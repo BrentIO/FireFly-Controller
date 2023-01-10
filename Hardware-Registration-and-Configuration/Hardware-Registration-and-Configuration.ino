@@ -232,13 +232,14 @@ void handlePostEEPROM(){
   //Write the deviceInfo object to the external EEPROM
   int writeResponse = externalEeprom.writeBlock(0, (uint8_t *) &deviceInfo, sizeof(deviceInfo));
 
+  //Enable write protection
+  digitalWrite(PIN_EEPROM_WP, HIGH);
+
   //I2C bus will return a non-zero on failure
   if(writeResponse != 0){
     handle500("Error during EEPROM write (" + (String)writeResponse + ")");
+    return;
   }
-
-  //Enable write protection
-  digitalWrite(PIN_EEPROM_WP, HIGH);
 
   server.send(204);
 }
