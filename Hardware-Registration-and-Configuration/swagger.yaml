@@ -1,0 +1,214 @@
+openapi: 3.0.3
+info:
+  title: FireFly Hardware Registration and Configuration
+  description: Retrieve and set data required for hardware registration
+  version: 1.0.0
+servers:
+  - url: 'http://{domain}'
+    variables:
+      domain:
+        default: 192.168.4.1
+        description: IP address of the device's WiFi interface
+
+tags:
+  - name: EEPROM
+    description: Operations for managing the EEPROM data
+  - name: Network
+    description: Operations for network communications
+  - name: MCU
+    description: Operations for the main control unit
+
+paths:
+  /api/network:
+    get:
+      tags:
+       - Network
+      summary: Retrieve all network interfaces
+      description: Retrieve all of the network interfaces
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/listmacAddressAndType'
+
+  /api/network/{interface}:
+    get:
+      tags:
+       - Network
+      summary: Retrieve the specified network interface
+      description: Retrieve the specified network interface information
+      parameters:
+        - in: path
+          name: interface
+          schema:
+            $ref: '#/components/schemas/networkInterfaceTypes'
+          required: true
+          description: Network interface to retrieve
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/macAddressAndType'
+        404:
+          description: Not Found
+
+  /api/eeprom:
+    post:
+      tags:
+       - EEPROM
+      summary: Store the configuration
+      description: Store the EEPROM configuration with the payload specified.  The response is synchronous to the operation completing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/eepromConfig'
+      responses:
+        204:
+          description: Accepted
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+        500:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+
+    get:
+      tags:
+       - EEPROM
+      summary: Retrieve the configuration
+      description: Retrieve the current EEPROM configuration
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/eepromConfig'
+        404:
+          description: No EEPROM configuration exists
+        500:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+
+    delete:
+      tags:
+        - EEPROM
+      summary: Format the EEPROM
+      description: Format the EEPROM so it has no data.  The response is synchronous to the operation completing
+      responses:
+        204:
+          description: Accepted
+        500:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+
+  /api/mcu:
+    get:
+      tags:
+       - MCU
+      summary: Main control unit hardware information
+      description: Retrieve the main control unit hardware information
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/mcuInfo'
+
+components:
+
+  schemas:
+    error_message:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Message describing the error condition
+          example: Unexpected Error
+
+    bad_request_message:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Message describing the issue with the request body
+          example: Missing parameter in request
+
+    networkInterfaceTypes:
+      type: string
+      enum:
+        - bluetooth
+        - ethernet
+        - wifi
+        - wifi_ap
+
+    macAddress:
+      type: string
+      description: Hardware address
+      pattern: ^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$
+      example: DE:AD:BE:EF:FE:ED
+
+    listmacAddressAndType:
+      type: array
+      items:
+        $ref: '#/components/schemas/macAddressAndType'
+
+    macAddressAndType:
+      type: object
+      properties:
+        mac_address:
+          $ref: '#/components/schemas/macAddress'
+        interface:
+          $ref: '#/components/schemas/networkInterfaceTypes'
+
+    eepromConfig:
+      type: object
+      properties:
+        uuid:
+          type: string
+          description: Unique identifier for the device
+          format: uuid
+          maxLength: 36
+        product_id:
+          type: string
+          description: Device product ID, which includes the board revision code
+          example: "FFC3232-2211"
+          maxLength: 32
+      required:
+        - uuid
+        - product_id
+
+    mcuInfo:
+      type: object
+      properties:
+        chip_model:
+          type: string
+          description: Main chip model
+          example: ESP32-D0WDQ5
+        revision:
+          type: string
+          description: Chip revision
+          example: 3
+        flash_chip_size:
+          type: integer
+          description: Size of the flash chip in bytes
+          example: 16777216

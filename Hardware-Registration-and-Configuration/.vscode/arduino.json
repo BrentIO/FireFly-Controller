@@ -1,0 +1,12 @@
+{
+    "board": "esp32:esp32:esp32wrover",
+    "buildPreferences": [
+        [
+            "build.extra_flags",
+            "-DPRODUCT_ID=32322211"
+        ]
+    ],
+    "port": "/dev/tty.SLAB_USBtoUART",
+    "sketch": "Hardware-Registration-and-Configuration.ino",
+    "output": ".cache"
+}
