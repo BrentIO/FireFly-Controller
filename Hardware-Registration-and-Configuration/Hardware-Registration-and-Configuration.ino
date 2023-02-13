@@ -9,14 +9,13 @@
  * (C) 2023, P5 Software, LLC
 */
 
-#include "customTypes.h" //P5 Software
-#include "hardwareDefinitions.h" //P5 Software
-#include "I2C_eeprom.h" //1.7.0, https://github.com/RobTillaart/I2C_EEPROM/releases/tag/1.7.0
-#include <ArduinoJson.h> //6.2.0, https://github.com/bblanchon/ArduinoJson/releases/tag/v6.20.0
-#include "esp_chip_info.h" //2.0.6, https://github.com/espressif/arduino-esp32/releases/tag/2.0.6
-#include <WiFi.h>
+#include "common/hardwareDefinitions.h"
+#include <I2C_eeprom.h> // https://github.com/RobTillaart/I2C_EEPROM
+#include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
+#include <esp_chip_info.h> // https://github.com/espressif/arduino-esp32
 #include <WiFiAP.h>
 #include <WebServer.h>
+
 
 WebServer server(80);
 I2C_eeprom externalEeprom(ADDRESS_EEPROM, SIZE_EEPROM);
