@@ -26,6 +26,11 @@
         #define COUNT_OUTPUT_CONTROLLER 2 /* The number of output controllers. */
         #define MODEL_OUTPUT_CONTROLLER ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
         #define COUNT_PINS_OUTPUT_CONTROLLER 16 /* The number of pins on each output controller. */
+        /* Temperature Sensor */
+        #define COUNT_TEMPERATURE_SENSOR 1 /* The number of temperature sensors. */
+        #define MODEL_TEMPERATURE_SENSOR ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
+        #define MILLS_TEMPERATURE_SLEEP_DURATION 5000 /* Number of millis to wait between reading the temperatures. Default 500. */
+        #define DEGREES_TEMPERATURE_VARIATION_ALLOWED 0.25 /* Number of degrees allowed variance between temperature reads before the new value is stored and reported. Default 0.1. */
         
         /* Pin Addresses */
         #define PIN_EEPROM_WP 23 /* EEPROM write protect pin.  When low, write protect is disabled. */
@@ -37,7 +42,7 @@
         /* I2C Addresses */
         #define _ADDRESSES_IO_EXTENDER {0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27} /* I2C addresses for the IO extenders, order must match the _PINS_INTERRUPT_IO_EXTENDER. */
         #define _ADDRESSES_OUTPUT_CONTROLLER {0x40,0x42} /* I2C addresses for the output controllers. */
-        #define ADDRESS_TEMPERATURE 0x48 /* I2C addresses of the on-board temperature sensor. */
+        #define _ADDRESSES_TEMPERATURE_SENSOR {0x48} /* I2C addresses of the on-board temperature sensors. */
         #define ADDRESS_EEPROM 0x50 /* I2C addresses of the external EEPROM. */
         #define ADDRESS_OLED 0x3C /* I2C addresses of the OLED Display.  NOTE: This can be modifed on the display itself, default is 0x3C. */
 
@@ -55,6 +60,7 @@
     const uint8_t PINS_IO_EXTENDER[] = _PINS_INTERRUPT_IO_EXTENDER;
     const uint8_t ADDRESSES_IO_EXTENDER[] = _ADDRESSES_IO_EXTENDER;
     const uint8_t ADDRESSES_OUTPUT_CONTROLLER[] = _ADDRESSES_OUTPUT_CONTROLLER;
+    const uint8_t ADDRESSES_TEMPERATURE_SENSORS[] = _ADDRESSES_TEMPERATURE_SENSOR;
 
 
  typedef struct {
