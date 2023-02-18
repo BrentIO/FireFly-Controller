@@ -64,12 +64,27 @@
     const uint8_t ADDRESSES_TEMPERATURE_SENSORS[] = _ADDRESSES_TEMPERATURE_SENSOR;
 
 
-    /* Include hardware-specific libraries and set hardware-specific strucutres */
+    /* Include hardware-specific libraries */
     #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9995
         #include <PCA95x5.h> // https://github.com/semcneil/PCA95x5
 
         #define DEBOUNCE_DELAY 500 /* Milliseconds between changes for debouncing. */
 
+    #endif
+
+
+    #if MODEL_OUTPUT_CONTROLLER == ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
+        #include <PCA9685.h> // https://github.com/RobTillaart/PCA9685_RT
+    #endif
+
+
+    #if MODEL_EEPROM_EXTERNAL == ENUM_MODEL_EEPROM_EXTERNAL_24LCXXX
+        #include <I2C_eeprom.h> // https://github.com/RobTillaart/I2C_EEPROM
+    #endif
+
+
+    #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
+        #include <PCT2075.h> // https://github.com/jpliew/PCT2075
     #endif
 
 
@@ -103,6 +118,7 @@
         VARIABLE = 1
     };
 
+
     enum temperatureSensorLocation{
         UNKNOWN = -1,
         CENTER = 0
@@ -122,43 +138,36 @@
         outputType type = BINARY;
     };
 
+
     struct ioExtender{
 
         #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9995
             PCA9555 hardware; /* Reference to the hardware. */
         #endif
+
         uint8_t interruptPin = 0; /* Interrupt pin. Default 0. */
         uint8_t address = 0; /* I2C address. Default 0.*/
         uint16_t previousRead = 0; /* Numeric value of the last read from the hardware. Default 0.*/
         inputPin inputs[COUNT_PINS_IO_EXTENDER]; /* Input pins connected to the hardware.*/
     };
 
-    #if MODEL_OUTPUT_CONTROLLER == ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
-        #include <PCA9685.h> // https://github.com/RobTillaart/PCA9685_RT
 
-        struct outputController{
-            uint8_t address = 0; /* I2C address. Default 0.*/
-            outputPin outputs[COUNT_PINS_OUTPUT_CONTROLLER];
-        };
+    struct outputController{
+        uint8_t address = 0; /* I2C address. Default 0.*/
+        outputPin outputs[COUNT_PINS_OUTPUT_CONTROLLER];
+    };
 
-    #endif
 
-    #if MODEL_EEPROM_EXTERNAL == ENUM_MODEL_EEPROM_EXTERNAL_24LCXXX
-        #include <I2C_eeprom.h> // https://github.com/RobTillaart/I2C_EEPROM
-    #endif
+    struct temperatureSensor{
+        uint8_t address = 0; /* I2C address. Default 0.*/
 
-    #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
-        #include <PCT2075.h> // https://github.com/jpliew/PCT2075
-
-        struct temperatureSensor{
-            uint8_t address = 0; /* I2C address. Default 0.*/
+        #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
             PCT2075 hardware = PCT2075(0); /* Reference to the hardware. */
-            float previousRead = 0; /* Previous read temperature. Default 0. */
-            unsigned long timePreviousRead = 0; /* Time (millis) when the sensor was last read. Default 0.*/
-            temperatureSensorLocation location;
-        };
-
-    #endif
-
+        #endif
+        
+        float previousRead = 0; /* Previous read temperature. Default 0. */
+        unsigned long timePreviousRead = 0; /* Time (millis) when the sensor was last read. Default 0.*/
+        temperatureSensorLocation location;
+    };
 
 #endif
