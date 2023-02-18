@@ -173,9 +173,10 @@ void handleGetEEPROM(){
     return;
   }
  
-  StaticJsonDocument<128> doc;
+  StaticJsonDocument<256> doc;
   doc["uuid"] = deviceInfo.uuid;
   doc["product_id"] = deviceInfo.product_id;
+  doc["key"] = deviceInfo.key;
 
   String output;
   serializeJson(doc, output);
@@ -188,6 +189,12 @@ void handleGetEEPROM(){
  * The response is synchronous to the operation completing
 */
 void handlePostEEPROM(){
+
+  MatchState ms;
+
+  #ifdef DEBUG
+    Serial.println("handlePostEEPROM()");
+  #endif
 
   //Ensure we received a body
   if(server.hasArg("plain") == false) {
@@ -202,7 +209,7 @@ void handlePostEEPROM(){
     return;
   }
 
-  StaticJsonDocument<192> doc;
+  StaticJsonDocument<256> doc;
   DeserializationError error = deserializeJson(doc, server.arg("plain"));
 
   if (error) {
@@ -216,18 +223,58 @@ void handlePostEEPROM(){
     return;
   }
 
+  if(strlen(doc["uuid"])!=36){
+    handle400(F("Field uuid is not exactly 36 characters"));
+    return;
+  }
+
+  strcpy(deviceInfo.uuid, doc["uuid"]);
+
+  ms.Target(deviceInfo.uuid);
+
+  if(ms.MatchCount("^[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+$")!=1){ //Library does not support lengths of each section, so there is some opportunity for error
+    handle400(F("Invalid uuid, see Swagger"));
+    return;
+  }
+
   if(!doc.containsKey("product_id")){
     handle400(F("Field product_id is required"));
     return;
   }
 
+  if(strlen(doc["product_id"])>32){
+    handle400(F("Field product_id is greater than 32 characters, see Swagger"));
+    return;
+  }
+
+  strcpy(deviceInfo.product_id, doc["product_id"]);
+
+  if(!doc.containsKey("key")){
+    handle400(F("Field key is required"));
+    return;
+  }
+
+  if(strlen(doc["key"])!=64){
+    handle400(F("Field key is not exactly 64 characters"));
+    return;
+  }
+
+  strcpy(deviceInfo.key, doc["key"]);
+
+  ms.Target(deviceInfo.key);
+
+  if(ms.MatchCount("^[0-9A-Za-z]+$")!=1){
+    handle400(F("Invalid key, see Swagger"));
+    return;
+  }
+
+  #ifdef DEBUG
+    Serial.println("Ready to write EEPROM");
+  #endif
+ 
   //Disable write protection
   digitalWrite(PIN_EEPROM_WP, LOW);
   delay(10);
-
-  //Copy the data to the deviceInfo object
-  strcpy(deviceInfo.uuid, doc["uuid"]);
-  strcpy(deviceInfo.product_id, doc["product_id"]);
 
   //Write the deviceInfo object to the external EEPROM
   int writeResponse = externalEeprom.writeBlock(0, (uint8_t *) &deviceInfo, sizeof(deviceInfo));

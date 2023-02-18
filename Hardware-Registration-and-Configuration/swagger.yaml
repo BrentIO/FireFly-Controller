@@ -187,15 +187,24 @@ components:
           type: string
           description: Unique identifier for the device
           format: uuid
+          minLength: 36
           maxLength: 36
         product_id:
           type: string
           description: Device product ID, which includes the board revision code
           example: "FFC3232-2211"
           maxLength: 32
+        key:
+          type: string
+          description: String of random characters used for authentication
+          minLength: 64
+          maxLength: 64
+          example: bCsCaNv1LIf0UriPsKWTOTbz2biycaNOL57fcuBjqkxrnSONcqjHt1416iJfg8QJ
+          pattern: '^[0-9A-Za-z]{64}$'
       required:
         - uuid
         - product_id
+        - key
 
     mcuInfo:
       type: object
@@ -212,3 +221,4 @@ components:
           type: integer
           description: Size of the flash chip in bytes
           example: 16777216
+

@@ -60,7 +60,9 @@
  typedef struct {
     char uuid[37];
     char product_id[33];
+    char key[65];
   } deviceType;
+
 
   enum inputType{
       NORMALLY_OPEN = 0,
