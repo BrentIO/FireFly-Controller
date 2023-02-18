@@ -17,6 +17,8 @@
 #include <WebServer.h>
 #include <Regexp.h> // https://github.com/nickgammon/Regexp
 
+#define DEBUG 1000
+
 
 WebServer server(80);
 I2C_eeprom externalEeprom(ADDRESS_EEPROM, SIZE_EEPROM);
@@ -25,14 +27,22 @@ deviceType deviceInfo;
 
 void setup() {
 
+  #ifdef DEBUG
+    Serial.begin(115200);
+  #endif
+
   //Setup a soft AP with the SSID FireFly-######, where the last 6 characters are the last 6 of the Soft AP MAC address
   uint8_t baseMac[6];
   esp_read_mac(baseMac, ESP_MAC_WIFI_SOFTAP);
   char baseMacChr[18] = {0};
   sprintf(baseMacChr, "FireFly-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
-  
+ 
   WiFi.softAP(baseMacChr);
   IPAddress myIP = WiFi.softAPIP();
+
+  #ifdef DEBUG
+    Serial.println("Started SoftAP " + String(baseMacChr));
+  #endif
 
   //Start the external EEPROM
   externalEeprom.begin();
@@ -55,6 +65,10 @@ void setup() {
   server.onNotFound(handle404);
 
   server.begin();
+
+  #ifdef DEBUG
+    Serial.println("HTTP server ready.");
+  #endif
 }
 
 
@@ -91,6 +105,10 @@ void handleGetMCU(){
  * Retrieve the specified network interface information based on the requested server.uri
 */
 void handleGetNetworkInterface(){
+
+  #ifdef DEBUG
+    Serial.println("handleGetNetworkInterface()");
+  #endif
 
   StaticJsonDocument<96> doc;
 
@@ -156,6 +174,10 @@ void handleGetNetworkInterface_all(){
  * Retrieve the current EEPROM configuration
 */
 void handleGetEEPROM(){
+
+  #ifdef DEBUG
+    Serial.println("handleGetEEPROM()");
+  #endif
 
   //Ensure we can talk to the EEPROM, otherwise throw an error
   if (!externalEeprom.isConnected())
@@ -288,6 +310,10 @@ void handlePostEEPROM(){
     return;
   }
 
+  #ifdef DEBUG
+    Serial.println("EEPROM write success");
+  #endif
+
   server.send(204);
 }
 
@@ -297,6 +323,10 @@ void handlePostEEPROM(){
  * The response is synchronous to the operation completing
 */
 void handleDeleteEEPROM(){
+
+  #ifdef DEBUG
+    Serial.println("handleDeleteEEPROM()");
+  #endif
 
   //Ensure we can talk to the EEPROM, otherwise throw an error
   if (!externalEeprom.isConnected())
