@@ -1,7 +1,4 @@
-#include <PCA95x5.h> // https://github.com/semcneil/PCA95x5
-#include <PCA9685.h> // https://github.com/RobTillaart/PCA9685_RT
-#include <PCT2075.h> // https://github.com/jpliew/PCT2075
-#include <I2C_eeprom.h> // https://github.com/RobTillaart/I2C_EEPROM
+
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
 #include "common/hardwareDefinitions.h"
 
