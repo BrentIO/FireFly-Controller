@@ -62,6 +62,8 @@ Download each library manually as a zip file.  Install each required library fro
 
 `arduino-cli lib install --zip-path /my/downloads/directory/PCT2075-main.zip`
 
+`arduino-cli lib install --zip-path /my/downloads/directory/Regexp-0.1.1.zip`
+
 ---
 
 ## **Visual Studio IDE Configuration**

@@ -15,6 +15,7 @@
 #include <esp_chip_info.h> // https://github.com/espressif/arduino-esp32
 #include <WiFiAP.h>
 #include <WebServer.h>
+#include <Regexp.h> // https://github.com/nickgammon/Regexp
 
 
 WebServer server(80);
