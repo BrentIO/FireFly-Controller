@@ -10,7 +10,6 @@
 */
 
 #include "common/hardwareDefinitions.h"
-#include <I2C_eeprom.h> // https://github.com/RobTillaart/I2C_EEPROM
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
 #include <esp_chip_info.h> // https://github.com/espressif/arduino-esp32
 #include <WiFi.h>
