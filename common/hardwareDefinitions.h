@@ -64,6 +64,15 @@
     const uint8_t ADDRESSES_TEMPERATURE_SENSORS[] = _ADDRESSES_TEMPERATURE_SENSOR;
 
 
+    /* Include hardware-specific libraries and set hardware-specific strucutres */
+    #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9995
+        #include <PCA95x5.h> // https://github.com/semcneil/PCA95x5
+
+        #define DEBOUNCE_DELAY 500 /* Milliseconds between changes for debouncing. */
+
+    #endif
+
+
     typedef struct {
         char uuid[37];
         char product_id[33];
@@ -113,22 +122,16 @@
         outputType type = BINARY;
     };
 
+    struct ioExtender{
 
-    /* Include hardware-specific libraries and set hardware-specific strucutres */
-    #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9995
-        #include <PCA95x5.h> // https://github.com/semcneil/PCA95x5
-
-        #define DEBOUNCE_DELAY 500 /* Milliseconds between changes for debouncing. */
-
-        struct ioExtender{
+        #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9995
             PCA9555 hardware; /* Reference to the hardware. */
-            uint8_t interruptPin = 0; /* Interrupt pin. Default 0. */
-            uint8_t address = 0; /* I2C address. Default 0.*/
-            uint16_t previousRead = 0; /* Numeric value of the last read from the hardware. Default 0.*/
-            inputPin inputs[COUNT_PINS_IO_EXTENDER]; /* Input pins connected to the hardware.*/
-        };
-
-    #endif
+        #endif
+        uint8_t interruptPin = 0; /* Interrupt pin. Default 0. */
+        uint8_t address = 0; /* I2C address. Default 0.*/
+        uint16_t previousRead = 0; /* Numeric value of the last read from the hardware. Default 0.*/
+        inputPin inputs[COUNT_PINS_IO_EXTENDER]; /* Input pins connected to the hardware.*/
+    };
 
     #if MODEL_OUTPUT_CONTROLLER == ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
         #include <PCA9685.h> // https://github.com/RobTillaart/PCA9685_RT
