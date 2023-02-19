@@ -377,11 +377,21 @@
                 FAILURE = 2 //Catastrophic failure that is non-recoverable
             };
 
+            enum inputState{
+                STATE_OPEN = LOW,
+                STATE_CLOSED = HIGH
+            };
+
+            enum inputType{
+                NORMALLY_OPEN = 0,
+                NORMALLY_CLOSED = 1,
+            };
+
         private:
             managerFrontPanelButton::status _ledStatus = TROUBLE;
 
         public:
-            unsigned long timePreviousChange = 0; /* Time (millis) when the input state last changed.  Value is set to 0 when the state returns to its input type. Default 0.*/
+
             inputState state = STATE_OPEN; /* The state entered at timePreviousChange. Default STATE_OPEN.*/
             inputType type = NORMALLY_OPEN; /* Defines if the input is normally open or normally closed. Default NORMALLY_OPEN.*/
 
