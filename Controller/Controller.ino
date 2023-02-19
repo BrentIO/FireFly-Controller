@@ -67,7 +67,7 @@ void setupInputs(){
     #endif
 
     //Get the current input states and ignore the debounce delays
-    readInputPins(i, true);
+    readInputPins(&inputControllers[i], true);
   }
 
 }
@@ -109,7 +109,7 @@ void loopInputs(){
     
     //Need to read each input pin for LOW so we can detect intra-PCA9555 button press changes
     if(digitalRead(inputControllers[i].interruptPin) == LOW){
-      readInputPins(i);
+      readInputPins(&inputControllers[i]);
     }
   }
 
@@ -117,18 +117,18 @@ void loopInputs(){
 
 
 /** Checks the pins on the ioExtenderIndex IO extender for changes */
-void readInputPins(int ioExtenderIndex){
-  readInputPins(ioExtenderIndex, false);
+void readInputPins(ioExtender *ioExtender){
+  readInputPins(ioExtender, false);
 }
 
 
 /** Checks the pins on the ioExtenderIndex IO extender for changes, optionally ignoring the debounce delay */
-void readInputPins(int ioExtenderIndex, boolean ignoreDebounceDelay){
+void readInputPins(ioExtender *ioExtender, boolean ignoreDebounceDelay){
 
   #ifdef DEBUG
     #if DEBUG > 50
       if(ignoreDebounceDelay == true){
-        Serial.println("(readInputPins) IO Extender: 0x" + String(inputControllers[ioExtenderIndex].address, HEX) + " Ignoring debounce delay.");
+        Serial.println("(readInputPins) IO Extender: 0x" + String(ioExtender->address, HEX) + " Ignoring debounce delay.");
       }
     #endif
   #endif
@@ -137,12 +137,12 @@ void readInputPins(int ioExtenderIndex, boolean ignoreDebounceDelay){
 
   #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9555
 
-    pinRead = inputControllers[ioExtenderIndex].hardware.read();
+    pinRead = ioExtender->hardware.read();
 
   #endif
 
   //Exit if the value returned from the controller is the same as the value that was previously read
-  if(pinRead == inputControllers[ioExtenderIndex].previousRead){
+  if(pinRead == ioExtender->previousRead){
     return;
   }
 
@@ -152,23 +152,23 @@ void readInputPins(int ioExtenderIndex, boolean ignoreDebounceDelay){
     inputState currentState = bitToInputState(bitRead(pinRead, i));
 
     //Check if the value returned in the read is the same as the last read
-    if(inputControllers[ioExtenderIndex].inputs[i].state == currentState){
+    if(ioExtender->inputs[i].state == currentState){
       #ifdef DEBUG
         #if DEBUG > 500
-          Serial.println("(readInputPins) IO Extender: 0x" + String(inputControllers[ioExtenderIndex].address, HEX) + " Pin: " + String(i) + " input states match. Previous: " + String(inputControllers[ioExtenderIndex].inputs[i].state, HEX) + " Current: " + String(currentState, HEX));
+          Serial.println("(readInputPins) IO Extender: 0x" + String(ioExtender->address, HEX) + " Pin: " + String(i) + " input states match. Previous: " + String(ioExtender->inputs[i].state, HEX) + " Current: " + String(currentState, HEX));
         #endif
       #endif
       continue;
     }
 
     //Values are different; Check if we are within the debounce delay
-    if(millis() - inputControllers[ioExtenderIndex].inputs[i].timePreviousChange < DEBOUNCE_DELAY){
+    if(millis() - ioExtender->inputs[i].timePreviousChange < DEBOUNCE_DELAY){
 
       //Check if the debounce delay should be checked (ignored on startup)
       if(ignoreDebounceDelay == false){
         #ifdef DEBUG
           #if DEBUG > 50
-            Serial.println("(readInputPins) IO Extender: 0x" + String(inputControllers[ioExtenderIndex].address, HEX) + " Pin: " + String(i) + " DEBOUNCE_DELAY (" + String(DEBOUNCE_DELAY) + ") not satisfied. Time Previous Change: " + String(inputControllers[ioExtenderIndex].inputs[i].timePreviousChange) + " Current Time: " + String(millis()) + " Difference: " + String(millis() - inputControllers[ioExtenderIndex].inputs[i].timePreviousChange));
+            Serial.println("(readInputPins) IO Extender: 0x" + String(ioExtender->address, HEX) + " Pin: " + String(i) + " DEBOUNCE_DELAY (" + String(DEBOUNCE_DELAY) + ") not satisfied. Time Previous Change: " + String(ioExtender->inputs[i].timePreviousChange) + " Current Time: " + String(millis()) + " Difference: " + String(millis() - ioExtender->inputs[i].timePreviousChange));
           #endif
         #endif
 
@@ -177,18 +177,18 @@ void readInputPins(int ioExtenderIndex, boolean ignoreDebounceDelay){
 
     }
 
-    switch(inputControllers[ioExtenderIndex].inputs[i].type){
+    switch(ioExtender->inputs[i].type){
 
       case inputType::NORMALLY_OPEN:
 
         //Check if input is in an abnormal state
         if(currentState == inputState::STATE_CLOSED){
 
-          inputControllers[ioExtenderIndex].inputs[i].timePreviousChange = millis();
+          ioExtender->inputs[i].timePreviousChange = millis();
 
           #ifdef DEBUG
             #if DEBUG > 50
-              Serial.println("(readInputPins) IO Extender: 0x" + String(inputControllers[ioExtenderIndex].address, HEX) + " Pin: " + String(i) + " Type: " + String(inputControllers[ioExtenderIndex].inputs[i].type) + " New State: " + String(currentState) + " (Abnormal)");
+              Serial.println("(readInputPins) IO Extender: 0x" + String(ioExtender->address, HEX) + " Pin: " + String(i) + " Type: " + String(ioExtender->inputs[i].type) + " New State: " + String(currentState) + " (Abnormal)");
             #endif
           #endif          
        
@@ -199,11 +199,11 @@ void readInputPins(int ioExtenderIndex, boolean ignoreDebounceDelay){
         //Check if input is in normal state
         if(currentState == inputState::STATE_OPEN){
           
-          inputControllers[ioExtenderIndex].inputs[i].timePreviousChange = 0;
+          ioExtender->inputs[i].timePreviousChange = 0;
 
           #ifdef DEBUG
             #if DEBUG > 50
-              Serial.println("(readInputPins) IO Extender: 0x" + String(inputControllers[ioExtenderIndex].address, HEX) + " Pin: " + String(i) + " Type: " + String(inputControllers[ioExtenderIndex].inputs[i].type) + " New State: " + String(currentState) + " (Normal)");
+              Serial.println("(readInputPins) IO Extender: 0x" + String(ioExtender->address, HEX) + " Pin: " + String(i) + " Type: " + String(ioExtender->inputs[i].type) + " New State: " + String(currentState) + " (Normal)");
             #endif
           #endif
          
@@ -216,11 +216,11 @@ void readInputPins(int ioExtenderIndex, boolean ignoreDebounceDelay){
         //Check if input is in an abnormal state
         if(currentState == inputState::STATE_OPEN){
 
-          inputControllers[ioExtenderIndex].inputs[i].timePreviousChange = millis();
+          ioExtender->inputs[i].timePreviousChange = millis();
           
           #ifdef DEBUG
             #if DEBUG > 50
-              Serial.println("(readInputPins) IO Extender: " + String(inputControllers[ioExtenderIndex].address, HEX) + " Pin: " + String(i) + " Type: " + String(inputControllers[ioExtenderIndex].inputs[i].type) + " New State: " + String(currentState) + " (Abnormal)");
+              Serial.println("(readInputPins) IO Extender: " + String(ioExtender->address, HEX) + " Pin: " + String(i) + " Type: " + String(ioExtender->inputs[i].type) + " New State: " + String(currentState) + " (Abnormal)");
             #endif
           #endif
           
@@ -231,11 +231,11 @@ void readInputPins(int ioExtenderIndex, boolean ignoreDebounceDelay){
         //Check if input is in normal state
         if(currentState == inputState::STATE_CLOSED){
           
-          inputControllers[ioExtenderIndex].inputs[i].timePreviousChange = 0;
+          ioExtender->inputs[i].timePreviousChange = 0;
 
           #ifdef DEBUG
             #if DEBUG > 50
-              Serial.println("(readInputPins) IO Extender: " + String(inputControllers[ioExtenderIndex].address, HEX) + " Pin: " + String(i) + " Type: " + String(inputControllers[ioExtenderIndex].inputs[i].type) + " New State: " + String(currentState) + " (Normal)");
+              Serial.println("(readInputPins) IO Extender: " + String(ioExtender->address, HEX) + " Pin: " + String(i) + " Type: " + String(ioExtender->inputs[i].type) + " New State: " + String(currentState) + " (Normal)");
             #endif
           #endif
 
@@ -246,13 +246,13 @@ void readInputPins(int ioExtenderIndex, boolean ignoreDebounceDelay){
     }
 
     //Set the value of the pin to the current state
-    inputControllers[ioExtenderIndex].inputs[i].state = currentState;
+    ioExtender->inputs[i].state = currentState;
 
   }
 
 
   //Set the controller's value to the updated value
-  inputControllers[ioExtenderIndex].previousRead = pinRead;
+  ioExtender->previousRead = pinRead;
 }
 
 
