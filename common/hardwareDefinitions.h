@@ -320,8 +320,6 @@
                         //Check if the delta between the two reads is more than the DEGREES_TEMPERATURE_VARIATION_ALLOWED
                         if(abs(currentRead - temperatureSensors[i].previousRead) > DEGREES_TEMPERATURE_VARIATION_ALLOWED){
 
-                            Serial.println(this->temperatureSensors[i].hardware.getConfig());
-
                             //Store the new temperature reading
                             temperatureSensors[i].previousRead = currentRead;
 
