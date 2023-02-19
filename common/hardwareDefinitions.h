@@ -158,7 +158,7 @@
     };
 
 
-    class oledLEDButton{
+    class managerFrontPanelButton{
 
         public:
             enum status{
@@ -168,7 +168,7 @@
             };
 
         private:
-            oledLEDButton::status _ledStatus = TROUBLE;
+            managerFrontPanelButton::status _ledStatus = TROUBLE;
 
         public:
             uint8_t interruptPin = PIN_OLED_BUTTON; /* Interrupt pin.*/
@@ -182,28 +182,28 @@
                 pinMode(this->ledPin, OUTPUT);
             }
 
-            void setLED(oledLEDButton::status value){
+            void setLED(managerFrontPanelButton::status value){
 
-                if(_ledStatus == oledLEDButton::FAILURE) { 
+                if(_ledStatus == managerFrontPanelButton::FAILURE) { 
                     return; //Prevent the status from being returned to normal
                 }
 
                 switch(value){
-                    case oledLEDButton::status::FAILURE:
                         digitalWrite(ledPin, LOW);
+                    case managerFrontPanelButton::status::FAILURE:
                         break;
 
-                    case oledLEDButton::status::NORMAL:
                         digitalWrite(ledPin, HIGH);
+                    case managerFrontPanelButton::status::NORMAL:
                         break;
 
-                    case oledLEDButton::status::TROUBLE:
                         digitalWrite(ledPin, LOW);
+                    case managerFrontPanelButton::status::TROUBLE:
                         break;                        
 
                     default:
                         digitalWrite(ledPin, LOW);
-                        _ledStatus = oledLEDButton::status::TROUBLE;
+                        _ledStatus = managerFrontPanelButton::status::TROUBLE;
                         break;
                 }
 
