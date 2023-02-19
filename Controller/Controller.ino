@@ -44,23 +44,29 @@ void loop() {
 /**Instantiate the input objects*/
 void setupInputs(){
 
-    for(int i = 0; i < COUNT_IO_EXTENDER; i++){
+  //Setup the input controllers
+  for(int i = 0; i < COUNT_IO_EXTENDER; i++){
 
-      pinMode(inputControllers[i].interruptPin, INPUT);
+    pinMode(inputControllers[i].interruptPin, INPUT);
 
-      inputControllers[i].interruptPin = PINS_IO_EXTENDER[i];
-      inputControllers[i].address = ADDRESSES_IO_EXTENDER[i];
-      
-      #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9555
-        inputControllers[i].hardware.attach(Wire, inputControllers[i].address);
-        inputControllers[i].hardware.polarity(PCA95x5::Polarity::INVERTED_ALL);
-        inputControllers[i].hardware.direction(PCA95x5::Direction::IN_ALL);
-      #endif
+    inputControllers[i].interruptPin = PINS_IO_EXTENDER[i];
+    inputControllers[i].address = ADDRESSES_IO_EXTENDER[i];
+    
+    #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9555
+      inputControllers[i].hardware.attach(Wire, inputControllers[i].address);
+      inputControllers[i].hardware.polarity(PCA95x5::Polarity::INVERTED_ALL);
+      inputControllers[i].hardware.direction(PCA95x5::Direction::IN_ALL);
 
-      //Get the current input states and ignore the debounce delays
-      readInputPins(i, true);
+      //Ensure we connected to the controller
+      if(inputControllers[i].hardware.i2c_error() != 0){
+        handleInputFailure(&inputControllers[i]);
+      }
 
-    }
+    #endif
+
+    //Get the current input states and ignore the debounce delays
+    readInputPins(i, true);
+  }
 
 }
 
