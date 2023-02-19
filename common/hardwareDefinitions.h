@@ -39,8 +39,8 @@
         /* Pin Addresses */
         #define PIN_EEPROM_WP 23 /* EEPROM write protect pin.  When low, write protect is disabled. */
         #define PIN_ETHERNET 0 /* Ethernet hardware control flow pin. */
-        #define _PIN_OLED_BUTTON 32 /* Button for the front panel. */
-        #define _PIN_OLED_LED 33 /* LED for the front panel button. */
+        #define PIN_OLED_BUTTON 32 /* Button for the front panel. */
+        #define PIN_OLED_LED 33 /* LED for the front panel button. */
         #define _PINS_INTERRUPT_IO_EXTENDER {35,25,26,27,4,5,18,19} /* Interrupt pins for the IO extenders, order must match the _ADDRESSES_IO_EXTENDER. */
 
         /* I2C Addresses */
@@ -52,11 +52,13 @@
 
     #endif
 
+
     #ifndef SUPPORTED_HARDWARE
 
         #error Build failed, Unknown PRODUCT_ID. Ensure it was set in ./.vscode/arduino.json {"buildPreferences":[["build.extra_flags","-DPRODUCT_ID=000000000"]]}
 
     #endif
+
 
     const uint8_t PINS_IO_EXTENDER[] = _PINS_INTERRUPT_IO_EXTENDER;
     const uint8_t ADDRESSES_IO_EXTENDER[] = _ADDRESSES_IO_EXTENDER;
@@ -169,8 +171,8 @@
             oledLEDButton::status _ledStatus = TROUBLE;
 
         public:
-            uint8_t interruptPin = _PIN_OLED_BUTTON; /* Interrupt pin.*/
-            uint8_t ledPin = _PIN_OLED_LED; /* LED output pin.*/
+            uint8_t interruptPin = PIN_OLED_BUTTON; /* Interrupt pin.*/
+            uint8_t ledPin = PIN_OLED_LED; /* LED output pin.*/
             unsigned long timePreviousChange = 0; /* Time (millis) when the input state last changed.  Value is set to 0 when the state returns to its input type. Default 0.*/
             inputState state = STATE_OPEN; /* The state entered at timePreviousChange. Default STATE_OPEN.*/
             inputType type = NORMALLY_OPEN; /* Defines if the input is normally open or normally closed. Default NORMALLY_OPEN.*/
