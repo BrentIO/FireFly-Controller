@@ -1,3 +1,4 @@
+#define DEBUG 400
 
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
 #include "common/hardwareDefinitions.h"
@@ -7,9 +8,6 @@ ioExtender inputControllers[COUNT_IO_EXTENDER];
 outputController outputControllers[COUNT_OUTPUT_CONTROLLER];
 managerTemperatureSensors temperatureSensors;
 managerFrontPanelButton frontPanelButton;
-
-
-#define DEBUG 400
 
 
 void setup() {
