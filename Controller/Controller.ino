@@ -25,7 +25,7 @@ void setup() {
 
     setupInputs();
     setupOutputs();
-    setupTemperatures();  
+    setupTemperatures();
 
     //System has started, show normal state
     frontPanelButton.setLED(oledLEDButton::NORMAL);
@@ -98,6 +98,11 @@ void setupTemperatures(){
 
       #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
         temperatureSensors[i].hardware = PCT2075(temperatureSensors[i].address);
+
+        if(temperatureSensors[i].hardware.getConfig() !=0){
+          handleTemperatureFailure(&temperatureSensors[i]);
+        }
+
       #endif
 
       #if PRODUCT_ID == 32322211
@@ -122,6 +127,10 @@ void loopTemperatures(){
 
   //Loop through each temperature sensor on the board
   for(int i = 0; i < COUNT_TEMPERATURE_SENSOR; i++){
+
+    if(temperatureSensors[i].enabled == false){
+      continue;
+    }
 
     //If the timer has expired OR if the temperature sensor has never been read, read it
     if((millis() - temperatureSensors[i].timePreviousRead > MILLS_TEMPERATURE_SLEEP_DURATION) || (temperatureSensors[i].timePreviousRead == 0)){
@@ -337,4 +346,21 @@ void publishNewTemperature(temperatureSensor *sensor){
   #endif
 
   //TODO: Add MQTT Event
+
+/** Handles failures of temperature sensors */
+void handleTemperatureFailure(temperatureSensor *sensor){
+
+  #ifdef DEBUG
+    Serial.println("Temperature sensor at 0x" + String(sensor->address, HEX) + " is offline.");
+  #endif
+
+  //Disable the sensor
+  sensor->enabled = false;
+
+  //Set the LED to trouble
+  frontPanelButton.setLED(oledLEDButton::FAILURE);
+
+
+  //TODO: Add MQTT Event
+
 }

@@ -225,10 +225,11 @@
         #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
             PCT2075 hardware = PCT2075(0); /* Reference to the hardware. */
         #endif
-        
+
         float previousRead = 0; /* Previous read temperature. Default 0. */
         unsigned long timePreviousRead = 0; /* Time (millis) when the sensor was last read. Default 0.*/
         temperatureSensorLocation location;
+        bool enabled = true; /* Indicates if the sensor is enabled. Default true.*/
     };
 
 #endif
