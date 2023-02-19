@@ -152,6 +152,8 @@
         uint8_t address = 0; /* I2C address. Default 0.*/
         uint16_t previousRead = 0; /* Numeric value of the last read from the hardware. Default 0.*/
         inputPin inputs[COUNT_PINS_IO_EXTENDER]; /* Input pins connected to the hardware.*/
+        bool enabled = true; /* Indicates if the controller is enabled. Default true.*/
+    };
 
 
     class oledLEDButton{
@@ -211,6 +213,7 @@
     struct outputController{
         uint8_t address = 0; /* I2C address. Default 0.*/
         outputPin outputs[COUNT_PINS_OUTPUT_CONTROLLER];
+        bool enabled = true; /* Indicates if the controller is enabled. Default true.*/
 
         #if MODEL_OUTPUT_CONTROLLER == ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
             PCA9685 hardware = PCA9685(0); /* Reference to the hardware. */

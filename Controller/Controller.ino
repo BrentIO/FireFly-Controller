@@ -167,12 +167,18 @@ void loopTemperatures(){
 void loopInputs(){
 
   for(int i = 0; i < COUNT_IO_EXTENDER; i++){
+
+    //Ignore disabled input controllers
+    if(inputControllers[i].enabled == false){
+      continue;
+    }
     
     //Need to read each input pin for LOW so we can detect intra-PCA9555 button press changes
     if(digitalRead(inputControllers[i].interruptPin) == LOW){
       readInputPins(i);
     }
   }
+
 }
 
 
@@ -352,6 +358,43 @@ void publishNewTemperature(temperatureSensor *sensor){
   #endif
 
   //TODO: Add MQTT Event
+}
+
+/** Handles failures of input controllers */
+void handleInputFailure(ioExtender *controller){
+
+  #ifdef DEBUG
+    Serial.println("Input controller at 0x" + String(controller->address, HEX) + " is offline.");
+  #endif
+
+  //Disable the controller
+  controller->enabled = false;
+
+  //Set the LED to trouble
+  frontPanelButton.setLED(oledLEDButton::FAILURE);
+
+
+  //TODO: Add MQTT Event
+
+}
+
+/** Handles failures of output controllers */
+void handleOutputFailure(outputController *controller){
+
+  #ifdef DEBUG
+    Serial.println("Output controller at 0x" + String(controller->address, HEX) + " is offline.");
+  #endif
+
+  //Disable the controller
+  controller->enabled = false;
+
+  //Set the LED to trouble
+  frontPanelButton.setLED(oledLEDButton::FAILURE);
+
+
+  //TODO: Add MQTT Event
+
+}
 
 /** Handles failures of temperature sensors */
 void handleTemperatureFailure(temperatureSensor *sensor){
