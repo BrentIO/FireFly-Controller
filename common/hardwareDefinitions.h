@@ -316,6 +316,14 @@
 
                         //Set the new read time time
                         temperatureSensors[i].timePreviousRead = millis();
+
+                        //Ensure the hardware is still online
+                        #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
+                            if(this->temperatureSensors[i].hardware.getConfig() !=0){
+                                temperatureSensors[i].enabled = false;
+                                this->ptrFailureCallback(locationToString(temperatureSensors[i].location));
+                            }
+                        #endif
                         
                         //Check if the delta between the two reads is more than the DEGREES_TEMPERATURE_VARIATION_ALLOWED
                         if(abs(currentRead - temperatureSensors[i].previousRead) > DEGREES_TEMPERATURE_VARIATION_ALLOWED){
