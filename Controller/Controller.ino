@@ -9,7 +9,7 @@ temperatureSensor temperatureSensors[COUNT_TEMPERATURE_SENSOR];
 oledLEDButton frontPanelButton;
 
 
-#define DEBUG 1000
+#define DEBUG 400
 
 
 void setup() {
@@ -199,7 +199,7 @@ void readInputPins(int ioExtenderIndex, boolean ignoreDebounceDelay){
     //Check if the value returned in the read is the same as the last read
     if(inputControllers[ioExtenderIndex].inputs[i].state == currentState){
       #ifdef DEBUG
-        #if DEBUG > 50
+        #if DEBUG > 500
           Serial.println("(readInputPins) IO Extender: 0x" + String(inputControllers[ioExtenderIndex].address, HEX) + " Pin: " + String(i) + " input states match. Previous: " + String(inputControllers[ioExtenderIndex].inputs[i].state, HEX) + " Current: " + String(currentState, HEX));
         #endif
       #endif
