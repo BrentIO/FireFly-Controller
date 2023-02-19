@@ -6,7 +6,7 @@
 ioExtender inputControllers[COUNT_IO_EXTENDER];
 outputController outputControllers[COUNT_OUTPUT_CONTROLLER];
 temperatureSensor temperatureSensors[COUNT_TEMPERATURE_SENSOR];
-oledLEDButton frontPanelButton;
+managerFrontPanelButton frontPanelButton;
 
 
 #define DEBUG 400
@@ -28,7 +28,7 @@ void setup() {
     setupTemperatures();
 
     //System has started, show normal state
-    frontPanelButton.setLED(oledLEDButton::NORMAL);
+    frontPanelButton.setLED(managerFrontPanelButton::status::NORMAL);
 
 }
 
@@ -371,10 +371,10 @@ void handleInputFailure(ioExtender *controller){
   controller->enabled = false;
 
   //Set the LED to trouble
-  frontPanelButton.setLED(oledLEDButton::FAILURE);
+  frontPanelButton.setLED(managerFrontPanelButton::status::FAILURE);
 
 
-  //TODO: Add MQTT Event
+  //TODO: Add MQTT and stuff
 
 }
 
@@ -389,10 +389,10 @@ void handleOutputFailure(outputController *controller){
   controller->enabled = false;
 
   //Set the LED to trouble
-  frontPanelButton.setLED(oledLEDButton::FAILURE);
+  frontPanelButton.setLED(managerFrontPanelButton::status::FAILURE);
 
 
-  //TODO: Add MQTT Event
+  //TODO: Add MQTT and stuff
 
 }
 
