@@ -6,6 +6,7 @@
 ioExtender inputControllers[COUNT_IO_EXTENDER];
 outputController outputControllers[COUNT_OUTPUT_CONTROLLER];
 temperatureSensor temperatureSensors[COUNT_TEMPERATURE_SENSOR];
+oledLEDButton frontPanelButton;
 
 
 #define DEBUG 1000
@@ -20,13 +21,15 @@ void setup() {
     Wire.begin();
 
     //Configure the peripherals
+    frontPanelButton.begin();
+
     setupInputs();
     setupOutputs();
     setupTemperatures();  
 
-    pinMode(PIN_OLED_LED, OUTPUT);
+    //System has started, show normal state
+    frontPanelButton.setLED(oledLEDButton::NORMAL);
 
-    digitalWrite(PIN_OLED_LED, HIGH); //Turn on the OLED button LED, we are ready
 }
 
 

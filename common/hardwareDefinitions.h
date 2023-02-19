@@ -39,8 +39,8 @@
         /* Pin Addresses */
         #define PIN_EEPROM_WP 23 /* EEPROM write protect pin.  When low, write protect is disabled. */
         #define PIN_ETHERNET 0 /* Ethernet hardware control flow pin. */
-        #define PIN_OLED_BUTTON 32 /* Button for the front panel. */
-        #define PIN_OLED_LED 33 /* LED for the front panel button. */
+        #define _PIN_OLED_BUTTON 32 /* Button for the front panel. */
+        #define _PIN_OLED_LED 33 /* LED for the front panel button. */
         #define _PINS_INTERRUPT_IO_EXTENDER {35,25,26,27,4,5,18,19} /* Interrupt pins for the IO extenders, order must match the _ADDRESSES_IO_EXTENDER. */
 
         /* I2C Addresses */
@@ -149,6 +149,59 @@
         uint8_t address = 0; /* I2C address. Default 0.*/
         uint16_t previousRead = 0; /* Numeric value of the last read from the hardware. Default 0.*/
         inputPin inputs[COUNT_PINS_IO_EXTENDER]; /* Input pins connected to the hardware.*/
+
+
+    class oledLEDButton{
+
+        public:
+            enum status{
+                NORMAL = 0, //System is operating nomally
+                TROUBLE = 1, //Temporary issue which can be corrected, such as temporary network outage
+                FAILURE = 2 //Catastrophic failure that is non-recoverable
+            };
+
+        private:
+            oledLEDButton::status _ledStatus = TROUBLE;
+
+        public:
+            uint8_t interruptPin = _PIN_OLED_BUTTON; /* Interrupt pin.*/
+            uint8_t ledPin = _PIN_OLED_LED; /* LED output pin.*/
+            unsigned long timePreviousChange = 0; /* Time (millis) when the input state last changed.  Value is set to 0 when the state returns to its input type. Default 0.*/
+            inputState state = STATE_OPEN; /* The state entered at timePreviousChange. Default STATE_OPEN.*/
+            inputType type = NORMALLY_OPEN; /* Defines if the input is normally open or normally closed. Default NORMALLY_OPEN.*/
+
+            void begin(){
+                pinMode(this->interruptPin, INPUT);
+                pinMode(this->ledPin, OUTPUT);
+            }
+
+            void setLED(oledLEDButton::status value){
+
+                if(_ledStatus == oledLEDButton::FAILURE) { 
+                    return; //Prevent the status from being returned to normal
+                }
+
+                switch(value){
+                    case oledLEDButton::status::FAILURE:
+                        digitalWrite(ledPin, LOW);
+                        break;
+
+                    case oledLEDButton::status::NORMAL:
+                        digitalWrite(ledPin, HIGH);
+                        break;
+
+                    case oledLEDButton::status::TROUBLE:
+                        digitalWrite(ledPin, LOW);
+                        break;                        
+
+                    default:
+                        digitalWrite(ledPin, LOW);
+                        _ledStatus = oledLEDButton::status::TROUBLE;
+                        break;
+                }
+
+                _ledStatus = value;
+            }
     };
 
 
