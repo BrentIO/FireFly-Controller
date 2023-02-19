@@ -5,7 +5,7 @@
 
 ioExtender inputControllers[COUNT_IO_EXTENDER];
 outputController outputControllers[COUNT_OUTPUT_CONTROLLER];
-temperatureSensor temperatureSensors[COUNT_TEMPERATURE_SENSOR];
+managerTemperatureSensors temperatureSensors;
 managerFrontPanelButton frontPanelButton;
 
 
@@ -25,7 +25,9 @@ void setup() {
 
     setupInputs();
     setupOutputs();
-    setupTemperatures();
+    temperatureSensors.setCallback_publisher(&temperaturePublisher);
+    temperatureSensors.setCallback_failure(&temperatureFailure);
+    temperatureSensors.begin();
 
     //System has started, show normal state
     frontPanelButton.setLED(managerFrontPanelButton::status::NORMAL);
@@ -36,7 +38,7 @@ void setup() {
 void loop() {
 
   loopInputs();
-  loopTemperatures();
+  temperatureSensors.loop();
 
 }
 
@@ -92,74 +94,6 @@ void setupOutputs(){
 
   }
 
-}
-
-
-/**Instantiates the temperature sensor objects*/
-void setupTemperatures(){
-
-  for(int i = 0; i < COUNT_TEMPERATURE_SENSOR; i++){
-
-      temperatureSensors[i].address = ADDRESSES_TEMPERATURE_SENSORS[i];
-
-      #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
-        temperatureSensors[i].hardware = PCT2075(temperatureSensors[i].address);
-
-        if(temperatureSensors[i].hardware.getConfig() !=0){
-          handleTemperatureFailure(&temperatureSensors[i]);
-        }
-
-      #endif
-
-      #if PRODUCT_ID == 32322211
-
-        switch(i){
-          case 0:
-            temperatureSensors[i].location = temperatureSensorLocation::CENTER;
-            break;
-          default:
-            temperatureSensors[i].location = temperatureSensorLocation::UNKNOWN;
-            break;
-        }
-       
-      #endif
-
-    }
-}
-
-
-/**Checks the temperatures at each sensor*/
-void loopTemperatures(){
-
-  //Loop through each temperature sensor on the board
-  for(int i = 0; i < COUNT_TEMPERATURE_SENSOR; i++){
-
-    if(temperatureSensors[i].enabled == false){
-      continue;
-    }
-
-    //If the timer has expired OR if the temperature sensor has never been read, read it
-    if((millis() - temperatureSensors[i].timePreviousRead > MILLS_TEMPERATURE_SLEEP_DURATION) || (temperatureSensors[i].timePreviousRead == 0)){
-
-      //Temperatures will be reported in degrees C
-      #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
-        float currentRead = temperatureSensors[i].hardware.getTempC();
-      #endif
-
-      //Set the new read time time
-      temperatureSensors[i].timePreviousRead = millis();
-      
-      //Check if the delta between the two reads is more than the DEGREES_TEMPERATURE_VARIATION_ALLOWED
-      if(abs(currentRead - temperatureSensors[i].previousRead) > DEGREES_TEMPERATURE_VARIATION_ALLOWED){
-
-        //Store the new temperature reading
-        temperatureSensors[i].previousRead = currentRead;
-
-        //Publish an event for the change
-        publishNewTemperature(&temperatureSensors[i]);
-      }      
-    }
-  }
 }
 
 
@@ -333,32 +267,26 @@ inputState bitToInputState(boolean value){
 
 }
 
-
-/** Convert a temperatureSensorLocation to string */
-String temperatureSensorLocationToString(temperatureSensorLocation value){
-
-  switch(value){
-
-    case temperatureSensorLocation::CENTER:
-      return "CENTER";
-      break;
-
-    default:
-      return "UNKNOWN";
-      break;
-  }
-}
-
-
-/** Publish a notification to MQTT about the temperature sensor change */
-void publishNewTemperature(temperatureSensor *sensor){
+void temperaturePublisher(String location, float value){
 
   #ifdef DEBUG
-    Serial.println("New Temperature: " + String(sensor->previousRead) + " at " + temperatureSensorLocationToString(sensor->location));
+    Serial.println("New Temperature: " + String(value) + " at " + location);
   #endif
 
-  //TODO: Add MQTT Event
-}
+  //TODO: Add MQTT and stuff
+
+};
+
+void temperatureFailure(String location){
+
+  #ifdef DEBUG
+    Serial.println("Temperature sensor at " + location + " is offline.");
+  #endif
+
+  //TODO: Add MQTT and stuff
+
+};
+
 
 /** Handles failures of input controllers */
 void handleInputFailure(ioExtender *controller){
@@ -396,20 +324,3 @@ void handleOutputFailure(outputController *controller){
 
 }
 
-/** Handles failures of temperature sensors */
-void handleTemperatureFailure(temperatureSensor *sensor){
-
-  #ifdef DEBUG
-    Serial.println("Temperature sensor at 0x" + String(sensor->address, HEX) + " is offline.");
-  #endif
-
-  //Disable the sensor
-  sensor->enabled = false;
-
-  //Set the LED to trouble
-  frontPanelButton.setLED(oledLEDButton::FAILURE);
-
-
-  //TODO: Add MQTT Event
-
-}
