@@ -75,6 +75,9 @@
 
     #if MODEL_OUTPUT_CONTROLLER == ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
         #include <PCA9685.h> // https://github.com/RobTillaart/PCA9685_RT
+
+        #define MAXIMUM_PWM 4095 /* Maximum value for PWM */
+        #define FREQUENCY_PWM 1500 /* PWM Frequency in Hz */
     #endif
 
 
@@ -208,6 +211,11 @@
     struct outputController{
         uint8_t address = 0; /* I2C address. Default 0.*/
         outputPin outputs[COUNT_PINS_OUTPUT_CONTROLLER];
+
+        #if MODEL_OUTPUT_CONTROLLER == ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
+            PCA9685 hardware = PCA9685(0); /* Reference to the hardware. */
+        #endif
+
     };
 
 
