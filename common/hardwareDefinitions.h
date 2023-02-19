@@ -171,15 +171,13 @@
             managerFrontPanelButton::status _ledStatus = TROUBLE;
 
         public:
-            uint8_t interruptPin = PIN_OLED_BUTTON; /* Interrupt pin.*/
-            uint8_t ledPin = PIN_OLED_LED; /* LED output pin.*/
             unsigned long timePreviousChange = 0; /* Time (millis) when the input state last changed.  Value is set to 0 when the state returns to its input type. Default 0.*/
             inputState state = STATE_OPEN; /* The state entered at timePreviousChange. Default STATE_OPEN.*/
             inputType type = NORMALLY_OPEN; /* Defines if the input is normally open or normally closed. Default NORMALLY_OPEN.*/
 
             void begin(){
-                pinMode(this->interruptPin, INPUT);
-                pinMode(this->ledPin, OUTPUT);
+                pinMode(PIN_OLED_BUTTON, INPUT);
+                pinMode(PIN_OLED_LED, OUTPUT);
             }
 
             void setLED(managerFrontPanelButton::status value){
@@ -189,20 +187,20 @@
                 }
 
                 switch(value){
-                        digitalWrite(ledPin, LOW);
                     case managerFrontPanelButton::status::FAILURE:
+                        digitalWrite(PIN_OLED_LED, LOW);
                         break;
 
-                        digitalWrite(ledPin, HIGH);
                     case managerFrontPanelButton::status::NORMAL:
+                        digitalWrite(PIN_OLED_LED, HIGH);
                         break;
 
-                        digitalWrite(ledPin, LOW);
                     case managerFrontPanelButton::status::TROUBLE:
+                        digitalWrite(PIN_OLED_LED, LOW);
                         break;                        
 
                     default:
-                        digitalWrite(ledPin, LOW);
+                        digitalWrite(PIN_OLED_LED, LOW);
                         _ledStatus = managerFrontPanelButton::status::TROUBLE;
                         break;
                 }
