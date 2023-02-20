@@ -1,7 +1,7 @@
 #define DEBUG 400
 
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
-#include "common/hardwareDefinitions.h"
+#include "common/hardware.h"
 
 
 managerInputs inputs;
