@@ -45,6 +45,16 @@ void setup() {
 
   externalEEPROM.begin();
 
+  #ifdef DEBUG
+
+   if(externalEEPROM.enabled == true){
+      Serial.println("uuid: " + String(externalEEPROM.data.uuid));
+      Serial.println("product_id: " + String(externalEEPROM.data.product_id));
+      Serial.println("key: " + String(externalEEPROM.data.key));
+    }
+
+  #endif
+ 
   //Configure the HTTP server and enable CORS and cross-origin
   server.enableCORS(true);
   server.enableCrossOrigin(true);
