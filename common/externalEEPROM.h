@@ -59,6 +59,8 @@ class managerExternalEEPROM{
                     this->ptrFailureCallback();   
                 }
 
+                pinMode(PIN_EEPROM_WP, OUTPUT);
+
             #endif
 
             //Get the data from the EEPROM
@@ -76,8 +78,6 @@ class managerExternalEEPROM{
 
                 return false;
             }
-
-            pinMode(PIN_EEPROM_WP, OUTPUT);
 
             #ifdef DEBUG
                 Serial.println("Ready to write EEPROM");
