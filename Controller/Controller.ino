@@ -24,6 +24,7 @@ void setup() {
 
     //Configure the peripherals
     frontPanelButton.begin();
+    frontPanelButton.setStatus(managerFrontPanelButton::status::NORMAL);
 
     inputs.setCallback_failure(&handleInputFailure);
     outputs.setCallback_failure(&outputFailure);
