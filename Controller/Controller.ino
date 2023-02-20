@@ -2,6 +2,10 @@
 
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
 #include "common/hardware.h"
+#include "common/outputs.h"
+#include "common/inputs.h"
+#include "common/temperature.h"
+#include "common/frontPanel.h"
 
 
 managerInputs inputs;
