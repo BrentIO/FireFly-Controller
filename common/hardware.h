@@ -85,12 +85,5 @@
         #include <PCT2075.h> // https://github.com/jpliew/PCT2075
     #endif
 
-
-    typedef struct {
-        char uuid[37];
-        char product_id[33];
-        char key[65];
-    } deviceType;
-
     
 #endif
