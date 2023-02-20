@@ -23,7 +23,6 @@ class managerInputs{
 
 
     struct ioExtender{
-
         #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9995
             PCA9555 hardware; /* Reference to the hardware. */
         #endif
