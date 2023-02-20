@@ -89,14 +89,15 @@ void temperatureFailure(String location){
   #endif
 
   //TODO: Add MQTT and stuff
+  frontPanelButton.setStatus(managerFrontPanelButton::status::FAILURE);
 
 };
 
-/** Handles failures of input controllers */
-void handleInputFailure(){
+
+void inputPublisher(){
 
   #ifdef DEBUG
-    Serial.println("An input controller is offline.");
+    Serial.println("An input was made.");
   #endif
 
   //TODO: Add MQTT and stuff
@@ -104,19 +105,38 @@ void handleInputFailure(){
 }
 
 
-/** Handles failures of output controllers */
-void handleOutputFailure(outputController *controller){
+/** Handles failures of input controllers */
+void inputFailure(){
 
   #ifdef DEBUG
-    Serial.println("Output controller at 0x" + String(controller->address, HEX) + " is offline.");
+    Serial.println("An input controller is offline.");
   #endif
 
-  //Disable the controller
-  controller->enabled = false;
+  //TODO: Add MQTT and stuff
+  frontPanelButton.setStatus(managerFrontPanelButton::status::FAILURE);
 
-  //Set the LED to trouble
-  frontPanelButton.setLED(managerFrontPanelButton::status::FAILURE);
+}
 
+
+/** Handles failures of output controllers */
+void outputFailure(){
+
+  #ifdef DEBUG
+    Serial.println("An output controller is offline.");
+  #endif
+
+  //TODO: Add MQTT and stuff
+  frontPanelButton.setStatus(managerFrontPanelButton::status::FAILURE);
+
+
+}
+
+
+void outputPublisher(){
+
+  #ifdef DEBUG
+    Serial.println("An output was changed.");
+  #endif
 
   //TODO: Add MQTT and stuff
 
