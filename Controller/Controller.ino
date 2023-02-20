@@ -26,10 +26,12 @@ void setup() {
     frontPanelButton.begin();
     frontPanelButton.setStatus(managerFrontPanelButton::status::NORMAL);
 
-    inputs.setCallback_failure(&handleInputFailure);
     outputs.setCallback_failure(&outputFailure);
     outputs.setCallback_publisher(&outputFailure);
     outputs.begin();
+
+    inputs.setCallback_failure(&inputFailure);
+    inputs.setCallback_publisher(&inputPublisher);
     inputs.begin();
 
     temperatureSensors.setCallback_publisher(&temperaturePublisher);
@@ -59,6 +61,8 @@ void temperaturePublisher(String location, float value){
 
 };
 
+
+/** Handles failures of temperature sensors */
 void temperatureFailure(String location){
 
   #ifdef DEBUG
