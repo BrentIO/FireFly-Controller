@@ -57,6 +57,9 @@ class managerExternalEEPROM{
                 if(this->hardware.isConnected() == false){    
                     this->enabled = false;
                     this->ptrFailureCallback();   
+                    this->ptrFailureCallback();
+
+                    return;
                 }
 
                 pinMode(PIN_EEPROM_WP, OUTPUT);
@@ -109,6 +112,7 @@ class managerExternalEEPROM{
 
                 //Disable the hardware
                 this->enabled = false;
+                this->ptrFailureCallback();
 
                 return false;
             }
@@ -161,6 +165,7 @@ class managerExternalEEPROM{
 
             //Disable the hardware
             this->enabled = false;
+            this->ptrFailureCallback();
             
             return false;
         };
