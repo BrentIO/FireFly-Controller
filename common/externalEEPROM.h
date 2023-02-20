@@ -149,6 +149,9 @@ class managerExternalEEPROM{
                     Serial.println("EEPROM destroyed success");
                 #endif
 
+                deviceType empty;
+                data = empty;
+
                 return true;
             }
 
