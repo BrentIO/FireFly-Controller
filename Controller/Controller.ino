@@ -11,7 +11,7 @@
 managerOutputs outputs;
 managerInputs inputs;
 managerTemperatureSensors temperatureSensors;
-managerFrontPanelButton frontPanelButton;
+managerFrontPanel frontPanel;
 
 
 void setup() {
@@ -23,8 +23,8 @@ void setup() {
     Wire.begin();
 
     //Configure the peripherals
-    frontPanelButton.begin();
-    frontPanelButton.setStatus(managerFrontPanelButton::status::NORMAL);
+    frontPanel.begin();
+    frontPanel.setStatus(managerFrontPanel::status::NORMAL);
 
     outputs.setCallback_failure(&outputFailure);
     outputs.setCallback_publisher(&outputFailure);
@@ -39,7 +39,7 @@ void setup() {
     temperatureSensors.begin();
 
     //System has started, show normal state
-    frontPanelButton.setStatus(managerFrontPanelButton::status::NORMAL);
+    frontPanel.setStatus(managerFrontPanel::status::NORMAL);
 }
 
 
@@ -68,7 +68,7 @@ void temperatureFailure(String location){
   #endif
 
   //TODO: Add MQTT and stuff
-  frontPanelButton.setStatus(managerFrontPanelButton::status::FAILURE);
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 
 };
 
@@ -92,7 +92,7 @@ void inputFailure(){
   #endif
 
   //TODO: Add MQTT and stuff
-  frontPanelButton.setStatus(managerFrontPanelButton::status::FAILURE);
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 
 }
 
@@ -105,7 +105,7 @@ void outputFailure(){
   #endif
 
   //TODO: Add MQTT and stuff
-  frontPanelButton.setStatus(managerFrontPanelButton::status::FAILURE);
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 
 
 }

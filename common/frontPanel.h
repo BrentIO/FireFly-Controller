@@ -1,6 +1,6 @@
 #include "hardware.h"
 
-class managerFrontPanelButton{
+class managerFrontPanel{
 
     public:
         enum status{
@@ -20,7 +20,7 @@ class managerFrontPanelButton{
         };
 
     private:
-        managerFrontPanelButton::status _ledStatus = TROUBLE;
+        status _ledStatus = TROUBLE;
 
     public:
 
@@ -32,28 +32,28 @@ class managerFrontPanelButton{
             pinMode(PIN_OLED_LED, OUTPUT);
         }
 
-        void setStatus(managerFrontPanelButton::status value){
+        void setStatus(managerFrontPanel::status value){
 
-            if(_ledStatus == managerFrontPanelButton::FAILURE) { 
+            if(_ledStatus == managerFrontPanel::FAILURE) { 
                 return; //Prevent the status from being returned to normal
             }
 
             switch(value){
-                case managerFrontPanelButton::status::FAILURE:
+                case managerFrontPanel::status::FAILURE:
                     digitalWrite(PIN_OLED_LED, LOW);
                     break;
 
-                case managerFrontPanelButton::status::NORMAL:
+                case managerFrontPanel::status::NORMAL:
                     digitalWrite(PIN_OLED_LED, HIGH);
                     break;
 
-                case managerFrontPanelButton::status::TROUBLE:
+                case managerFrontPanel::status::TROUBLE:
                     digitalWrite(PIN_OLED_LED, LOW);
                     break;                        
 
                 default:
                     digitalWrite(PIN_OLED_LED, LOW);
-                    _ledStatus = managerFrontPanelButton::status::TROUBLE;
+                    _ledStatus = managerFrontPanel::status::TROUBLE;
                     break;
             }
 
