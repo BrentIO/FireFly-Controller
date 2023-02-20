@@ -43,6 +43,8 @@ void setup() {
     Serial.println("Started SoftAP " + String(baseMacChr));
   #endif
 
+
+  externalEEPROM.setCallback_failure(&eepromFailure);
   externalEEPROM.begin();
 
   #ifdef DEBUG
@@ -372,4 +374,15 @@ String getMacAddress(esp_mac_type_t type) {
     char baseMacChr[18] = {0};
     sprintf(baseMacChr, "%02X:%02X:%02X:%02X:%02X:%02X", baseMac[0], baseMac[1], baseMac[2], baseMac[3], baseMac[4], baseMac[5]);
     return String(baseMacChr);
+}
+
+
+/** Handles failures of output controllers */
+void eepromFailure(){
+
+  #ifdef DEBUG
+    Serial.println("EEPROM failure was called.");
+  #endif
+
+
 }
