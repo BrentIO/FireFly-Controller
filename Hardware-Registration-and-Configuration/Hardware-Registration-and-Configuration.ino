@@ -10,6 +10,7 @@
 */
 
 #include "common/hardware.h"
+#include "common/externalEEPROM.h"
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
 #include <esp_chip_info.h> // https://github.com/espressif/arduino-esp32
 #include <WiFi.h>
@@ -20,8 +21,7 @@
 
 
 WebServer server(80);
-I2C_eeprom externalEeprom(ADDRESS_EEPROM, SIZE_EEPROM);
-deviceType deviceInfo;
+managerExternalEEPROM externalEEPROM;
 
 
 void setup() {
@@ -43,9 +43,7 @@ void setup() {
     Serial.println("Started SoftAP " + String(baseMacChr));
   #endif
 
-  //Start the external EEPROM
-  externalEeprom.begin();
-  pinMode(PIN_EEPROM_WP, OUTPUT);
+  externalEEPROM.begin();
 
   //Configure the HTTP server and enable CORS and cross-origin
   server.enableCORS(true);
@@ -179,25 +177,21 @@ void handleGetEEPROM(){
   #endif
 
   //Ensure we can talk to the EEPROM, otherwise throw an error
-  if (!externalEeprom.isConnected())
-  {
+  if (!externalEEPROM.enabled){
     handle500(F("Cannot connect to external EEPROM"));
     return;
   }
 
-  //Read the expected data size abck from the EEPROM and put it into deviceInfo
-  externalEeprom.readBlock(0, (uint8_t *) &deviceInfo, sizeof(deviceInfo));
-
   //Do a sanity check to see if the data is printable
-  if(!isPrintable(deviceInfo.uuid[0]) || !isPrintable(deviceInfo.uuid[18]) || !isPrintable(deviceInfo.uuid[35])){
+  if(!isPrintable(externalEEPROM.data.uuid[0]) || !isPrintable(externalEEPROM.data.uuid[18]) || !isPrintable(externalEEPROM.data.uuid[35])){
     handle404();
     return;
   }
  
   StaticJsonDocument<256> doc;
-  doc["uuid"] = deviceInfo.uuid;
-  doc["product_id"] = deviceInfo.product_id;
-  doc["key"] = deviceInfo.key;
+  doc["uuid"] = externalEEPROM.data.uuid;
+  doc["product_id"] = externalEEPROM.data.product_id;
+  doc["key"] = externalEEPROM.data.key;
 
   String output;
   serializeJson(doc, output);
@@ -224,7 +218,7 @@ void handlePostEEPROM(){
   }
   
   //Ensure we can talk to the EEPROM, otherwise throw an error
-  if (!externalEeprom.isConnected())
+  if (!externalEEPROM.enabled)
   {
     handle500(F("Cannot connect to external EEPROM"));
     return;
@@ -249,9 +243,9 @@ void handlePostEEPROM(){
     return;
   }
 
-  strcpy(deviceInfo.uuid, doc["uuid"]);
+  strcpy(externalEEPROM.data.uuid, doc["uuid"]);
 
-  ms.Target(deviceInfo.uuid);
+  ms.Target(externalEEPROM.data.uuid);
 
   if(ms.MatchCount("^[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+$")!=1){ //Library does not support lengths of each section, so there is some opportunity for error
     handle400(F("Invalid uuid, see Swagger"));
@@ -268,7 +262,7 @@ void handlePostEEPROM(){
     return;
   }
 
-  strcpy(deviceInfo.product_id, doc["product_id"]);
+  strcpy(externalEEPROM.data.product_id, doc["product_id"]);
 
   if(!doc.containsKey("key")){
     handle400(F("Field key is required"));
@@ -280,38 +274,20 @@ void handlePostEEPROM(){
     return;
   }
 
-  strcpy(deviceInfo.key, doc["key"]);
+  strcpy(externalEEPROM.data.key, doc["key"]);
 
-  ms.Target(deviceInfo.key);
+  ms.Target(externalEEPROM.data.key);
 
   if(ms.MatchCount("^[0-9A-Za-z]+$")!=1){
     handle400(F("Invalid key, see Swagger"));
     return;
   }
 
-  #ifdef DEBUG
-    Serial.println("Ready to write EEPROM");
-  #endif
- 
-  //Disable write protection
-  digitalWrite(PIN_EEPROM_WP, LOW);
-  delay(10);
-
   //Write the deviceInfo object to the external EEPROM
-  int writeResponse = externalEeprom.writeBlock(0, (uint8_t *) &deviceInfo, sizeof(deviceInfo));
-
-  //Enable write protection
-  digitalWrite(PIN_EEPROM_WP, HIGH);
-
-  //I2C bus will return a non-zero on failure
-  if(writeResponse != 0){
-    handle500("Error during EEPROM write (" + (String)writeResponse + ")");
+  if(externalEEPROM.write() == false){
+    handle500("Error during EEPROM write.");
     return;
   }
-
-  #ifdef DEBUG
-    Serial.println("EEPROM write success");
-  #endif
 
   server.send(204);
 }
@@ -328,23 +304,16 @@ void handleDeleteEEPROM(){
   #endif
 
   //Ensure we can talk to the EEPROM, otherwise throw an error
-  if (!externalEeprom.isConnected())
+  if (!externalEEPROM.enabled)
   {
     handle500(F("Cannot connect to external EEPROM"));
     return;
   }
 
-  //Disable write protection
-  digitalWrite(PIN_EEPROM_WP, LOW);
-  delay(10);
-
-  for (uint32_t address = 0; address < SIZE_EEPROM; address += 128)
-  {
-    externalEeprom.setBlock(address, 0xff, 128);
+  if(externalEEPROM.destroy() == false){
+    handle500("Error during EEPROM delete.");
+    return;
   }
-
-  //Enable write protection
-  digitalWrite(PIN_EEPROM_WP, HIGH);
 
   server.send(204);
 }
