@@ -250,7 +250,7 @@ void handlePostEEPROM(){
     return;
   }
 
-  if(strlen(doc["uuid"])!=36){
+  if(strlen(doc["uuid"])!=(sizeof(externalEEPROM.data.uuid)-1)){
     handle400(F("Field uuid is not exactly 36 characters"));
     return;
   }
@@ -269,7 +269,7 @@ void handlePostEEPROM(){
     return;
   }
 
-  if(strlen(doc["product_id"])>32){
+  if(strlen(doc["product_id"])>(sizeof(externalEEPROM.data.product_id)-1)){
     handle400(F("Field product_id is greater than 32 characters, see Swagger"));
     return;
   }
@@ -281,7 +281,7 @@ void handlePostEEPROM(){
     return;
   }
 
-  if(strlen(doc["key"])!=64){
+  if(strlen(doc["key"])!=(sizeof(externalEEPROM.data.key)-1)){
     handle400(F("Field key is not exactly 64 characters"));
     return;
   }
