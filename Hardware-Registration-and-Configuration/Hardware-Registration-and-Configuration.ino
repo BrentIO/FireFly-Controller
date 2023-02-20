@@ -9,7 +9,7 @@
  * (C) 2023, P5 Software, LLC
 */
 
-#include "common/hardwareDefinitions.h"
+#include "common/hardware.h"
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
 #include <esp_chip_info.h> // https://github.com/espressif/arduino-esp32
 #include <WiFi.h>
