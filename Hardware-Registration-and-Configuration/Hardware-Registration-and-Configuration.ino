@@ -9,6 +9,8 @@
  * (C) 2023, P5 Software, LLC
 */
 
+#define DEBUG 1000
+
 #include "common/hardware.h"
 #include "common/externalEEPROM.h"
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
@@ -16,8 +18,6 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <Regexp.h> // https://github.com/nickgammon/Regexp
-
-#define DEBUG 1000
 
 
 WebServer server(80);
