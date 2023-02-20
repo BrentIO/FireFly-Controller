@@ -39,15 +39,13 @@ void setup() {
     temperatureSensors.begin();
 
     //System has started, show normal state
-    frontPanelButton.setLED(managerFrontPanelButton::status::NORMAL);
-
+    frontPanelButton.setStatus(managerFrontPanelButton::status::NORMAL);
 }
 
 
 void loop() {
   inputs.loop();
   temperatureSensors.loop();
-
 }
 
 
