@@ -3,11 +3,15 @@
 class managerFrontPanel{
 
     public:
+
         enum status{
             NORMAL = 0, //System is operating nomally
             TROUBLE = 1, //Temporary issue which can be corrected, such as temporary network outage
             FAILURE = 2 //Catastrophic failure that is non-recoverable
         };
+
+
+    private:
 
         enum inputState{
             STATE_OPEN = 0,
