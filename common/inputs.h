@@ -45,9 +45,9 @@ class managerInputs{
     inputState bitToInputState(boolean value){
 
         if(value == LOW){
-            return inputState::STATE_OPEN;
-        }else{
             return inputState::STATE_CLOSED;
+        }else{
+            return inputState::STATE_OPEN;
         }
 
     }
