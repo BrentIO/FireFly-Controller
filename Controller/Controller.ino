@@ -64,7 +64,7 @@ void temperaturePublisher(String location, float value){
 void temperatureFailure(String location){
 
   #ifdef DEBUG
-    Serial.println("Temperature sensor at " + location + " is offline.");
+    Serial.println("Temperature sensor at " + location + " is offline");
   #endif
 
   //TODO: Add MQTT and stuff
@@ -76,7 +76,7 @@ void temperatureFailure(String location){
 void inputPublisher(){
 
   #ifdef DEBUG
-    Serial.println("An input was made.");
+    Serial.println("An input was made");
   #endif
 
   //TODO: Add MQTT and stuff
@@ -88,7 +88,7 @@ void inputPublisher(){
 void inputFailure(){
 
   #ifdef DEBUG
-    Serial.println("An input controller is offline.");
+    Serial.println("An input controller is offline");
   #endif
 
   //TODO: Add MQTT and stuff
@@ -101,7 +101,7 @@ void inputFailure(){
 void outputFailure(){
 
   #ifdef DEBUG
-    Serial.println("An output controller is offline.");
+    Serial.println("An output controller is offline");
   #endif
 
   //TODO: Add MQTT and stuff
@@ -114,7 +114,7 @@ void outputFailure(){
 void outputPublisher(){
 
   #ifdef DEBUG
-    Serial.println("An output was changed.");
+    Serial.println("An output was changed");
   #endif
 
   //TODO: Add MQTT and stuff
