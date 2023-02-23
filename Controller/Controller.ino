@@ -129,3 +129,37 @@ void outputPublisher(){
   //TODO: Add MQTT and stuff
 
 }
+
+
+/** Handles failures of output controllers */
+void eepromFailure(){
+
+  #ifdef DEBUG
+    Serial.println("EEPROM failure was called");
+  #endif
+
+  //TODO: Add MQTT and stuff
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
+
+}
+
+void frontPanelButtonPress(){
+
+  #ifdef DEBUG
+    Serial.println("Front Panel button was pressed");
+  #endif
+
+  //TODO: Add MQTT and stuff
+
+}
+
+
+void frontPanelButtonClosedAtBegin(){
+
+  #ifdef DEBUG
+    Serial.println("Front Panel button was closed on begin()");
+  #endif
+
+  //TODO: Add MQTT and stuff
+
+}
