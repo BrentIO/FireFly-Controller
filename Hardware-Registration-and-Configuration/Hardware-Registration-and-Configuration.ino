@@ -381,7 +381,7 @@ String getMacAddress(esp_mac_type_t type) {
 void eepromFailure(){
 
   #ifdef DEBUG
-    Serial.println("EEPROM failure was called.");
+    Serial.println("EEPROM failure was called");
   #endif
 
 

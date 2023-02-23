@@ -56,7 +56,7 @@ class managerExternalEEPROM{
                 //Ensure the hardware is online
                 if(this->hardware.isConnected() == false){
                     #ifdef DEBUG
-                        Serial.println("External EEPROM not connected.");
+                        Serial.println("External EEPROM not connected");
                     #endif
 
                     this->enabled = false;
