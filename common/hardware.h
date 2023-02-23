@@ -45,7 +45,7 @@
 
         /* I2C Addresses */
         #define ADDRESSES_IO_EXTENDER {0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27} /* I2C addresses for the IO extenders, order must match the PINS_INTERRUPT_IO_EXTENDER. */
-        #define ADDRESSES_OUTPUT_CONTROLLER {0x40,0x41} /* I2C addresses for the output controllers. */
+        #define ADDRESSES_OUTPUT_CONTROLLER {0x40,0x42} /* I2C addresses for the output controllers. */
         #define ADDRESSES_TEMPERATURE_SENSOR {0x48} /* I2C addresses of the on-board temperature sensors. */
         #define ADDRESS_EEPROM 0x50 /* I2C addresses of the external EEPROM. */
         #define ADDRESS_OLED 0x3C /* I2C addresses of the OLED Display.  NOTE: This can be modifed on the display itself, default is 0x3C. */
