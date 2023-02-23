@@ -62,7 +62,11 @@ class managerOutputs{
                     //Ensure the controller is online
                     if(outputControllers[i].hardware.isConnected() == false){    
                         this->outputControllers[i].enabled = false;
-                        this->ptrFailureCallback();   
+
+                        if(this->ptrFailureCallback){
+                            this->ptrFailureCallback();
+                        }
+                           
                     }
 
                 #endif

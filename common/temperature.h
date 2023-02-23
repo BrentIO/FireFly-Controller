@@ -62,7 +62,10 @@ class managerTemperatureSensors{
 
                     if(this->temperatureSensors[i].hardware.getConfig() !=0){
                         temperatureSensors[i].enabled = false;
-                        this->ptrFailureCallback(locationToString(temperatureSensors[i].location));
+
+                        if(this->ptrFailureCallback){
+                            this->ptrFailureCallback(locationToString(temperatureSensors[i].location));
+                        }
                     }
 
                 #endif
@@ -118,7 +121,9 @@ class managerTemperatureSensors{
                         temperatureSensors[i].previousRead = currentRead;
 
                         //Publish an event for the change
-                        this->ptrPublisherCallback(locationToString(temperatureSensors[i].location), temperatureSensors[i].previousRead);
+                        if(this->ptrPublisherCallback){
+                            this->ptrPublisherCallback(locationToString(temperatureSensors[i].location), temperatureSensors[i].previousRead);
+                        }
                     }      
                 }
             }

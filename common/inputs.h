@@ -128,9 +128,11 @@ class managerInputs{
                             #if DEBUG > 50
                                 Serial.println("(readInputPins) IO Extender: 0x" + String(inputController->address, HEX) + " Pin: " + String(i) + " Type: " + String(inputController->inputs[i].type) + " New State: " + String(currentState) + " (Abnormal)");
                             #endif
-                        #endif          
-                    
-                        this->ptrPublisherCallback();
+                        #endif
+
+                        if(this->ptrPublisherCallback){
+                            this->ptrPublisherCallback();
+                        }
 
                         break;
                     }
@@ -163,7 +165,9 @@ class managerInputs{
                             #endif
                         #endif
 
-                        this->ptrPublisherCallback();
+                        if(this->ptrPublisherCallback){
+                            this->ptrPublisherCallback();
+                        }
 
                         break;
                     }
@@ -224,7 +228,10 @@ class managerInputs{
                     //Ensure we connected to the controller
                     if(this->inputControllers[i].hardware.i2c_error() != 0){
                         this->inputControllers[i].enabled = false;
-                        this->ptrFailureCallback();
+
+                        if(this->ptrFailureCallback){
+                            this->ptrFailureCallback();
+                        }
                     }
 
                 #endif

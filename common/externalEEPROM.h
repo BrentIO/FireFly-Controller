@@ -41,7 +41,8 @@ class managerExternalEEPROM{
     public:
 
         void setCallback_failure(void (*userDefinedCallback)(void)) {
-            this->ptrFailureCallback = userDefinedCallback; }
+            this->ptrFailureCallback = userDefinedCallback;
+        }
 
 
         bool enabled = true; /* Indicates if the device is enabled. Default true.*/
@@ -60,7 +61,10 @@ class managerExternalEEPROM{
                     #endif
 
                     this->enabled = false;
-                    this->ptrFailureCallback();
+
+                    if(this->ptrFailureCallback){
+                        this->ptrFailureCallback();
+                    }
 
                     return;
                 }
@@ -115,7 +119,10 @@ class managerExternalEEPROM{
 
                 //Disable the hardware
                 this->enabled = false;
-                this->ptrFailureCallback();
+
+                if(this->ptrFailureCallback){
+                    this->ptrFailureCallback();
+                }
 
                 return false;
             }
@@ -168,7 +175,10 @@ class managerExternalEEPROM{
 
             //Disable the hardware
             this->enabled = false;
-            this->ptrFailureCallback();
+            
+            if(this->ptrFailureCallback){
+                this->ptrFailureCallback();
+            }
             
             return false;
         };
