@@ -27,6 +27,8 @@ void setup() {
     Wire.begin();
 
     //Configure the peripherals
+    frontPanel.setCallback_publisher(&frontPanelButtonPress);
+    frontPanel.setCallback_state_closed_at_begin(&frontPanelButtonClosedAtBegin);
     frontPanel.begin();
     frontPanel.setStatus(managerFrontPanel::status::NORMAL);
 
@@ -59,6 +61,7 @@ void setup() {
 
 void loop() {
   inputs.loop();
+  frontPanel.loop();
   temperatureSensors.loop();
 }
 
