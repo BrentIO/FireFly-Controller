@@ -1,3 +1,5 @@
+#define VERSION "2023.02.0001"
+
 #define DEBUG 400
 
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
@@ -37,6 +39,13 @@ void setup() {
     temperatureSensors.setCallback_publisher(&temperaturePublisher);
     temperatureSensors.setCallback_failure(&temperatureFailure);
     temperatureSensors.begin();
+
+    #ifdef DEBUG
+      Serial.println("Version: " + String(VERSION));
+      Serial.println("Product ID: " + String(externalEEPROM.data.product_id));
+      Serial.println("UUID: " + String(externalEEPROM.data.uuid));
+      Serial.println("Key: " + String(externalEEPROM.data.key));
+    #endif
 
     //System has started, show normal state
     frontPanel.setStatus(managerFrontPanel::status::NORMAL);
