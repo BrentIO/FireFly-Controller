@@ -35,7 +35,7 @@ class managerFrontPanel{
         void (*ptrStateClosedAtBeginCallback)(void);
 
         void begin(){
-            pinMode(PIN_OLED_BUTTON, INPUT);
+            pinMode(PIN_OLED_BUTTON, INPUT_PULLUP);
             pinMode(PIN_OLED_LED, OUTPUT);
 
                 if(this->ptrStateClosedAtBeginCallback){
