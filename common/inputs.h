@@ -215,7 +215,7 @@ class managerInputs{
             //Setup the input controllers
             for(int i = 0; i < COUNT_IO_EXTENDER; i++){
 
-                pinMode(this->inputControllers[i].interruptPin, INPUT);
+                pinMode(this->inputControllers[i].interruptPin, INPUT_PULLUP);
 
                 this->inputControllers[i].interruptPin = pinsInterruptIoExtender[i];
                 this->inputControllers[i].address = addressesIoExtender[i];
