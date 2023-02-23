@@ -31,10 +31,23 @@ class managerFrontPanel{
         inputState state = STATE_OPEN; /* The state entered at timePreviousChange. Default STATE_OPEN.*/
         inputType type = NORMALLY_OPEN; /* Defines if the input is normally open or normally closed. Default NORMALLY_OPEN.*/
 
+        void (*ptrPublisherCallback)(void);
+        void (*ptrStateClosedAtBeginCallback)(void);
+
         void begin(){
             pinMode(PIN_OLED_BUTTON, INPUT);
             pinMode(PIN_OLED_LED, OUTPUT);
+
+                if(this->ptrStateClosedAtBeginCallback){
+                    this->ptrStateClosedAtBeginCallback();
+                }
         }
+
+        void setCallback_publisher(void (*userDefinedCallback)(void)) {
+            ptrPublisherCallback = userDefinedCallback; }
+
+        void setCallback_state_closed_at_begin(void (*userDefinedCallback)(void)) {
+            ptrStateClosedAtBeginCallback = userDefinedCallback; }
 
         void setStatus(managerFrontPanel::status value){
 
@@ -63,4 +76,8 @@ class managerFrontPanel{
 
             _ledStatus = value;
         }
+                if(ptrPublisherCallback){
+                    ptrPublisherCallback();
+                }
+
     };
