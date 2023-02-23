@@ -8,12 +8,14 @@
 #include "common/inputs.h"
 #include "common/temperature.h"
 #include "common/frontPanel.h"
+#include "common/externalEEPROM.h"
 
 
 managerOutputs outputs;
 managerInputs inputs;
 managerTemperatureSensors temperatureSensors;
 managerFrontPanel frontPanel;
+managerExternalEEPROM externalEEPROM;
 
 
 void setup() {
@@ -39,6 +41,9 @@ void setup() {
     temperatureSensors.setCallback_publisher(&temperaturePublisher);
     temperatureSensors.setCallback_failure(&temperatureFailure);
     temperatureSensors.begin();
+
+    externalEEPROM.setCallback_failure(&eepromFailure);
+    externalEEPROM.begin();
 
     #ifdef DEBUG
       Serial.println("Version: " + String(VERSION));
