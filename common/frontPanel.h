@@ -10,8 +10,8 @@ class managerFrontPanel{
         };
 
         enum inputState{
-            STATE_OPEN = LOW,
-            STATE_CLOSED = HIGH
+            STATE_OPEN = 0,
+            STATE_CLOSED = 1
         };
 
         enum inputType{
