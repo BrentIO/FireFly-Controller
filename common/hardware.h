@@ -5,11 +5,17 @@
 #ifndef hardware_definitions_h
     #define hardware_definitions_h
 
+    #ifndef ESP32
+        #error Build failed, missing ESP32 definition. Ensure it was set in ./.vscode/arduino.json {"buildPreferences":[["build.extra_flags","-DESP32"]]}
+    #endif
+
     /* Define hardware enumeration constants */
     #define ENUM_MODEL_IO_EXTENDER_PCA9995 0 /* PCA9555 */
     #define ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685 0 /* PCA9685 */
     #define ENUM_MODEL_EEPROM_EXTERNAL_24LCXXX 0 /* 24LC024 + Family */
     #define ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075 0 /* PCT2075 */
+    #define ENUM_MODEL_OLED_SSD1306_128_32 0 /* SSD1306 128x32px */
+
 
     /* Hardware Types */
     #if PRODUCT_ID == 32322211
@@ -36,6 +42,9 @@
         #define MODEL_TEMPERATURE_SENSOR ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
         #define MILLS_TEMPERATURE_SLEEP_DURATION 5000 /* Number of millis to wait between reading the temperatures. Default 500. */
         #define DEGREES_TEMPERATURE_VARIATION_ALLOWED 0.25 /* Number of degrees allowed variance between temperature reads before the new value is stored and reported. Default 0.1. */
+
+        /* OLED Display */
+        #define MODEL_OLED_DISPLAY ENUM_MODEL_OLED_SSD1306_128_32
         
         /* Pin Addresses */
         #define PIN_EEPROM_WP 23 /* EEPROM write protect pin.  When low, write protect is disabled. */
@@ -84,5 +93,23 @@
         #include <PCT2075.h> // https://github.com/jpliew/PCT2075
     #endif
 
+
+    #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+
+        #ifndef SSD1306_NO_SPLASH
+            #error Build failed, missing SSD1306_NO_SPLASH to prevent the Adafruit logo from being uploaded. Ensure it was set in ./.vscode/arduino.json {"buildPreferences":[["build.extra_flags","-DSSD1306_NO_SPLASH"]]}
+        #endif
+
+        #include <Wire.h>
+        #include <Adafruit_GFX.h>
+        #include <Adafruit_SSD1306.h> //https://github.com/adafruit/Adafruit_SSD1306
+
+        #define DISPLAY_WIDTH 128
+        #define DISPLAY_HEIGHT 32
+        #define SCROLL_BAR_WIDTH 2
+        #define SCROLL_BAR_HEIGHT (SCROLL_BAR_WIDTH * 2)
+        #define CHARACTERS_PER_LINE 22
+        #define NUMBER_OF_LINES 4
+    #endif
     
 #endif

@@ -64,6 +64,12 @@ Download each library manually as a zip file.  Install each required library fro
 
 `arduino-cli lib install --zip-path /my/downloads/directory/Regexp-0.1.1.zip`
 
+`arduino-cli lib install --zip-path /my/downloads/directory/Adafruit_SSD1306-2.5.7.zip`
+
+`arduino-cli lib install --zip-path /my/downloads/directory/Adafruit-GFX-Library-1.11.5.zip`
+
+`arduino-cli lib install --zip-path /my/downloads/directory/Adafruit_BusIO-1.14.1.zip`
+
 ---
 
 ## **Visual Studio IDE Configuration**
@@ -100,7 +106,7 @@ Example File Contents:
     "buildPreferences": [
         [
             "build.extra_flags",
-            "-DPRODUCT_ID=32322211 -I/my/path/to/project/FireFly-Controller"
+            "-DPRODUCT_ID=32322211 -DESP32 -DSSD1306_NO_SPLASH -I/my/path/to/project/FireFly-Controller"
         ]
     ],
     "port": "/dev/tty.SLAB_USBtoUART",
@@ -111,6 +117,10 @@ Example File Contents:
 ### **build.extra_flags**
 
 This configuration indicates the hardware product ID and is required.  If it is not included, the compiler will trigger an error.  Change the `32322211` value in the example shown above to match the actual hardware product ID.
+
+The hardware type must also be set for the Adafruit libraries to be configured correctly.  Use `-DESP32` flag to set the hardware to ESP32.
+
+To prohibit the adafruit logo from being displayed, use `-DSSD1306_NO_SPLASH` to disable it from compiling.
 
 You must also include the parent directory of FireFly-Controller using the `-I/my/path/to/project/FireFly-Controller` parameter.  The folder structure should look like this:
 
