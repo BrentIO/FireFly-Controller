@@ -62,6 +62,7 @@ void setup() {
 
     externalEEPROM.setCallback_failure(&eepromFailure);
     externalEEPROM.begin();
+    
 
     #ifdef DEBUG
       Serial.println("Version: " + String(VERSION));
