@@ -5,6 +5,9 @@
 #define NTP_SERVER_1 "pool.ntp.org"
 #define NTP_SERVER_2 "0.north-america.pool.ntp.org"
 #define NTP_SERVER_3 "0.europe.pool.ntp.org"
+#define WIFI_TIMEOUT 10000 //Number of milliseconds before WiFi will time out
+
+
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
 #include "common/hardware.h"
 #include "common/outputs.h"
@@ -13,6 +16,7 @@
 #include "common/frontPanel.h"
 #include "common/externalEEPROM.h"
 #include "common/oled.h"
+#include <WiFi.h>
 #include "time.h"
 
 
@@ -70,6 +74,8 @@ void setup() {
     oled.setProductID(externalEEPROM.data.product_id);
     oled.setUUID(externalEEPROM.data.uuid);
 
+    connectWiFi();
+
     setBootTime();
 
     //System has started, show normal state
@@ -80,6 +86,49 @@ void setup() {
     //oled.showError("Example error text");
   
 }
+
+void connectWiFi(){
+
+  WiFi.begin(ssid, password);
+
+  #ifdef DEBUG
+    Serial.println("Connecting to WiFi");
+  #endif
+
+  const unsigned long time_now = millis();
+
+  while(WiFi.status() != WL_CONNECTED){
+
+    if((unsigned long)(millis() - time_now) >= WIFI_TIMEOUT){
+
+      #ifdef DEBUG
+        Serial.println("WiFi Timeout");
+        oled.logEvent("WiFi Timeout",managerOled::LOG_LEVEL_INFO);
+        break;
+
+      #endif
+    }
+
+    #ifdef DEBUG
+      Serial.print(".");
+    #endif
+
+    delay(100);
+  }
+
+  
+    if(WiFi.status() == WL_CONNECTED){
+
+      #ifdef DEBUG
+        Serial.println("WiFi Connected");
+      #endif
+
+      oled.logEvent("WiFi Connected",managerOled::LOG_LEVEL_INFO);
+    }
+  
+
+  oled.setWiFiInfo(&WiFi);
+
 }
 
 
