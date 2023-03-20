@@ -12,6 +12,7 @@
 #include "common/temperature.h"
 #include "common/frontPanel.h"
 #include "common/externalEEPROM.h"
+#include "common/oled.h"
 #include "time.h"
 
 
@@ -20,6 +21,9 @@ managerInputs inputs;
 managerTemperatureSensors temperatureSensors;
 managerFrontPanel frontPanel;
 managerExternalEEPROM externalEEPROM;
+managerOled oled;
+
+
 struct tm bootTime;
 time_t now;
 
@@ -33,6 +37,9 @@ void setup() {
     Wire.begin();
 
     //Configure the peripherals
+    oled.setCallback_failure(&oledFailure);
+    oled.begin();
+
     frontPanel.setCallback_publisher(&frontPanelButtonPress);
     frontPanel.setCallback_state_closed_at_begin(&frontPanelButtonClosedAtBegin);
     frontPanel.begin();
@@ -60,10 +67,19 @@ void setup() {
       Serial.println("Key: " + String(externalEEPROM.data.key));
     #endif
 
+    oled.setProductID(externalEEPROM.data.product_id);
+    oled.setUUID(externalEEPROM.data.uuid);
+
     setBootTime();
 
     //System has started, show normal state
     frontPanel.setStatus(managerFrontPanel::status::NORMAL);
+
+    oled.showPage(managerOled::PAGE_EVENT_LOG);
+
+    //oled.showError("Example error text");
+  
+}
 }
 
 
@@ -82,6 +98,7 @@ void loop() {
   inputs.loop();
   frontPanel.loop();
   temperatureSensors.loop();
+  oled.loop();
 }
 
 
@@ -90,6 +107,8 @@ void temperaturePublisher(String location, float value){
   #ifdef DEBUG
     Serial.println("New Temperature: " + String(value) + " at " + location);
   #endif
+
+  oled.logEvent(("Temp: " + String(value) + char(0xF8) + "C").c_str(),managerOled::LOG_LEVEL_NOTIFICATION);
 
   //TODO: Add MQTT and stuff
 
@@ -177,6 +196,8 @@ void frontPanelButtonPress(){
     Serial.println("Front Panel button was pressed");
   #endif
 
+  oled.nextPage();
+
   //TODO: Add MQTT and stuff
 
 }
@@ -191,3 +212,31 @@ void frontPanelButtonClosedAtBegin(){
   //TODO: Add MQTT and stuff
 
 }
+
+
+/** Handles failures of the OLED display */
+void oledFailure(managerOled::failureCode failureCode){
+
+  switch(failureCode){
+    case managerOled::failureCode::NOT_ON_BUS:
+      #if DEBUG
+        Serial.println("Error: OLED not found on bus");
+      #endif
+      break;
+
+    case managerOled::failureCode::UNABLE_TO_START:
+      #if DEBUG
+        Serial.println("Error: Unable to start OLED");
+      #endif
+      break;
+
+    default:
+      #if DEBUG
+        Serial.println("Error: Unknown OLED failure");
+      #endif
+  }
+
+  //TODO: Add MQTT and stuff
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
+
+};
