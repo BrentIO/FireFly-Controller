@@ -47,7 +47,6 @@ void setup() {
     frontPanel.setCallback_publisher(&frontPanelButtonPress);
     frontPanel.setCallback_state_closed_at_begin(&frontPanelButtonClosedAtBegin);
     frontPanel.begin();
-    frontPanel.setStatus(managerFrontPanel::status::NORMAL);
 
     outputs.setCallback_failure(&outputFailure);
     outputs.setCallback_publisher(&outputFailure);
