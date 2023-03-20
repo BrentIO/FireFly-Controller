@@ -52,9 +52,6 @@ class managerFrontPanel{
             inputState currentState = bitToInputState(digitalRead(PIN_OLED_BUTTON));
 
             if(currentState == inputState::STATE_CLOSED){
-                #if DEBUG > 50
-                    Serial.println("Front panel button STATE_CLOSED at begin()");
-                #endif
 
                 if(this->ptrStateClosedAtBeginCallback){
                     this->ptrStateClosedAtBeginCallback();
