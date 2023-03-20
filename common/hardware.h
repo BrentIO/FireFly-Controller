@@ -26,7 +26,7 @@
         #define COUNT_IO_EXTENDER 8 /* The number of IO extenders. */
         #define MODEL_IO_EXTENDER ENUM_MODEL_IO_EXTENDER_PCA9995 /* IO Extender Model. */
         #define COUNT_PINS_IO_EXTENDER 16 /* The number of pins on each IO extender. */
-        #define DEBOUNCE_DELAY 500 /* Milliseconds between changes for debouncing. */
+        #define DEBOUNCE_DELAY 150 /* Milliseconds between changes for debouncing. */
         
         /* Output Controller */
         #define COUNT_OUTPUT_CONTROLLER 2 /* The number of output controllers. */
