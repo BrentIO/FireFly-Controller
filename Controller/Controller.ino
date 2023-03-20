@@ -2,6 +2,9 @@
 
 #define DEBUG 400
 
+#define NTP_SERVER_1 "pool.ntp.org"
+#define NTP_SERVER_2 "0.north-america.pool.ntp.org"
+#define NTP_SERVER_3 "0.europe.pool.ntp.org"
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
 #include "common/hardware.h"
 #include "common/outputs.h"
@@ -9,6 +12,7 @@
 #include "common/temperature.h"
 #include "common/frontPanel.h"
 #include "common/externalEEPROM.h"
+#include "time.h"
 
 
 managerOutputs outputs;
@@ -16,6 +20,8 @@ managerInputs inputs;
 managerTemperatureSensors temperatureSensors;
 managerFrontPanel frontPanel;
 managerExternalEEPROM externalEEPROM;
+struct tm bootTime;
+time_t now;
 
 
 void setup() {
@@ -54,9 +60,22 @@ void setup() {
       Serial.println("Key: " + String(externalEEPROM.data.key));
     #endif
 
+    setBootTime();
+
     //System has started, show normal state
     frontPanel.setStatus(managerFrontPanel::status::NORMAL);
 }
+
+
+void setBootTime(){
+
+    configTime(0,0, NTP_SERVER_1, NTP_SERVER_2, NTP_SERVER_3);
+    struct tm timeinfo;
+    getLocalTime(&timeinfo);
+    bootTime = timeinfo;
+
+}
+
 
 
 void loop() {
@@ -150,6 +169,7 @@ void eepromFailure(){
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 
 }
+
 
 void frontPanelButtonPress(){
 
