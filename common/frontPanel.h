@@ -49,8 +49,6 @@ class managerFrontPanel{
             pinMode(PIN_OLED_BUTTON, INPUT_PULLUP);
             pinMode(PIN_OLED_LED, OUTPUT);
 
-            setStatus(managerFrontPanel::status::NORMAL);
-
             inputState currentState = bitToInputState(digitalRead(PIN_OLED_BUTTON));
 
             if(currentState == inputState::STATE_CLOSED){
