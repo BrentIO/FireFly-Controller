@@ -54,6 +54,7 @@
             boolean _isSleeping = false;
             boolean _isDimmed = false;
             char* _errorText = "";
+            int _factory_reset_value = 0;
             char events[NUMBER_OF_LINES][CHARACTERS_PER_LINE];
             unsigned long _timeLastAction = 0;
 
@@ -791,6 +792,10 @@
 
             void setWiFiInfo(WiFiClass *value){
                 this->_wifiInfo = value;
+            }
+
+            void setFactoryResetValue(int value){
+                this->_factory_reset_value = value;
             }
 
 
