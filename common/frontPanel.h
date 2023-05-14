@@ -10,13 +10,13 @@ class managerFrontPanel{
             FAILURE = 2 //Catastrophic failure that is non-recoverable
         };
 
-
-    private:
-
         enum inputState{
             STATE_OPEN = 0,
             STATE_CLOSED = 1
         };
+
+
+    private:
 
         enum inputType{
             NORMALLY_OPEN = 0,
@@ -93,6 +93,12 @@ class managerFrontPanel{
             }
 
             _ledStatus = value;
+        }
+
+        inputState getButtonState(){
+
+            return bitToInputState(digitalRead(PIN_OLED_BUTTON));
+
         }
 
         void loop(){
