@@ -79,8 +79,11 @@
 
             void _commit(){
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                if(this->_initialized != true){
+                    return;
+                }
 
+                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
                     this->_display.display();
 
                 #endif
@@ -88,18 +91,32 @@
             }
 
             void _dim(){
+
+                if(this->_initialized != true){
+                    return;
+                }
+
                 this->_display.dim(true);
                 this->_isDimmed = true;
             }
 
             void _sleep(){
                 this->_display.ssd1306_command(SSD1306_DISPLAYOFF);
+
+                if(this->_initialized != true){
+                    return;
+                }
+
                 this->_isSleeping = true;
                 this->_isDimmed = false;
             }
             
             
             void _wake(){
+
+                if(this->_initialized != true){
+                    return;
+                }
 
                 #if DEBUG > 400
                     Serial.println("[oled] (_wake) Woke up");
@@ -121,6 +138,9 @@
 
             void _extendWake(void){
 
+                if(this->_initialized != true){
+                    return;
+                }
 
                 #if DEBUG > 400
                     Serial.println("[oled] (_extendWake) Extending Wake");
@@ -131,6 +151,10 @@
 
 
             void _drawScrollBar(byte page){
+
+                if(this->_initialized != true){
+                    return;
+                }
 
                 byte total = COUNT_PAGES;
 
@@ -150,6 +174,10 @@
 
 
             void _showPage_Logo(){
+
+                if(this->_initialized != true){
+                    return;
+                }
 
                 #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
                     #define LOGO_WIDTH  128
@@ -836,6 +864,10 @@
             
             void loop(){
 
+                if(this->_initialized != true){
+                    return;
+                }
+
                 //If the display is off, exit
                 if(_isSleeping == true){
                     return;
@@ -930,6 +962,10 @@
 
             void showPage(pages requestedPage){
 
+                if(this->_initialized != true){
+                    return;
+                }
+
                 this->_wake();
 
                 switch(requestedPage){
@@ -1009,6 +1045,10 @@
 
 
             void nextPage(){
+
+                if(this->_initialized != true){
+                    return;
+                }
 
                 //If the display is asleep, simply turn it on
                 if(this->_isSleeping == true){
