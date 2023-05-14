@@ -86,10 +86,10 @@
 
                 #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
                     this->_display.display();
-
                 #endif
 
             }
+
 
             void _dim(){
 
@@ -102,11 +102,14 @@
             }
 
             void _sleep(){
-                this->_display.ssd1306_command(SSD1306_DISPLAYOFF);
 
                 if(this->_initialized != true){
                     return;
                 }
+
+                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                    this->_display.ssd1306_command(SSD1306_DISPLAYOFF);
+                #endif
 
                 this->_isSleeping = true;
                 this->_isDimmed = false;
@@ -126,7 +129,10 @@
                 this->_display.dim(false);
                 
                 if(this->_isSleeping == true){
-                    this->_display.ssd1306_command(SSD1306_DISPLAYON);
+
+                    #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                        this->_display.ssd1306_command(SSD1306_DISPLAYON);
+                    #endif
                 }      
 
                 this->_isDimmed = false;
@@ -163,13 +169,12 @@
                     total = total +1;
                 }
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                int val = map(page, 1, total, 1, DISPLAY_HEIGHT-SCROLL_BAR_HEIGHT-1);
 
-                    int val = map(page, 1, total, 1, DISPLAY_HEIGHT-SCROLL_BAR_HEIGHT-1);
+                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
                     this->_display.setTextColor(SSD1306_WHITE);
                     this->_display.fillRect((DISPLAY_WIDTH-SCROLL_BAR_WIDTH),0,SCROLL_BAR_WIDTH, DISPLAY_HEIGHT, SSD1306_WHITE); //Scroll Bar
                     this->_display.fillRect((DISPLAY_WIDTH-SCROLL_BAR_WIDTH),val,SCROLL_BAR_WIDTH,SCROLL_BAR_HEIGHT, SSD1306_BLACK); //Scroll position
-
                 #endif      
             }
 
@@ -855,12 +860,10 @@
 
                 //Update the page if we are already on the event log page
                 if(_activePage == PAGE_EVENT_LOG){
-
                     showPage(PAGE_EVENT_LOG);
-
                 }
 
-                }
+            }
 
             
             void loop(){
