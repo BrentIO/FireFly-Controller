@@ -664,10 +664,14 @@
 
                         this->_display.setCursor(2, LOGO_HEIGHT+5);
                         if(this->_wifiInfo->getMode() == WIFI_MODE_AP){
+                            this->_display.setTextColor(SSD1306_BLACK, SSD1306_WHITE); // Draw black text
                             this->_display.println("AP");
+                            this->_display.setTextColor(SSD1306_WHITE); // Draw white text
                         }
                         if(this->_wifiInfo->getMode() == WIFI_MODE_STA){
+                            this->_display.setTextColor(SSD1306_BLACK, SSD1306_WHITE); // Draw black text
                             this->_display.println("STA");
+                            this->_display.setTextColor(SSD1306_WHITE); // Draw white text
                         }
                     }
                 #endif
