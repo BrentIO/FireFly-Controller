@@ -57,8 +57,8 @@
             char events[NUMBER_OF_LINES][CHARACTERS_PER_LINE];
             unsigned long _timeLastAction = 0;
 
-            #define msDimAfter 10000 //30 Seconds
-            #define msSleepAfter 15000 //60 Seconds
+            #define DIM_AFTER_MS 10000
+            #define SLEEP_AFTER_MS 15000
 
             #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
                 Adafruit_SSD1306 _display;
@@ -843,7 +843,7 @@
 
                 //See if it is time to turn off
                 if(_isDimmed == true){
-                    if((unsigned long)(millis() - _timeLastAction) > msSleepAfter){
+                    if((unsigned long)(millis() - _timeLastAction) > SLEEP_AFTER_MS){
 
                         #if DEBUG > 400
                             Serial.println("[oled] (loop) Turning off OLED");
@@ -854,18 +854,13 @@
                     return;
                 }
 
-                //See if it is time to dim
-                if(_isDimmed == false){
-
-                    if((unsigned long)(millis() - _timeLastAction) > msDimAfter){
+                if((unsigned long)(millis() - _timeLastAction) > DIM_AFTER_MS){
 
                     #if DEBUG > 400
                         Serial.println("[oled] (loop) Dimming OLED");
                     #endif
 
-                        this->_dim();
-                    }
-                    return;
+                    this->_dim();
                 }
 
                 switch(_activePage){
