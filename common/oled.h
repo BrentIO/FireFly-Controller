@@ -101,8 +101,8 @@
             
             void _wake(){
 
-                #if DEBUG
-                    Serial.println("Woke up");
+                #if DEBUG > 400
+                    Serial.println("[oled] (_wake) Woke up");
                 #endif
 
                 this->_display.dim(false);
@@ -121,8 +121,9 @@
 
             void _extendWake(void){
 
-                #if DEBUG
-                    Serial.println("Extending Wake");
+
+                #if DEBUG > 400
+                    Serial.println("[oled] (_extendWake) Extending Wake");
                 #endif
 
                 _timeLastAction = millis();
@@ -844,8 +845,8 @@
                 if(_isDimmed == true){
                     if((unsigned long)(millis() - _timeLastAction) > msSleepAfter){
 
-                        #if DEBUG
-                            Serial.println("Turning off OLED");
+                        #if DEBUG > 400
+                            Serial.println("[oled] (loop) Turning off OLED");
                         #endif
 
                         this->_sleep();
@@ -858,9 +859,9 @@
 
                     if((unsigned long)(millis() - _timeLastAction) > msDimAfter){
 
-                        #if DEBUG
-                            Serial.println("Dimming OLED");
-                        #endif
+                    #if DEBUG > 400
+                        Serial.println("[oled] (loop) Dimming OLED");
+                    #endif
 
                         this->_dim();
                     }
