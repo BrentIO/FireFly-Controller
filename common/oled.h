@@ -1,10 +1,12 @@
 #include "hardware.h"
 #include <WiFi.h>
+#include "Prototype9pt7b.h"
 
 #ifndef oled_h
     #define oled_h
 
-    #define COUNT_PAGES 5 //The total number of pages without an error
+    #define COUNT_PAGES 6 //The total number of pages without an error
+    #define INTRO_DWELL_MS 750 //Number of milliseconds that the intro page should be shown when switching screens
 
     class managerOled{
 
@@ -17,12 +19,19 @@
 
             enum pages{
                 PAGE_EVENT_LOG = 1,
+                PAGE_EVENT_LOG_INTRO = 10,
                 PAGE_WIFI = 2,
                 PAGE_ETHERNET = 3,
+                PAGE_NETWORK_INTRO = 20,
                 PAGE_STATUS = 4,
-                PAGE_VERSION = 5,
-                PAGE_ERROR = 6,
-                PAGE_FACTORY_RESET = 20
+                PAGE_STATUS_INTRO = 40,
+                PAGE_HARDWARE = 5,
+                PAGE_HARDWARE_INTRO = 50,
+                PAGE_SOFTWARE = 6,
+                PAGE_SOFTWARE_INTRO = 60,
+                PAGE_ERROR = 7,
+                PAGE_ERROR_INTRO = 70,
+                PAGE_FACTORY_RESET = 1000
             };
 
             enum logLevel{
@@ -172,17 +181,377 @@
             }
 
         
-            void _showPage_Versions(){
+            void _showPage_Software(){
 
                 if(this->_initialized != true){
                     return;
                 }
 
-                this->_display.clearDisplay();
+                this->_clear();
+
+                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                    this->_display.setCursor(0, 0);
+                    this->_display.setTextColor(SSD1306_WHITE); // Draw white text
+
+                    this->_display.print("Ver: ");
+                    this->_display.println(VERSION);                    
+                #endif
+
+                this->_drawScrollBar(PAGE_SOFTWARE);
+                this->_commit();
+            }
+
+
+            void _showPage_EventLog_Intro(){
+
+                if(this->_initialized != true){
+                    return;
+                }
+
+                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+
+                    #define LOGO_WIDTH  20
+                    #define LOGO_HEIGHT 20
+
+                    const uint8_t PROGMEM logo[] = {
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00111111,0b11111111,0b11000000,
+                        0b00111111,0b11111111,0b11000000,
+                        0b00111111,0b11111111,0b11000000,
+                        0b00111000,0b00000001,0b11000000,
+                        0b00111111,0b11111111,0b11000000,
+                        0b00111111,0b11111111,0b11000000,
+                        0b00111000,0b00000001,0b11000000,
+                        0b00111111,0b11111111,0b11000000,
+                        0b00111000,0b00011111,0b11000000,
+                        0b00111111,0b11111111,0b11000000,
+                        0b00111111,0b11111111,0b11000000,
+                        0b00111111,0b11111111,0b11000000,
+                        0b00111111,0b11111111,0b00000000,
+                        0b00110000,0b00000000,0b00000000,
+                        0b00100000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                    };
+
+                    this->_wake();
+                    this->_clear();
+                    this->_display.drawBitmap(0, (DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                    this->_display.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
+                    this->_display.setTextColor(SSD1306_WHITE); // Draw white text
+                    this->_display.setFont(&Prototype9pt7b);
+                    this->_display.println("Event Log");
+                    this->_display.setFont();
+                    this->_drawScrollBar(PAGE_EVENT_LOG);
+
+                #endif
+
+                _timeIntroShown = millis();
+                this->_commit();   
+            }
+
+
+            void _showPage_Network_Intro(){
+
+                if(this->_initialized != true){
+                    return;
+                }
+
+                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+
+                    #define LOGO_WIDTH  20
+                    #define LOGO_HEIGHT 20
+
+                    const uint8_t PROGMEM logo[] = {
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000001,0b11111000,0b00000000,
+                        0b00000001,0b11111000,0b00000000,
+                        0b00000001,0b11111000,0b00000000,
+                        0b00000001,0b11111000,0b00000000,
+                        0b00000001,0b11111000,0b00000000,
+                        0b00000000,0b01100000,0b00000000,
+                        0b00000000,0b01100000,0b00000000,
+                        0b00000111,0b11111110,0b00000000,
+                        0b00000111,0b11111110,0b00000000,
+                        0b00000110,0b00000110,0b00000000,
+                        0b00000110,0b00000110,0b00000000,
+                        0b00011111,0b10011111,0b10000000,
+                        0b00011111,0b10011111,0b10000000,
+                        0b00011111,0b10011111,0b10000000,
+                        0b00011111,0b10011111,0b10000000,
+                        0b00011111,0b10011111,0b10000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                    };
+
+                    this->_wake();
+                    this->_clear();
+                    this->_display.drawBitmap(0, (DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                    this->_display.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
+                    this->_display.setTextColor(SSD1306_WHITE); // Draw white text
+                    this->_display.setFont(&Prototype9pt7b);
+                    this->_display.println("Network");
+                    this->_display.setFont();
+                    this->_drawScrollBar(PAGE_WIFI);
+
+                #endif
+
+                _timeIntroShown = millis();
+                this->_commit();  
+            }
+
+
+            void _showPage_Hardware_Intro(){
+
+                if(this->_initialized != true){
+                    return;
+                }
+
+                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+
+                    #define LOGO_WIDTH  20
+                    #define LOGO_HEIGHT 20
+
+                    const uint8_t PROGMEM logo[] = {
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00001111,0b11111111,0b00000000,
+                        0b00011111,0b11111111,0b10000000,
+                        0b00011100,0b11111111,0b10000000,
+                        0b00011100,0b11111111,0b10000000,
+                        0b00011111,0b11111111,0b10000000,
+                        0b00001111,0b11111111,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00001111,0b11111111,0b00000000,
+                        0b00011111,0b11111111,0b10000000,
+                        0b00011100,0b11111111,0b10000000,
+                        0b00011100,0b11111111,0b10000000,
+                        0b00011111,0b11111111,0b10000000,
+                        0b00001111,0b11111111,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                    };
+
+                    this->_wake();
+                    this->_clear();
+                    this->_display.drawBitmap(0, (DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                    this->_display.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
+                    this->_display.setTextColor(SSD1306_WHITE); // Draw white text
+                    this->_display.setFont(&Prototype9pt7b);
+                    this->_display.println("Hardware");
+                    this->_display.setFont();
+                    this->_drawScrollBar(PAGE_HARDWARE);
+                
+                #endif
+
+                _timeIntroShown = millis();
+                this->_commit();  
+
+            }
+
+
+            void _showPage_Software_Intro(){
+
+                if(this->_initialized != true){
+                    return;
+                }
+
+                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+
+                    #define LOGO_WIDTH  20
+                    #define LOGO_HEIGHT 20
+
+                    const uint8_t PROGMEM logo[] = {
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00001111,0b11111111,0b00000000,
+                        0b00011111,0b11111111,0b10000000,
+                        0b00111111,0b11111111,0b11000000,
+                        0b00110000,0b00000000,0b11000000,
+                        0b00110010,0b00000000,0b11000000,
+                        0b00110011,0b00000000,0b11000000,
+                        0b00110001,0b10000000,0b11000000,
+                        0b00110011,0b00000000,0b11000000,
+                        0b00110110,0b00111110,0b11000000,
+                        0b00110000,0b00000000,0b11000000,
+                        0b00010111,0b11111111,0b10000000,
+                        0b00011111,0b11111111,0b10000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                    };
+
+                    this->_wake();
+                    this->_clear();
+                    this->_display.drawBitmap(0, (DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                    this->_display.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
+                    this->_display.setTextColor(SSD1306_WHITE); // Draw white text
+                    this->_display.setFont(&Prototype9pt7b);
+                    this->_display.println("Software");
+                    this->_display.setFont();
+                    this->_drawScrollBar(PAGE_SOFTWARE);
+
+                #endif
+
+                _timeIntroShown = millis();
+                this->_commit();  
+
+            }
+
+
+            void _showPage_Status_Intro(){
+
+                if(this->_initialized != true){
+                    return;
+                }
+
+                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+
+                    #define LOGO_WIDTH  20
+                    #define LOGO_HEIGHT 20
+
+                    const uint8_t PROGMEM logo[] = {
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b11110000,0b00000000,
+                        0b00000011,0b11111100,0b00000000,
+                        0b00000111,0b11111110,0b00000000,
+                        0b00001111,0b11111111,0b00000000,
+                        0b00011111,0b11111111,0b10000000,
+                        0b00011111,0b11111011,0b10000000,
+                        0b00111111,0b11110011,0b11000000,
+                        0b00111111,0b11100111,0b11000000,
+                        0b00111110,0b01001111,0b11000000,
+                        0b00111111,0b00011111,0b11000000,
+                        0b00011111,0b10111111,0b10000000,
+                        0b00011111,0b11111111,0b10000000,
+                        0b00001111,0b11111111,0b00000000,
+                        0b00000111,0b11111110,0b00000000,
+                        0b00000011,0b11111100,0b00000000,
+                        0b00000000,0b11110000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                    };
+
+                    this->_wake();
+                    this->_clear();
+                    this->_display.drawBitmap(0, (DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                    this->_display.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
+                    this->_display.setTextColor(SSD1306_WHITE); // Draw white text
+                    this->_display.setFont(&Prototype9pt7b);
+                    this->_display.println("Status");
+                    this->_display.setFont();
+                    this->_drawScrollBar(PAGE_STATUS);
+
+                #endif
+
+                _timeIntroShown = millis();
+                this->_commit();   
+            }
+
+
+            void _showPage_Error_Intro(){
+
+                if(this->_initialized != true){
+                    return;
+                }
+
+                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+
+                    #define LOGO_WIDTH  20
+                    #define LOGO_HEIGHT 20
+
+                    const uint8_t PROGMEM logo[] = {
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000011,0b11111100,0b00000000,
+                        0b00000111,0b11111110,0b00000000,
+                        0b00001111,0b11111111,0b00000000,
+                        0b00011111,0b10011111,0b10000000,
+                        0b00011111,0b10011111,0b10000000,
+                        0b00011111,0b10011111,0b10000000,
+                        0b00011111,0b10011111,0b10000000,
+                        0b00011111,0b10011111,0b10000000,
+                        0b00011111,0b11111111,0b10000000,
+                        0b00011111,0b10011111,0b10000000,
+                        0b00011111,0b10011111,0b10000000,
+                        0b00001111,0b11111111,0b00000000,
+                        0b00000111,0b11111110,0b00000000,
+                        0b00000011,0b11111100,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                    };
+
+                    this->_wake();
+                    this->_clear();
+                    this->_display.drawBitmap(0, (DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                    this->_display.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
+                    this->_display.setTextColor(SSD1306_WHITE); // Draw white text
+                    this->_display.setFont(&Prototype9pt7b);
+                    this->_display.println("Error");
+                    this->_display.setFont();
+                    this->_drawScrollBar(PAGE_STATUS);
+
+                #endif
+
+                _timeIntroShown = millis();
+                this->_commit();   
+            }
+
+            void _showPage_Factory_Reset(){
+
+                if(this->_initialized != true){
+                    return;
+                }
+
+                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+
+                    this->_wake();
+                    this->_clear();
+
+                    if (this->_factory_reset_value % 2 == 0){
+                        this->_display.invertDisplay(false);
+                    }else{
+                        this->_display.invertDisplay(true);
+                    }
+
+                    this->_display.setCursor(0, 0);
+                    this->_display.setTextColor(SSD1306_WHITE); // Draw white text
+                    this->_display.println("     Factory Reset    ");
+                    this->_display.setFont(&Prototype9pt7b);
+                    this->_display.setCursor(DISPLAY_WIDTH / 2, 26);
+                    this->_display.println(this->_factory_reset_value);
+                    this->_display.setFont();
+
+                #endif
+
+                _timeIntroShown = millis();
+                this->_commit();   
+            }
+
+
+            void _showPage_Hardware(){
+
+                if(this->_initialized != true){
+                    return;
+                }
+
+                this->_clear();
 
                 #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
                     this->_display.setTextColor(SSD1306_WHITE); // Draw white text
-                    this->_display.setCursor(0, 0); 
+                    this->_display.setCursor(0, 0);
 
                     if(this->_productId){
                         this->_display.print("PID: ");
@@ -197,12 +566,10 @@
                     }else{
                         this->_display.println("Unknown UUID");
                     }
-
-                    this->_display.print("Ver: ");
-                    this->_display.println(VERSION);                    
+                  
                 #endif
 
-                this->_drawScrollBar(PAGE_VERSION);
+                this->_drawScrollBar(PAGE_HARDWARE);
                 this->_commit();
             }
         
@@ -370,24 +737,6 @@
                 this->_commit();
             }
 
-
-            void _showPage_factoryReset(){
-
-                if(this->_initialized != true){
-                    return;
-                }
-
-                this->_display.clearDisplay();
-
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
-                    this->_display.setTextColor(SSD1306_WHITE); // Draw white text
-                    this->_display.setCursor(0, 0); 
-                    this->_display.println("FACTORY RESET STUB");
-                #endif
-
-                this->_commit();
-            }
-
         public:
 
             void setCallback_failure(void (*userDefinedCallback)(failureCode)) {
@@ -518,6 +867,52 @@
                     return;
                 }
 
+                switch(_activePage){
+
+                    case PAGE_EVENT_LOG_INTRO:
+
+                        if((unsigned long)(millis() - _timeIntroShown) > INTRO_DWELL_MS){
+                            showPage(PAGE_EVENT_LOG);
+                        } 
+                        break;
+
+
+                    case PAGE_NETWORK_INTRO:
+
+                        if((unsigned long)(millis() - _timeIntroShown) > INTRO_DWELL_MS){
+                            showPage(PAGE_WIFI);
+                        } 
+                        break;
+
+                    case PAGE_STATUS_INTRO:
+
+                        if((unsigned long)(millis() - _timeIntroShown) > INTRO_DWELL_MS){
+                            showPage(PAGE_STATUS);
+                        } 
+                        break;
+
+                    case PAGE_HARDWARE_INTRO:
+
+                        if((unsigned long)(millis() - _timeIntroShown) > INTRO_DWELL_MS){
+                            showPage(PAGE_HARDWARE);
+                        } 
+                        break;
+
+                    case PAGE_SOFTWARE_INTRO:
+
+                        if((unsigned long)(millis() - _timeIntroShown) > INTRO_DWELL_MS){
+                            showPage(PAGE_SOFTWARE);
+                        } 
+                        break;
+
+                    case PAGE_ERROR_INTRO:
+                        
+                        if((unsigned long)(millis() - _timeIntroShown) > INTRO_DWELL_MS){
+                            showPage(PAGE_ERROR);
+                        } 
+                        break;
+                }
+              
             }
 
             void showError(char* text){
@@ -547,21 +942,25 @@
                         _activePage = PAGE_EVENT_LOG;
                         _showPage_EventLog();
                         break;
-                    
-                    case PAGE_VERSION:
-                        _activePage = PAGE_VERSION;
-                        _showPage_Versions();
-                        break;
 
+                    case PAGE_EVENT_LOG_INTRO:
+                        _activePage = PAGE_EVENT_LOG_INTRO;
+                        _showPage_EventLog_Intro();
+                        break;
+                    
                     case PAGE_WIFI:
                         _activePage = PAGE_WIFI;
                         _showPage_WiFi();
                         break;
 
-                    
                     case PAGE_ETHERNET:
                         _activePage = PAGE_ETHERNET;
                         _showPage_Ethernet();
+                        break;
+
+                    case PAGE_NETWORK_INTRO:
+                        _activePage = PAGE_NETWORK_INTRO;
+                        _showPage_Network_Intro();
                         break;
 
                     case PAGE_STATUS:
@@ -569,14 +968,44 @@
                         _showPage_Status();
                         break;
 
+                    case PAGE_STATUS_INTRO:
+                        _activePage = PAGE_STATUS_INTRO;
+                        _showPage_Status_Intro();
+                        break;
+
+                    case PAGE_HARDWARE:
+                        _activePage = PAGE_HARDWARE;
+                        _showPage_Hardware();
+                        break;
+
+                    case PAGE_HARDWARE_INTRO:
+                        _activePage = PAGE_HARDWARE_INTRO;
+                        _showPage_Hardware_Intro();
+                        break;
+
+                    case PAGE_SOFTWARE:
+                        _activePage = PAGE_SOFTWARE;
+                        _showPage_Software();
+                        break;
+
+                    case PAGE_SOFTWARE_INTRO:
+                        _activePage = PAGE_SOFTWARE_INTRO;
+                        _showPage_Software_Intro();
+                        break;
+
                     case PAGE_ERROR:
                         _activePage = PAGE_ERROR;
                         _showPage_Error();
                         break;
 
+                    case PAGE_ERROR_INTRO:
+                        _activePage = PAGE_ERROR_INTRO;
+                        _showPage_Error_Intro();
+                        break;
+
                     case PAGE_FACTORY_RESET:
                         _activePage = PAGE_FACTORY_RESET;
-                        //showPageProvisionRequired();
+                        _showPage_Factory_Reset();
                         break;
                 }
                 
@@ -587,7 +1016,7 @@
 
                 //If the display is asleep, simply turn it on
                 if(this->_isSleeping == true){
-                    showPage(PAGE_EVENT_LOG);
+                    showPage(PAGE_EVENT_LOG_INTRO);
                     return;
                 }
 
@@ -596,24 +1025,12 @@
                 //Proceed to the next screen
                 switch(_activePage){
 
-                    case PAGE_VERSION:
-                    
-                        //Only show the error page if there is an error, otherwise show the event log
-                        if(_errorText != ""){
-                            showPage(PAGE_ERROR);
-                            return;
-                        }
-                        showPage(PAGE_EVENT_LOG);
+                    case PAGE_EVENT_LOG:
+                        showPage(PAGE_NETWORK_INTRO);
                         break;
 
-                    case PAGE_EVENT_LOG:
-                        /*if(settings.deviceIsProvisioned == true){
-                            showPage(ipAddress);
-                            break;
-                        }else{*/
-                        
-                        showPage(PAGE_WIFI);
-                        //}
+                    case PAGE_EVENT_LOG_INTRO:
+                        showPage(PAGE_NETWORK_INTRO);
                         break;
                     
                     case PAGE_WIFI:
@@ -621,20 +1038,32 @@
                         break;
 
                     case PAGE_ETHERNET:
-                        showPage(PAGE_STATUS);
+                    case PAGE_NETWORK_INTRO:
+                        showPage(PAGE_STATUS_INTRO);
                         break;
 
                     case PAGE_STATUS:
-                        showPage(PAGE_VERSION);
-                        break; 
+                    case PAGE_STATUS_INTRO:
+                        showPage(PAGE_HARDWARE_INTRO);
+                        break;
 
-                    case PAGE_ERROR:
-                        showPage(PAGE_EVENT_LOG);
-                        break; 
+                    case PAGE_HARDWARE:
+                    case PAGE_HARDWARE_INTRO:
+                        showPage(PAGE_SOFTWARE_INTRO);
+                        break;
 
+                    case PAGE_SOFTWARE:
+                    case PAGE_SOFTWARE_INTRO:
+
+                        //Only show the error page if there is an error, otherwise show the event log
+                        if(_errorText != ""){
+                            showPage(PAGE_ERROR_INTRO);
+                            return;
+                        }
+                        showPage(PAGE_EVENT_LOG_INTRO);
+                        break;
                 }
             }
-
     };
 
 #endif
