@@ -57,6 +57,7 @@
             int _factory_reset_value = 0;
             char events[NUMBER_OF_LINES][CHARACTERS_PER_LINE];
             unsigned long _timeLastAction = 0;
+            unsigned long _timeIntroShown = 0;
 
             #define DIM_AFTER_MS 10000
             #define SLEEP_AFTER_MS 15000
