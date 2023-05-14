@@ -258,6 +258,32 @@ void frontPanelButtonClosedAtBegin(){
     Serial.println("[Controller] (frontPanelButtonClosedAtBeginning) Front Panel button was closed on begin()");
   #endif
 
+  int i = 10;
+
+  while(i>0){
+    oled.setFactoryResetValue(i);
+    oled.showPage(managerOled::PAGE_FACTORY_RESET);
+
+    if(frontPanel.getButtonState() == managerFrontPanel::inputState::STATE_OPEN){
+
+      #ifdef DEBUG
+        Serial.println("[Controller] (frontPanelButtonClosedAtBeginning) Front Panel button was released before confirmation timeout.");
+      #endif
+
+      return;
+    }
+
+    i--;
+
+    delay(1000);
+  }
+
+  #ifdef DEBUG
+    Serial.println("[Controller] (frontPanelButtonClosedAtBeginning) Front Panel button was held to completion; EEPROM will be deleted.");
+  #endif
+
+
+
   //TODO: Add MQTT and stuff
 
 }
