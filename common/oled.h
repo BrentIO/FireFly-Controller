@@ -719,9 +719,10 @@
                     return;
                 }
 
-                this->_display.clearDisplay();
+                this->_clear();
 
                 #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+
                     this->_display.setTextColor(SSD1306_WHITE); // Draw white text
                     this->_display.setCursor(0, 0);
                     for(unsigned int i=0; i < 4; i++){
@@ -741,7 +742,7 @@
                     return;
                 }
 
-                this->_display.clearDisplay();
+                this->_clear();
 
                 #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
                     this->_display.setTextColor(SSD1306_WHITE); // Draw white text
@@ -761,7 +762,7 @@
                     return;
                 }
 
-                this->_display.clearDisplay();
+                this->_clear();
 
                 #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
                     this->_display.setTextColor(SSD1306_WHITE); // Draw white text
