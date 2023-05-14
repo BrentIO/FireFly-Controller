@@ -73,6 +73,7 @@
 
                 #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
                     this->_display.clearDisplay();
+                    this->_display.invertDisplay(false);
                 #endif
             }
 
