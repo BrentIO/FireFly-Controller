@@ -865,12 +865,6 @@
 
                 //Write the requested chars to the first element in the array
                 strcpy(events[0], eventData);
-                
-                //Turn on the display for notification and error messages
-                if(type == LOG_LEVEL_NOTIFICATION || type == LOG_LEVEL_ERROR){
-                    this->_wake();
-                    showPage(PAGE_EVENT_LOG);
-                }
 
                 if(type == LOG_LEVEL_NOTIFICATION){
 
@@ -878,12 +872,23 @@
                     this->_errorText = "";
 
                 }
+                
+                //Turn on the display for notification and error messages
+                if(type == LOG_LEVEL_NOTIFICATION || type == LOG_LEVEL_ERROR){
+                    this->_wake();
+                    showPage(PAGE_EVENT_LOG);
+                    return;
+                }
+
+                //Don't show the event log if we are sleeping because the event isn't important enough
+                if(_isSleeping == true){
+                    return;
+                }
 
                 //Update the page if we are already on the event log page
                 if(_activePage == PAGE_EVENT_LOG){
                     showPage(PAGE_EVENT_LOG);
                 }
-
             }
 
             
