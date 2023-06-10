@@ -32,10 +32,18 @@ class managerInputs{
         uint16_t previousRead = 0; /* Numeric value of the last read from the hardware. Default 0.*/
         inputPin inputs[COUNT_PINS_IO_EXTENDER]; /* Input pins connected to the hardware.*/
         bool enabled = true; /* Indicates if the controller is enabled. Default true.*/
+        uint8_t portOffset = 0; /* Indicates the first RJ45 port handled by this ioExtender.*/
+    };
+
+
+    struct portChannel{
+        uint8_t port; /* RJ45 port */
+        uint8_t channel; /* Wire within the RJ45 port */
     };
 
 
     ioExtender inputControllers[COUNT_IO_EXTENDER];
+    const uint8_t portChannelPinMap[COUNT_PINS_IO_EXTENDER][2] = IO_EXTENDER_CHANNELS;
 
     void (*ptrPublisherCallback)(void); //TODO: Determine correct signature
     void (*ptrFailureCallback)(void); //TODO: Determine correct signature
@@ -85,6 +93,10 @@ class managerInputs{
         for(int i = 0; i < COUNT_PINS_IO_EXTENDER; i++){
 
             inputState currentState = bitToInputState(bitRead(pinRead, i));
+            portChannel portChannel;
+
+            portChannel.port = portChannelPinMap[i][0] + inputController->portOffset;
+            portChannel.channel = portChannelPinMap[i][1];
 
             //Check if the value returned in the read is the same as the last read
             if(inputController->inputs[i].state == currentState){
@@ -219,6 +231,7 @@ class managerInputs{
 
                 this->inputControllers[i].interruptPin = pinsInterruptIoExtender[i];
                 this->inputControllers[i].address = addressesIoExtender[i];
+                this->inputControllers[i].portOffset = ((COUNT_PINS_IO_EXTENDER / COUNT_CHANNELS_PER_PORT) * i);
                 
                 #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9555
                     this->inputControllers[i].hardware.attach(Wire, inputControllers[i].address);
