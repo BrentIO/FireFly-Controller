@@ -132,16 +132,24 @@
                     Serial.println("[oled] (_wake) Woke up");
                 #endif
 
-                if(this->_isSleeping == true){
+                if(this->_isDimmed == true){
 
                     #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
                         this->hardware.dim(false);
+                    #endif
+
+                    this->_isDimmed = false;
+                }
+
+                if(this->_isSleeping == true){
+                    
+                    #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                        this->hardware.dim(false);  //Required because without it the display only turns back on to a dimmed display
                         this->hardware.ssd1306_command(SSD1306_DISPLAYON);
                     #endif
-                }      
 
-                this->_isDimmed = false;
-                this->_isSleeping = false;
+                    this->_isSleeping = false;
+                }      
 
                 _extendWake();
 
