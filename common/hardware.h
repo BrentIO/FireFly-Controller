@@ -27,6 +27,7 @@
         #define MODEL_IO_EXTENDER ENUM_MODEL_IO_EXTENDER_PCA9995 /* IO Extender Model. */
         #define COUNT_PINS_IO_EXTENDER 16 /* The number of pins on each IO extender. */
         #define DEBOUNCE_DELAY 150 /* Milliseconds between changes for debouncing. */
+        #define COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ45 port that are usable. */
         
         /* Output Controller */
         #define COUNT_OUTPUT_CONTROLLER 2 /* The number of output controllers. */
@@ -73,6 +74,7 @@
         #define MODEL_IO_EXTENDER ENUM_MODEL_IO_EXTENDER_PCA9995 /* IO Extender Model. */
         #define COUNT_PINS_IO_EXTENDER 16 /* The number of pins on each IO extender. */
         #define DEBOUNCE_DELAY 150 /* Milliseconds between changes for debouncing. */
+        #define COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ45 port that are usable. */
         
         /* Output Controller */
         #define COUNT_OUTPUT_CONTROLLER 2 /* The number of output controllers. */
