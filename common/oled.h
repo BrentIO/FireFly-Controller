@@ -903,7 +903,7 @@
                     if((unsigned long)(millis() - _timeLastAction) > SLEEP_AFTER_MS){
 
                         #if DEBUG > 400
-                            Serial.println("[oled] (loop) Turning off OLED");
+                            Serial.println("[oled] (loop) Sleeping OLED");
                         #endif
 
                         this->_sleep();
