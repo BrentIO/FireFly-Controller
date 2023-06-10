@@ -235,7 +235,7 @@ class managerInputs{
                 
                 #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9555
                     this->inputControllers[i].hardware.attach(Wire, inputControllers[i].address);
-                    this->inputControllers[i].hardware.polarity(PCA95x5::Polarity::INVERTED_ALL);
+                    this->inputControllers[i].hardware.polarity(PCA95x5::Polarity::ORIGINAL_ALL);
                     this->inputControllers[i].hardware.direction(PCA95x5::Direction::IN_ALL);
 
                     //Ensure we connected to the controller
