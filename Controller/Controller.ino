@@ -81,9 +81,7 @@ void setup() {
     frontPanel.setStatus(managerFrontPanel::status::NORMAL);
 
     oled.showPage(managerOled::PAGE_EVENT_LOG);
-
-    //oled.showError("Example error text");
-  
+     
 }
 
 void connectWiFi(){
@@ -172,12 +170,13 @@ void setBootTime(){
 }
 
 
-
 void loop() {
+
   inputs.loop();
   frontPanel.loop();
   temperatureSensors.loop();
   oled.loop();
+
 }
 
 
