@@ -26,10 +26,7 @@ managerTemperatureSensors temperatureSensors;
 managerFrontPanel frontPanel;
 managerExternalEEPROM externalEEPROM;
 managerOled oled;
-
-
-struct tm bootTime;
-time_t now;
+unsigned long bootTime;
 
 
 void setup() {
@@ -76,7 +73,9 @@ void setup() {
 
     connectWiFi();
 
-    setBootTime();
+    configTime(0,0, NTP_SERVER_1, NTP_SERVER_2, NTP_SERVER_3);
+
+    setBootTime();    
 
     //System has started, show normal state
     frontPanel.setStatus(managerFrontPanel::status::NORMAL);
@@ -132,12 +131,43 @@ void connectWiFi(){
 }
 
 
+unsigned long getTime() {
+  /* Retrieves current GMT time. */
+
+  time_t now;
+  struct tm timeinfo;
+
+  if (!getLocalTime(&timeinfo)) {
+    
+    #ifdef DEBUG
+      Serial.println("[Controller] (getTime) unable to getLocalTime");
+    #endif
+
+    return(0);
+  }
+
+  return time(&now);
+
+}
+
 void setBootTime(){
 
-    configTime(0,0, NTP_SERVER_1, NTP_SERVER_2, NTP_SERVER_3);
-    struct tm timeinfo;
-    getLocalTime(&timeinfo);
-    bootTime = timeinfo;
+  bootTime = getTime();
+
+  if(bootTime == 0){
+    oled.logEvent("Unknown boot time", managerOled::logLevel::LOG_LEVEL_INFO);
+
+      #ifdef DEBUG
+        Serial.println("[Controller] (setBootTime) Failed to set boot time, defaulting to 0.");
+      #endif
+
+  }else{
+    oled.logEvent("Boot time set", managerOled::logLevel::LOG_LEVEL_INFO);
+
+    #ifdef DEBUG > 1000
+      Serial.println("[Controller] (setBootTime) Boot time set to " + String(bootTime));
+    #endif
+  }
 
 }
 
