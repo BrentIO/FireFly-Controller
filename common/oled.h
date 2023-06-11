@@ -995,7 +995,7 @@
             void showError(const char* text){
 
                 //Log the error text
-                //logEvent(text, info);
+                logEvent(text, this->LOG_LEVEL_ERROR);
 
                 //Set the errorText
                 _errorText = text;
