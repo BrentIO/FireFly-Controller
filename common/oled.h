@@ -119,6 +119,11 @@
                     return;
                 }
 
+                if(strlen(this->_errorText)>0){
+                    _extendWake();
+                    return;
+                }
+
                 #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
                     this->hardware.ssd1306_command(SSD1306_DISPLAYOFF);
                 #endif
@@ -184,7 +189,7 @@
 
                 byte total = COUNT_PAGES;
 
-                if(_errorText != ""){
+                if(strlen(this->_errorText)>0){
                     total = total +1;
                 }
 
