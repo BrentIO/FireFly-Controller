@@ -876,30 +876,25 @@
             }
 
 
-            void logEvent(const char* eventData, logLevel type){
+            void logEvent(const char* text, logLevel type){
      
                 //Copy the elements down one element
                 for(int i = 2; i >= 0; i--){
 
-                    strcpy(events[i+1], events[i]);
+                    strncpy(this->events[i+1], this->events[i], CHARACTERS_PER_LINE);
                     
                 }
 
                 //Write the requested chars to the first element in the array
-                strcpy(events[0], eventData);
-
+                strncpy(this->events[0], text, CHARACTERS_PER_LINE);
+                
+                //Turn on the display for notification
                 if(type == LOG_LEVEL_NOTIFICATION){
 
-                    //Clear the error condition
-                    this->_errorText = "";
-
-                }
-                
-                //Turn on the display for notification and error messages
-                if(type == LOG_LEVEL_NOTIFICATION || type == LOG_LEVEL_ERROR){
                     this->_wake();
                     showPage(PAGE_EVENT_LOG);
                     return;
+
                 }
 
                 //Don't show the event log if we are sleeping because the event isn't important enough
