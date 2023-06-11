@@ -232,7 +232,7 @@
                     this->hardware.setCursor(LOGO_WIDTH + 2, DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
-                    this->hardware.println("P5 Software");
+                    this->hardware.println(F("P5 Software"));
                     this->hardware.setFont();
 
                 #endif
@@ -254,7 +254,7 @@
                     this->hardware.setCursor(0, 0);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
 
-                    this->hardware.print("Ver: ");
+                    this->hardware.print(F("Ver: "));
                     this->hardware.println(VERSION);                    
                 #endif
 
@@ -303,7 +303,7 @@
                     this->hardware.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
-                    this->hardware.println("Event Log");
+                    this->hardware.println(F("Event Log"));
                     this->hardware.setFont();
                     this->_drawScrollBar(PAGE_EVENT_LOG);
 
@@ -354,7 +354,7 @@
                     this->hardware.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
-                    this->hardware.println("Network");
+                    this->hardware.println(F("Network"));
                     this->hardware.setFont();
                     this->_drawScrollBar(PAGE_WIFI);
 
@@ -405,7 +405,7 @@
                     this->hardware.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
-                    this->hardware.println("Hardware");
+                    this->hardware.println(F("Hardware"));
                     this->hardware.setFont();
                     this->_drawScrollBar(PAGE_HARDWARE);
                 
@@ -457,7 +457,7 @@
                     this->hardware.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
-                    this->hardware.println("Software");
+                    this->hardware.println(F("Software"));
                     this->hardware.setFont();
                     this->_drawScrollBar(PAGE_SOFTWARE);
 
@@ -509,7 +509,7 @@
                     this->hardware.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
-                    this->hardware.println("Status");
+                    this->hardware.println(F("Status"));
                     this->hardware.setFont();
                     this->_drawScrollBar(PAGE_STATUS);
 
@@ -560,7 +560,7 @@
                     this->hardware.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
-                    this->hardware.println("Error");
+                    this->hardware.println(F("Error"));
                     this->hardware.setFont();
                     this->_drawScrollBar(PAGE_STATUS);
 
@@ -589,7 +589,7 @@
 
                     this->hardware.setCursor(0, 0);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
-                    this->hardware.println("     Factory Reset    ");
+                    this->hardware.println(F("     Factory Reset    "));
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.setCursor(DISPLAY_WIDTH / 2, 26);
                     this->hardware.println(this->_factory_reset_value);
@@ -615,17 +615,17 @@
                     this->hardware.setCursor(0, 0);
 
                     if(this->_productId){
-                        this->hardware.print("PID: ");
+                        this->hardware.print(F("PID: "));
                         this->hardware.println(this->_productId);
                     }else{
-                        this->hardware.println("Unknown Product ID");
+                        this->hardware.println(F("Unknown Product ID"));
                     }
 
                     if(this->_uuid){
-                        this->hardware.print("UUID: ");
+                        this->hardware.print(F("UUID: "));
                         this->hardware.println(this->_uuid);
                     }else{
-                        this->hardware.println("Unknown UUID");
+                        this->hardware.println(F("Unknown UUID"));
                     }
                   
                 #endif
@@ -674,7 +674,7 @@
                     if(this->_wifiInfo->isConnected() == false){
                         this->hardware.drawBitmap(0,(DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
                         this->hardware.setCursor(LOGO_WIDTH + 16, (DISPLAY_HEIGHT/2)-3);
-                        this->hardware.println("Disconnected");
+                        this->hardware.println(F("Disconnected"));
                     }else{
                         this->hardware.drawBitmap(0,0, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
                         this->hardware.setCursor(LOGO_WIDTH + 3, 0);
@@ -687,12 +687,12 @@
                         this->hardware.setCursor(2, LOGO_HEIGHT+5);
                         if(this->_wifiInfo->getMode() == WIFI_MODE_AP){
                             this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); // Draw black text
-                            this->hardware.println("AP");
+                            this->hardware.println(F("AP"));
                             this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                         }
                         if(this->_wifiInfo->getMode() == WIFI_MODE_STA){
                             this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); // Draw black text
-                            this->hardware.println("STA");
+                            this->hardware.println(F("STA"));
                             this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                         }
                     }
@@ -801,7 +801,7 @@
                 #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
                     this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); //Inverted text
                     this->hardware.setCursor(0, 0);
-                    this->hardware.println("        ERROR        ");
+                    this->hardware.println(F("        ERROR        "));
                     this->hardware.setTextColor(SSD1306_WHITE); //Draw white text
                     this->hardware.setCursor(0, 9); 
                     this->hardware.println(this->_errorText);
