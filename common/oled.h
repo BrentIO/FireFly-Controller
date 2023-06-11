@@ -99,6 +99,11 @@
                     return;
                 }
 
+                if(strlen(this->_errorText)>0){
+                    _extendWake();
+                    return;
+                }
+
                 #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
                     this->hardware.dim(true);
                 #endif
@@ -1130,7 +1135,7 @@
                     case PAGE_SOFTWARE_INTRO:
 
                         //Only show the error page if there is an error, otherwise show the event log
-                        if(_errorText != ""){
+                        if(strlen(this->_errorText)>0){
                             showPage(PAGE_ERROR_INTRO);
                             return;
                         }
