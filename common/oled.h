@@ -996,14 +996,17 @@
                 logEvent(text, this->LOG_LEVEL_ERROR);
 
                 //Set the errorText
-                _errorText = text;
+                strncpy(this->_errorText, text, sizeof(_errorText));
 
                 //Show the error screen
                 showPage(PAGE_ERROR);
+
             }
 
+
             void clearError(){
-                _errorText = "";
+                strcpy(this->_errorText, "");
+                showPage(PAGE_EVENT_LOG);
             }
 
 
