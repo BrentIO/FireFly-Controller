@@ -323,19 +323,19 @@ void oledFailure(managerOled::failureCode failureCode){
 
   switch(failureCode){
     case managerOled::failureCode::NOT_ON_BUS:
-      #if DEBUG
+      #ifdef DEBUG
         Serial.println("[Controller] (oledFailure) Error: OLED not found on bus");
       #endif
       break;
 
     case managerOled::failureCode::UNABLE_TO_START:
-      #if DEBUG
+      #ifdef DEBUG
         Serial.println("[Controller] (oledFailure) Error: Unable to start OLED");
       #endif
       break;
 
     default:
-      #if DEBUG
+      #ifdef DEBUG
         Serial.println("[Controller] (oledFailure) Error: Unknown OLED failure");
       #endif
       break;
