@@ -799,9 +799,12 @@
                 this->_clear();
 
                 #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
-                    this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
-                    this->hardware.setCursor(0, 0); 
-                    this->hardware.println("Error STUB");
+                    this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); //Inverted text
+                    this->hardware.setCursor(0, 0);
+                    this->hardware.println("        ERROR        ");
+                    this->hardware.setTextColor(SSD1306_WHITE); //Draw white text
+                    this->hardware.setCursor(0, 9); 
+                    this->hardware.println(this->_errorText);
                 #endif
 
                 this->_drawScrollBar(PAGE_ERROR);
@@ -1147,6 +1150,12 @@
                         }
                         showPage(PAGE_EVENT_LOG_INTRO);
                         break;
+
+                    case PAGE_ERROR:
+                    case PAGE_ERROR_INTRO:
+                        showPage(PAGE_EVENT_LOG_INTRO);
+                        break;
+
                 }
             }
     };
