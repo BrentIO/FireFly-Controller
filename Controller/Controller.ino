@@ -84,6 +84,7 @@ void setup() {
      
 }
 
+
 void connectWiFi(){
 
   WiFi.begin(ssid, password);
@@ -147,6 +148,7 @@ unsigned long getTime() {
   return time(&now);
 
 }
+
 
 void setBootTime(){
 
@@ -239,7 +241,6 @@ void outputFailure(){
 
   //TODO: Add MQTT and stuff
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
-
 
 }
 
