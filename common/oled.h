@@ -112,6 +112,7 @@
                 this->_isSleeping = false;
             }
 
+
             void _sleep(){
 
                 if(this->_initialized != true){
@@ -147,7 +148,7 @@
                 }
 
                 if(this->_isSleeping == true){
-                    
+
                     #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
                         this->hardware.dim(false);  //Required because without it the display only turns back on to a dimmed display
                         this->hardware.ssd1306_command(SSD1306_DISPLAYON);
@@ -912,13 +913,13 @@
                 }
 
                 //If the display is off, exit
-                if(_isSleeping == true){
+                if(this->_isSleeping == true){
                     return;
                 }
 
                 //See if it is time to turn off
-                if(_isDimmed == true){
-                    if((unsigned long)(millis() - _timeLastAction) > SLEEP_AFTER_MS){
+                if(this->_isDimmed == true){
+                    if((unsigned long)(millis() - this->_timeLastAction) > SLEEP_AFTER_MS){
 
                         #if DEBUG > 400
                             Serial.println("[oled] (loop) Sleeping OLED");
@@ -929,7 +930,7 @@
                     return;
                 }
 
-                if((unsigned long)(millis() - _timeLastAction) > DIM_AFTER_MS){
+                if((unsigned long)(millis() - this->_timeLastAction) > DIM_AFTER_MS){
 
                     #if DEBUG > 400
                         Serial.println("[oled] (loop) Dimming OLED");
@@ -938,11 +939,11 @@
                     this->_dim();
                 }
 
-                switch(_activePage){
+                switch(this->_activePage){
 
                     case PAGE_EVENT_LOG_INTRO:
 
-                        if((unsigned long)(millis() - _timeIntroShown) > INTRO_DWELL_MS){
+                        if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
                             showPage(PAGE_EVENT_LOG);
                         } 
                         break;
@@ -950,35 +951,35 @@
 
                     case PAGE_NETWORK_INTRO:
 
-                        if((unsigned long)(millis() - _timeIntroShown) > INTRO_DWELL_MS){
+                        if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
                             showPage(PAGE_WIFI);
                         } 
                         break;
 
                     case PAGE_STATUS_INTRO:
 
-                        if((unsigned long)(millis() - _timeIntroShown) > INTRO_DWELL_MS){
+                        if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
                             showPage(PAGE_STATUS);
                         } 
                         break;
 
                     case PAGE_HARDWARE_INTRO:
 
-                        if((unsigned long)(millis() - _timeIntroShown) > INTRO_DWELL_MS){
+                        if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
                             showPage(PAGE_HARDWARE);
                         } 
                         break;
 
                     case PAGE_SOFTWARE_INTRO:
 
-                        if((unsigned long)(millis() - _timeIntroShown) > INTRO_DWELL_MS){
+                        if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
                             showPage(PAGE_SOFTWARE);
                         } 
                         break;
 
                     case PAGE_ERROR_INTRO:
                         
-                        if((unsigned long)(millis() - _timeIntroShown) > INTRO_DWELL_MS){
+                        if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
                             showPage(PAGE_ERROR);
                         } 
                         break;
@@ -1014,72 +1015,72 @@
                 switch(requestedPage){
 
                     case PAGE_EVENT_LOG:
-                        _activePage = PAGE_EVENT_LOG;
+                        this->_activePage = PAGE_EVENT_LOG;
                         _showPage_EventLog();
                         break;
 
                     case PAGE_EVENT_LOG_INTRO:
-                        _activePage = PAGE_EVENT_LOG_INTRO;
+                        this->_activePage = PAGE_EVENT_LOG_INTRO;
                         _showPage_EventLog_Intro();
                         break;
                     
                     case PAGE_WIFI:
-                        _activePage = PAGE_WIFI;
+                        this->_activePage = PAGE_WIFI;
                         _showPage_WiFi();
                         break;
 
                     case PAGE_ETHERNET:
-                        _activePage = PAGE_ETHERNET;
+                        this->_activePage = PAGE_ETHERNET;
                         _showPage_Ethernet();
                         break;
 
                     case PAGE_NETWORK_INTRO:
-                        _activePage = PAGE_NETWORK_INTRO;
+                        this->_activePage = PAGE_NETWORK_INTRO;
                         _showPage_Network_Intro();
                         break;
 
                     case PAGE_STATUS:
-                        _activePage = PAGE_STATUS;
+                        this->_activePage = PAGE_STATUS;
                         _showPage_Status();
                         break;
 
                     case PAGE_STATUS_INTRO:
-                        _activePage = PAGE_STATUS_INTRO;
+                        this->_activePage = PAGE_STATUS_INTRO;
                         _showPage_Status_Intro();
                         break;
 
                     case PAGE_HARDWARE:
-                        _activePage = PAGE_HARDWARE;
+                        this->_activePage = PAGE_HARDWARE;
                         _showPage_Hardware();
                         break;
 
                     case PAGE_HARDWARE_INTRO:
-                        _activePage = PAGE_HARDWARE_INTRO;
+                        this->_activePage = PAGE_HARDWARE_INTRO;
                         _showPage_Hardware_Intro();
                         break;
 
                     case PAGE_SOFTWARE:
-                        _activePage = PAGE_SOFTWARE;
+                        this->_activePage = PAGE_SOFTWARE;
                         _showPage_Software();
                         break;
 
                     case PAGE_SOFTWARE_INTRO:
-                        _activePage = PAGE_SOFTWARE_INTRO;
+                        this->_activePage = PAGE_SOFTWARE_INTRO;
                         _showPage_Software_Intro();
                         break;
 
                     case PAGE_ERROR:
-                        _activePage = PAGE_ERROR;
+                        this->_activePage = PAGE_ERROR;
                         _showPage_Error();
                         break;
 
                     case PAGE_ERROR_INTRO:
-                        _activePage = PAGE_ERROR_INTRO;
+                        this->_activePage = PAGE_ERROR_INTRO;
                         _showPage_Error_Intro();
                         break;
 
                     case PAGE_FACTORY_RESET:
-                        _activePage = PAGE_FACTORY_RESET;
+                        this->_activePage = PAGE_FACTORY_RESET;
                         _showPage_Factory_Reset();
                         break;
                 }
@@ -1102,7 +1103,7 @@
                 this->_extendWake();
 
                 //Proceed to the next screen
-                switch(_activePage){
+                switch(this->_activePage){
 
                     case PAGE_EVENT_LOG:
                         showPage(PAGE_NETWORK_INTRO);
