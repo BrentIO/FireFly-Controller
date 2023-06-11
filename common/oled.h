@@ -53,7 +53,7 @@
             boolean _isInitialized = 0;
             boolean _isSleeping = false;
             boolean _isDimmed = false;
-            char* _errorText = "";
+            char _errorText[CHARACTERS_PER_LINE * 2];
             int _factory_reset_value = 0;
             char events[NUMBER_OF_LINES][CHARACTERS_PER_LINE + 1];
             unsigned long _timeLastAction = 0;
@@ -986,7 +986,7 @@
               
             }
 
-            void showError(char* text){
+            void showError(const char* text){
 
                 //Log the error text
                 //logEvent(text, info);
