@@ -157,7 +157,7 @@
         #define DISPLAY_HEIGHT 32
         #define SCROLL_BAR_WIDTH 2
         #define SCROLL_BAR_HEIGHT (SCROLL_BAR_WIDTH * 2)
-        #define CHARACTERS_PER_LINE 22
+        #define CHARACTERS_PER_LINE 21
         #define NUMBER_OF_LINES 4
     #endif
     

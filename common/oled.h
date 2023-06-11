@@ -55,7 +55,7 @@
             boolean _isDimmed = false;
             char* _errorText = "";
             int _factory_reset_value = 0;
-            char events[NUMBER_OF_LINES][CHARACTERS_PER_LINE];
+            char events[NUMBER_OF_LINES][CHARACTERS_PER_LINE + 1];
             unsigned long _timeLastAction = 0;
             unsigned long _timeIntroShown = 0;
 
