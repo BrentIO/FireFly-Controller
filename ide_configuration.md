@@ -150,6 +150,8 @@ Steps:
 1. Close Visual Studio Code
 2. Merge the sub custom board into the main boards file.  Example for ESP Core version 2.0.9:
    
+    `cp ~/Library/Arduino15/packages/esp32/hardware/esp32/2.0.9/boards.txt ~/Library/Arduino15/packages/esp32/hardware/esp32/2.0.9/boards.original.txt`
+    
     `cat ./Hardware-Registration-and-Configuration/boards.txt >> ~/Library/Arduino15/packages/esp32/hardware/esp32/2.0.9/boards.txt`
 
 3. Open Visual Studio Code.  Select the board labeled `P5 Software FireFly Controller`.
