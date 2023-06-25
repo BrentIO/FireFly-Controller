@@ -18,7 +18,7 @@
 
 
     /* Hardware Types */
-    #if PRODUCT_ID == 32322211
+    #if PRODUCT_ID == FFC_32322211
 
         #define SUPPORTED_HARDWARE
        
@@ -63,7 +63,7 @@
     #endif
 
 
-    #if PRODUCT_ID == 32322304
+    #if PRODUCT_ID == FFC_32322304
 
         #define SUPPORTED_HARDWARE
        
