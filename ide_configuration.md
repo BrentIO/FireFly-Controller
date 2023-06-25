@@ -102,17 +102,18 @@ Example File Contents:
 
 ```
 {
-    "sketch": "Controller.ino",
-    "configuration": "PartitionScheme=default,FlashMode=qio,FlashFreq=80,UploadSpeed=921600,DebugLevel=none,EraseFlash=none",
-    "board": "esp32:esp32:esp32wrover",
+    "sketch": "Hardware-Registration-and-Configuration.ino",
+    "configuration": "FlashFreq=80,PartitionScheme=default,UploadSpeed=921600,DebugLevel=none,EraseFlash=none",
+    "board": "esp32:esp32:firefly_controller",
     "buildPreferences": [
         [
             "build.extra_flags",
-            "-DPRODUCT_ID=32322211 -DESP32 -DSSD1306_NO_SPLASH -I/my/path/to/project/FireFly-Controller"
+            "-DPRODUCT_ID=FFC_08062305 -DESP32 -DSSD1306_NO_SPLASH -I/Users/brent/GitHub/P5Software/FireFly-Controller"
         ]
     ],
     "port": "/dev/tty.SLAB_USBtoUART",
-    "output": "../.cache"
+    "output": "../.cache",
+    "programmer": "esptool"
 }
 ```
 ---
@@ -134,6 +135,7 @@ You must also include the parent directory of FireFly-Controller using the `-I/m
         -> ...
     -> Hardware-Registration-and-Configuration
         -> Hardware-Registration-and-Configuration.ino
+        -> boards.txt
         -> ...
     -> common
         -> hardwareDefinitions.h
@@ -141,8 +143,21 @@ You must also include the parent directory of FireFly-Controller using the `-I/m
 ```
 
 ---
+## Add Custom Board to boards.txt
+The board must be added to the boards.txt file, found in the Espressif ESP Core version-specifc folder.  The stub for the custom board is included in the Hardware-Registration-and-Configuration project.
 
-## How to include files
+Steps:
+1. Close Visual Studio Code
+2. Merge the sub custom board into the main boards file.  Example for ESP Core version 2.0.9:
+   
+    `cat ./Hardware-Registration-and-Configuration/boards.txt >> ~/Library/Arduino15/packages/esp32/hardware/esp32/2.0.9/boards.txt`
+
+3. Open Visual Studio Code.  Select the board labeled `P5 Software FireFly Controller`.
+4. For new boards only, ensure the option `Hardware-Registration-and-Configuration` is set to `Enabled`.  Subsequent flashes of that chip should be set to `Disabled`.
+5. Flash the Hardware-Registration-and-Configuration.ino project.
+
+---
+# How to include files into the project
 
 To include additional files, place them in the correct directories.  At the top of the .ino file, include the files, such as:
 
