@@ -3,7 +3,6 @@
 This guide will explain how to install and configure VSCode for use with arduino-cli.  It assumes the Arduino plug-in has already been installed in VSCode.
 
 ---
-
 ## **Installing and Configuring arduino-cli**
 
 Using arduino-cli is more flexible and reliable than the IDE.
@@ -12,11 +11,11 @@ Using arduino-cli is more flexible and reliable than the IDE.
 
 Instructions are available at https://arduino.github.io/arduino-cli/latest/.  Essentially:
 
-```
-brew update
-brew install arduino-cli
-```
+`brew update`
 
+`brew install arduino-cli`
+
+---
 ### Init the installation:
 
 `arduino-cli config init`
@@ -31,9 +30,9 @@ Add the ESP32 board manager packages:
 
 `arduino-cli config set board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`
 
-Install ESP32 core, version 2.0.6:
+Install ESP32 core, version 2.0.9:
 
-`arduino-cli core install esp32:esp32@2.0.6`
+`arduino-cli core install esp32:esp32@2.0.9`
 
 Check the libraries to ensure nothing is installed.
 
