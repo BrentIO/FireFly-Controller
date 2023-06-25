@@ -151,6 +151,25 @@ To include additional files, place them in the correct directories.  At the top 
 #include "common/hardwareDefinitions.h"
 ```
 
+# Updating Packages
+
+## Updating Arduino CLI
+
+To update, run these commands in Terminal:
+
+`brew update`
+
+`brew upgrade arduino-cli`
+
+## Updating Arduino CLI
+
+To upgrade the ESP version from 2.0.6 to 2.0.9:
+
+`arduino-cli core uninstall esp32:esp32`
+
+`arduino-cli core install esp32:esp32@2.0.9`
+
+---
 # Troubleshooting
 
 ## Upload won't work
