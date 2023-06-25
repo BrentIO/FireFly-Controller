@@ -24,6 +24,7 @@ Enable unsafe installation so that local zip files can be installed:
 
 `arduino-cli config set library.enable_unsafe_install true`
 
+---
 ### Configure boards and libraries
 
 Add the ESP32 board manager packages:
@@ -45,6 +46,7 @@ No libraries installed.
 
 If there are any installed libraries, uninstall them before proceeding.
 
+---
 ### Install the required libraries
 
 Download each library manually as a zip file.  Install each required library from disk.
@@ -70,16 +72,17 @@ Download each library manually as a zip file.  Install each required library fro
 `arduino-cli lib install --zip-path /my/downloads/directory/Adafruit_BusIO-1.14.1.zip`
 
 ---
-
 ## **Visual Studio IDE Configuration**
 
 To use Visual Studio Code to compile FireFly-Controller, several files must be modified, all of which are located in `/.vscode/`.  The folder may be hidden, but the file should be created automatically by VSCode.
 
-### c_cpp_properties.json
+---
+## c_cpp_properties.json
 
 No changes should be required for this file, as it is generated automatically.
 
-###  settings.json
+---
+##  settings.json
 
 ```
 {
@@ -90,8 +93,8 @@ No changes should be required for this file, as it is generated automatically.
     "arduino.defaultTimestampFormat": "%H:%m:%S.%L "
 }
 ```
-
-### arduino.json
+---
+## arduino.json
 
 Contents of this file control the data sent to the compiler, and *do not* affect IntelliSense.  IntelliSense is updated automatically from the compiler's output.
 
@@ -112,14 +115,14 @@ Example File Contents:
     "output": "../.cache"
 }
 ```
+---
+## build.extra_flags
 
-### **build.extra_flags**
+**`PRODUCT_ID`** This configuration indicates the hardware product ID and is required.  If it is not included, the compiler will trigger an error.  Change the `FFC_32322211` value in the example shown above to match the actual hardware product ID, with `FFC_` prefixed.  This allows for a product ID beginning with zero.
 
-This configuration indicates the hardware product ID and is required.  If it is not included, the compiler will trigger an error.  Change the `32322211` value in the example shown above to match the actual hardware product ID.
+**`ESP32`** The hardware type must also be set for the Adafruit libraries to be configured correctly.  Use `-DESP32` flag to set the hardware to ESP32.  Without it, you can expect to receive errors such as ```fatal error: util/delay.h: No such file or directory```
 
-The hardware type must also be set for the Adafruit libraries to be configured correctly.  Use `-DESP32` flag to set the hardware to ESP32.
-
-To prohibit the adafruit logo from being displayed, use `-DSSD1306_NO_SPLASH` to disable it from compiling.
+**`SSD1306_NO_SPLASH`** To prohibit the adafruit logo from being displayed, use `-DSSD1306_NO_SPLASH` to disable it from compiling.
 
 You must also include the parent directory of FireFly-Controller using the `-I/my/path/to/project/FireFly-Controller` parameter.  The folder structure should look like this:
 
