@@ -1,6 +1,8 @@
-#define VERSION "2023.04.0002"
+#define VERSION "2023.07.0002"
 
-#define DEBUG 400
+#define DEBUG 50
+
+
 
 #define NTP_SERVER_1 "pool.ntp.org"
 #define NTP_SERVER_2 "0.north-america.pool.ntp.org"
