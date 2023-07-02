@@ -9,7 +9,8 @@
  * (C) 2023, P5 Software, LLC
 */
 
-#define DEBUG 1000
+#define DEBUG 2500
+#define VERSION "2023.07.0001"
 
 #include "common/hardware.h"
 #include "common/externalEEPROM.h"
