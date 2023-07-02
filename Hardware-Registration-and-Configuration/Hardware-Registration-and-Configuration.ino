@@ -16,11 +16,13 @@
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
 #include <esp_chip_info.h> // https://github.com/espressif/arduino-esp32
 #include <WiFi.h>
-#include <WebServer.h>
+#include <AsyncTCP.h> // https://github.com/me-no-dev/AsyncTCP
+#include <ESPAsyncWebServer.h> // https://github.com/me-no-dev/ESPAsyncWebServer
+#include "AsyncJson.h"
 #include <Regexp.h> // https://github.com/nickgammon/Regexp
 
 
-WebServer server(80);
+AsyncWebServer httpServer(80);
 managerExternalEEPROM externalEEPROM;
 
 
@@ -56,158 +58,320 @@ void setup() {
     }
 
   #endif
- 
-  //Configure the HTTP server and enable CORS and cross-origin
-  server.enableCORS(true);
-  server.enableCrossOrigin(true);
 
-  server.on("/api/eeprom", HTTP_GET, handleGetEEPROM);
-  server.on("/api/eeprom", HTTP_POST, handlePostEEPROM);
-  server.on("/api/eeprom", HTTP_DELETE, handleDeleteEEPROM);
-  server.on("/api/eeprom", HTTP_OPTIONS, handleOptions);
-  server.on("/api/network", HTTP_GET, handleGetNetworkInterface_all);
-  server.on("/api/network/bluetooth", HTTP_GET, handleGetNetworkInterface);
-  server.on("/api/network/ethernet", HTTP_GET, handleGetNetworkInterface);
-  server.on("/api/network/wifi", HTTP_GET, handleGetNetworkInterface);
-  server.on("/api/network/wifi_ap", HTTP_GET, handleGetNetworkInterface);
-  server.on("/api/mcu", HTTP_GET, handleGetMCU);
-  server.onNotFound(handle404);
+  /* Note, sequence below matters. */
+  AsyncCallbackJsonWebHandler* eepromTest = new AsyncCallbackJsonWebHandler("/api/eeprom", http_handleEEPROM_POST);
 
-  server.begin();
+  httpServer.addHandler(eepromTest);
+  httpServer.on("/api/eeprom", http_handleEEPROM);
+  httpServer.on("/api/mcu", http_handleMCU);
+  httpServer.on("/api/partitions", http_handlePartitions);
+  httpServer.on("^\/api\/network\/([a-z_]+)$", http_handleNetworkInterface);
+  httpServer.on("/api/network", http_handleAllNetworkInterfaces);
+  httpServer.rewrite("/", "/index.html");
+  httpServer.onNotFound(http_notFound);
 
-  #ifdef DEBUG
-    Serial.println("HTTP server ready.");
-  #endif
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+
+  if(WiFi.getMode() == wifi_mode_t::WIFI_MODE_NULL){
+
+    #ifdef DEBUG
+     Serial.println("[main] (setup) HTTP server will not be started because WiFi it has not been initialized (WIFI_MODE_NULL)");
+    #endif
+    
+  }else{
+    httpServer.begin();
+
+    #if DEBUG > 1000
+      Serial.println("[main] (setup) HTTP server ready.");
+    #endif
+  }
+  
 }
 
 
 void loop() {
-  server.handleClient();
+void http_notFound(AsyncWebServerRequest *request) {
+    request->send(404);
+}
+
+
+void http_methodNotAllowed(AsyncWebServerRequest *request) {
+    request->send(405);
 }
 
 
 /**
- * Sends back requests for OPTIONS method requests, necessary for AJAX calls
+ * Sends a 500 response indicating an internal server or hardware failure
 */
-void handleOptions(){
-  server.send(200, F("application/json"), "");
+void http_error(AsyncWebServerRequest *request, String message){
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  StaticJsonDocument<256> doc;
+  doc["error"] = message;
+
+  serializeJson(doc, *response);
+  response->setCode(500);
+  request->send(response);
 }
+
+
+/**
+ * Sends a 400 response indicating an invalid request from the caller
+*/
+void http_badRequest(AsyncWebServerRequest *request, String message){
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  StaticJsonDocument<256> doc;
+  doc["message"] = message;
+
+  serializeJson(doc, *response);
+  response->setCode(400);
+  request->send(response);
+}
+
+
+void http_options(AsyncWebServerRequest *request) {
+  AsyncWebServerResponse *response = request->beginResponse(200);
+  request->send(response);
+};
+
+
+void http_handlePartitions(AsyncWebServerRequest *request){
+
+  if(request->method() != HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  esp_partition_iterator_t pi = esp_partition_find(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_ANY, NULL);
+
+  if (pi != NULL) {
+
+    AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+    StaticJsonDocument<768> doc;
+    JsonArray array = doc.to<JsonArray>();
+
+    do {
+      const esp_partition_t* p = esp_partition_get(pi);
+      JsonObject jsonPartition = array.createNestedObject();
+      
+      jsonPartition["type"] = p->type;
+      jsonPartition["subtype"] = p->subtype;
+      jsonPartition["address"] = p->address;
+      jsonPartition["size"] = p->size;
+      jsonPartition["label"] = p->label;
+
+    } while (pi = (esp_partition_next(pi)));
+
+    serializeJson(doc, *response);
+    request->send(response);
+    return;
+
+  }
+    http_error(request, F("esp_partition_find returned NULL"));
+}
+
 
 
 /**
  * Retrieve the main control unit hardware information
 */
-void handleGetMCU(){
+void http_handleMCU(AsyncWebServerRequest *request){
 
+  if(request->method() != HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<128> doc;
   doc["chip_model"] = ESP.getChipModel();
   doc["revision"] = (String)ESP.getChipRevision();
-  doc["flash_chip_size"] = ESP.getFlashChipSize(); 
+  doc["flash_chip_size"] = ESP.getFlashChipSize();
 
-  String output;
-  serializeJson(doc, output);
-  server.send(200, F("application/json"), output);
+  serializeJson(doc, *response);
+  request->send(response);
 }
 
 
 /**
- * Retrieve the specified network interface information based on the requested server.uri
+ * Retrieve the specified network interface information based on the requested path
 */
-void handleGetNetworkInterface(){
+void http_handleNetworkInterface(AsyncWebServerRequest *request){
 
-  #ifdef DEBUG
-    Serial.println("handleGetNetworkInterface()");
+  #if DEBUG > 2000
+    Serial.println("http_handleNetworkInterface()");
   #endif
 
+  if(request->method() != HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  esp_mac_type_t interface = ESP_MAC_IEEE802154; //Not used
+
+  if(request->pathArg(0) == "bluetooth"){
+    interface = ESP_MAC_BT;    
+  }
+
+  if(request->pathArg(0) == "ethernet"){
+    interface = ESP_MAC_ETH;
+  }
+
+  if(request->pathArg(0) == "wifi"){
+    interface = ESP_MAC_WIFI_STA;
+  }
+
+  if(request->pathArg(0) == "wifi_ap"){
+    interface = ESP_MAC_WIFI_SOFTAP;
+  }
+
+  if(interface == ESP_MAC_IEEE802154){
+    http_notFound(request);
+    return;
+  }
+
+  char macAddress[18] = {0};
+  getMacAddress(interface, macAddress);
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<96> doc;
 
-  if(server.uri() == "/api/network/bluetooth"){
-    doc["mac_address"] = getMacAddress(ESP_MAC_BT);
-    doc["interface"] = F("bluetooth");
-  }
-
-  if(server.uri() == "/api/network/ethernet"){
-    doc["mac_address"] = getMacAddress(ESP_MAC_ETH);
-    doc["interface"] = F("ethernet");
-  }
-
-  if(server.uri() == "/api/network/wifi"){
-    doc["mac_address"] = getMacAddress(ESP_MAC_WIFI_STA);
-    doc["interface"] = F("wifi");
-  }
-
-  if(server.uri() == "/api/network/wifi_ap"){
-    doc["mac_address"] = getMacAddress(ESP_MAC_WIFI_SOFTAP);
-    doc["interface"] = F("wifi_ap");
-  }
-
-  String output;
-  serializeJson(doc, output);
-  server.send(200, F("application/json"), output);
+  doc["interface"] = request->pathArg(0);
+  doc["mac_address"] = macAddress;
+  
+  serializeJson(doc, *response);
+  request->send(response);
 }
 
 
 /**
  * Retrieve all of the network interfaces
 */
-void handleGetNetworkInterface_all(){
+void http_handleAllNetworkInterfaces(AsyncWebServerRequest *request){
 
+  #if DEBUG > 2000
+    Serial.println("http_handleAllNetworkInterfaces()");
+  #endif
+
+  if(request->method() != HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<384> doc;
-
   JsonArray array = doc.to<JsonArray>();
-
   JsonObject objBT = array.createNestedObject();
   JsonObject objEth = array.createNestedObject();
   JsonObject objWifi = array.createNestedObject();
   JsonObject objAP = array.createNestedObject();
 
-  objBT["mac_address"] = getMacAddress(ESP_MAC_BT);
+  char macAddress[18] = {0};
+
+  getMacAddress(ESP_MAC_BT, macAddress);
+  objBT["mac_address"] = macAddress;
   objBT["interface"] = F("bluetooth");
   
-  objEth["mac_address"] = getMacAddress(ESP_MAC_ETH);
+  getMacAddress(ESP_MAC_ETH, macAddress);
+  objEth["mac_address"] = macAddress;
   objEth["interface"] = F("ethernet");
   
-  objWifi["mac_address"] = getMacAddress(ESP_MAC_WIFI_STA);
+  getMacAddress(ESP_MAC_WIFI_STA, macAddress);
+  objWifi["mac_address"] = macAddress;
   objWifi["interface"] = F("wifi");
 
-  objAP["mac_address"] = getMacAddress(ESP_MAC_WIFI_SOFTAP);
+  getMacAddress(ESP_MAC_WIFI_SOFTAP, macAddress);
+  objAP["mac_address"] = macAddress;
   objAP["interface"] = F("wifi_ap");
   
-  String output;
-  serializeJson(doc, output);
-  server.send(200, F("application/json"), output);
+  serializeJson(doc, *response);
+  request->send(response);
+}
+
+
+void http_handleEEPROM(AsyncWebServerRequest *request){
+
+  switch(request->method()){
+
+    case HTTP_OPTIONS:
+      http_options(request);
+      break;
+
+    case HTTP_GET:
+      http_handleEEPROM_GET(request);
+      break;
+
+    case HTTP_DELETE:
+      http_handleEEPROM_DELETE(request);
+      break;
+
+    default:
+      http_methodNotAllowed(request);
+      break;
+  }
 }
 
 
 /**
  * Retrieve the current EEPROM configuration
 */
-void handleGetEEPROM(){
+void http_handleEEPROM_GET(AsyncWebServerRequest *request){
 
-  #ifdef DEBUG
-    Serial.println("handleGetEEPROM()");
+  #if DEBUG > 2000
+    Serial.println("http_handleEEPROM_GET()");
   #endif
 
   //Ensure we can talk to the EEPROM, otherwise throw an error
   if (!externalEEPROM.enabled){
-    handle500(F("Cannot connect to external EEPROM"));
+    http_error(request, F("Cannot connect to external EEPROM"));
     return;
   }
 
   //Do a sanity check to see if the data is printable
   if(!isPrintable(externalEEPROM.data.uuid[0]) || !isPrintable(externalEEPROM.data.uuid[18]) || !isPrintable(externalEEPROM.data.uuid[35])){
-    handle404();
+    http_notFound(request);
     return;
   }
  
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<256> doc;
   doc["uuid"] = externalEEPROM.data.uuid;
   doc["product_id"] = externalEEPROM.data.product_id;
   doc["key"] = externalEEPROM.data.key;
 
-  String output;
-  serializeJson(doc, output);
-  server.send(200, F("application/json"), output);
+  serializeJson(doc, *response);
+  request->send(response);
+}
+
+
+/**
+ * Format the EEPROM so it has no data.
+ * The response is synchronous to the operation completing
+*/
+void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
+
+  #if DEBUG > 2000
+    Serial.println("handleDeleteEEPROM()");
+  #endif
+
+  //Ensure we can talk to the EEPROM, otherwise throw an error
+  if (!externalEEPROM.enabled)
+  {
+    http_error(request, F("Cannot connect to external EEPROM"));
+    return;
+  }
+
+  if(externalEEPROM.destroy() == false){
+    http_error(request, F("Error during EEPROM delete."));
+    return;
+  }
+
+  oled.setProductID(NULL);
+  oled.setUUID(NULL);
+
+  request->send(204);
 }
 
 
@@ -215,43 +379,27 @@ void handleGetEEPROM(){
  * Store the EEPROM configuration with the payload specified.
  * The response is synchronous to the operation completing
 */
-void handlePostEEPROM(){
+void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
+
+  if(request->method()!= HTTP_POST){
+    http_methodNotAllowed(request);
+    return;
+  }
 
   MatchState ms;
 
-  #ifdef DEBUG
-    Serial.println("handlePostEEPROM()");
+  #if DEBUG > 2000
+    Serial.println("http_handleEEPROM_POST()");
   #endif
-
-  //Ensure we received a body
-  if(server.hasArg("plain") == false) {
-    handle400(F("No body was sent with request"));
-    return;
-  }
-  
-  //Ensure we can talk to the EEPROM, otherwise throw an error
-  if (!externalEEPROM.enabled)
-  {
-    handle500(F("Cannot connect to external EEPROM"));
-    return;
-  }
-
-  StaticJsonDocument<256> doc;
-  DeserializationError error = deserializeJson(doc, server.arg("plain"));
-
-  if (error) {
-    handle400(error.c_str());
-    return;
-  }
 
   //Ensure required fields are passed in the JSON body
   if(!doc.containsKey("uuid")){
-    handle400(F("Field uuid is required"));
+    http_badRequest(request, F("Field uuid is required"));
     return;
   }
 
   if(strlen(doc["uuid"])!=(sizeof(externalEEPROM.data.uuid)-1)){
-    handle400(F("Field uuid is not exactly 36 characters"));
+    http_badRequest(request, F("Field uuid is not exactly 36 characters"));
     return;
   }
 
@@ -260,29 +408,29 @@ void handlePostEEPROM(){
   ms.Target(externalEEPROM.data.uuid);
 
   if(ms.MatchCount("^[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+$")!=1){ //Library does not support lengths of each section, so there is some opportunity for error
-    handle400(F("Invalid uuid, see Swagger"));
+    http_badRequest(request, F("Invalid uuid, see Swagger"));
     return;
   }
 
   if(!doc.containsKey("product_id")){
-    handle400(F("Field product_id is required"));
+    http_badRequest(request, F("Field product_id is required"));
     return;
   }
 
   if(strlen(doc["product_id"])>(sizeof(externalEEPROM.data.product_id)-1)){
-    handle400(F("Field product_id is greater than 32 characters, see Swagger"));
+    http_badRequest(request, F("Field product_id is greater than 32 characters, see Swagger"));
     return;
   }
 
   strcpy(externalEEPROM.data.product_id, doc["product_id"]);
 
   if(!doc.containsKey("key")){
-    handle400(F("Field key is required"));
+    http_badRequest(request, F("Field key is required"));
     return;
   }
 
   if(strlen(doc["key"])!=(sizeof(externalEEPROM.data.key)-1)){
-    handle400(F("Field key is not exactly 64 characters"));
+    http_badRequest(request, F("Field key is not exactly 64 characters"));
     return;
   }
 
@@ -291,77 +439,21 @@ void handlePostEEPROM(){
   ms.Target(externalEEPROM.data.key);
 
   if(ms.MatchCount("^[0-9A-Za-z]+$")!=1){
-    handle400(F("Invalid key, see Swagger"));
+    http_badRequest(request, F("Invalid key, see Swagger"));
     return;
   }
 
   //Write the deviceInfo object to the external EEPROM
   if(externalEEPROM.write() == false){
-    handle500("Error during EEPROM write.");
+    http_error(request, "Error during EEPROM write.");
     return;
   }
 
-  server.send(204);
-}
+  oled.setProductID(externalEEPROM.data.product_id);
+  oled.setUUID(externalEEPROM.data.uuid);
 
+  request->send(204);
 
-/**
- * Format the EEPROM so it has no data.
- * The response is synchronous to the operation completing
-*/
-void handleDeleteEEPROM(){
-
-  #ifdef DEBUG
-    Serial.println("handleDeleteEEPROM()");
-  #endif
-
-  //Ensure we can talk to the EEPROM, otherwise throw an error
-  if (!externalEEPROM.enabled)
-  {
-    handle500(F("Cannot connect to external EEPROM"));
-    return;
-  }
-
-  if(externalEEPROM.destroy() == false){
-    handle500("Error during EEPROM delete.");
-    return;
-  }
-
-  server.send(204);
-}
-
-
-/**
- * Sends a 404 response indicating a requested resource is not available
-*/
-void handle404(){
-  server.send(404);
-}
-
-
-/**
- * Sends a 400 response indicating the request was invalid
-*/
-void handle400(String message){
-  StaticJsonDocument<96> doc;
-  doc["message"] = message;
-
-  String output;
-  serializeJson(doc, output);
-  server.send(400, F("application/json"), output);
-}
-
-
-/**
- * Sends a 500 response indicating an internal server or hardware failure
-*/
-void handle500(String error){
-  StaticJsonDocument<96> doc;
-  doc["error"] = error;
-
-  String output;
-  serializeJson(doc, output);
-  server.send(500, F("application/json"), output);
 }
 
 

@@ -71,6 +71,10 @@ Download each library manually as a zip file.  Install each required library fro
 
 `arduino-cli lib install --zip-path /my/downloads/directory/Adafruit_BusIO-1.14.1.zip`
 
+`arduino-cli lib install --zip-path /my/downloads/directory/ESPAsyncWebServer-master.zip`
+
+`arduino-cli lib install --zip-path /my/downloads/directory/AsyncTCP-master.zip`
+
 ---
 ## **Visual Studio IDE Configuration**
 
@@ -108,7 +112,7 @@ Example File Contents:
     "buildPreferences": [
         [
             "build.extra_flags",
-            "-DPRODUCT_ID=FFC_08062305 -DESP32 -DSSD1306_NO_SPLASH -I/Users/brent/GitHub/P5Software/FireFly-Controller"
+            "-DASYNCWEBSERVER_REGEX -DPRODUCT_ID=FFC_08062305 -DESP32 -DSSD1306_NO_SPLASH -I/Users/brent/GitHub/P5Software/FireFly-Controller"
         ]
     ],
     "port": "/dev/tty.SLAB_USBtoUART",
@@ -118,6 +122,8 @@ Example File Contents:
 ```
 ---
 ## build.extra_flags
+
+**`ASYNCWEBSERVER_REGEX`** Required only for Hardware Registration and Configuration application, this allows regex paths in the URL.
 
 **`PRODUCT_ID`** This configuration indicates the hardware product ID and is required.  If it is not included, the compiler will trigger an error.  Change the `FFC_32322211` value in the example shown above to match the actual hardware product ID, with `FFC_` prefixed.  This allows for a product ID beginning with zero.
 
