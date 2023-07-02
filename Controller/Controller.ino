@@ -64,10 +64,10 @@ void setup() {
     
 
     #ifdef DEBUG
-      Serial.println("[Controller] (setup) Version: " + String(VERSION));
-      Serial.println("[Controller] (setup) Product ID: " + String(externalEEPROM.data.product_id));
-      Serial.println("[Controller] (setup) UUID: " + String(externalEEPROM.data.uuid));
-      Serial.println("[Controller] (setup) Key: " + String(externalEEPROM.data.key));
+      Serial.println("[main] (setup) Version: " + String(VERSION));
+      Serial.println("[main] (setup) Product ID: " + String(externalEEPROM.data.product_id));
+      Serial.println("[main] (setup) UUID: " + String(externalEEPROM.data.uuid));
+      Serial.println("[main] (setup) Key: " + String(externalEEPROM.data.key));
     #endif
 
     oled.setProductID(externalEEPROM.data.product_id);
@@ -92,7 +92,7 @@ void connectWiFi(){
   WiFi.begin(ssid, password);
 
   #ifdef DEBUG
-    Serial.println("[Controller] (connectWiFi) Connecting to WiFi");
+    Serial.println("[main] (connectWiFi) Connecting to WiFi");
   #endif
 
   const unsigned long time_now = millis();
@@ -102,7 +102,7 @@ void connectWiFi(){
     if((unsigned long)(millis() - time_now) >= WIFI_TIMEOUT){
 
       #ifdef DEBUG
-        Serial.println("[Controller] (connectWiFi) WiFi Timeout");
+        Serial.println("[main] (connectWiFi) WiFi Timeout");
         oled.logEvent("WiFi Timeout",managerOled::LOG_LEVEL_INFO);
         break;
 
@@ -120,7 +120,7 @@ void connectWiFi(){
     if(WiFi.status() == WL_CONNECTED){
 
       #ifdef DEBUG
-        Serial.println("[Controller] (connectWiFi) WiFi Connected");
+        Serial.println("[main] (connectWiFi) WiFi Connected");
       #endif
 
       oled.logEvent("WiFi Connected",managerOled::LOG_LEVEL_INFO);
@@ -141,7 +141,7 @@ unsigned long getTime() {
   if (!getLocalTime(&timeinfo)) {
     
     #ifdef DEBUG
-      Serial.println("[Controller] (getTime) unable to getLocalTime");
+      Serial.println("[main] (getTime) unable to getLocalTime");
     #endif
 
     return(0);
@@ -160,14 +160,14 @@ void setBootTime(){
     oled.logEvent("Unknown boot time", managerOled::logLevel::LOG_LEVEL_INFO);
 
       #ifdef DEBUG
-        Serial.println("[Controller] (setBootTime) Failed to set boot time, defaulting to 0.");
+        Serial.println("[main] (setBootTime) Failed to set boot time, defaulting to 0.");
       #endif
 
   }else{
     oled.logEvent("Boot time set", managerOled::logLevel::LOG_LEVEL_INFO);
 
     #ifdef DEBUG > 1000
-      Serial.println("[Controller] (setBootTime) Boot time set to " + String(bootTime));
+      Serial.println("[main] (setBootTime) Boot time set to " + String(bootTime));
     #endif
   }
 
@@ -187,7 +187,7 @@ void loop() {
 void temperaturePublisher(String location, float value){
 
   #ifdef DEBUG
-    Serial.println("[Controller] (temperaturePublisher) New Temperature: " + String(value) + " at " + location);
+    Serial.println("[main] (temperaturePublisher) New Temperature: " + String(value) + " at " + location);
   #endif
 
   oled.logEvent(("Temp: " + String(value) + char(0xF8) + "C").c_str(),managerOled::LOG_LEVEL_INFO);
@@ -201,7 +201,7 @@ void temperaturePublisher(String location, float value){
 void temperatureFailure(String location){
 
   #ifdef DEBUG
-    Serial.println("[Controller] (temperatureFailure) Temperature sensor at " + location + " is offline");
+    Serial.println("[main] (temperatureFailure) Temperature sensor at " + location + " is offline");
   #endif
 
   //TODO: Add MQTT and stuff
@@ -213,7 +213,7 @@ void temperatureFailure(String location){
 void inputPublisher(){
 
   #ifdef DEBUG
-    Serial.println("[Controller] (inputPublisher) An input was made");
+    Serial.println("[main] (inputPublisher) An input was made");
   #endif
 
   //TODO: Add MQTT and stuff
@@ -225,7 +225,7 @@ void inputPublisher(){
 void inputFailure(){
 
   #ifdef DEBUG
-    Serial.println("[Controller] (inputFailure) An input controller is offline");
+    Serial.println("[main] (inputFailure) An input controller is offline");
   #endif
 
   //TODO: Add MQTT and stuff
@@ -238,7 +238,7 @@ void inputFailure(){
 void outputFailure(){
 
   #ifdef DEBUG
-    Serial.println("[Controller] (outputFailure) An output controller is offline");
+    Serial.println("[main] (outputFailure) An output controller is offline");
   #endif
 
   //TODO: Add MQTT and stuff
@@ -250,7 +250,7 @@ void outputFailure(){
 void outputPublisher(){
 
   #ifdef DEBUG
-    Serial.println("[Controller] (outputPublisher) An output was changed");
+    Serial.println("[main] (outputPublisher) An output was changed");
   #endif
 
   //TODO: Add MQTT and stuff
@@ -262,7 +262,7 @@ void outputPublisher(){
 void eepromFailure(){
 
   #ifdef DEBUG
-    Serial.println("[Controller] (eepromFailure) EEPROM failure was called");
+    Serial.println("[main] (eepromFailure) EEPROM failure was called");
   #endif
 
   //TODO: Add MQTT and stuff
@@ -274,7 +274,7 @@ void eepromFailure(){
 void frontPanelButtonPress(){
 
   #ifdef DEBUG
-    Serial.println("[Controller] (frontPanelButtonPress) Front Panel button was pressed");
+    Serial.println("[main] (frontPanelButtonPress) Front Panel button was pressed");
   #endif
 
   oled.nextPage();
@@ -287,7 +287,7 @@ void frontPanelButtonPress(){
 void frontPanelButtonClosedAtBegin(){
 
   #ifdef DEBUG
-    Serial.println("[Controller] (frontPanelButtonClosedAtBeginning) Front Panel button was closed on begin()");
+    Serial.println("[main] (frontPanelButtonClosedAtBeginning) Front Panel button was closed on begin()");
   #endif
 
   int i = 10;
@@ -299,7 +299,7 @@ void frontPanelButtonClosedAtBegin(){
     if(frontPanel.getButtonState() == managerFrontPanel::inputState::STATE_OPEN){
 
       #ifdef DEBUG
-        Serial.println("[Controller] (frontPanelButtonClosedAtBeginning) Front Panel button was released before confirmation timeout.");
+        Serial.println("[main] (frontPanelButtonClosedAtBeginning) Front Panel button was released before confirmation timeout.");
       #endif
 
       return;
@@ -311,7 +311,7 @@ void frontPanelButtonClosedAtBegin(){
   }
 
   #ifdef DEBUG
-    Serial.println("[Controller] (frontPanelButtonClosedAtBeginning) Front Panel button was held to completion; EEPROM will be deleted.");
+    Serial.println("[main] (frontPanelButtonClosedAtBeginning) Front Panel button was held to completion; EEPROM will be deleted.");
   #endif
 
 
@@ -327,19 +327,19 @@ void oledFailure(managerOled::failureCode failureCode){
   switch(failureCode){
     case managerOled::failureCode::NOT_ON_BUS:
       #ifdef DEBUG
-        Serial.println("[Controller] (oledFailure) Error: OLED not found on bus");
+        Serial.println("[main] (oledFailure) Error: OLED not found on bus");
       #endif
       break;
 
     case managerOled::failureCode::UNABLE_TO_START:
       #ifdef DEBUG
-        Serial.println("[Controller] (oledFailure) Error: Unable to start OLED");
+        Serial.println("[main] (oledFailure) Error: Unable to start OLED");
       #endif
       break;
 
     default:
       #ifdef DEBUG
-        Serial.println("[Controller] (oledFailure) Error: Unknown OLED failure");
+        Serial.println("[main] (oledFailure) Error: Unknown OLED failure");
       #endif
       break;
   }
@@ -347,4 +347,4 @@ void oledFailure(managerOled::failureCode failureCode){
   //TODO: Add MQTT and stuff
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 
-};
+}
