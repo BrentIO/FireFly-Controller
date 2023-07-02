@@ -12,8 +12,11 @@
 #define DEBUG 2500
 #define VERSION "2023.07.0001"
 
+
 #include "common/hardware.h"
 #include "common/externalEEPROM.h"
+#include "common/oled.h"
+#include "common/frontPanel.h"
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
 #include <esp_chip_info.h> // https://github.com/espressif/arduino-esp32
 #include <WiFi.h>
@@ -25,6 +28,8 @@
 
 AsyncWebServer httpServer(80);
 managerExternalEEPROM externalEEPROM;
+managerOled oled;
+managerFrontPanel frontPanel;
 
 
 void setup() {
@@ -32,6 +37,14 @@ void setup() {
   #ifdef DEBUG
     Serial.begin(115200);
   #endif
+
+  Wire.begin();
+
+  oled.setCallback_failure(&oledFailure);
+  oled.begin();
+
+  frontPanel.setCallback_publisher(&frontPanelButtonPress);
+  frontPanel.begin();
 
   //Setup a soft AP with the SSID FireFly-######, where the last 6 characters are the last 6 of the Soft AP MAC address
   uint8_t baseMac[6];
@@ -46,11 +59,16 @@ void setup() {
     Serial.println("Started SoftAP " + String(baseMacChr));
   #endif
 
+ 
+  oled.setWiFiInfo(&WiFi);
 
   externalEEPROM.setCallback_failure(&eepromFailure);
   externalEEPROM.begin();
 
-  #ifdef DEBUG
+  oled.setProductID(externalEEPROM.data.product_id);
+  oled.setUUID(externalEEPROM.data.uuid);
+
+  #if DEBUG > 500
 
    if(externalEEPROM.enabled == true){
       Serial.println("uuid: " + String(externalEEPROM.data.uuid));
@@ -88,10 +106,60 @@ void setup() {
     #endif
   }
   
+  oled.logEvent("Ready to Configure", managerOled::LOG_LEVEL_INFO);
+
+  frontPanel.setStatus(managerFrontPanel::status::NORMAL);
+  oled.showPage(managerOled::PAGE_EVENT_LOG);
+
 }
 
 
 void loop() {
+  frontPanel.loop();
+  oled.loop();
+}
+
+
+/** Handles front panel button press events */
+void frontPanelButtonPress(){
+
+  #if DEBUG > 2000
+    Serial.println(F("[main] (frontPanelButtonPress) Front Panel button was pressed"));
+  #endif
+
+  oled.nextPage();
+
+}
+
+
+/** Handles failures of the OLED display */
+void oledFailure(managerOled::failureCode failureCode){
+
+  switch(failureCode){
+    case managerOled::failureCode::NOT_ON_BUS:
+      #ifdef DEBUG
+        Serial.println(F("[main] (oledFailure) Error: OLED not found on bus"));
+      #endif
+      break;
+
+    case managerOled::failureCode::UNABLE_TO_START:
+      #ifdef DEBUG
+        Serial.println(F("[main] (oledFailure) Error: Unable to start OLED"));
+      #endif
+      break;
+
+    default:
+      #ifdef DEBUG
+        Serial.println(F("[main] (oledFailure) Error: Unknown OLED failure"));
+      #endif
+      break;
+  }
+
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
+
+}
+
+
 void http_notFound(AsyncWebServerRequest *request) {
     request->send(404);
 }
@@ -473,7 +541,9 @@ String getMacAddress(esp_mac_type_t type) {
 /** Handles failures of external EEPROM */
 void eepromFailure(){
 
-  #ifdef DEBUG
+  oled.logEvent("EEPROM Failure", managerOled::LOG_LEVEL_ERROR);
+
+  #if DEBUG > 1000
     Serial.println("EEPROM failure was called");
   #endif
 
