@@ -12,9 +12,11 @@ servers:
 
 tags:
   - name: EEPROM
-    description: Operations for managing the EEPROM data
+    description: Operations for managing the external EEPROM data
   - name: Network
     description: Operations for network communications
+  - name: Partitions
+    description: Operations for the internal EEPROM partition information
   - name: MCU
     description: Operations for the main control unit
 
@@ -134,6 +136,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/mcuInfo'
 
+  /api/partitions:
+    get:
+      tags:
+       - Partitions
+      summary: Internal EEPROM partition schema
+      description: Retrieve internal EEPROM partition schema information from the MCU
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/listPartitions'
+        500:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+
+
 components:
 
   schemas:
@@ -180,6 +203,46 @@ components:
         interface:
           $ref: '#/components/schemas/networkInterfaceTypes'
 
+    partitionType:
+      type: integer
+      description: Partition Type, as defined in https://docs.espressif.com/projects/esp-idf/en/v4.2/esp32/api-reference/storage/spi_flash.html#_CPPv420esp_partition_type_t
+
+    partitionSubType:
+      type: integer
+      description: Partition SubType, as defined in https://docs.espressif.com/projects/esp-idf/en/v4.2/esp32/api-reference/storage/spi_flash.html#_CPPv423esp_partition_subtype_t
+
+    partitionAddress:
+      type: integer
+      description: Start address for the partition, in bytes
+
+    partitionSize:
+      type: integer
+      description: Size of the partition, in bytes
+
+    partitionLabel:
+      type: string
+      maxLength: 16
+      description: Arbitrary label for the partition
+
+    partition:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/partitionType'
+        subtype:
+          $ref: '#/components/schemas/partitionSubType'
+        address:
+          $ref: '#/components/schemas/partitionAddress'
+        size:
+          $ref: '#/components/schemas/partitionSize'
+        label:
+          $ref: '#/components/schemas/partitionLabel'
+
+    listPartitions:
+      type: array
+      items:
+        $ref: '#/components/schemas/partition'
+   
     eepromConfig:
       type: object
       properties:
