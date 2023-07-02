@@ -53,10 +53,16 @@ void setup() {
   char apName[18] = {0};
   sprintf(apName, "FireFly-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
 
-  #ifdef DEBUG
-    Serial.println("Started SoftAP " + String(baseMacChr));
+  #if DEBUG > 1000
+    Serial.print(F("Starting SoftAP..."));
   #endif
 
+  WiFi.softAP(apName);
+
+  #if DEBUG > 1000
+    Serial.println(F("Done."));
+    Serial.println("Started SoftAP " + WiFi.softAPSSID());
+  #endif
  
   oled.setWiFiInfo(&WiFi);
 
