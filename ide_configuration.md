@@ -198,3 +198,17 @@ To upgrade the ESP version from 2.0.6 to 2.0.9:
 ## Upload won't work
 
 If the upload function does not work, but the application compiles correctly, re-select the port on the bottom right side of the screen.
+
+---
+
+# Creating the LittleFS image
+
+The size is from the partition table -- 0x360000 = 3538944
+
+`~Library/Arduino15/packages/esp32/tools/mklittlefs/3.0.0-gnu12-dc7f933/mklittlefs -s 3538944 -c /Users/brent/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/data /Users/brent/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/littlefs.bin`
+
+# Flashing the littelfs image
+
+The location is the start location for spiffs 0xC90000
+
+`"/Users/brent/Library/Arduino15/packages/esp32/tools/esptool_py/4.5.1/esptool" --chip esp32 --port "/dev/tty.SLAB_USBtoUART" --baud 921600  --before default_reset --after hard_reset write_flash  -z --flash_mode dio --flash_freq 80m --flash_size 16MB 0xC90000 /Users/brent/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/littlefs.bin`

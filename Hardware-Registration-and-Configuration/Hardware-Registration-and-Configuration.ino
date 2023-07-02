@@ -23,6 +23,7 @@
 #include <AsyncTCP.h> // https://github.com/me-no-dev/AsyncTCP
 #include <ESPAsyncWebServer.h> // https://github.com/me-no-dev/ESPAsyncWebServer
 #include "AsyncJson.h"
+#include <LittleFS.h>
 #include <Regexp.h> // https://github.com/nickgammon/Regexp
 
 
@@ -87,6 +88,19 @@ void setup() {
   httpServer.on("/api/partitions", http_handlePartitions);
   httpServer.on("^\/api\/network\/([a-z_]+)$", http_handleNetworkInterface);
   httpServer.on("/api/network", http_handleAllNetworkInterfaces);
+
+  if (!LittleFS.begin())
+  {
+    oled.logEvent("Error loading LittleFS", managerOled::LOG_LEVEL_ERROR);
+
+    #ifdef DEBUG
+      Serial.println(F("[main] (setup) An Error has occurred while mounting LittleFS"));
+    #endif
+  }
+  else{
+    httpServer.serveStatic("/", LittleFS, "/");
+  }
+
   httpServer.rewrite("/", "/index.html");
   httpServer.onNotFound(http_notFound);
 
