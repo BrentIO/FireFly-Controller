@@ -469,7 +469,7 @@ String getMacAddress(esp_mac_type_t type) {
 }
 
 
-/** Handles failures of output controllers */
+/** Handles failures of external EEPROM */
 void eepromFailure(){
 
   #ifdef DEBUG
