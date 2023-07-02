@@ -50,11 +50,8 @@ void setup() {
   //Setup a soft AP with the SSID FireFly-######, where the last 6 characters are the last 6 of the Soft AP MAC address
   uint8_t baseMac[6];
   esp_read_mac(baseMac, ESP_MAC_WIFI_SOFTAP);
-  char baseMacChr[18] = {0};
-  sprintf(baseMacChr, "FireFly-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
- 
-  WiFi.softAP(baseMacChr);
-  IPAddress myIP = WiFi.softAPIP();
+  char apName[18] = {0};
+  sprintf(apName, "FireFly-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
 
   #ifdef DEBUG
     Serial.println("Started SoftAP " + String(baseMacChr));
@@ -543,12 +540,10 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
 /**
  * Formats the MAC address into a XX:XX:XX:XX:XX format
 */
-String getMacAddress(esp_mac_type_t type) {
+void getMacAddress(esp_mac_type_t type, char *buff) {
     uint8_t baseMac[6];
     esp_read_mac(baseMac, type);
-    char baseMacChr[18] = {0};
-    sprintf(baseMacChr, "%02X:%02X:%02X:%02X:%02X:%02X", baseMac[0], baseMac[1], baseMac[2], baseMac[3], baseMac[4], baseMac[5]);
-    return String(baseMacChr);
+    sprintf(buff, "%02X:%02X:%02X:%02X:%02X:%02X", baseMac[0], baseMac[1], baseMac[2], baseMac[3], baseMac[4], baseMac[5]);
 }
 
 
@@ -560,6 +555,5 @@ void eepromFailure(){
   #if DEBUG > 1000
     Serial.println("EEPROM failure was called");
   #endif
-
 
 }
