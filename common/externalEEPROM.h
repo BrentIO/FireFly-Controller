@@ -88,10 +88,6 @@ class managerExternalEEPROM{
 
                 return false;
             }
-
-            #ifdef DEBUG
-                Serial.println("Ready to write EEPROM");
-            #endif
             
             //Disable write protection
             digitalWrite(PIN_EEPROM_WP, LOW);
@@ -104,11 +100,6 @@ class managerExternalEEPROM{
             digitalWrite(PIN_EEPROM_WP, HIGH);
 
             if(writeResponse == 0){
-
-                #ifdef DEBUG
-                    Serial.println("EEPROM write success");
-                #endif
-
                 return true;
 
             }else{
@@ -146,10 +137,6 @@ class managerExternalEEPROM{
             digitalWrite(PIN_EEPROM_WP, LOW);
             delay(10);
 
-            #ifdef DEBUG
-                Serial.println("Ready to destroy EEPROM");
-            #endif
-
             for (uint32_t address = 0; address < SIZE_EEPROM; address += 128)
             {
                 writeResponse += this->hardware.setBlock(address, 0xff, 128);
@@ -159,10 +146,6 @@ class managerExternalEEPROM{
             digitalWrite(PIN_EEPROM_WP, HIGH);
 
             if(writeResponse == 0){
-                #ifdef DEBUG
-                    Serial.println("EEPROM destroyed success");
-                #endif
-
                 deviceType empty;
                 data = empty;
 

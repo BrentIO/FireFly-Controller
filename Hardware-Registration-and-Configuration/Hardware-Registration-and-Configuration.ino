@@ -286,10 +286,6 @@ void http_handleMCU(AsyncWebServerRequest *request){
 */
 void http_handleNetworkInterface(AsyncWebServerRequest *request){
 
-  #if DEBUG > 2000
-    Serial.println("http_handleNetworkInterface()");
-  #endif
-
   if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
     return;
@@ -336,10 +332,6 @@ void http_handleNetworkInterface(AsyncWebServerRequest *request){
  * Retrieve all of the network interfaces
 */
 void http_handleAllNetworkInterfaces(AsyncWebServerRequest *request){
-
-  #if DEBUG > 2000
-    Serial.println("http_handleAllNetworkInterfaces()");
-  #endif
 
   if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
@@ -405,10 +397,6 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
 */
 void http_handleEEPROM_GET(AsyncWebServerRequest *request){
 
-  #if DEBUG > 2000
-    Serial.println("http_handleEEPROM_GET()");
-  #endif
-
   //Ensure we can talk to the EEPROM, otherwise throw an error
   if (!externalEEPROM.enabled){
     http_error(request, F("Cannot connect to external EEPROM"));
@@ -437,10 +425,6 @@ void http_handleEEPROM_GET(AsyncWebServerRequest *request){
  * The response is synchronous to the operation completing
 */
 void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
-
-  #if DEBUG > 2000
-    Serial.println("handleDeleteEEPROM()");
-  #endif
 
   //Ensure we can talk to the EEPROM, otherwise throw an error
   if (!externalEEPROM.enabled)
@@ -473,10 +457,6 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
   }
 
   MatchState ms;
-
-  #if DEBUG > 2000
-    Serial.println("http_handleEEPROM_POST()");
-  #endif
 
   //Ensure required fields are passed in the JSON body
   if(!doc.containsKey("uuid")){
@@ -558,8 +538,5 @@ void eepromFailure(){
 
   oled.logEvent("EEPROM Failure", managerOled::LOG_LEVEL_ERROR);
 
-  #if DEBUG > 1000
-    Serial.println("EEPROM failure was called");
-  #endif
 
 }
