@@ -487,8 +487,7 @@ void http_handleEEPROM_GET(AsyncWebServerRequest *request){
     return;
   }
 
-  //Do a sanity check to see if the data is printable (new/unformatted EEPROM will not have printable data)
-  if(!isPrintable(externalEEPROM.data.uuid[0]) || !isPrintable(externalEEPROM.data.uuid[18]) || !isPrintable(externalEEPROM.data.uuid[35])){
+  if(strcmp(externalEEPROM.data.uuid, "") == 0){
     http_notFound(request);
     return;
   }

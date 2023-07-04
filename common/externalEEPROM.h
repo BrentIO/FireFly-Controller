@@ -32,6 +32,12 @@ class managerExternalEEPROM{
                 hardware.readBlock(0, (uint8_t *) &this->data, sizeof(this->data));
             #endif
 
+            //Do a sanity check to see if the data is printable (new/unformatted EEPROM will not have printable data)
+            if(!isPrintable(this->data.uuid[0]) || !isPrintable(this->data.uuid[18]) || !isPrintable(this->data.uuid[35])){
+                strcpy(this->data.uuid, "");
+                strcpy(this->data.key, "");
+                strcpy(this->data.product_id, "");
+            }
         };
 
         bool _initialized = false; /* If the class has been initialized. */
@@ -45,7 +51,7 @@ class managerExternalEEPROM{
         }
 
         bool enabled = false; /* Indicates if the device is enabled. Default false.*/
-
+        
         
         void begin(){
 
@@ -183,8 +189,9 @@ class managerExternalEEPROM{
             digitalWrite(PIN_EEPROM_WP, HIGH);
 
             if(writeResponse == 0){
-                deviceType empty;
-                data = empty;
+                strcpy(this->data.uuid, "");
+                strcpy(this->data.key, "");
+                strcpy(this->data.product_id, "");
 
                 return true;
             }
@@ -202,5 +209,4 @@ class managerExternalEEPROM{
             
             return false;
         };
-    
 };
