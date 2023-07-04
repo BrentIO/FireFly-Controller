@@ -20,7 +20,7 @@
     #if PRODUCT_HEX == 0x32322211
 
         #define SUPPORTED_HARDWARE
-       
+      
         /* Input IO Extender */
         #define COUNT_IO_EXTENDER 8 /* The number of IO extenders. */
         #define MODEL_IO_EXTENDER ENUM_MODEL_IO_EXTENDER_PCA9995 /* IO Extender Model. */
@@ -31,8 +31,7 @@
         /* Output Controller */
         #define COUNT_OUTPUT_CONTROLLER 2 /* The number of output controllers. */
         #define MODEL_OUTPUT_CONTROLLER ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
-        #define COUNT_PINS_OUTPUT_CONTROLLER 16 /* The number of pins on each output controller. */
-
+        
         /* External EEPROM */
         #define MODEL_EEPROM_EXTERNAL ENUM_MODEL_EEPROM_EXTERNAL_24LCXXX
         #define SIZE_EEPROM 256 /* Six of the external EEPROM.  NOTE: Divide the device size in Kbits by 8. */
@@ -76,7 +75,6 @@
         /* Output Controller */
         #define COUNT_OUTPUT_CONTROLLER 2 /* The number of output controllers. */
         #define MODEL_OUTPUT_CONTROLLER ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
-        #define COUNT_PINS_OUTPUT_CONTROLLER 16 /* The number of pins on each output controller. */
 
         /* External EEPROM */
         #define MODEL_EEPROM_EXTERNAL ENUM_MODEL_EEPROM_EXTERNAL_24LCXXX
@@ -120,7 +118,6 @@
         /* Output Controller */
         #define COUNT_OUTPUT_CONTROLLER 1 /* The number of output controllers. */
         #define MODEL_OUTPUT_CONTROLLER ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
-        #define COUNT_PINS_OUTPUT_CONTROLLER 16 /* The number of pins on each output controller. */
 
         /* External EEPROM */
         #define MODEL_EEPROM_EXTERNAL ENUM_MODEL_EEPROM_EXTERNAL_24LCXXX
@@ -169,6 +166,7 @@
 
         #define MAXIMUM_PWM 4095 /* Maximum value for PWM */
         #define FREQUENCY_PWM 1500 /* PWM Frequency in Hz */
+        #define COUNT_PINS_OUTPUT_CONTROLLER 16 /* The number of pins on each output controller. */
     #endif
 
 
