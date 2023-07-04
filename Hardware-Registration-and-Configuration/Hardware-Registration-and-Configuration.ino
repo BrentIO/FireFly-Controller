@@ -67,7 +67,7 @@ void setup() {
   WiFi.softAP(apName);
 
   #if DEBUG > 1000
-    Serial.println(F("Done."));
+    Serial.println(F("Done"));
     Serial.println("[main] (setup) Started SoftAP " + WiFi.softAPSSID());
   #endif
  
@@ -98,9 +98,8 @@ void setup() {
   temperatureSensors.setCallback_failure(&failureHandler_temperatureSensors);
   temperatureSensors.begin();
 
-  /* Note, sequence below matters. */
+  // *** Sequence below matters -- specific to generic ***
   AsyncCallbackJsonWebHandler* eepromTest = new AsyncCallbackJsonWebHandler("/api/eeprom", http_handleEEPROM_POST);
-
   httpServer.addHandler(eepromTest);
   httpServer.on("/api/eeprom", http_handleEEPROM);
   httpServer.on("/api/mcu", http_handleMCU);
@@ -137,7 +136,7 @@ void setup() {
     httpServer.begin();
 
     #if DEBUG > 1000
-      Serial.println(F("[main] (setup) HTTP server ready."));
+      Serial.println(F("[main] (setup) HTTP server ready"));
     #endif
   }
   
@@ -165,11 +164,16 @@ void frontPanelButtonPress(){
 }
 
 
+/**
+ * Sends a 404 response indicating the resource is not found
+*/
 void http_notFound(AsyncWebServerRequest *request) {
     request->send(404);
 }
 
-
+/**
+ * Sends a 405 response indicating the method specified is not allowed
+*/
 void http_methodNotAllowed(AsyncWebServerRequest *request) {
     request->send(405);
 }
@@ -205,12 +209,18 @@ void http_badRequest(AsyncWebServerRequest *request, String message){
 }
 
 
+/**
+ * Sends a 200 response for any OPTIONS requests
+*/
 void http_options(AsyncWebServerRequest *request) {
   AsyncWebServerResponse *response = request->beginResponse(200);
   request->send(response);
 };
 
 
+/**
+ * Handles partitions requests for the internal EEPROM
+*/
 void http_handlePartitions(AsyncWebServerRequest *request){
 
   if(request->method() != HTTP_GET){
@@ -247,6 +257,9 @@ void http_handlePartitions(AsyncWebServerRequest *request){
 }
 
 
+/**
+ * Handles the version endpoint requests
+*/
 void http_handleVersion(AsyncWebServerRequest *request){
 
   if(request->method() != HTTP_GET){
@@ -266,6 +279,9 @@ void http_handleVersion(AsyncWebServerRequest *request){
 }
 
 
+/**
+ * Handles peripheral requests for peripherals defined in hardware.h
+*/
 void http_handlePeripherals(AsyncWebServerRequest *request){
 
   if(request->method() != HTTP_GET){
@@ -327,7 +343,7 @@ void http_handlePeripherals(AsyncWebServerRequest *request){
 
 
 /**
- * Retrieve the main control unit hardware information
+ * Handles requests for the main control unit
 */
 void http_handleMCU(AsyncWebServerRequest *request){
 
@@ -348,7 +364,7 @@ void http_handleMCU(AsyncWebServerRequest *request){
 
 
 /**
- * Retrieve the specified network interface information based on the requested path
+ * Handles network interface requests for the specified interface based on the request path
 */
 void http_handleNetworkInterface(AsyncWebServerRequest *request){
 
@@ -357,7 +373,7 @@ void http_handleNetworkInterface(AsyncWebServerRequest *request){
     return;
   }
 
-  esp_mac_type_t interface = ESP_MAC_IEEE802154; //Not used
+  esp_mac_type_t interface = ESP_MAC_IEEE802154; //Used for defaulting only; not supported by chip or API
 
   if(request->pathArg(0) == "bluetooth"){
     interface = ESP_MAC_BT;    
@@ -395,7 +411,7 @@ void http_handleNetworkInterface(AsyncWebServerRequest *request){
 
 
 /**
- * Retrieve all of the network interfaces
+ * Handles network interface requests for all network interfaces
 */
 void http_handleAllNetworkInterfaces(AsyncWebServerRequest *request){
 
@@ -435,6 +451,9 @@ void http_handleAllNetworkInterfaces(AsyncWebServerRequest *request){
 }
 
 
+/**
+ * Handles all requests for the external EEPROM
+*/
 void http_handleEEPROM(AsyncWebServerRequest *request){
 
   switch(request->method()){
@@ -459,17 +478,16 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
 
 
 /**
- * Retrieve the current EEPROM configuration
+ * Handles GET requests for the external EEPROM
 */
 void http_handleEEPROM_GET(AsyncWebServerRequest *request){
 
-  //Ensure we can talk to the EEPROM, otherwise throw an error
   if (!externalEEPROM.enabled){
     http_error(request, F("Cannot connect to external EEPROM"));
     return;
   }
 
-  //Do a sanity check to see if the data is printable
+  //Do a sanity check to see if the data is printable (new/unformatted EEPROM will not have printable data)
   if(!isPrintable(externalEEPROM.data.uuid[0]) || !isPrintable(externalEEPROM.data.uuid[18]) || !isPrintable(externalEEPROM.data.uuid[35])){
     http_notFound(request);
     return;
@@ -487,12 +505,11 @@ void http_handleEEPROM_GET(AsyncWebServerRequest *request){
 
 
 /**
- * Format the EEPROM so it has no data.
+ * Handles DELETE requests for the external EEPROM, which destroys its data.
  * The response is synchronous to the operation completing
 */
 void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
 
-  //Ensure we can talk to the EEPROM, otherwise throw an error
   if (!externalEEPROM.enabled)
   {
     http_error(request, F("Cannot connect to external EEPROM"));
@@ -500,7 +517,7 @@ void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
   }
 
   if(externalEEPROM.destroy() == false){
-    http_error(request, F("Error during EEPROM delete."));
+    http_error(request, F("Error during EEPROM delete"));
     return;
   }
 
@@ -512,7 +529,7 @@ void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
 
 
 /**
- * Store the EEPROM configuration with the payload specified.
+ * Handles POST requests for the external EEPROM, which writes data to the EEPROM.
  * The response is synchronous to the operation completing
 */
 void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
@@ -524,7 +541,6 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
   MatchState ms;
 
-  //Ensure required fields are passed in the JSON body
   if(!doc.containsKey("uuid")){
     http_badRequest(request, F("Field uuid is required"));
     return;
@@ -540,7 +556,7 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
   ms.Target(externalEEPROM.data.uuid);
 
   if(ms.MatchCount("^[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+$")!=1){ //Library does not support lengths of each section, so there is some opportunity for error
-    http_badRequest(request, F("Invalid uuid, see Swagger"));
+    http_badRequest(request, F("Invalid uuid, see docs"));
     return;
   }
 
@@ -550,7 +566,7 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
   }
 
   if(strlen(doc["product_id"])>(sizeof(externalEEPROM.data.product_id)-1)){
-    http_badRequest(request, F("Field product_id is greater than 32 characters, see Swagger"));
+    http_badRequest(request, F("Field product_id is greater than 32 characters, see docs"));
     return;
   }
 
@@ -571,13 +587,12 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
   ms.Target(externalEEPROM.data.key);
 
   if(ms.MatchCount("^[0-9A-Za-z]+$")!=1){
-    http_badRequest(request, F("Invalid key, see Swagger"));
+    http_badRequest(request, F("Invalid key, see docs"));
     return;
   }
 
-  //Write the deviceInfo object to the external EEPROM
   if(externalEEPROM.write() == false){
-    http_error(request, "Error during EEPROM write.");
+    http_error(request, "Error during EEPROM write");
     return;
   }
 
@@ -590,7 +605,7 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
 
 /**
- * Formats the MAC address into a XX:XX:XX:XX:XX format
+ * Retrieves the requested interface MAC address
 */
 void getMacAddress(esp_mac_type_t type, char *buff) {
     uint8_t baseMac[6];
