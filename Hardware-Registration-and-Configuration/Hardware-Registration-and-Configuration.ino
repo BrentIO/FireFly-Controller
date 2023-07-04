@@ -515,7 +515,7 @@ void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
   }
 
   if(strcmp(externalEEPROM.data.uuid, "") == 0){
-    http_badRequest(request, F("EEPROM already deleted"));
+    http_notFound(request);
     return;
   }
 
@@ -613,7 +613,7 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
   oled.setProductID(externalEEPROM.data.product_id);
   oled.setUUID(externalEEPROM.data.uuid);
 
-  request->send(204);
+  request->send(201);
 
   oled.logEvent("Wrote EEPROM", managerOled::LOG_LEVEL_NOTIFICATION);
 }
