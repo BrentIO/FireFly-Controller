@@ -59,6 +59,20 @@ class managerOutputs{
 
             const uint8_t addressesOutputController[] = ADDRESSES_OUTPUT_CONTROLLER;
 
+            if(COUNT_OUTPUT_CONTROLLER != sizeof(addressesOutputController)/sizeof(uint8_t)){
+
+                #if DEBUG
+                    Serial.println(F("[outputs] (begin) COUNT_OUTPUT_CONTROLLER and the length of ADDRESSES_OUTPUT_CONTROLLER are mismatched in hardware.h; Disabling outputs."));
+                #endif
+
+                if(this->ptrFailureCallback){
+                    this->ptrFailureCallback();
+                }
+
+                return;
+
+            }
+
             //Setup output controllers
             for(int i = 0; i < COUNT_OUTPUT_CONTROLLER; i++){
                 this->outputControllers[i].address = addressesOutputController[i];

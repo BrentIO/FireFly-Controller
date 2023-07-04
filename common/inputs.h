@@ -235,6 +235,48 @@ class managerInputs{
             const uint8_t pinsInterruptIoExtender[] = PINS_INTERRUPT_IO_EXTENDER;
             const uint8_t addressesIoExtender[] = ADDRESSES_IO_EXTENDER;
 
+            if(COUNT_IO_EXTENDER != sizeof(pinsInterruptIoExtender)/sizeof(uint8_t)){
+
+                #if DEBUG
+                    Serial.println(F("[inputs] (begin) COUNT_IO_EXTENDER and the length of PINS_INTERRUPT_IO_EXTENDER are mismatched in hardware.h; Disabling inputs."));
+                #endif
+
+                if(this->ptrFailureCallback){
+                    this->ptrFailureCallback();
+                }
+
+                return;
+
+            }
+
+            if(COUNT_IO_EXTENDER != sizeof(addressesIoExtender)/sizeof(uint8_t)){
+
+                #if DEBUG
+                    Serial.println(F("[inputs] (begin) COUNT_IO_EXTENDER and the length of ADDRESSES_IO_EXTENDER are mismatched in hardware.h; Disabling inputs."));
+                #endif
+
+                if(this->ptrFailureCallback){
+                    this->ptrFailureCallback();
+                }
+
+                return;
+
+            }
+
+            if(COUNT_PINS_IO_EXTENDER != sizeof(portChannelPinMap)/sizeof(portChannelPinMap[0])){
+
+                #if DEBUG
+                    Serial.println(F("[inputs] (begin) COUNT_PINS_IO_EXTENDER and the length of IO_EXTENDER_CHANNELS are mismatched in hardware.h; Disabling inputs."));
+                #endif
+
+                if(this->ptrFailureCallback){
+                    this->ptrFailureCallback();
+                }
+
+                return;
+
+            }
+
             //Setup the input controllers
             for(int i = 0; i < COUNT_IO_EXTENDER; i++){
 

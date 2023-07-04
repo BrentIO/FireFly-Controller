@@ -63,6 +63,20 @@ class managerTemperatureSensors{
 
             const uint8_t addressesTemperatureSensor[] = ADDRESSES_TEMPERATURE_SENSOR;
 
+            if(COUNT_TEMPERATURE_SENSOR != sizeof(addressesTemperatureSensor)/sizeof(uint8_t)){
+
+                #if DEBUG
+                    Serial.println(F("[temperature] (begin) COUNT_TEMPERATURE_SENSOR and the length of ADDRESSES_TEMPERATURE_SENSOR are mismatched in hardware.h; Disabling temperature sensors."));
+                #endif
+
+                if(this->ptrFailureCallback){
+                    this->ptrFailureCallback(locationToString(UNKNOWN));
+                }
+
+                return;
+
+            }
+
             for(int i = 0; i < COUNT_TEMPERATURE_SENSOR; i++){
 
                 this->temperatureSensors[i].address = addressesTemperatureSensor[i];
@@ -76,6 +90,8 @@ class managerTemperatureSensors{
                         if(this->ptrFailureCallback){
                             this->ptrFailureCallback(locationToString(temperatureSensors[i].location));
                         }
+
+                        continue;
                     }
 
                     temperatureSensors[i].enabled = true;
