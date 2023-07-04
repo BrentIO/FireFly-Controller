@@ -523,6 +523,8 @@ void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
   oled.setUUID(NULL);
 
   request->send(204);
+
+  oled.logEvent("Deleted EEPROM", managerOled::LOG_LEVEL_NOTIFICATION);
 }
 
 
@@ -603,6 +605,7 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
   request->send(204);
 
+  oled.logEvent("Wrote EEPROM", managerOled::LOG_LEVEL_NOTIFICATION);
 }
 
 
