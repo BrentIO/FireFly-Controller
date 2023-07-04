@@ -17,6 +17,9 @@ class managerExternalEEPROM{
             I2C_eeprom hardware = I2C_eeprom(0); /* Reference to the hardware. */
         #endif
 
+        bool _initialized = false; /* If the class has been initialized. */
+        void (*ptrFailureCallback)(void); //TODO: Define signature
+
         void read(){
 
             //Ensure the hardware is enabled
@@ -39,9 +42,6 @@ class managerExternalEEPROM{
                 strcpy(this->data.product_id, "");
             }
         };
-
-        bool _initialized = false; /* If the class has been initialized. */
-        void (*ptrFailureCallback)(void); //TODO: Define signature
 
 
     public:
