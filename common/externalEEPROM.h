@@ -17,7 +17,7 @@ class managerExternalEEPROM{
             I2C_eeprom hardware = I2C_eeprom(0); /* Reference to the hardware. */
         #endif
 
-        void read_eeprom(){
+        void read(){
 
             //Ensure the hardware is enabled
             if(this->enabled == false){
@@ -82,7 +82,7 @@ class managerExternalEEPROM{
             this->_initialized = true;
 
             //Get the data from the EEPROM
-            this->read_eeprom();
+            this->read();
         }
 
 
