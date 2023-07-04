@@ -50,7 +50,6 @@
             WiFiClass *_wifiInfo;
             IPAddress _ethernetIp;
             pages _activePage = PAGE_EVENT_LOG;
-            boolean _isInitialized = 0;
             boolean _isSleeping = false;
             boolean _isDimmed = false;
             char _errorText[CHARACTERS_PER_LINE * 2];
