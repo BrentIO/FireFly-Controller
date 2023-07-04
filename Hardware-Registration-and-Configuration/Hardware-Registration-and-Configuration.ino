@@ -514,6 +514,11 @@ void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
     return;
   }
 
+  if(strcmp(externalEEPROM.data.uuid, "") == 0){
+    http_badRequest(request, F("EEPROM already deleted"));
+    return;
+  }
+
   if(externalEEPROM.destroy() == false){
     http_error(request, F("Error during EEPROM delete"));
     return;
@@ -536,6 +541,11 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
   if (externalEEPROM.enabled == false){
     http_error(request, F("Cannot connect to external EEPROM"));
+    return;
+  }
+
+  if(strcmp(externalEEPROM.data.uuid, "") != 0){
+    http_badRequest(request, F("EEPROM already configured"));
     return;
   }
 
