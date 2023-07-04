@@ -49,10 +49,10 @@ class managerTemperatureSensors{
         };
 
         void setCallback_publisher(void (*userDefinedCallback)(String, float)) {
-                    this->ptrPublisherCallback = userDefinedCallback; }
+                    ptrPublisherCallback = userDefinedCallback; }
 
         void setCallback_failure(void (*userDefinedCallback)(String)) {
-                    this->ptrFailureCallback = userDefinedCallback; }
+                    ptrFailureCallback = userDefinedCallback; }
         
 
         void begin(){
