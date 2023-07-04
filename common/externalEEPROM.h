@@ -109,7 +109,7 @@ class managerExternalEEPROM{
 
             if(this->_initialized != true){
                 #ifdef DEBUG
-                    Serial.println(F("[externalEEPROM] (write) External EEPROM class not initialized."));
+                    Serial.println(F("[externalEEPROM] (write) External EEPROM class not initialized"));
                 #endif
 
                 return false;
@@ -118,7 +118,7 @@ class managerExternalEEPROM{
             //Ensure the hardware is enabled
             if(this->enabled == false){
                 #ifdef DEBUG
-                    Serial.println(F("[externalEEPROM] (write) External EEPROM not enabled; write() failed."));
+                    Serial.println(F("[externalEEPROM] (write) External EEPROM not enabled; write() failed"));
                 #endif
 
                 return false;
@@ -154,12 +154,13 @@ class managerExternalEEPROM{
             }
         };
 
+
         /**Destroys (deletes) data on the external EEPROM.  On success, returns true else returns false.*/
         bool destroy(){
 
             if(this->_initialized != true){
                 #ifdef DEBUG
-                    Serial.println(F("[externalEEPROM] (destroy) External EEPROM class not initialized."));
+                    Serial.println(F("[externalEEPROM] (destroy) External EEPROM class not initialized"));
                 #endif
 
                 return false;
@@ -168,7 +169,7 @@ class managerExternalEEPROM{
             //Ensure the hardware is enabled
             if(this->enabled == false){
                 #ifdef DEBUG
-                    Serial.println(F("[externalEEPROM] (destroy) External EEPROM not enabled; destroy() failed."));
+                    Serial.println(F("[externalEEPROM] (destroy) External EEPROM not enabled; destroy() failed"));
                 #endif
 
                 return false;
