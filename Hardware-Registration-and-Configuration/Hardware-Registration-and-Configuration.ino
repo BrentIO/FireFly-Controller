@@ -52,6 +52,7 @@ void setup() {
 
   frontPanel.setCallback_publisher(&frontPanelButtonPress);
   frontPanel.begin();
+  frontPanel.setStatus(managerFrontPanel::status::NORMAL);
 
   //Setup a soft AP with the SSID FireFly-######, where the last 6 characters are the last 6 of the Soft AP MAC address
   uint8_t baseMac[6];
@@ -141,8 +142,6 @@ void setup() {
   }
   
   oled.logEvent("Ready to Configure", managerOled::LOG_LEVEL_INFO);
-
-  frontPanel.setStatus(managerFrontPanel::status::NORMAL);
   oled.showPage(managerOled::PAGE_EVENT_LOG);
 
 }
