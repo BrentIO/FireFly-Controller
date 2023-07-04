@@ -113,8 +113,8 @@ class managerFrontPanel{
             if((millis() - timePreviousChange < DEBOUNCE_DELAY) && currentState != type){
                            
                 #ifdef DEBUG
-                    #if DEBUG > 50
-                        Serial.println("(frontPanel.h->loop) Front Panel Button: DEBOUNCE_DELAY (" + String(DEBOUNCE_DELAY) + ") not satisfied. Time Previous Change: " + String(timePreviousChange) + " Current Time: " + String(millis()) + " Difference: " + String(millis() - timePreviousChange) +  " Current State: " + String(currentState) + " State: " + String(state));
+                    #if DEBUG > 200
+                        Serial.println("[frontPanel] (loop) Front Panel Button: DEBOUNCE_DELAY (" + String(DEBOUNCE_DELAY) + ") not satisfied. Time Previous Change: " + String(timePreviousChange) + " Current Time: " + String(millis()) + " Difference: " + String(millis() - timePreviousChange) +  " Current State: " + String(currentState) + " State: " + String(state));
                     #endif
                 #endif
 
@@ -127,8 +127,8 @@ class managerFrontPanel{
             if(currentState == inputState::STATE_CLOSED){
 
                 #ifdef DEBUG
-                    #if DEBUG > 50
-                        Serial.println("(frontPanel.h->loop) Front Panel Button Type: " + String(type) + " New State: " + String(currentState) + " (Abnormal)");
+                    #if DEBUG > 500
+                        Serial.println("[frontPanel] (loop) Front Panel Button Type: " + String(type) + " New State: " + String(currentState) + " (Abnormal)");
                     #endif
                 #endif
 
@@ -148,8 +148,8 @@ class managerFrontPanel{
             if(currentState == inputState::STATE_OPEN){
         
                 #ifdef DEBUG
-                    #if DEBUG > 50
-                        Serial.println("(frontPanel.h->loop) Front Panel Button Type: " + String(type) + " New State: " + String(currentState) + " (Normal)");
+                    #if DEBUG > 500
+                        Serial.println("[frontPanel] (loop)  Front Panel Button Type: " + String(type) + " New State: " + String(currentState) + " (Normal)");
                     #endif
                 #endif
 

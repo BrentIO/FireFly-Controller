@@ -22,7 +22,7 @@ class managerExternalEEPROM{
             //Ensure the hardware is enabled
             if(this->enabled == false){
                 #ifdef DEBUG
-                    Serial.println("External EEPROM not enabled; read_eeprom() failed.");
+                    Serial.println(F("[externalEEPROM] (read_eeprom) External EEPROM not enabled; read_eeprom() failed."));
                 #endif
 
                 return;
@@ -57,7 +57,7 @@ class managerExternalEEPROM{
                 //Ensure the hardware is online
                 if(this->hardware.isConnected() == false){
                     #ifdef DEBUG
-                        Serial.println("External EEPROM not connected");
+                        Serial.println(F("[externalEEPROM] (begin) External EEPROM not connected"));
                     #endif
 
                     this->enabled = false;
@@ -83,7 +83,7 @@ class managerExternalEEPROM{
             //Ensure the hardware is enabled
             if(this->enabled == false){
                 #ifdef DEBUG
-                    Serial.println("External EEPROM not enabled; write() failed.");
+                    Serial.println(F("[externalEEPROM] (write) External EEPROM not enabled; write() failed."));
                 #endif
 
                 return false;
@@ -114,7 +114,7 @@ class managerExternalEEPROM{
             }else{
 
                 #ifdef DEBUG
-                    Serial.println("EEPROM write failed.  writeResponse returned was " + String(writeResponse));
+                    Serial.println("[externalEEPROM] (write) EEPROM write failed.  writeResponse returned was " + String(writeResponse));
                 #endif
 
                 //Disable the hardware
@@ -134,7 +134,7 @@ class managerExternalEEPROM{
             //Ensure the hardware is enabled
             if(this->enabled == false){
                 #ifdef DEBUG
-                    Serial.println("External EEPROM not enabled; destroy() failed.");
+                    Serial.println(F("[externalEEPROM] (destroy) External EEPROM not enabled; destroy() failed."));
                 #endif
 
                 return false;

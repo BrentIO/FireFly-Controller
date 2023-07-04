@@ -71,7 +71,7 @@ class managerInputs{
     void readInputPins(ioExtender *inputController, boolean ignoreDebounceDelay){
 
         #ifdef DEBUG
-            #if DEBUG > 50
+            #if DEBUG > 500
                 if(ignoreDebounceDelay == true){
                     Serial.println("[inputs] (readInputPins) IO Extender: 0x" + String(inputController->address, HEX) + " Ignoring debounce delay.");
                 }
@@ -117,7 +117,7 @@ class managerInputs{
                 if(ignoreDebounceDelay == false){
                     
                     #ifdef DEBUG
-                        #if DEBUG > 50
+                        #if DEBUG > 500
                             Serial.println("[inputs] (readInputPins) IO Extender: 0x" + String(inputController->address, HEX) + " Pin: " + String(i) + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + " DEBOUNCE_DELAY (" + String(DEBOUNCE_DELAY) + ") not satisfied. Time Previous Change: " + String(inputController->inputs[i].timePreviousChange) + " Current Time: " + String(millis()) + " Difference: " + String(millis() - inputController->inputs[i].timePreviousChange));
                         #endif
                     #endif
@@ -137,7 +137,7 @@ class managerInputs{
                         inputController->inputs[i].timePreviousChange = millis();
 
                         #ifdef DEBUG
-                            #if DEBUG > 50
+                            #if DEBUG > 500
                                 Serial.println("[inputs] (readInputPins) IO Extender: 0x" + String(inputController->address, HEX) + " Pin: " + String(i) + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + " Type: " + String(inputController->inputs[i].type) + " New State: " + String(currentState) + " (Abnormal)");
                             #endif
                         #endif
@@ -155,7 +155,7 @@ class managerInputs{
                         inputController->inputs[i].timePreviousChange = 0;
 
                         #ifdef DEBUG
-                            #if DEBUG > 50
+                            #if DEBUG > 500
                                 Serial.println("[inputs] (readInputPins) IO Extender: 0x" + String(inputController->address, HEX) + " Pin: " + String(i) + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + " Type: " + String(inputController->inputs[i].type) + " New State: " + String(currentState) + " (Normal)");
                             #endif
                         #endif
@@ -172,7 +172,7 @@ class managerInputs{
                         inputController->inputs[i].timePreviousChange = millis();
                         
                         #ifdef DEBUG
-                            #if DEBUG > 50
+                            #if DEBUG > 500
                                 Serial.println("[inputs] (readInputPins) IO Extender: " + String(inputController->address, HEX) + " Pin: " + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + String(i) + " Type: " + String(inputController->inputs[i].type) + " New State: " + String(currentState) + " (Abnormal)");
                             #endif
                         #endif
@@ -190,7 +190,7 @@ class managerInputs{
                         inputController->inputs[i].timePreviousChange = 0;
 
                         #ifdef DEBUG
-                            #if DEBUG > 50
+                            #if DEBUG > 500
                                 Serial.println("[inputs] (readInputPins) IO Extender: " + String(inputController->address, HEX) + " Pin: " + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + String(i) + " Type: " + String(inputController->inputs[i].type) + " New State: " + String(currentState) + " (Normal)");
                             #endif
                         #endif

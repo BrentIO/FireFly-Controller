@@ -139,8 +139,8 @@
                     return;
                 }
 
-                #if DEBUG > 400
-                    Serial.println("[oled] (_wake) Woke up");
+                #if DEBUG > 4000
+                    Serial.println(F("[oled] (_wake) Woke up"));
                 #endif
 
                 if(this->_isDimmed == true){
@@ -173,8 +173,8 @@
                     return;
                 }
 
-                #if DEBUG > 400
-                    Serial.println("[oled] (_extendWake) Extending Wake");
+                #if DEBUG > 4000
+                    Serial.println(F("[oled] (_extendWake) Extending Wake"));
                 #endif
 
                 _timeLastAction = millis();
@@ -864,7 +864,7 @@
 
                 if(this->_wifiInfo->getMode() == wifi_mode_t::WIFI_MODE_NULL){
                     #ifdef DEBUG
-                        Serial.println("[oled] (setWiFiInfo) Attempted to set WiFi it has not been initialized (WIFI_MODE_NULL)");
+                        Serial.println(F("[oled] (setWiFiInfo) Attempted to set WiFi it has not been initialized (WIFI_MODE_NULL)"));
                     #endif
                     return;
                 }
@@ -963,8 +963,8 @@
                 if(this->_isDimmed == true){
                     if((unsigned long)(millis() - this->_timeLastAction) > SLEEP_AFTER_MS){
 
-                        #if DEBUG > 400
-                            Serial.println("[oled] (loop) Sleeping OLED");
+                        #if DEBUG > 4000
+                            Serial.println(F("[oled] (loop) Sleeping OLED"));
                         #endif
 
                         this->_sleep();
@@ -974,8 +974,8 @@
 
                 if((unsigned long)(millis() - this->_timeLastAction) > DIM_AFTER_MS){
 
-                    #if DEBUG > 400
-                        Serial.println("[oled] (loop) Dimming OLED");
+                    #if DEBUG > 4000
+                        Serial.println(F("[oled] (loop) Dimming OLED"));
                     #endif
 
                     this->_dim();

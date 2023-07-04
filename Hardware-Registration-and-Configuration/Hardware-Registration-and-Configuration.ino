@@ -54,14 +54,14 @@ void setup() {
   sprintf(apName, "FireFly-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
 
   #if DEBUG > 1000
-    Serial.print(F("Starting SoftAP..."));
+    Serial.print(F("[main] (setup) Starting SoftAP..."));
   #endif
 
   WiFi.softAP(apName);
 
   #if DEBUG > 1000
     Serial.println(F("Done."));
-    Serial.println("Started SoftAP " + WiFi.softAPSSID());
+    Serial.println("[main] (setup) Started SoftAP " + WiFi.softAPSSID());
   #endif
  
   oled.setWiFiInfo(&WiFi);
@@ -112,14 +112,14 @@ void setup() {
   if(WiFi.getMode() == wifi_mode_t::WIFI_MODE_NULL){
 
     #ifdef DEBUG
-     Serial.println("[main] (setup) HTTP server will not be started because WiFi it has not been initialized (WIFI_MODE_NULL)");
+     Serial.println(F("[main] (setup) HTTP server will not be started because WiFi it has not been initialized (WIFI_MODE_NULL)"));
     #endif
     
   }else{
     httpServer.begin();
 
     #if DEBUG > 1000
-      Serial.println("[main] (setup) HTTP server ready.");
+      Serial.println(F("[main] (setup) HTTP server ready."));
     #endif
   }
   
