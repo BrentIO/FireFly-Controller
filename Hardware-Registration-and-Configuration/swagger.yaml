@@ -17,6 +17,8 @@ tags:
     description: Operations for network communications
   - name: Partitions
     description: Operations for the internal EEPROM partition information
+  - name: Peripherals
+    description: Operations for the on-board peripherals
   - name: MCU
     description: Operations for the main control unit
 
@@ -155,6 +157,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/error_message'
+  /api/peripherals:
+    get:
+      tags:
+       - Peripherals
+      summary: On-board peripheral information
+      description: Retrieve all peripherals that were defined for the hardware type in firmware
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/listPeripherals'
 
 
 components:
@@ -242,6 +257,42 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/partition'
+
+    peripheralAddress:
+      type: string
+      maxLength: 5
+      format: hexadecimal
+      description: Address of the peripheral
+      example: "0x20"
+
+    peripheralType:
+      type: string
+      description: Type of peripheral
+      enum:
+        - INPUT
+        - OUTPUT
+        - TEMPERATURE
+        - OLED
+        - EEPROM
+
+    peripheralOnline:
+      type: boolean
+      description: If the peripheral was found to be online
+
+    peripheral:
+      type: object
+      properties:
+        address:
+          $ref: '#/components/schemas/peripheralAddress'
+        type:
+          $ref: '#/components/schemas/peripheralType'
+        online:
+          $ref: '#/components/schemas/peripheralOnline'
+
+    listPeripherals:
+      type: array
+      items:
+        $ref: '#/components/schemas/peripheral'
    
     eepromConfig:
       type: object
