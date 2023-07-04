@@ -47,7 +47,7 @@ void setup() {
 
   Wire.begin();
 
-  oled.setCallback_failure(&oledFailure);
+  oled.setCallback_failure(&failureHandler_oled);
   oled.begin();
 
   frontPanel.setCallback_publisher(&frontPanelButtonPress);
@@ -73,7 +73,7 @@ void setup() {
  
   oled.setWiFiInfo(&WiFi);
 
-  externalEEPROM.setCallback_failure(&eepromFailure);
+  externalEEPROM.setCallback_failure(&failureHandler_eeprom);
   externalEEPROM.begin();
 
   oled.setProductID(externalEEPROM.data.product_id);
@@ -89,13 +89,13 @@ void setup() {
 
   #endif
 
-  inputs.setCallback_failure(&inputFailure);
+  inputs.setCallback_failure(&failureHandler_inputs);
   inputs.begin();
 
-  outputs.setCallback_failure(&outputFailure);
+  outputs.setCallback_failure(&failureHandler_outputs);
   outputs.begin();
 
-  temperatureSensors.setCallback_failure(&temperatureFailure);
+  temperatureSensors.setCallback_failure(&failureHandler_temperatureSensors);
   temperatureSensors.begin();
 
   /* Note, sequence below matters. */
@@ -161,34 +161,6 @@ void frontPanelButtonPress(){
   #endif
 
   oled.nextPage();
-
-}
-
-
-/** Handles failures of the OLED display */
-void oledFailure(managerOled::failureCode failureCode){
-
-  switch(failureCode){
-    case managerOled::failureCode::NOT_ON_BUS:
-      #ifdef DEBUG
-        Serial.println(F("[main] (oledFailure) Error: OLED not found on bus"));
-      #endif
-      break;
-
-    case managerOled::failureCode::UNABLE_TO_START:
-      #ifdef DEBUG
-        Serial.println(F("[main] (oledFailure) Error: Unable to start OLED"));
-      #endif
-      break;
-
-    default:
-      #ifdef DEBUG
-        Serial.println(F("[main] (oledFailure) Error: Unknown OLED failure"));
-      #endif
-      break;
-  }
-
-  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 
 }
 
@@ -627,29 +599,70 @@ void getMacAddress(esp_mac_type_t type, char *buff) {
 }
 
 
-/** Handles failures of external EEPROM */
-void eepromFailure(){
+/** 
+ * Callback function which handles failures of the OLED 
+*/
+void failureHandler_oled(managerOled::failureCode failureCode){
+
+  switch(failureCode){
+    case managerOled::failureCode::NOT_ON_BUS:
+      #ifdef DEBUG
+        Serial.println(F("[main] (failureHandler_oled) Error: OLED not found on bus"));
+      #endif
+      break;
+
+    case managerOled::failureCode::UNABLE_TO_START:
+      #ifdef DEBUG
+        Serial.println(F("[main] (failureHandler_oled) Error: Unable to start OLED"));
+      #endif
+      break;
+
+    default:
+      #ifdef DEBUG
+        Serial.println(F("[main] (failureHandler_oled) Error: Unknown OLED failure"));
+      #endif
+      break;
+  }
+
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
+
+}
+
+
+/** 
+ * Callback function which handles failures of the external EERPOM 
+*/
+void failureHandler_eeprom(){
 
   oled.logEvent("EEPROM Failure", managerOled::LOG_LEVEL_ERROR);
 
 }
 
 
-void inputFailure(){
+/** 
+ * Callback function which handles failures of any input 
+*/
+void failureHandler_inputs(){
 
   oled.logEvent("Input Failure", managerOled::LOG_LEVEL_ERROR);
  
 }
 
 
-void outputFailure(){
+/** 
+ * Callback function which handles failures of any output 
+*/
+void failureHandler_outputs(){
 
   oled.logEvent("Output Failure", managerOled::LOG_LEVEL_ERROR);
   
 }
 
 
-void temperatureFailure(String message){
+/** 
+ * Callback function which handles failures of any temperature sensor 
+*/
+void failureHandler_temperatureSensors(String message){
 
   oled.logEvent("Temperature Failure", managerOled::LOG_LEVEL_ERROR);
   
