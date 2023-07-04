@@ -305,7 +305,7 @@ void http_handlePeripherals(AsyncWebServerRequest *request){
     JsonObject inputObj = array.createNestedObject();
     sprintf(address, "0x%02X", inputHealth.inputControllers[i].address);
     inputObj["address"] = address;
-    inputObj["type"] = "Input " + String(i);
+    inputObj["type"] = "INPUT";
     inputObj["online"] = inputHealth.inputControllers[i].enabled;
   }
 
@@ -313,7 +313,7 @@ void http_handlePeripherals(AsyncWebServerRequest *request){
     JsonObject outputObj = array.createNestedObject();
     sprintf(address, "0x%02X", outputHealth.outputControllers[i].address);
     outputObj["address"] = address;
-    outputObj["type"] = "Output " + String(i);
+    outputObj["type"] = "OUTPUT";
     outputObj["online"] = outputHealth.outputControllers[i].enabled;
   }
 
@@ -321,7 +321,7 @@ void http_handlePeripherals(AsyncWebServerRequest *request){
     JsonObject tempObj = array.createNestedObject();
     sprintf(address, "0x%02X", temperatureHealth.sensor[i].address);
     tempObj["address"] = address;
-    tempObj["type"] = "Temperature " + String(i);
+    tempObj["type"] = "TEMPERATURE";
     tempObj["online"] = temperatureHealth.sensor[i].enabled;
   }
 
