@@ -230,7 +230,7 @@ void http_handlePartitions(AsyncWebServerRequest *request){
 
   esp_partition_iterator_t pi = esp_partition_find(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_ANY, NULL);
 
-  if (pi != NULL) {
+  if (pi == NULL) {
     http_error(request, F("esp_partition_find returned NULL"));
     return;
   }
