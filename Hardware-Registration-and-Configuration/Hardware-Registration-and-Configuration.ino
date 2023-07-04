@@ -105,6 +105,7 @@ void setup() {
   httpServer.on("/api/mcu", http_handleMCU);
   httpServer.on("/api/partitions", http_handlePartitions);
   httpServer.on("/api/peripherals", http_handlePeripherals);
+  httpServer.on("/api/version", http_handleVersion);
   httpServer.on("^\/api\/network\/([a-z_]+)$", http_handleNetworkInterface);
   httpServer.on("/api/network", http_handleAllNetworkInterfaces);
 
@@ -272,6 +273,25 @@ void http_handlePartitions(AsyncWebServerRequest *request){
 
   }
     http_error(request, F("esp_partition_find returned NULL"));
+}
+
+
+void http_handleVersion(AsyncWebServerRequest *request){
+
+  if(request->method() != HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  StaticJsonDocument<96> doc;
+  doc["application"] = VERSION;
+  char product_hex[16] = {0};
+  sprintf(product_hex, "0x%02X", PRODUCT_HEX);
+  doc["product_hex"] = product_hex;
+
+  serializeJson(doc, *response);
+  request->send(response);
 }
 
 
