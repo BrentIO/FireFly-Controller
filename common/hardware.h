@@ -16,9 +16,8 @@
     #define ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075 0 /* PCT2075 */
     #define ENUM_MODEL_OLED_SSD1306_128_32 0 /* SSD1306 128x32px */
 
-
     /* Hardware Types */
-    #if PRODUCT_ID == FFC_32322211
+    #if PRODUCT_HEX == 0x32322211
 
         #define SUPPORTED_HARDWARE
        
@@ -63,7 +62,7 @@
     #endif
 
 
-    #if PRODUCT_ID == FFC_32322304
+    #if PRODUCT_HEX == 0x32322304
 
         #define SUPPORTED_HARDWARE
        
@@ -107,7 +106,7 @@
 
     #endif
 
-    #if PRODUCT_ID == FFC_08062305
+    #if PRODUCT_HEX == 0x08062305
 
         #define SUPPORTED_HARDWARE
        
@@ -154,7 +153,7 @@
 
     #ifndef SUPPORTED_HARDWARE
 
-        #error Build failed, Unknown PRODUCT_ID. Ensure it was set in ./.vscode/arduino.json {"buildPreferences":[["build.extra_flags","-DPRODUCT_ID=000000000"]]}
+        #error Build failed, Unknown PRODUCT_HEX. Ensure it was set in ./.vscode/arduino.json {"buildPreferences":[["build.extra_flags","-DPRODUCT_HEX=0x000000000"]]}
 
     #endif
 
