@@ -482,7 +482,7 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
 */
 void http_handleEEPROM_GET(AsyncWebServerRequest *request){
 
-  if (!externalEEPROM.enabled){
+  if(externalEEPROM.enabled == false){
     http_error(request, F("Cannot connect to external EEPROM"));
     return;
   }
@@ -509,8 +509,7 @@ void http_handleEEPROM_GET(AsyncWebServerRequest *request){
 */
 void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
 
-  if (!externalEEPROM.enabled)
-  {
+  if (externalEEPROM.enabled == false){
     http_error(request, F("Cannot connect to external EEPROM"));
     return;
   }
@@ -532,6 +531,11 @@ void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
  * The response is synchronous to the operation completing
 */
 void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
+
+  if (externalEEPROM.enabled == false){
+    http_error(request, F("Cannot connect to external EEPROM"));
+    return;
+  }
 
   MatchState ms;
 
