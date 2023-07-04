@@ -111,7 +111,7 @@ void setup() {
 
   if (!LittleFS.begin())
   {
-    oled.logEvent("Error loading LittleFS", managerOled::LOG_LEVEL_ERROR);
+    oled.logEvent("LittleFS Mount Fail", managerOled::LOG_LEVEL_ERROR);
 
     #ifdef DEBUG
       Serial.println(F("[main] (setup) An Error has occurred while mounting LittleFS"));
