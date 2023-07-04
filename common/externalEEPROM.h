@@ -34,7 +34,7 @@ class managerExternalEEPROM{
 
         };
 
-
+        bool _initialized = false; /* If the class has been initialized. */
         void (*ptrFailureCallback)(void); //TODO: Define signature
 
 
@@ -44,11 +44,14 @@ class managerExternalEEPROM{
             this->ptrFailureCallback = userDefinedCallback;
         }
 
-
-        bool enabled = true; /* Indicates if the device is enabled. Default true.*/
+        bool enabled = false; /* Indicates if the device is enabled. Default false.*/
 
         
         void begin(){
+
+            if(this->_initialized == true){
+                return;
+            }
 
             #if MODEL_EEPROM_EXTERNAL == ENUM_MODEL_EEPROM_EXTERNAL_24LCXXX
                 this->hardware = I2C_eeprom(ADDRESS_EEPROM,SIZE_EEPROM);
@@ -56,6 +59,7 @@ class managerExternalEEPROM{
 
                 //Ensure the hardware is online
                 if(this->hardware.isConnected() == false){
+
                     #ifdef DEBUG
                         Serial.println(F("[externalEEPROM] (begin) External EEPROM not connected"));
                     #endif
@@ -69,16 +73,41 @@ class managerExternalEEPROM{
                     return;
                 }
 
+                this->enabled = true;
+
                 pinMode(PIN_EEPROM_WP, OUTPUT);
 
             #endif
+
+            this->_initialized = true;
 
             //Get the data from the EEPROM
             this->read_eeprom();
         }
 
+
+        /** Returns the External EEPROM's bus status */
+        structHealth health(){
+
+            structHealth returnValue;
+
+            returnValue.address = ADDRESS_EEPROM;
+            returnValue.enabled = this->enabled;
+
+            return returnValue;
+        }
+
+
         /**Writes data to the external EEPROM.  On success, returns true else returns false.*/
         bool write(){
+
+            if(this->_initialized != true){
+                #ifdef DEBUG
+                    Serial.println(F("[externalEEPROM] (write) External EEPROM class not initialized."));
+                #endif
+
+                return false;
+            }
 
             //Ensure the hardware is enabled
             if(this->enabled == false){
@@ -121,6 +150,14 @@ class managerExternalEEPROM{
 
         /**Destroys (deletes) data on the external EEPROM.  On success, returns true else returns false.*/
         bool destroy(){
+
+            if(this->_initialized != true){
+                #ifdef DEBUG
+                    Serial.println(F("[externalEEPROM] (destroy) External EEPROM class not initialized."));
+                #endif
+
+                return false;
+            }
 
             //Ensure the hardware is enabled
             if(this->enabled == false){

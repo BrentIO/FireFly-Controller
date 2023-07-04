@@ -17,10 +17,11 @@ class managerTemperatureSensors{
         float previousRead = 0; /* Previous read temperature. Default 0. */
         unsigned long timePreviousRead = 0; /* Time (millis) when the sensor was last read. Default 0.*/
         temperatureSensorLocation location;
-        bool enabled = true; /* Indicates if the sensor is enabled. Default true.*/
+        bool enabled = false; /* Indicates if the sensor is enabled. Default false.*/
     };
 
     temperatureSensor temperatureSensors[COUNT_TEMPERATURE_SENSOR];
+    bool _initialized = false; /* If the class has been initialized. */
 
     /** Convert a temperatureSensorLocation to string */
     String locationToString(temperatureSensorLocation value){
@@ -42,6 +43,11 @@ class managerTemperatureSensors{
 
     public:
 
+        struct healthResult{
+            uint8_t count = 0;
+            structHealth sensor[COUNT_TEMPERATURE_SENSOR];
+        };
+
         void setCallback_publisher(void (*userDefinedCallback)(String, float)) {
                     this->ptrPublisherCallback = userDefinedCallback; }
 
@@ -50,6 +56,10 @@ class managerTemperatureSensors{
         
 
         void begin(){
+            
+            if(this->_initialized == true){
+                return;
+            }
 
             const uint8_t addressesTemperatureSensor[] = ADDRESSES_TEMPERATURE_SENSOR;
 
@@ -68,6 +78,8 @@ class managerTemperatureSensors{
                         }
                     }
 
+                    temperatureSensors[i].enabled = true;
+
                 #endif
 
                 #if PRODUCT_ID == 32322211
@@ -83,10 +95,36 @@ class managerTemperatureSensors{
                 
                 #endif
             }
+
+            this->_initialized = true;
         };
 
 
+        /** Returns the value of each temperature sensor's bus status */
+        healthResult health(){
+
+            healthResult returnValue;
+
+            if(this->_initialized != true){
+                return returnValue;
+            }
+
+            for(int i = 0; i < COUNT_TEMPERATURE_SENSOR; i++){
+                returnValue.sensor[i].address = this->temperatureSensors[i].address;
+                returnValue.sensor[i].enabled = this->temperatureSensors[i].enabled;
+            }
+
+            returnValue.count = COUNT_TEMPERATURE_SENSOR;
+
+            return returnValue;
+        }
+
+
         void loop(){
+
+            if(this->_initialized != true){
+                return;
+            }
 
             //Loop through each temperature sensor on the board
             for(int i = 0; i < COUNT_TEMPERATURE_SENSOR; i++){
@@ -127,7 +165,5 @@ class managerTemperatureSensors{
                     }      
                 }
             }
-
         };
-
 };

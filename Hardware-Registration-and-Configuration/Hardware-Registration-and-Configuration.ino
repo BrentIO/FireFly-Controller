@@ -17,6 +17,9 @@
 #include "common/externalEEPROM.h"
 #include "common/oled.h"
 #include "common/frontPanel.h"
+#include "common/inputs.h"
+#include "common/temperature.h"
+#include "common/outputs.h"
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
 #include <esp_chip_info.h> // https://github.com/espressif/arduino-esp32
 #include <WiFi.h>
@@ -31,6 +34,9 @@ AsyncWebServer httpServer(80);
 managerExternalEEPROM externalEEPROM;
 managerOled oled;
 managerFrontPanel frontPanel;
+managerInputs inputs;
+managerOutputs outputs;
+managerTemperatureSensors temperatureSensors;
 
 
 void setup() {
@@ -82,6 +88,15 @@ void setup() {
 
   #endif
 
+  inputs.setCallback_failure(&inputFailure);
+  inputs.begin();
+
+  outputs.setCallback_failure(&outputFailure);
+  outputs.begin();
+
+  temperatureSensors.setCallback_failure(&temperatureFailure);
+  temperatureSensors.begin();
+
   /* Note, sequence below matters. */
   AsyncCallbackJsonWebHandler* eepromTest = new AsyncCallbackJsonWebHandler("/api/eeprom", http_handleEEPROM_POST);
 
@@ -89,6 +104,7 @@ void setup() {
   httpServer.on("/api/eeprom", http_handleEEPROM);
   httpServer.on("/api/mcu", http_handleMCU);
   httpServer.on("/api/partitions", http_handlePartitions);
+  httpServer.on("/api/peripherals", http_handlePeripherals);
   httpServer.on("^\/api\/network\/([a-z_]+)$", http_handleNetworkInterface);
   httpServer.on("/api/network", http_handleAllNetworkInterfaces);
 
@@ -258,6 +274,65 @@ void http_handlePartitions(AsyncWebServerRequest *request){
     http_error(request, F("esp_partition_find returned NULL"));
 }
 
+
+void http_handlePeripherals(AsyncWebServerRequest *request){
+
+  if(request->method() != HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  char address[5] = {0};
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  StaticJsonDocument<1536> doc;
+  JsonArray array = doc.to<JsonArray>();
+
+  managerInputs::healthResult inputHealth = inputs.health();
+  managerOutputs::healthResult outputHealth = outputs.health();
+  managerTemperatureSensors::healthResult temperatureHealth = temperatureSensors.health();
+  structHealth oledHealth = oled.health();
+  structHealth externalEepromHealth = externalEEPROM.health();
+
+
+  for(int i=0; i < inputHealth.count; i++){
+    JsonObject inputObj = array.createNestedObject();
+    sprintf(address, "0x%02X", inputHealth.inputControllers[i].address);
+    inputObj["address"] = address;
+    inputObj["type"] = "Input " + String(i);
+    inputObj["online"] = inputHealth.inputControllers[i].enabled;
+  }
+
+  for(int i=0; i < outputHealth.count; i++){
+    JsonObject outputObj = array.createNestedObject();
+    sprintf(address, "0x%02X", outputHealth.outputControllers[i].address);
+    outputObj["address"] = address;
+    outputObj["type"] = "Output " + String(i);
+    outputObj["online"] = outputHealth.outputControllers[i].enabled;
+  }
+
+  for(int i=0; i < temperatureHealth.count; i++){
+    JsonObject tempObj = array.createNestedObject();
+    sprintf(address, "0x%02X", temperatureHealth.sensor[i].address);
+    tempObj["address"] = address;
+    tempObj["type"] = "Temperature " + String(i);
+    tempObj["online"] = temperatureHealth.sensor[i].enabled;
+  }
+
+  JsonObject oledObj = array.createNestedObject();
+  sprintf(address, "0x%02X", oledHealth.address);
+  oledObj["address"] = address;
+  oledObj["type"] = "OLED";
+  oledObj["online"] = oledHealth.enabled;
+
+  JsonObject externalEepromObj = array.createNestedObject();
+  sprintf(address, "0x%02X", externalEepromHealth.address);
+  externalEepromObj["address"] = address;
+  externalEepromObj["type"] = "EEPROM";
+  externalEepromObj["online"] = externalEepromHealth.enabled;
+
+  serializeJson(doc, *response);
+  request->send(response);
+}
 
 
 /**
@@ -538,5 +613,25 @@ void eepromFailure(){
 
   oled.logEvent("EEPROM Failure", managerOled::LOG_LEVEL_ERROR);
 
+}
 
+
+void inputFailure(){
+
+  oled.logEvent("Input Failure", managerOled::LOG_LEVEL_ERROR);
+ 
+}
+
+
+void outputFailure(){
+
+  oled.logEvent("Output Failure", managerOled::LOG_LEVEL_ERROR);
+  
+}
+
+
+void temperatureFailure(String message){
+
+  oled.logEvent("Temperature Failure", managerOled::LOG_LEVEL_ERROR);
+  
 }

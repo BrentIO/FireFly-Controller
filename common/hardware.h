@@ -201,5 +201,12 @@
         #define CHARACTERS_PER_LINE 21
         #define NUMBER_OF_LINES 4
     #endif
+
+
+    /** Common health status for all peripherals. */
+    struct structHealth{
+        uint8_t address; /* I2C address.*/
+        bool enabled; /* Indicates if the controller is enabled.*/
+    };
     
 #endif

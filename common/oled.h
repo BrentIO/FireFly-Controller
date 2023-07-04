@@ -915,6 +915,18 @@
             }
 
 
+            /** Returns the OLED's bus status */
+            structHealth health(){
+
+                structHealth returnValue;
+
+                returnValue.address = ADDRESS_OLED;
+                returnValue.enabled = this->_initialized;
+
+                return returnValue;
+            }
+
+
             void logEvent(const char* text, logLevel type){
      
                 //Copy the elements down one element

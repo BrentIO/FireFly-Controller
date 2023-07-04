@@ -210,8 +210,15 @@ class managerInputs{
         inputController->previousRead = pinRead;
     }
 
+    bool _initialized = false; /* If the class has been initialized. */
+
 
     public:
+
+        struct healthResult{
+            uint8_t count = 0;
+            structHealth inputControllers[COUNT_IO_EXTENDER];
+        };
 
         void setCallback_publisher(void (*userDefinedCallback)(void)) {
             ptrPublisherCallback = userDefinedCallback; }
@@ -220,6 +227,10 @@ class managerInputs{
             ptrFailureCallback = userDefinedCallback; }
 
         void begin(){
+
+            if(this->_initialized == true){
+                return;
+            }
 
             const uint8_t pinsInterruptIoExtender[] = PINS_INTERRUPT_IO_EXTENDER;
             const uint8_t addressesIoExtender[] = ADDRESSES_IO_EXTENDER;
@@ -253,9 +264,34 @@ class managerInputs{
                 this->readInputPins(&this->inputControllers[i], true);
             }
 
+            this->_initialized = true;
+
         };
 
+        /** Returns the value of each input controller's bus status */
+        healthResult health(){
+
+            healthResult returnValue;
+
+            if(this->_initialized != true){
+                return returnValue;
+            }
+
+            for(int i = 0; i < COUNT_IO_EXTENDER; i++){
+                returnValue.inputControllers[i].address = this->inputControllers[i].address;
+                returnValue.inputControllers[i].enabled = this->inputControllers[i].enabled;
+            }
+
+            returnValue.count = COUNT_IO_EXTENDER;
+
+            return returnValue;
+        }
+
         void loop(){
+
+            if(this->_initialized != true){
+                return;
+            }
 
             for(int i = 0; i < COUNT_IO_EXTENDER; i++){
 
