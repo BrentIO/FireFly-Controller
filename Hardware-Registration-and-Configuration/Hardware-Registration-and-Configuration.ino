@@ -231,29 +231,29 @@ void http_handlePartitions(AsyncWebServerRequest *request){
   esp_partition_iterator_t pi = esp_partition_find(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_ANY, NULL);
 
   if (pi != NULL) {
-
-    AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
-    StaticJsonDocument<768> doc;
-    JsonArray array = doc.to<JsonArray>();
-
-    do {
-      const esp_partition_t* p = esp_partition_get(pi);
-      JsonObject jsonPartition = array.createNestedObject();
-      
-      jsonPartition["type"] = p->type;
-      jsonPartition["subtype"] = p->subtype;
-      jsonPartition["address"] = p->address;
-      jsonPartition["size"] = p->size;
-      jsonPartition["label"] = p->label;
-
-    } while (pi = (esp_partition_next(pi)));
-
-    serializeJson(doc, *response);
-    request->send(response);
-    return;
-
-  }
     http_error(request, F("esp_partition_find returned NULL"));
+    return;
+  }
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  StaticJsonDocument<768> doc;
+  JsonArray array = doc.to<JsonArray>();
+
+  do {
+    const esp_partition_t* p = esp_partition_get(pi);
+    JsonObject jsonPartition = array.createNestedObject();
+    
+    jsonPartition["type"] = p->type;
+    jsonPartition["subtype"] = p->subtype;
+    jsonPartition["address"] = p->address;
+    jsonPartition["size"] = p->size;
+    jsonPartition["label"] = p->label;
+
+  } while (pi = (esp_partition_next(pi)));
+
+  serializeJson(doc, *response);
+  request->send(response);
+    
 }
 
 
@@ -533,11 +533,6 @@ void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
  * The response is synchronous to the operation completing
 */
 void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
-
-  if(request->method()!= HTTP_POST){
-    http_methodNotAllowed(request);
-    return;
-  }
 
   MatchState ms;
 
