@@ -81,12 +81,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/bad_request_message'
+              example:
+                message: EEPROM already configured
         500:
           description: Internal Server Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/error_message'
+              example:
+                message: Cannot connect to external EEPROM
 
     get:
       tags:
@@ -108,6 +112,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/error_message'
+              example:
+                message: Cannot connect to external EEPROM
 
     delete:
       tags:
@@ -116,13 +122,17 @@ paths:
       description: Format the EEPROM so it has no data.  The response is synchronous to the operation completing
       responses:
         204:
-          description: Accepted
+          description: Deleted EEPROM successfully
+        404:
+          description: No EEPROM coniguration exists
         500:
           description: Internal Server Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/error_message'
+              example:
+                message: Cannot connect to external EEPROM
 
   /api/mcu:
     get:
@@ -157,6 +167,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/error_message'
+              example:
+                message: esp_partition_find returned NULL
+
   /api/peripherals:
     get:
       tags:
@@ -221,23 +234,28 @@ components:
     partitionType:
       type: integer
       description: Partition Type, as defined in https://docs.espressif.com/projects/esp-idf/en/v4.2/esp32/api-reference/storage/spi_flash.html#_CPPv420esp_partition_type_t
+      example: 1
 
     partitionSubType:
       type: integer
       description: Partition SubType, as defined in https://docs.espressif.com/projects/esp-idf/en/v4.2/esp32/api-reference/storage/spi_flash.html#_CPPv423esp_partition_subtype_t
+      example: 2
 
     partitionAddress:
       type: integer
       description: Start address for the partition, in bytes
+      example: 36864
 
     partitionSize:
       type: integer
       description: Size of the partition, in bytes
+      example: 20480
 
     partitionLabel:
       type: string
       maxLength: 16
       description: Arbitrary label for the partition
+      example: "nvs"
 
     partition:
       type: object
