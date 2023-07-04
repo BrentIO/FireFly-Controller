@@ -683,7 +683,7 @@
                             this->hardware.println(this->_wifiInfo->softAPmacAddress());
                             this->hardware.setCursor(LOGO_WIDTH + 3, 24);
                             this->hardware.println("Clients: " + String(this->_wifiInfo->softAPgetStationNum()));
-                            this->hardware.setCursor(2, LOGO_HEIGHT+5);
+                            this->hardware.setCursor(4, LOGO_HEIGHT+5);
                             this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); // Draw black text
                             this->hardware.println(F("AP"));
                             this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
