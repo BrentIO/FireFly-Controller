@@ -73,8 +73,8 @@ paths:
             schema:
               $ref: '#/components/schemas/eepromConfig'
       responses:
-        204:
-          description: Accepted
+        201:
+          description: Wrote EEPROM successfully
         400:
           description: Bad Request
           content:
