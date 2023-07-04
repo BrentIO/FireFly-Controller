@@ -545,9 +545,11 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  strcpy(externalEEPROM.data.uuid, doc["uuid"]);
+  managerExternalEEPROM::deviceType postedData;
 
-  ms.Target(externalEEPROM.data.uuid);
+  strcpy(postedData.uuid, doc["uuid"]);
+
+  ms.Target(postedData.uuid);
 
   if(ms.MatchCount("^[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+$")!=1){ //Library does not support lengths of each section, so there is some opportunity for error
     http_badRequest(request, F("Invalid uuid, see docs"));
@@ -559,31 +561,33 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  if(strlen(doc["product_id"])>(sizeof(externalEEPROM.data.product_id)-1)){
+  if(strlen(doc["product_id"])>(sizeof(postedData.product_id)-1)){
     http_badRequest(request, F("Field product_id is greater than 32 characters, see docs"));
     return;
   }
 
-  strcpy(externalEEPROM.data.product_id, doc["product_id"]);
+  strcpy(postedData.product_id, doc["product_id"]);
 
   if(!doc.containsKey("key")){
     http_badRequest(request, F("Field key is required"));
     return;
   }
 
-  if(strlen(doc["key"])!=(sizeof(externalEEPROM.data.key)-1)){
+  if(strlen(doc["key"])!=(sizeof(postedData.key)-1)){
     http_badRequest(request, F("Field key is not exactly 64 characters"));
     return;
   }
 
-  strcpy(externalEEPROM.data.key, doc["key"]);
+  strcpy(postedData.key, doc["key"]);
 
-  ms.Target(externalEEPROM.data.key);
+  ms.Target(postedData.key);
 
   if(ms.MatchCount("^[0-9A-Za-z]+$")!=1){
     http_badRequest(request, F("Invalid key, see docs"));
     return;
   }
+
+  externalEEPROM.data = postedData;
 
   if(externalEEPROM.write() == false){
     http_error(request, "Error during EEPROM write");
