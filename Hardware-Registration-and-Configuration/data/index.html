@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Hardware Configuration</title>
+        <link href="./bootstrap.min.css" rel="stylesheet">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <script src="./bootstrap.min.js"></script>
+    <script>
+
+        let root = "http://192.168.4.1/api";
+
+        let partitionSchemes = [{"product_hex":"0x12345", "scheme":[{"type":1,"subtype":2,"address":36864,"size":20480,"label":"nvs"},{"type":1,"subtype":0,"address":57344,"size":8192,"label":"otadata"},{"type":0,"subtype":16,"address":65536,"size":6553600,"label":"app0"},{"type":0,"subtype":17,"address":6619136,"size":6553600,"label":"app1"},{"type":1,"subtype":130,"address":13172736,"size":3538944,"label":"spiffs"},{"type":1,"subtype":3,"address":16711680,"size":65536,"label":"coredump"}]}]
+
+
+
+
+
+        function bytesToSize(bytes) {
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+            if (bytes === 0) return 'n/a'
+            const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10)
+            if (i === 0) return `${bytes} ${sizes[i]})`
+            return `${(bytes / (1024 ** i)).toFixed(1)} ${sizes[i]}`
+        }
+
+
+        function interfaceNameFormat(value){
+
+            switch(value.toLowerCase()){
+
+                case "bluetooth":
+                    return "Bluetooth";
+                    break;
+
+                case "ethernet":
+                    return "Ethernet";
+                    break;
+
+                case "wifi":
+                    return "WiFi";
+                    break;
+
+                case "wifi_ap":
+                    return "WiFi AP";
+                    break;
+
+                default:
+                    return value;
+                    break;
+            }
+        }
+
+
+
+        function computePartitionScheme(data){
+
+            let offset = 0x9000;
+
+            data = data.sort((a, b) => {
+                if (a.address < b.address) {
+                    return -1;
+                }
+            });
+
+            data.forEach(function (element){
+                element.offset = offset;
+                offset = offset + element.size;
+            });
+
+            return data;
+
+        }
+
+
+        async function getMCU(){
+
+            let response = await fetch(root + "/mcu");
+
+            if (response.ok) {
+                let data = await response.json(); // read response body and parse as JSON
+                updateMCU(data);
+            } else {
+                alert("HTTP-Error: " + response.status);
+            }
+        }
+
+
+        async function getNetwork(){
+
+            let response = await fetch(root + "/network");
+
+            if (response.ok) {
+                let data = await response.json();
+                updateNetwork(data);
+            } else {
+                alert("HTTP-Error: " + response.status);
+            }
+        }
+
+
+        async function getPartitions(){
+
+            let response = await fetch(root + "/partitions");
+
+            if (response.ok) {
+                let data = await response.json();
+                updatePartitions(data);
+            } else {
+                alert("HTTP-Error: " + response.status);
+            }
+        }
+
+
+        function updateMCU(data){
+
+            document.getElementById("chip_model").innerText = data['chip_model'];
+            document.getElementById("chip_revision").innerText = data['revision'];
+            document.getElementById("flash_chip_size").innerText = bytesToSize(data['flash_chip_size']);
+        }
+
+
+        function updateNetwork(data){
+
+            var table = document.getElementById('network-tab-table');
+
+            table.innerHTML="";
+
+            data = data.sort((a, b) => {
+                if (a.interface < b.interface) {
+                    return -1;
+                }
+            });
+            data.forEach(element => table.insertAdjacentHTML('beforeend', `<tr><td>${interfaceNameFormat(element.interface)}</td><td>${element.mac_address}</td></tr>`));
+        }
+
+
+        function updatePartitions(data){
+
+            data = computePartitionScheme(data);
+
+            //table.innerHTML="";
+            var table = document.getElementById('partition-tab-table');
+
+            data.forEach(function (element){
+                table.insertAdjacentHTML('beforeend', `<tr><td>0x${element.type.toString(16).padStart(2, '0')}</td><td>0x${element.subtype.toString(16).padStart(2, '0')}</td><td>0x${element.offset.toString(16).padStart(6, '0').toUpperCase()}</td><td>${bytesToSize(element.size)}</td><td>${element.label}</td><td>${element.status}</td></tr>`);
+            });
+        }
+
+        /*function getIPFromURL(){
+            let params = new URLSearchParams(window.location.search);
+            localStorage.setItem("deviceIP", params.get("ip"));
+
+            if(validateIPaddress(localStorage.getItem("deviceIP")) == false){
+                alert("Unable to parse IP address from querystring.");
+                return;
+            }
+
+        }
+
+        function validateIPaddress(ipaddress) {  
+            if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ipaddress)) {  
+                return true;
+            }  
+            return false;
+        }
+
+        function requestData(url){
+            fetch(url, {
+                method: 'GET'
+            }).then(response => {
+                if(response.ok){
+                    
+                    return response.json();  
+                }
+                throw new Error('Request failed!');
+            }, networkError => {
+                console.log(networkError.message);
+                }).then(jsonResponse => {
+                console.log(jsonResponse);
+                })
+        }
+
+        function getData(){
+            getMCU();
+            getNetwork();
+            getEEPROM();
+        }
+
+
+        function getMCU(){
+            document.getElementById("mcu").innerHTML = requestData("http://" + localStorage.getItem("deviceIP")+"/api/mcu");
+        }
+
+        function getNetwork(){
+            document.getElementById("network").innerHTML = requestData("http://" + localStorage.getItem("deviceIP")+"/api/network");
+        }
+
+        function getEEPROM(){
+            document.getElementById("eeprom").innerHTML = requestData("http://" + localStorage.getItem("deviceIP")+"/api/eeprom");
+        }
+
+        function putRandomInDev(){
+            document.getElementById("randomchars").innerHTML = generateString(64);
+        }
+
+        function putUUID(){
+            document.getElementById("uuid").innerHTML = crypto.randomUUID();
+        }*/
+
+        
+        function generateRandomString(length) {
+            const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            const charactersLength = characters.length;
+            for ( let i = 0; i < length; i++ ) {
+                result += characters.charAt(Math.floor(Math.random() * charactersLength));
+            }
+
+            return result;
+        }
+
+    </script>
+
+    <body>
+
+        <!-- Naviation Menu -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container-fluid">
+                <span class="navbar-brand">Hardware Configuration</span>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" aria-current="page" href="#" id="mcu-tab" data-bs-toggle="tab" data-bs-target="#mcu-tab-pane" type="button" role="tab" aria-controls="mcu-tab-pane" aria-selected="true">MCU</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" aria-current="page" href="#" id="network-tab" data-bs-toggle="tab" data-bs-target="#network-tab-pane" type="button" role="tab" aria-controls="network-tab-pane" aria-selected="false">Network</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" aria-current="page" href="#" id="identification-tab" data-bs-toggle="tab" data-bs-target="#identification-tab-pane" type="button" role="tab" aria-controls="identification-tab-pane" aria-selected="false">Identification</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" aria-current="page" href="#" id="partition-table-tab" data-bs-toggle="tab" data-bs-target="#partition-table-tab-pane" type="button" role="tab" aria-controls="partition-table-tab-pane" aria-selected="false"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#dc3545" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16">
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                            </svg> Partition Table</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" aria-current="page" href="#" id="peripherals-tab" data-bs-toggle="tab" data-bs-target="#peripherals-tab-pane" type="button" role="tab" aria-controls="peripherals-tab-pane" aria-selected="false"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#dc3545" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16">
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                            </svg> Peripherals</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" aria-current="page" href="#" id="about-tab" data-bs-toggle="tab" data-bs-target="#about-tab-pane" type="button" role="tab" aria-controls="about-tab-pane" aria-selected="false">About</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+
+        <!-- Content -->
+        <div class="tab-content container-fluid" id="content">
+
+            
+            <!-- Hardware -->
+            <div class="tab-pane fade show active" id="mcu-tab-pane" role="tabpanel" aria-labelledby="mcu-tab" tabindex="0">                    
+                <strong>Chip Model:</strong> <span id="chip_model"></span><br>
+                <strong>Revision:</strong> <span id="chip_revision"></span><br>
+                <strong>Flash Chip Size:</strong> <span id="flash_chip_size"></span>
+                <button onclick="getMCU();">Get</button>
+            </div>
+
+
+            <!-- Network -->
+            <div class="tab-pane fade" id="network-tab-pane" role="tabpanel" aria-labelledby="network-tab" tabindex="0">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                            <th scope="col">Interface</th>
+                            <th scope="col">MAC Address</th>
+                            </tr>
+                        </thead>
+                        <tbody id="network-tab-table">
+                        </tbody>
+                    </table>
+                </div>
+                <button onclick="getNetwork();">Get</button>
+            </div>
+
+
+            <!-- Identification -->
+            <div class="tab-pane fade" id="identification-tab-pane" role="tabpanel" aria-labelledby="identification-tab" tabindex="0">
+                <div class="alert alert-warning" role="alert">Controller has been previously configured.</div>
+
+                <div class="row">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Device UUID</span>
+                        <input type="text" class="form-control" id="uuid">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Product ID</span>
+                        <select class="form-select" id="product_id">
+                            <option value="FFC0806-2305" selected>FFC0806-2305</option>
+                            <option value="FFC3232-2211">FFC3232-2211</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="input-group mb-3">
+                            <span class="input-group-text">Key</span>
+                            <input type="password" class="form-control" id="key">
+                    </div>
+                </div>
+                <div class="row g-3 d-flex gap-2 mb-3">
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-primary" title="Save">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M8 10a.5.5 0 0 0 .5-.5V3.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 3.707V9.5a.5.5 0 0 0 .5.5zm-7 2.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13a.5.5 0 0 1-.5-.5z"/></svg> Save</button>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-outline-danger disabled" title="Delete">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16">
+                            <path d="M11.46.146A.5.5 0 0 0 11.107 0H4.893a.5.5 0 0 0-.353.146L.146 4.54A.5.5 0 0 0 0 4.893v6.214a.5.5 0 0 0 .146.353l4.394 4.394a.5.5 0 0 0 .353.146h6.214a.5.5 0 0 0 .353-.146l4.394-4.394a.5.5 0 0 0 .146-.353V4.893a.5.5 0 0 0-.146-.353L11.46.146zm-6.106 4.5L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 1 1 .708-.708z"/></svg> Delete</button>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Partition Table -->
+            <div class="tab-pane fade" id="partition-table-tab-pane" role="tabpanel" aria-labelledby="partition-table-tab" tabindex="0">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th scope="col">Type</th>
+                                <th scope="col">Subtype</th>
+                                <th scope="col">Offset</th>
+                                <th scope="col">Size</th>
+                                <th scope="col">Label</th>
+                                <th scope="col">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="partition-tab-table">
+                            <tr>
+                                <td>01</td>
+                                <td>02</td>
+                                <td>0x009000</td>
+                                <td>0x005000</td>
+                                <td>nvs</td>
+                                <td><span class="badge bg-success">OK</span></td>
+                            </tr>
+                            <tr>
+                                <td>01</td>
+                                <td>00</td>
+                                <td>0x00E000</td>
+                                <td>0x002000</td>
+                                <td>otadata</td>
+                                <td><span class="badge bg-danger">Unexpected Offset</span> <span class="badge bg-danger">Unexpected Size</span></td>
+                            </tr>
+                            <tr>
+                                <td>01</td>
+                                <td>00</td>
+                                <td>0x00E000</td>
+                                <td>0x002000</td>
+                                <td>otadata</td>
+                                <td><span class="badge bg-danger">Unexpected Type</span> <span class="badge bg-danger">Unexpected Subtype</span></td>
+                            </tr>
+                            <tr>
+                                <td>01</td>
+                                <td>00</td>
+                                <td>0x00E000</td>
+                                <td>0x002000</td>
+                                <td>junk</td>
+                                <td><span class="badge bg-danger">Unknown Label</span> <span class="badge bg-danger">Duplicate Label</span></td>
+                            </tr>
+                            <tr>
+                                <td>01</td>
+                                <td>00</td>
+                                <td>0x00E000</td>
+                                <td>0x002000</td>
+                                <td>spiffs</td>
+                                <td><span class="badge bg-danger">Offline</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button onclick="getPartitions();">Get</button>
+            </div>
+
+
+            <!-- Peripherals -->
+            <div class="tab-pane fade" id="peripherals-tab-pane" role="tabpanel" aria-labelledby="peripherals-tab" tabindex="0">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th scope="col">Address</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Status</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>0x20</td>
+                                <td>Input 0</td>
+                                <td><span class="badge bg-success">Online</span></td>
+                            </tr>
+                            <tr>
+                                <td>0x21</td>
+                                <td>Input 1</td>
+                                <td><span class="badge bg-success">Online</span></td>
+                            </tr>
+                            <tr>
+                                <td>0x40</td>
+                                <td>Output 0</td>
+                                <td><span class="badge bg-success">Online</span></td>
+                            </tr>
+                            <tr>
+                                <td>0x41</td>
+                                <td>Output 1</td>
+                                <td><span class="badge bg-danger">Offline</span></td>
+                            </tr>
+                            <tr>
+                                <td>0x50</td>
+                                <td>EEPROM</td>
+                                <td><span class="badge bg-success">Online</span></td>
+                            </tr>
+                            <tr>
+                                <td>0x48</td>
+                                <td>Temperature</td>
+                                <td><span class="badge bg-success">Online</span></td>
+                            </tr>
+                            <tr>
+                                <td>0x3C</td>
+                                <td>OLED</td>
+                                <td><span class="badge bg-success">Online</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+            <!-- Abount -->
+            <div class="tab-pane fade" id="about-tab-pane" role="tabpanel" aria-labelledby="about-tab" tabindex="0">
+                    <strong>UI Version:</strong> 2023.00.00.00<br>
+                    <strong>Application Version:</strong> <span id="application-version">???????</span><br>
+                    <small>&copy; 2023, P5 Software, LLC</small>
+                <div class="mt-4">
+                    <h4>Included Third Party Libraries</h4>
+                    <a href="https://github.com/adafruit/Adafruit_BusIO" target="_blank">Adafruit Bus IO Library</a><br>
+                    <a href="https://github.com/adafruit/Adafruit-GFX-Library" target="_blank">Adafruit GFX Library</a><br>
+                    <a href="https://github.com/adafruit/Adafruit_SSD1306" target="_blank">Adafruit_SSD1306</a><br>
+                    <a href="https://github.com/bblanchon/ArduinoJson" target="_blank">ArduinoJson</a><br>
+                    <a href="https://github.com/me-no-dev/AsyncTCP" target="_blank">AsyncTCP</a>
+                    <a href="https://getbootstrap.com" target="_blank">Bootstrap</a><br>
+                    <a href="https://github.com/me-no-dev/ESPAsyncWebServer" target="_blank">ESPAsyncWebServer</a><br>
+                    <a href="https://github.com/RobTillaart/I2C_EEPROM" target="_blank">I2C_EEPROM</a><br>
+                    <a href="https://github.com/semcneil/PCA95x5" target="_blank">PCA95x5</a><br>
+                    <a href="https://github.com/RobTillaart/PCA9685_RT" target="_blank">PCA9685_RT</a><br>
+                    <a href="https://github.com/jpliew/PCT2075" target="_blank">PCT2075 Digital Temperature Sensor Library for Arduino</a><br>
+                    <a href="https://github.com/nickgammon/Regexp" target="_blank">Regexp</a><br>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
