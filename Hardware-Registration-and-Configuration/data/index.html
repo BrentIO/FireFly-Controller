@@ -4,225 +4,907 @@
         <title>Hardware Configuration</title>
         <link href="./bootstrap.min.css" rel="stylesheet">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-    </head>
-    <script src="./bootstrap.min.js"></script>
-    <script>
+  
+        <script src="./bootstrap.min.js"></script>
+        <script>
 
-        let root = "http://192.168.4.1/api";
+            let ui_version = "2023.09.01";
 
-        let partitionSchemes = [{"product_hex":"0x12345", "scheme":[{"type":1,"subtype":2,"address":36864,"size":20480,"label":"nvs"},{"type":1,"subtype":0,"address":57344,"size":8192,"label":"otadata"},{"type":0,"subtype":16,"address":65536,"size":6553600,"label":"app0"},{"type":0,"subtype":17,"address":6619136,"size":6553600,"label":"app1"},{"type":1,"subtype":130,"address":13172736,"size":3538944,"label":"spiffs"},{"type":1,"subtype":3,"address":16711680,"size":65536,"label":"coredump"}]}]
+            let root = "./api";
+            let mcu = {};
+            let network = [];
+            let identification = null;
+            let auxillary_data = null;
+            let partitions = [];
+            let peripherals = [];
+            let version = null;
 
-
-
-
-
-        function bytesToSize(bytes) {
-            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
-            if (bytes === 0) return 'n/a'
-            const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10)
-            if (i === 0) return `${bytes} ${sizes[i]})`
-            return `${(bytes / (1024 ** i)).toFixed(1)} ${sizes[i]}`
-        }
+            const api_timeout = 5000;
 
 
-        function interfaceNameFormat(value){
-
-            switch(value.toLowerCase()){
-
-                case "bluetooth":
-                    return "Bluetooth";
-                    break;
-
-                case "ethernet":
-                    return "Ethernet";
-                    break;
-
-                case "wifi":
-                    return "WiFi";
-                    break;
-
-                case "wifi_ap":
-                    return "WiFi AP";
-                    break;
-
-                default:
-                    return value;
-                    break;
+            window.onload = function(){
+                getMCU();
+                getIdentification();
+                getNetwork();
+                getPartitions();
+                getPeripherals();
             }
-        }
 
 
-
-        function computePartitionScheme(data){
-
-            let offset = 0x9000;
-
-            data = data.sort((a, b) => {
-                if (a.address < b.address) {
-                    return -1;
+            function key_password_toggle() {
+                var x = document.getElementById("key");
+                var show_eye = document.getElementById("identification-key-show_eye");
+                var hide_eye = document.getElementById("identification-key-hide_eye");
+                hide_eye.classList.remove("d-none");
+                if (x.type === "password") {
+                    x.type = "text";
+                    show_eye.style.display = "none";
+                    hide_eye.style.display = "block";
+                } else {
+                    x.type = "password";
+                    show_eye.style.display = "block";
+                    hide_eye.style.display = "none";
                 }
-            });
-
-            data.forEach(function (element){
-                element.offset = offset;
-                offset = offset + element.size;
-            });
-
-            return data;
-
-        }
-
-
-        async function getMCU(){
-
-            let response = await fetch(root + "/mcu");
-
-            if (response.ok) {
-                let data = await response.json(); // read response body and parse as JSON
-                updateMCU(data);
-            } else {
-                alert("HTTP-Error: " + response.status);
             }
-        }
 
 
-        async function getNetwork(){
+            function product_id_toggle(){
+                var x = document.getElementById("product_id");
 
-            let response = await fetch(root + "/network");
-
-            if (response.ok) {
-                let data = await response.json();
-                updateNetwork(data);
-            } else {
-                alert("HTTP-Error: " + response.status);
-            }
-        }
-
-
-        async function getPartitions(){
-
-            let response = await fetch(root + "/partitions");
-
-            if (response.ok) {
-                let data = await response.json();
-                updatePartitions(data);
-            } else {
-                alert("HTTP-Error: " + response.status);
-            }
-        }
-
-
-        function updateMCU(data){
-
-            document.getElementById("chip_model").innerText = data['chip_model'];
-            document.getElementById("chip_revision").innerText = data['revision'];
-            document.getElementById("flash_chip_size").innerText = bytesToSize(data['flash_chip_size']);
-        }
-
-
-        function updateNetwork(data){
-
-            var table = document.getElementById('network-tab-table');
-
-            table.innerHTML="";
-
-            data = data.sort((a, b) => {
-                if (a.interface < b.interface) {
-                    return -1;
+                if (x.disabled == true) {
+                    x.disabled = false;
+                    product_id_icon("lock");
+                } else {
+                    x.disabled = true;
+                    product_id_icon("unlocked");
                 }
-            });
-            data.forEach(element => table.insertAdjacentHTML('beforeend', `<tr><td>${interfaceNameFormat(element.interface)}</td><td>${element.mac_address}</td></tr>`));
-        }
 
-
-        function updatePartitions(data){
-
-            data = computePartitionScheme(data);
-
-            //table.innerHTML="";
-            var table = document.getElementById('partition-tab-table');
-
-            data.forEach(function (element){
-                table.insertAdjacentHTML('beforeend', `<tr><td>0x${element.type.toString(16).padStart(2, '0')}</td><td>0x${element.subtype.toString(16).padStart(2, '0')}</td><td>0x${element.offset.toString(16).padStart(6, '0').toUpperCase()}</td><td>${bytesToSize(element.size)}</td><td>${element.label}</td><td>${element.status}</td></tr>`);
-            });
-        }
-
-        /*function getIPFromURL(){
-            let params = new URLSearchParams(window.location.search);
-            localStorage.setItem("deviceIP", params.get("ip"));
-
-            if(validateIPaddress(localStorage.getItem("deviceIP")) == false){
-                alert("Unable to parse IP address from querystring.");
-                return;
             }
 
-        }
 
-        function validateIPaddress(ipaddress) {  
-            if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ipaddress)) {  
-                return true;
-            }  
-            return false;
-        }
+            function product_id_icon(value){
 
-        function requestData(url){
-            fetch(url, {
-                method: 'GET'
-            }).then(response => {
-                if(response.ok){
+                var unlock = document.getElementById("identification-product_id-unlock");
+                var lock = document.getElementById("identification-product_id-lock");
+                lock.classList.remove("d-none");
+
+                if(value == "lock"){
+                    unlock.style.display = "none";
+                    lock.style.display = "block";
+                }else{
+                    unlock.style.display = "block";
+                    lock.style.display = "none";
+                }
+
+            }
+
+
+            function bytesToSize(bytes) {
+                const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+                if (bytes === 0) return 'n/a'
+                const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10)
+                if (i === 0) return `${bytes} ${sizes[i]})`
+                return `${(bytes / (1024 ** i)).toFixed(1)} ${sizes[i]}`
+            }
+
+
+            function interfaceNameFormat(value){
+
+                switch(value.toLowerCase()){
+
+                    case "bluetooth":
+                        return "Bluetooth";
+                        break;
+
+                    case "ethernet":
+                        return "Ethernet";
+                        break;
+
+                    case "wifi":
+                        return "WiFi";
+                        break;
+
+                    case "wifi_ap":
+                        return "WiFi AP";
+                        break;
+
+                    default:
+                        return value;
+                        break;
+                }
+            }
+
+
+            function peripheralTypeNameFormat(value){
+                switch(value.toLowerCase()){
+
+                    case "input":
+                        return "Input";
+                        break;
+
+                    case "output":
+                        return "Output";
+                        break;
                     
-                    return response.json();  
+                    case "temperature":
+                        return "Temperature";
+                        break;
+
+                    case "oled":
+                        return "OLED";
+                        break;
+
+                    case "eeprom":
+                        return "EEPROM";
+                        break;
+
+                    default:
+                        return value;
+                        break;
                 }
-                throw new Error('Request failed!');
-            }, networkError => {
-                console.log(networkError.message);
-                }).then(jsonResponse => {
-                console.log(jsonResponse);
-                })
-        }
-
-        function getData(){
-            getMCU();
-            getNetwork();
-            getEEPROM();
-        }
-
-
-        function getMCU(){
-            document.getElementById("mcu").innerHTML = requestData("http://" + localStorage.getItem("deviceIP")+"/api/mcu");
-        }
-
-        function getNetwork(){
-            document.getElementById("network").innerHTML = requestData("http://" + localStorage.getItem("deviceIP")+"/api/network");
-        }
-
-        function getEEPROM(){
-            document.getElementById("eeprom").innerHTML = requestData("http://" + localStorage.getItem("deviceIP")+"/api/eeprom");
-        }
-
-        function putRandomInDev(){
-            document.getElementById("randomchars").innerHTML = generateString(64);
-        }
-
-        function putUUID(){
-            document.getElementById("uuid").innerHTML = crypto.randomUUID();
-        }*/
-
-        
-        function generateRandomString(length) {
-            const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            let result = '';
-            const charactersLength = characters.length;
-            for ( let i = 0; i < length; i++ ) {
-                result += characters.charAt(Math.floor(Math.random() * charactersLength));
             }
 
-            return result;
-        }
 
-    </script>
+            function computePartitionScheme(data){
 
+                data = data.sort((a, b) => {
+                    if (a.address < b.address) {
+                        return -1;
+                    }
+                });
+
+                return data;
+
+            }
+
+
+            function errorHandler_get_div(element){
+                document.getElementById(element).innerHTML = `<div class="d-flex justify-content-center align-items-center"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-exclamation-triangle-fill text-danger" width="10%" height="10%" viewBox="0 0 16 16">
+                                                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                                                                </svg></div>`;
+
+            }
+
+
+            function errorHandler_get_inline(element){
+                document.getElementById(element).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-exclamation-triangle-fill text-danger" width="20" height="20" viewBox="0 0 16 16">
+                                                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                                                                </svg>`;
+            }
+
+            function prependWarningLabel(element){
+                document.getElementById(element).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-exclamation-triangle-fill text-danger" width="20" height="20" viewBox="0 0 16 16">
+                                                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                                                                </svg> ` + document.getElementById(element).innerHTML;
+
+            }
+
+
+            async function getMCU(){
+
+                try{
+                    let response = await fetch(root + "/mcu", { signal: AbortSignal.timeout(api_timeout) });
+
+                    if (response.ok) {
+                        mcu = await response.json();
+                        drawMCU();
+                    } else {
+                        throw new Error("Unable to get " + response.url + " (" + response.status + ")");
+                    }
+
+                }
+                catch(err){
+                    if (err.name === "AbortError") {
+                        prependWarningLabel("mcu-tab");
+                        createErrorToast("Unable to get MCU", "Timeout");
+                        errorHandler_get_inline("chip_model");
+                        errorHandler_get_inline("chip_revision");
+                        errorHandler_get_inline("flash_chip_size");
+
+                    } else {
+                        prependWarningLabel("mcu-tab");
+                        createErrorToast("Unable to get MCU", err);
+                        errorHandler_get_inline("chip_model", );
+                        errorHandler_get_inline("chip_model");
+                        errorHandler_get_inline("chip_revision");
+                        errorHandler_get_inline("flash_chip_size");
+                    }
+                }                
+            }
+
+
+            function drawMCU(){
+
+                if(mcu == {}){
+                    return;
+                }
+
+                document.getElementById("chip_model").innerText = mcu['chip_model'];
+                document.getElementById("chip_revision").innerText = mcu['revision'];
+                document.getElementById("flash_chip_size").innerText = bytesToSize(mcu['flash_chip_size']);
+            }
+
+
+            async function getNetwork(){
+
+                try{
+                    let response = await fetch(root + "/network", { signal: AbortSignal.timeout(api_timeout) })
+
+                    if (response.ok) {
+                        network = await response.json();
+                        drawNetwork();
+                    } else {
+                        throw new Error("Unable to get " + response.url + " (" + response.status + ")");
+                    }
+
+                }
+                catch(err){
+                    if (err.name === "AbortError") {
+                        prependWarningLabel("network-tab");
+                        errorHandler_get_div("network-tab-pane");
+                        createErrorToast("Unable to get Network", "Timeout");
+                    } else {
+                        prependWarningLabel("network-tab");
+                        errorHandler_get_div("network-tab-pane");
+                        createErrorToast("Unable to get Network", err);
+                    }
+                }
+            }
+
+
+            function drawNetwork(){
+
+                if(network == []){
+                    return;
+                }
+
+                var table = document.getElementById('network-tab-table-data');
+
+                network = network.sort((a, b) => {
+                    if (a.interface < b.interface) {
+                        return -1;
+                    }
+                });
+
+                network.forEach(function(element){
+
+                    var row = table.insertRow();
+
+                    var colInterface = row.insertCell();
+                    var colMacAddress = row.insertCell();
+
+                    colInterface.innerText = interfaceNameFormat(element.interface);
+                    colMacAddress.innerText = element.mac_address;
+                });
+
+                document.getElementById('network-tab-table').classList.remove("d-none");
+                document.getElementById('network-tab-wait-spinner').classList.add("d-none");
+                
+            }
+
+
+            async function getIdentification(){
+
+                try{
+                    let response = await fetch(root + "/eeprom", { signal: AbortSignal.timeout(api_timeout) });
+                    
+                    switch(response.status){
+                        case 200:
+                            identification = await response.json();
+                            drawIdentification();
+                            break;
+
+                        case 404:
+                            identification = null
+                            drawIdentification();
+                            break;
+
+                        default:
+                            throw new Error("Unable to get " + response.url + " (" + response.status + ")");
+                    }
+                }
+                catch(err){
+                    if (err.name === "AbortError") {
+                        errorHandler_get_div("identification-tab-pane");
+                        prependWarningLabel("identification-tab");
+                        createErrorToast("Unable to get Identification", "Timeout");
+                    } else {
+                        errorHandler_get_div("identification-tab-pane");
+                        prependWarningLabel("identification-tab");
+                        createErrorToast("Unable to get Identification", err);
+                    }
+                }
+
+                document.getElementById('identification-tab-content').classList.remove("d-none");
+                document.getElementById('identification-tab-wait-spinner').classList.add("d-none");
+
+            }
+
+
+            function drawIdentification(){
+
+                if(identification === null){
+                    document.getElementById("identification-alert").classList.add("d-none");
+                    document.getElementById("uuid").value = crypto.randomUUID();
+                    document.getElementById("key").value = generateRandomString(64);
+                    disable_identification_save_button(false);
+                    disable_identification_delete_button(true);
+                    document.getElementById("identification-save-button").disabled = false;
+                    return;
+                }
+
+                document.getElementById("identification-alert").classList.remove("d-none");
+                disable_identification_save_button(true);
+                disable_identification_delete_button(false);
+                document.getElementById("uuid").value = identification['uuid'];
+                document.querySelector("#product_id").value = identification['product_id'];
+                document.getElementById("key").value = identification['key'];
+            }
+
+
+            async function deleteIdentification(){
+
+                try{
+
+                    var spinner = document.getElementById("identification-delete-button-spinner");
+                    var icon = document.getElementById("identification-delete-button-icon");
+                    spinner.classList.remove("d-none");
+                    icon.classList.add("d-none");
+
+                    disable_identification_save_button(true);
+                    disable_identification_delete_button(true);
+
+                    let response = await fetch(root + "/eeprom", { signal: AbortSignal.timeout(api_timeout), method: 'DELETE'});
+                    
+                    switch(response.status){
+                        case 204:
+                            createSuccessToast("Success", "Identification has been deleted.");
+                            getIdentification();
+                            break;
+
+                        default:
+                            throw new Error("Unable to delete " + response.url + " (" + response.status + ")");
+                    }
+                }
+                catch(err){
+                    if (err.name === "AbortError") {
+                        createErrorToast("Unable to delete identification", "Timeout");
+                    } else {
+                        createErrorToast("Unable to delete identification", err);
+                    }
+                }
+
+                spinner.classList.add("d-none");
+                icon.classList.remove("d-none");
+            }
+
+
+            async function postIdentification(){
+
+                try{
+
+                    var spinner = document.getElementById("identification-save-button-spinner");
+                    var icon = document.getElementById("identification-save-button-icon");
+                    spinner.classList.remove("d-none");
+                    icon.classList.add("d-none");
+
+                    disable_identification_save_button(true);
+                    disable_identification_delete_button(true);
+
+                    document.getElementById("uuid").value = document.getElementById("uuid").value.trim();
+                    document.getElementById("key").value = document.getElementById("key").value.trim();
+
+
+                    if(document.getElementById("uuid").value.length != 36){
+                        throw new Error("Device UUID must be exactly 36 characters.");
+                    }
+
+                    if(document.getElementById("product_id").value == ""){
+                        throw new Error("No Product ID was selected.");
+                    }
+
+                    if(document.getElementById("key").value.length != 64){
+                        throw new Error("Key must be exactly 64 characters.");
+                    }
+
+                    payload = {}
+
+                    payload['uuid'] = document.getElementById("uuid").value;
+                    payload['product_id'] = document.getElementById("product_id").value;
+                    payload['key'] = document.getElementById("key").value;
+                 
+                    let response = await fetch(
+                        root + "/eeprom", 
+                        { signal: AbortSignal.timeout(api_timeout), 
+                          method: 'POST',
+                          headers: {
+                            "content-type":"application/json"
+                          },
+                          body:JSON.stringify(payload)
+                        });
+                    
+                    switch(response.status){
+                        case 201:
+                            createSuccessToast("Success", "Identification has been created.");
+                            getIdentification();
+                            break;
+
+                        default:
+                            throw new Error("Unable to save " + response.url + " (" + response.status + ")");
+                    }
+                }
+                catch(err){
+                    if (err.name === "AbortError") {
+                        createErrorToast("Unable to save identification", "Timeout");
+                    } else {
+                        createErrorToast("Unable to save identification", err);
+                    }
+                }
+
+                spinner.classList.add("d-none");
+                icon.classList.remove("d-none");
+
+            }
+
+
+            function disable_identification_save_button(value){
+
+                var button = document.getElementById("identification-save-button");
+
+                if(identification != null){
+                    button.disabled = true;
+                    return;
+                }
+
+                button.disabled = value;
+
+            }
+
+
+            function disable_identification_delete_button(value){
+
+                var button = document.getElementById("identification-delete-button");
+
+                if(identification == null){
+                    button.disabled = true;
+                    return;
+                }
+
+                button.disabled = value;
+
+            }
+
+
+
+            function toggle_identification_save_delete(){
+
+                var save_button = document.getElementById("identification-save-button");
+                var delete_button = document.getElementById("identification-delete-button");
+
+                if (save_button.disabled == true) {
+                    save_button.disabled = false;
+
+                    if(identification != null){
+                        delete_button.disabled = false;
+                    }
+                    
+                } else {
+                    save_button.disabled = true;
+                    delete_button.disabled = true;
+                }
+
+            }
+
+
+            function drawProduct_Ids(){
+
+                if(auxillary_data === null){
+                    throw new Error("No auxillary data found.");
+                    return;
+                }
+
+                product_ids = auxillary_data.sort((a, b) => {
+                    if (a.product_id < b.product_id) {
+                        return -1;
+                    }
+                });
+
+                var dropdown = document.getElementById("product_id");
+
+                if(dropdown === null){
+                    return; //The form was destroyed
+                }
+
+                var optionSelectAProductId = document.createElement("option");
+                    optionSelectAProductId.value = "";
+                    optionSelectAProductId.text = "-- Select a Product ID -- ";
+                    optionSelectAProductId.selected = true;
+                    dropdown.add(optionSelectAProductId);
+                    product_id_icon("lock");
+
+                product_ids.forEach(function(element){
+
+                    var option = document.createElement("option");
+                    option.value = element.product_id;
+                    option.text = element.product_id;
+                    option.setAttribute("product_hex", element.product_hex);
+                    dropdown.add(option);
+                });
+
+
+                for(let i=0; i < document.getElementById("product_id").options.length; i++){
+                    if(document.getElementById("product_id").options[i].getAttribute("product_hex") == version['product_hex']){
+                        document.getElementById("product_id").options[i].selected = true;
+                        product_id_toggle();
+                        product_id_icon("unlocked");
+                    }
+                }
+            }
+
+
+            async function getPartitions(){
+
+                try{
+                    let version_response = await fetch(root + "/version", { signal: AbortSignal.timeout(api_timeout) });
+
+                    if (version_response.ok) {
+                        version = await version_response.json();
+                        drawVersion()
+                    } else {
+                        throw new Error("Unable to get " + version_response.url + " (" + version_response.status + ")");
+                    }
+
+                }
+                catch(err){
+                    if (err.name === "AbortError") {
+                        prependWarningLabel("about-tab");
+                        errorHandler_get_inline("about-ui-version");
+                        errorHandler_get_inline("about-hardware-product-hex");
+                        errorHandler_get_inline("about-application-version");
+                        createErrorToast("Unable to get Version", "Timeout");
+                    } else {
+                        prependWarningLabel("about-tab");
+                        errorHandler_get_inline("about-ui-version");
+                        errorHandler_get_inline("about-hardware-product-hex");
+                        errorHandler_get_inline("about-application-version");
+                        createErrorToast("Unable to get Version", err);
+                    }
+                }
+
+                try{
+
+                    let aux_data_response = await fetch("./auxillary_data.json", { signal: AbortSignal.timeout(api_timeout) });
+
+                    if (aux_data_response.ok) {
+                        auxillary_data = await aux_data_response.json();
+                        drawProduct_Ids();
+                    } else {
+                        throw new Error("Unable to get " + aux_data_response.url + " (" + aux_data_response.status + ")");
+                    }
+                    }
+                    catch(err){
+                    if (err.name === "AbortError") {
+                        createErrorToast("Unable to get Auxillary Data", "Timeout");
+                    } else {
+                        createErrorToast("Unable to get Auxillary Data", err);
+                    }
+                }
+
+                try{
+
+                    let partitions_response = await fetch(root + "/partitions", { signal: AbortSignal.timeout(api_timeout) });
+
+                    if (partitions_response.ok) {
+                        partitions = await partitions_response.json();
+
+                        try{
+                            partitions = computePartitionScheme(partitions);
+                            checkPartitionScheme();
+                            drawPartitions();
+                        }
+                        catch(err){
+                            prependWarningLabel("partition-table-tab");
+                            errorHandler_get_div("partition-table-tab-pane");
+                            createErrorToast("Error Checking Partition Table", err.message);
+                        }
+
+                    } else {
+                        throw new Error("Unable to get " + partitions_response.url + " (" + partitions_response.status + ")");
+                    }
+                }
+                catch(err){
+                    if (err.name === "AbortError") {
+                        prependWarningLabel("partition-table-tab");
+                        errorHandler_get_div("partition-table-tab-pane");
+                        createErrorToast("Unable to get Partition Table", "Timeout");
+                        return;
+                    } else {
+                        prependWarningLabel("partition-table-tab");
+                        errorHandler_get_div("partition-table-tab-pane");
+                        createErrorToast("Unable to get Partition Table", err);
+                        return;
+                    }
+                }
+               
+            }
+
+
+            function drawPartitions(){
+
+                var countOfIssues = 0;
+
+                if(partitions == []){
+                    errorHandler_get_div("No partitions found.");
+                    return;
+                }
+
+                var table = document.getElementById('partition-tab-table-data');
+
+                partitions.forEach(function (element){
+
+                    var row = table.insertRow();
+
+                    var colType = row.insertCell();
+                    var colSubType = row.insertCell();
+                    var colAddress = row.insertCell();
+                    var colSize = row.insertCell();
+                    var colLabel = row.insertCell();
+                    var colStatus = row.insertCell();
+
+                    colType.innerText = "0x" + element.type.toString(16).padStart(2, '0');
+                    colSubType.innerText = "0x" + element.subtype.toString(16).padStart(2, '0');
+                    colAddress.innerText = "0x" + element.address.toString(16).padStart(6, '0').toUpperCase();
+                    colSize.innerText = bytesToSize(element.size) + " (" + "0x" + element.size.toString(16).padStart(6, '0') + ")";
+                    colLabel.innerText = element.label;
+
+                    if(!element.hasOwnProperty('status')){
+                        element.status = [];
+                        element.status.push("Error Comparing Partition Table Data");
+
+                    }
+
+                    if(element.status.length == 0){
+                        colStatus.innerHTML = `<span class="badge bg-success">OK</span>`
+                    }else{
+
+                        element.status.forEach(function(status){
+
+                            countOfIssues++;
+                            colStatus.innerHTML = colStatus.innerHTML + `<span class="badge bg-danger">${status}</span>`
+
+                        });
+                    }
+                });
+
+                if(countOfIssues > 0){
+                    prependWarningLabel("partition-table-tab");
+                    createErrorToast("Partition Table", "One or more partitions have errors.");
+                }
+
+                document.getElementById('partition-tab-table').classList.remove("d-none");
+                document.getElementById('partition-tab-wait-spinner').classList.add("d-none");
+            }
+
+
+            function checkPartitionScheme(){
+
+                if(partitions.length == 0){
+                    throw new Error("No partitions returned by API.");
+                    return;
+                }
+
+                if(auxillary_data.length == 0){
+                    throw new Error("No partition schemes found in auxillary data.");
+                    return;
+                }
+
+                if(version === null){
+                    throw new Error("Version information is missing.");
+                    return;
+                }
+
+                partition_scheme = [];
+
+                partition_scheme = auxillary_data.filter(function(element){
+
+                    if(element.product_hex == version['product_hex']){
+                        return element;
+                    }
+
+                });
+
+                if(partition_scheme.length == 0 ){
+                    throw new Error("No match between product hex and auxillary data.  Either the product hex is wrong, or the auxillary data needs to be updated for the hardware type.");
+                    return;
+                }
+
+
+                if(partition_scheme.length != 1 ){
+                    throw new Error("Partition scheme length of " + partition_scheme.length + ", expected exactly 1.");
+                    return;
+                }
+
+                partition_scheme = computePartitionScheme(partition_scheme[0].partition_scheme);
+
+
+                if(partition_scheme.length != partitions.length){
+                    throw new Error("The number of partitions in auxillary data for this product hex and the actual number of partitions reported by the hardware do not match.");
+                    return;
+                }
+
+
+                for(var i=0; i < partition_scheme.length; i++){
+
+                    partitions[i]['status'] = [];
+
+                    if(partition_scheme[i].type != partitions[i].type){
+                        partitions[i]['status'].push("Unexpected Type");
+                    }
+
+                    if(partition_scheme[i].subtype != partitions[i].subtype){
+                        partitions[i]['status'].push("Unexpected Subtype");
+                    }
+
+                    if(partition_scheme[i].address != partitions[i].address){
+                        partitions[i]['status'].push("Unexpected Address");
+                    }
+
+                    if(partition_scheme[i].size != partitions[i].size){
+                        partitions[i]['status'].push("Unexpected Size");
+                    }
+
+                    if(partition_scheme[i].label != partitions[i].label){
+                        partitions[i]['status'].push("Unexpected Label");
+                    }
+                }
+
+            }
+
+
+            async function getPeripherals(){
+
+                try{
+                    let response = await fetch(root + "/peripherals", { signal: AbortSignal.timeout(api_timeout) });
+
+                    if (response.ok) {
+                        peripherals = await response.json();
+                        drawPeripherals()
+                    } else {
+                        throw new Error("Unable to get " + response.url + " (" + response.status + ")");
+                    }
+
+                }
+                catch(err){
+                    if (err.name === "AbortError") {
+                        prependWarningLabel("peripherals-tab");
+                        errorHandler_get_div("peripherals-tab-pane");
+                        createErrorToast("Unable to get Peripherals", "Timeout");
+                    } else {
+                        prependWarningLabel("peripherals-tab");
+                        errorHandler_get_div("peripherals-tab-pane");
+                        createErrorToast("Unable to get Peripherals", err);
+                    }
+                }
+            }
+
+
+            function drawPeripherals(){
+
+                if(peripherals == []){
+                    return;
+                }
+
+                var table = document.getElementById('peripheral-tab-table-data');
+
+                var countOffline = 0;
+
+                peripherals.forEach(function (element){
+                    var row = table.insertRow();
+
+                    var colAddress = row.insertCell();
+                    var colType = row.insertCell();
+                    var colOnline = row.insertCell();
+
+                    colAddress.innerHTML = element.address;
+                    colType.innerHTML = peripheralTypeNameFormat(element.type);
+
+                    if(element.online == true){
+                        colOnline.innerHTML = `<span class="badge bg-success">Online</span>`;
+                    }else{
+                        colOnline.innerHTML = `<span class="badge bg-danger">Offline</span>`;
+                        countOffline++;
+                    }
+                });
+
+
+                if(countOffline > 0){
+                    prependWarningLabel("peripherals-tab");
+                    createErrorToast("Peripherals Offline", "One or more peripherals are offline.");
+                }
+
+                document.getElementById('peripheral-tab-table').classList.remove("d-none");
+                document.getElementById('peripheral-tab-wait-spinner').classList.add("d-none");
+
+            }
+
+
+            function drawVersion(){
+
+                if(version == {}){
+                    return;
+                }
+
+                document.getElementById("about-ui-version").innerText = ui_version;
+                document.getElementById("about-hardware-product-hex").innerText = version['product_hex'];
+                document.getElementById("about-application-version").innerText = version['application'];
+            }
+
+
+            function createErrorToast(title, message){
+
+                var template = document.getElementById('toast-element-error');
+                var toaster = template.cloneNode(true);
+                
+                toaster.querySelector('.toast-header').innerHTML = title;
+                toaster.querySelector('.toast-body').innerHTML = message;
+
+                var visibleToast = new bootstrap.Toast(toaster, {'autohide': false});
+
+                visibleToast.show();
+                template.parentNode.appendChild(toaster);
+
+            }
+
+            function createSuccessToast(title, message){
+
+                var template = document.getElementById('toast-element-success');
+                var toaster = template.cloneNode(true);
+
+                toaster.querySelector('.toast-header').innerHTML = title;
+                toaster.querySelector('.toast-body').innerHTML = message;
+
+                var visibleToast = new bootstrap.Toast(toaster, {'autohide': true});
+
+                visibleToast.show();
+                template.parentNode.appendChild(toaster);
+
+            }
+
+
+            function generateRandomString(length) {
+                const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                let result = '';
+                const charactersLength = characters.length;
+                for ( let i = 0; i < length; i++ ) {
+                    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+                }
+
+                return result;
+            }
+
+        </script>
+    </head>
     <body>
+
+        <div class="toast-container end-0 top-0 p-3">
+            <div class="toast align-items-center border-0" id="toast-element-error" role="alert">
+                
+                    <div class="toast-header text-bg-danger"></div>
+                <div class="d-flex">
+                    <div class="toast-body"></div>
+                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+
+            <div class="toast align-items-center border-0" id="toast-element-success" role="alert">
+                
+                <div class="toast-header text-bg-success"></div>
+                <div class="d-flex">
+                    <div class="toast-body"></div>
+                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
 
         <!-- Naviation Menu -->
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -243,14 +925,10 @@
                             <a class="nav-link" aria-current="page" href="#" id="identification-tab" data-bs-toggle="tab" data-bs-target="#identification-tab-pane" type="button" role="tab" aria-controls="identification-tab-pane" aria-selected="false">Identification</a>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <a class="nav-link" aria-current="page" href="#" id="partition-table-tab" data-bs-toggle="tab" data-bs-target="#partition-table-tab-pane" type="button" role="tab" aria-controls="partition-table-tab-pane" aria-selected="false"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#dc3545" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16">
-                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-                            </svg> Partition Table</a>
+                            <a class="nav-link" aria-current="page" href="#" id="partition-table-tab" data-bs-toggle="tab" data-bs-target="#partition-table-tab-pane" type="button" role="tab" aria-controls="partition-table-tab-pane" aria-selected="false">Partition Table</a>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <a class="nav-link" aria-current="page" href="#" id="peripherals-tab" data-bs-toggle="tab" data-bs-target="#peripherals-tab-pane" type="button" role="tab" aria-controls="peripherals-tab-pane" aria-selected="false"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#dc3545" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16">
-                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-                            </svg> Peripherals</a>
+                            <a class="nav-link" aria-current="page" href="#" id="peripherals-tab" data-bs-toggle="tab" data-bs-target="#peripherals-tab-pane" type="button" role="tab" aria-controls="peripherals-tab-pane" aria-selected="false">Peripherals</a>
                         </li>
                         <li class="nav-item" role="presentation">
                             <a class="nav-link" aria-current="page" href="#" id="about-tab" data-bs-toggle="tab" data-bs-target="#about-tab-pane" type="button" role="tab" aria-controls="about-tab-pane" aria-selected="false">About</a>
@@ -264,19 +942,27 @@
         <!-- Content -->
         <div class="tab-content container-fluid" id="content">
 
-            
+
             <!-- Hardware -->
             <div class="tab-pane fade show active" id="mcu-tab-pane" role="tabpanel" aria-labelledby="mcu-tab" tabindex="0">                    
-                <strong>Chip Model:</strong> <span id="chip_model"></span><br>
-                <strong>Revision:</strong> <span id="chip_revision"></span><br>
-                <strong>Flash Chip Size:</strong> <span id="flash_chip_size"></span>
-                <button onclick="getMCU();">Get</button>
+                <strong>Chip Model:</strong> <span id="chip_model"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Loading...</span></div></span><br>
+                <strong>Revision:</strong> <span id="chip_revision"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Loading...</span></div></span><br>
+                <strong>Flash Chip Size:</strong> <span id="flash_chip_size"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Loading...</span></div></span>
             </div>
 
 
             <!-- Network -->
             <div class="tab-pane fade" id="network-tab-pane" role="tabpanel" aria-labelledby="network-tab" tabindex="0">
-                <div class="table-responsive">
+
+                <!--Wait Spinner-->
+                <div class="d-flex justify-content-center align-items-center mt-2" id="network-tab-wait-spinner">
+                    <div class="rounded d-flex justify-content-center align-items-center" style="background-color: rgb(0,0,0,0.1); width: 50px; height: 50px;">
+                        <div class="spinner-border spinner-border align-middle text-secondary" role="status" ><span class="visually-hidden">Loading...</span></div>
+                    </div>
+                </div>
+
+                <!--Data Table-->
+                <div class="table-responsive d-none" id="network-tab-table">
                     <table class="table table-striped">
                         <thead>
                             <tr>
@@ -284,49 +970,88 @@
                             <th scope="col">MAC Address</th>
                             </tr>
                         </thead>
-                        <tbody id="network-tab-table">
+                        <tbody id="network-tab-table-data"></div>
                         </tbody>
                     </table>
                 </div>
-                <button onclick="getNetwork();">Get</button>
             </div>
 
 
             <!-- Identification -->
             <div class="tab-pane fade" id="identification-tab-pane" role="tabpanel" aria-labelledby="identification-tab" tabindex="0">
-                <div class="alert alert-warning" role="alert">Controller has been previously configured.</div>
 
-                <div class="row">
-                    <div class="input-group mb-3">
-                        <span class="input-group-text">Device UUID</span>
-                        <input type="text" class="form-control" id="uuid">
+
+                <!--Wait Spinner-->
+                <div class="d-flex justify-content-center align-items-center mt-2" id="identification-tab-wait-spinner">
+                    <div class="rounded d-flex justify-content-center align-items-center" style="background-color: rgb(0,0,0,0.1); width: 50px; height: 50px;">
+                        <div class="spinner-border spinner-border align-middle text-secondary" role="status" ><span class="visually-hidden">Loading...</span></div>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="input-group mb-3">
-                        <span class="input-group-text">Product ID</span>
-                        <select class="form-select" id="product_id">
-                            <option value="FFC0806-2305" selected>FFC0806-2305</option>
-                            <option value="FFC3232-2211">FFC3232-2211</option>
-                        </select>
+
+                <!--Input Form-->
+                <div id="identification-tab-content" class="d-none">
+                    <div id="identification-alert" class="alert alert-warning mt-2 d-none" role="alert">Controller has been previously configured.</div>
+                    
+                    <div class="row mt-2">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">Device UUID</span>
+                            <input type="text" class="form-control" id="uuid">
+                        </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="input-group mb-3">
-                            <span class="input-group-text">Key</span>
-                            <input type="password" class="form-control" id="key">
+                    <div class="row">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">Product ID</span>
+                            <select class="form-select" id="product_id">
+                            </select>
+                            <div class="input-group-append"><div class="input-group-append">
+                                <span class="input-group-text" onclick="product_id_toggle();">
+                                    <i id="identification-product_id-unlock">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-identification-product_id-unlock-fill" viewBox="0 0 16 16">
+                                            <path d="M11 1a2 2 0 0 0-2 2v4a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h5V3a3 3 0 0 1 6 0v4a.5.5 0 0 1-1 0V3a2 2 0 0 0-2-2z"/>
+                                        </svg>
+                                    </i>
+                                    <i id="identification-product_id-lock" class="d-none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-lock-fill" viewBox="0 0 16 16">
+                                            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                                        </svg>
+                                    </i>
+                                </span>
+                            </div></div>
+                        </div>
                     </div>
-                </div>
-                <div class="row g-3 d-flex gap-2 mb-3">
-                    <div class="col-auto">
-                        <button type="button" class="btn btn-primary" title="Save">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M8 10a.5.5 0 0 0 .5-.5V3.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 3.707V9.5a.5.5 0 0 0 .5.5zm-7 2.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13a.5.5 0 0 1-.5-.5z"/></svg> Save</button>
+                    <div class="row">
+                        <div class="input-group mb-3">
+                                <span class="input-group-text" id="identification-key">Key</span>
+                                <input type="password" class="form-control" id="key">
+                                <div class="input-group-append">
+                                    <span class="input-group-text" onclick="key_password_toggle();">
+                                    <i id="identification-key-show_eye"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-slash-fill" viewBox="0 0 16 16">
+                                        <path d="m10.79 12.912-1.614-1.615a3.5 3.5 0 0 1-4.474-4.474l-2.06-2.06C.938 6.278 0 8 0 8s3 5.5 8 5.5a7.029 7.029 0 0 0 2.79-.588zM5.21 3.088A7.028 7.028 0 0 1 8 2.5c5 0 8 5.5 8 5.5s-.939 1.721-2.641 3.238l-2.062-2.062a3.5 3.5 0 0 0-4.474-4.474L5.21 3.089z"/>
+                                        <path d="M5.525 7.646a2.5 2.5 0 0 0 2.829 2.829l-2.83-2.829zm4.95.708-2.829-2.83a2.5 2.5 0 0 1 2.829 2.829zm3.171 6-12-12 .708-.708 12 12-.708.708z"/>
+                                    </svg></i>
+                                    <i class="d-none" id="identification-key-hide_eye"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                                        <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
+                                        <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
+                                    </svg></i>
+                                    </span>
+                                </div>
+                        </div>
                     </div>
-                    <div class="col-auto">
-                        <button type="button" class="btn btn-outline-danger disabled" title="Delete">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16">
-                            <path d="M11.46.146A.5.5 0 0 0 11.107 0H4.893a.5.5 0 0 0-.353.146L.146 4.54A.5.5 0 0 0 0 4.893v6.214a.5.5 0 0 0 .146.353l4.394 4.394a.5.5 0 0 0 .353.146h6.214a.5.5 0 0 0 .353-.146l4.394-4.394a.5.5 0 0 0 .146-.353V4.893a.5.5 0 0 0-.146-.353L11.46.146zm-6.106 4.5L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 1 1 .708-.708z"/></svg> Delete</button>
+                    <div class="row g-3 d-flex gap-2 mb-3">
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-primary" title="Save" id="identification-save-button" onclick="postIdentification();">
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" id="identification-save-button-spinner"></span>
+                                <span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16" id="identification-save-button-icon">
+                                    <path fill-rule="evenodd" d="M8 10a.5.5 0 0 0 .5-.5V3.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 3.707V9.5a.5.5 0 0 0 .5.5zm-7 2.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13a.5.5 0 0 1-.5-.5z"/></svg> Save</span></button>
+                        </div>
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-outline-danger" id="identification-delete-button" title="Delete" onclick="deleteIdentification();">
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" id="identification-delete-button-spinner"></span>
+                                <span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16" id="identification-delete-button-icon">
+                                    <path d="M11.46.146A.5.5 0 0 0 11.107 0H4.893a.5.5 0 0 0-.353.146L.146 4.54A.5.5 0 0 0 0 4.893v6.214a.5.5 0 0 0 .146.353l4.394 4.394a.5.5 0 0 0 .353.146h6.214a.5.5 0 0 0 .353-.146l4.394-4.394a.5.5 0 0 0 .146-.353V4.893a.5.5 0 0 0-.146-.353L11.46.146zm-6.106 4.5L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 1 1 .708-.708z"/>
+                                </svg> Delete</span></button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -334,70 +1059,47 @@
 
             <!-- Partition Table -->
             <div class="tab-pane fade" id="partition-table-tab-pane" role="tabpanel" aria-labelledby="partition-table-tab" tabindex="0">
-                <div class="table-responsive">
+                
+                <!--Wait Spinner-->
+                <div class="d-flex justify-content-center align-items-center mt-2" id="partition-tab-wait-spinner">
+                    <div class="rounded d-flex justify-content-center align-items-center" style="background-color: rgb(0,0,0,0.1); width: 50px; height: 50px;">
+                        <div class="spinner-border spinner-border align-middle text-secondary" role="status" ><span class="visually-hidden">Loading...</span></div>
+                    </div>
+                </div>
+
+
+                <!--Data Table-->
+                <div class="table-responsive" id="partition-tab-table" class="d-none">
                     <table class="table table-striped">
                         <thead>
                             <tr>
                                 <th scope="col">Type</th>
                                 <th scope="col">Subtype</th>
-                                <th scope="col">Offset</th>
+                                <th scope="col">Address</th>
                                 <th scope="col">Size</th>
                                 <th scope="col">Label</th>
                                 <th scope="col">Status</th>
                             </tr>
                         </thead>
-                        <tbody id="partition-tab-table">
-                            <tr>
-                                <td>01</td>
-                                <td>02</td>
-                                <td>0x009000</td>
-                                <td>0x005000</td>
-                                <td>nvs</td>
-                                <td><span class="badge bg-success">OK</span></td>
-                            </tr>
-                            <tr>
-                                <td>01</td>
-                                <td>00</td>
-                                <td>0x00E000</td>
-                                <td>0x002000</td>
-                                <td>otadata</td>
-                                <td><span class="badge bg-danger">Unexpected Offset</span> <span class="badge bg-danger">Unexpected Size</span></td>
-                            </tr>
-                            <tr>
-                                <td>01</td>
-                                <td>00</td>
-                                <td>0x00E000</td>
-                                <td>0x002000</td>
-                                <td>otadata</td>
-                                <td><span class="badge bg-danger">Unexpected Type</span> <span class="badge bg-danger">Unexpected Subtype</span></td>
-                            </tr>
-                            <tr>
-                                <td>01</td>
-                                <td>00</td>
-                                <td>0x00E000</td>
-                                <td>0x002000</td>
-                                <td>junk</td>
-                                <td><span class="badge bg-danger">Unknown Label</span> <span class="badge bg-danger">Duplicate Label</span></td>
-                            </tr>
-                            <tr>
-                                <td>01</td>
-                                <td>00</td>
-                                <td>0x00E000</td>
-                                <td>0x002000</td>
-                                <td>spiffs</td>
-                                <td><span class="badge bg-danger">Offline</span></td>
-                            </tr>
+                        <tbody id="partition-tab-table-data">
                         </tbody>
                     </table>
                 </div>
-                <button onclick="getPartitions();">Get</button>
             </div>
 
 
             <!-- Peripherals -->
             <div class="tab-pane fade" id="peripherals-tab-pane" role="tabpanel" aria-labelledby="peripherals-tab" tabindex="0">
+
+                <!--Wait Spinner-->
+                <div class="d-flex justify-content-center align-items-center mt-2" id="peripheral-tab-wait-spinner">
+                    <div class="rounded d-flex justify-content-center align-items-center" style="background-color: rgb(0,0,0,0.1); width: 50px; height: 50px;">
+                        <div class="spinner-border spinner-border align-middle text-secondary" role="status" ><span class="visually-hidden">Loading...</span></div>
+                    </div>
+                </div>
+                
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-striped d-none" id="peripheral-tab-table">
                         <thead>
                         <tr>
                             <th scope="col">Address</th>
@@ -405,43 +1107,7 @@
                             <th scope="col">Status</th>
                         </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>0x20</td>
-                                <td>Input 0</td>
-                                <td><span class="badge bg-success">Online</span></td>
-                            </tr>
-                            <tr>
-                                <td>0x21</td>
-                                <td>Input 1</td>
-                                <td><span class="badge bg-success">Online</span></td>
-                            </tr>
-                            <tr>
-                                <td>0x40</td>
-                                <td>Output 0</td>
-                                <td><span class="badge bg-success">Online</span></td>
-                            </tr>
-                            <tr>
-                                <td>0x41</td>
-                                <td>Output 1</td>
-                                <td><span class="badge bg-danger">Offline</span></td>
-                            </tr>
-                            <tr>
-                                <td>0x50</td>
-                                <td>EEPROM</td>
-                                <td><span class="badge bg-success">Online</span></td>
-                            </tr>
-                            <tr>
-                                <td>0x48</td>
-                                <td>Temperature</td>
-                                <td><span class="badge bg-success">Online</span></td>
-                            </tr>
-                            <tr>
-                                <td>0x3C</td>
-                                <td>OLED</td>
-                                <td><span class="badge bg-success">Online</span></td>
-                            </tr>
-                        </tbody>
+                        <tbody id="peripheral-tab-table-data"></tbody>
                     </table>
                 </div>
             </div>
@@ -449,8 +1115,9 @@
 
             <!-- Abount -->
             <div class="tab-pane fade" id="about-tab-pane" role="tabpanel" aria-labelledby="about-tab" tabindex="0">
-                    <strong>UI Version:</strong> 2023.00.00.00<br>
-                    <strong>Application Version:</strong> <span id="application-version">???????</span><br>
+                    <strong>UI Version:</strong> <span id="about-ui-version"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Loading...</span></div></span><br>
+                    <strong>Hardware Product Hex:</strong> <span id="about-hardware-product-hex"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Loading...</span></div></span><br>
+                    <strong>Application Version:</strong> <span id="about-application-version"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Loading...</span></div></span><br>
                     <small>&copy; 2023, P5 Software, LLC</small>
                 <div class="mt-4">
                     <h4>Included Third Party Libraries</h4>
