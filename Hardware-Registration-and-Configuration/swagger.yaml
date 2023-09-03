@@ -296,8 +296,8 @@ components:
     peripheralAddress:
       type: string
       maxLength: 5
-      format: hexadecimal
-      description: Address of the peripheral
+      pattern: "^[A-Fa-f0-9]+$"
+      description: Hexadecimal address of the peripheral
       example: "0x20"
 
     peripheralType:
