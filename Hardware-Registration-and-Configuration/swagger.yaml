@@ -21,6 +21,9 @@ tags:
     description: Operations for the on-board peripherals
   - name: MCU
     description: Operations for the main control unit
+  - name: Version
+    description: Operations for the hardware and firmware versions
+
 
 paths:
   /api/network:
@@ -184,7 +187,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/listPeripherals'
 
+  /api/version:
+    get:
+      tags:
+        - Version
+      summary: Hardware and firmware version information
+      description: Retrieves the hardware and firmware version information
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/versionInfo'
 
+      
 components:
 
   schemas:
@@ -354,3 +371,20 @@ components:
           description: Size of the flash chip in bytes
           example: 16777216
 
+    applicationVersion:
+      type: string
+      description: Version of the firmware
+      example: "2023.01.0001"
+
+    productHex:
+      type: string
+      description: Hardware product hexadecimal, indicating the version of the firmware
+      example: "0x8062305"
+
+    versionInfo:
+      type: object
+      properties:
+        application:
+          $ref: '#/components/schemas/applicationVersion'
+        product_hex:
+          $ref: '#/components/schemas/productHex'
