@@ -20,6 +20,8 @@ Instructions are available at https://arduino.github.io/arduino-cli/latest/.  Es
 
 `arduino-cli config init`
 
+
+
 Enable unsafe installation so that local zip files can be installed:
 
 `arduino-cli config set library.enable_unsafe_install true`
@@ -31,9 +33,13 @@ Add the ESP32 board manager packages:
 
 `arduino-cli config set board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`
 
-Install ESP32 core, version 2.0.9:
+Update the Index
 
-`arduino-cli core install esp32:esp32@2.0.9`
+`arduino-cli core update-index`
+
+Install ESP32 core, version 2.0.11:
+
+`arduino-cli core install esp32:esp32@2.0.11`
 
 Check the libraries to ensure nothing is installed.
 
@@ -50,8 +56,6 @@ If there are any installed libraries, uninstall them before proceeding.
 ### Install the required libraries
 
 Download each library manually as a zip file.  Install each required library from disk.
-
-`arduino-cli lib install ArduinoJson@6.20.1`
 
 `arduino-cli lib install --zip-path /my/downloads/directory/ArduinoJson-6.20.1.zip`
 
