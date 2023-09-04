@@ -321,11 +321,21 @@
             }
 
 
+            function uuidv4() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+                .replace(/[xy]/g, function (c) {
+                    const r = Math.random() * 16 | 0, 
+                        v = c == 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+
+
             function drawIdentification(){
 
                 if(identification === null){
                     document.getElementById("identification-alert").classList.add("d-none");
-                    document.getElementById("uuid").value = crypto.randomUUID();
+                    document.getElementById("uuid").value = uuidv4();
                     document.getElementById("key").value = generateRandomString(64);
                     disable_identification_save_button(false);
                     disable_identification_delete_button(true);
