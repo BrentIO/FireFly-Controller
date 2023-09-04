@@ -10,7 +10,7 @@
 */
 
 #define DEBUG 2500
-#define VERSION "2023.07.0001"
+#define VERSION "2023.09.000"
 
 
 #include "common/hardware.h"
