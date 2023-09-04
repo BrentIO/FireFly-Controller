@@ -271,7 +271,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
   StaticJsonDocument<96> doc;
   doc["application"] = VERSION;
   char product_hex[16] = {0};
-  sprintf(product_hex, "0x%02X", PRODUCT_HEX);
+  sprintf(product_hex, "0x%08X", PRODUCT_HEX);
   doc["product_hex"] = product_hex;
 
   serializeJson(doc, *response);
