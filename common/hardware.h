@@ -17,6 +17,9 @@
     #define ENUM_MODEL_OLED_SSD1306_128_32 0 /* SSD1306 128x32px */
 
     #define DEBOUNCE_DELAY 150 /* Milliseconds between changes for debouncing on the front panel button. */
+    #define MINIMUM_CHANGE_DELAY 100 /* Milliseconds between a change being detected and an event triggering. This also handles debouncing for the main I/O.  */
+    #define MINIMUM_LONG_CHANGE_DELAY 1000 /* Milliseconds between the MINIMUM_CHANGE_DELAY that the change is observed before it is raised as a long change event. */
+
     /* Hardware Types */
     #if PRODUCT_HEX == 0x32322211
 

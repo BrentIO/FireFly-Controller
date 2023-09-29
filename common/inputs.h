@@ -15,10 +15,13 @@ class managerInputs{
 
 
     struct inputPin{
-        unsigned long timePreviousChange = 0; /* Time (millis) when the input state last changed.  Value is set to 0 when the state returns to its input type. Default 0.*/
-        inputState state = STATE_OPEN; /* The state entered at timePreviousChange. Default STATE_OPEN.*/
+        int64_t timeChange = 0; /* Time (milliseconds) when the input state last changed.  Value is set to 0 when the state returns to its input type. Default 0.*/
+        boolean changeHandled = true; /* If the change has been handled, to make the event singular. Default true. */
+        boolean changeHandledLong = true; /* If the long change has been handled, to make the event singular. Default true. */
+        inputState state = STATE_OPEN; /* The state entered at timeChange. Default STATE_OPEN.*/
         inputType type = NORMALLY_OPEN; /* Defines if the input is normally open or normally closed. Default NORMALLY_OPEN.*/
-        boolean monitorLongChange = false; /* Defines if the pin should be monitored for long changes.  Should be _true_ for buttons and _false_ for reed switches. Default false.*/
+        boolean monitorLongChange = true; /* Defines if the pin should be monitored for long changes.  Should be _true_ for buttons and _false_ for reed switches. Default false.*/             //******** DEBUG DEBUG DEBUG ********
+
     };
 
 
@@ -45,7 +48,7 @@ class managerInputs{
     ioExtender inputControllers[COUNT_IO_EXTENDER];
     const uint8_t portChannelPinMap[COUNT_PINS_IO_EXTENDER][2] = IO_EXTENDER_CHANNELS;
 
-    void (*ptrPublisherCallback)(void); //TODO: Determine correct signature
+    void (*ptrPublisherCallback)(boolean); //TODO: Determine correct signature
     void (*ptrFailureCallback)(void); //TODO: Determine correct signature
 
 
@@ -210,6 +213,59 @@ class managerInputs{
         inputController->previousRead = pinRead;
     }
 
+
+    void processInputs(ioExtender *inputController){
+
+        for(int i = 0; i < COUNT_PINS_IO_EXTENDER; i++){
+
+            if(inputController->inputs[i].timeChange == 0){
+                continue;
+            }
+
+            if((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) < MINIMUM_CHANGE_DELAY){
+
+                //Change was not observed long enough yet
+                continue;
+            }
+
+            if(((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) > MINIMUM_CHANGE_DELAY) && ((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) < MINIMUM_LONG_CHANGE_DELAY)){
+
+                if(inputController->inputs[i].changeHandled == true){
+                    continue;
+                }
+
+                inputController->inputs[i].changeHandled = true;
+
+                //Raise  an event for a short change
+                if(this->ptrPublisherCallback){
+                    this->ptrPublisherCallback(false);
+                }
+
+                continue;
+            }
+
+            if((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) > MINIMUM_LONG_CHANGE_DELAY){
+
+                if(inputController->inputs[i].monitorLongChange == false){
+                    continue;
+                }
+
+                if(inputController->inputs[i].changeHandledLong == true){
+                    continue;
+                }
+
+                inputController->inputs[i].changeHandledLong = true;
+
+                //Raise  an event for a long change
+                if(this->ptrPublisherCallback){
+                    this->ptrPublisherCallback(true);
+                }
+            }
+
+        }
+    }
+
+
     bool _initialized = false; /* If the class has been initialized. */
 
 
@@ -302,8 +358,9 @@ class managerInputs{
 
                 #endif
 
-                //Get the current input states and ignore the debounce delays
-                this->readInputPins(&this->inputControllers[i], true);
+                //Get the current input states
+                this->readInputPins(&this->inputControllers[i]);
+
             }
 
             this->_initialized = true;
@@ -346,6 +403,9 @@ class managerInputs{
                 if(digitalRead(this->inputControllers[i].interruptPin) == LOW){
                     readInputPins(&this->inputControllers[i]);
                 }
+
+                //Read the inputs and see if there are any that have an unhandled change
+                processInputs(&this->inputControllers[i]);
             }
         };
 };
