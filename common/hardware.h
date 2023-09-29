@@ -16,6 +16,7 @@
     #define ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075 0 /* PCT2075 */
     #define ENUM_MODEL_OLED_SSD1306_128_32 0 /* SSD1306 128x32px */
 
+    #define DEBOUNCE_DELAY 150 /* Milliseconds between changes for debouncing on the front panel button. */
     /* Hardware Types */
     #if PRODUCT_HEX == 0x32322211
 
@@ -25,7 +26,6 @@
         #define COUNT_IO_EXTENDER 8 /* The number of IO extenders. */
         #define MODEL_IO_EXTENDER ENUM_MODEL_IO_EXTENDER_PCA9995 /* IO Extender Model. */
         #define COUNT_PINS_IO_EXTENDER 16 /* The number of pins on each IO extender. */
-        #define DEBOUNCE_DELAY 150 /* Milliseconds between changes for debouncing. */
         #define COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ45 port that are usable. */
         
         /* Output Controller */
@@ -69,7 +69,6 @@
         #define COUNT_IO_EXTENDER 8 /* The number of IO extenders. */
         #define MODEL_IO_EXTENDER ENUM_MODEL_IO_EXTENDER_PCA9995 /* IO Extender Model. */
         #define COUNT_PINS_IO_EXTENDER 16 /* The number of pins on each IO extender. */
-        #define DEBOUNCE_DELAY 150 /* Milliseconds between changes for debouncing. */
         #define COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ45 port that are usable. */
         
         /* Output Controller */
@@ -107,12 +106,11 @@
     #if PRODUCT_HEX == 0x08062305
 
         #define SUPPORTED_HARDWARE
-       
+      
         /* Input IO Extender */
         #define COUNT_IO_EXTENDER 2 /* The number of IO extenders. */
         #define MODEL_IO_EXTENDER ENUM_MODEL_IO_EXTENDER_PCA9995 /* IO Extender Model. */
         #define COUNT_PINS_IO_EXTENDER 16 /* The number of pins on each IO extender. */
-        #define DEBOUNCE_DELAY 150 /* Milliseconds between changes for debouncing. */
         #define COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ45 port that are usable. */
         
         /* Output Controller */
