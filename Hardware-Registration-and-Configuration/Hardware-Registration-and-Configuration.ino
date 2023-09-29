@@ -9,8 +9,8 @@
  * (C) 2023, P5 Software, LLC
 */
 
-#define DEBUG 2500
-#define VERSION "2023.09.000"
+#define DEBUG 10000
+#define VERSION "2023.09.001"
 
 
 #include "common/hardware.h"
