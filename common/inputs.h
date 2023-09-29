@@ -70,16 +70,6 @@ class managerInputs{
     }
 
 
-    /** Checks the pins on the input controller for changes, optionally ignoring the debounce delay */
-    void readInputPins(ioExtender *inputController, boolean ignoreDebounceDelay){
-
-        #ifdef DEBUG
-            #if DEBUG > 500
-                if(ignoreDebounceDelay == true){
-                    Serial.println("[inputs] (readInputPins) IO Extender: 0x" + String(inputController->address, HEX) + " Ignoring debounce delay.");
-                }
-            #endif
-        #endif
 
         uint16_t pinRead = 0;
 
@@ -103,30 +93,9 @@ class managerInputs{
 
             //Check if the value returned in the read is the same as the last read
             if(inputController->inputs[i].state == currentState){
-
-                #ifdef DEBUG
-                    #if DEBUG > 500
-                        Serial.println("[inputs] (readInputPins) IO Extender: 0x" + String(inputController->address, HEX) + " Pin: " + String(i) + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + " input states match. Previous: " + String(inputController->inputs[i].state, HEX) + " Current: " + String(currentState, HEX));
-                    #endif
-                #endif
-
                 continue;
             }
 
-            //Values are different; Check if we are within the debounce delay and that the status isn't its normal state
-            if((millis() - inputController->inputs[i].timePreviousChange < DEBOUNCE_DELAY) && (inputController->inputs[i].type != currentState)){ // TO DO: FIX THIS
-
-                //Check if the debounce delay should be checked (ignored on startup)
-                if(ignoreDebounceDelay == false){
-                    
-                    #ifdef DEBUG
-                        #if DEBUG > 500
-                            Serial.println("[inputs] (readInputPins) IO Extender: 0x" + String(inputController->address, HEX) + " Pin: " + String(i) + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + " DEBOUNCE_DELAY (" + String(DEBOUNCE_DELAY) + ") not satisfied. Time Previous Change: " + String(inputController->inputs[i].timePreviousChange) + " Current Time: " + String(millis()) + " Difference: " + String(millis() - inputController->inputs[i].timePreviousChange));
-                        #endif
-                    #endif
-
-                    continue;
-                }
 
             }
 
