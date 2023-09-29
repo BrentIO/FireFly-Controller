@@ -210,10 +210,14 @@ void temperatureFailure(String location){
 };
 
 
-void inputPublisher(){
+void inputPublisher(boolean longChange){
 
   #ifdef DEBUG
-    Serial.println("[main] (inputPublisher) An input was made");
+    if(longChange == false){
+      Serial.println("[main] (inputPublisher) A short input was made");
+    }else{
+      Serial.println("[main] (inputPublisher) A long input was made");
+    }
   #endif
 
   //TODO: Add MQTT and stuff

@@ -239,7 +239,7 @@ class managerInputs{
             structHealth inputControllers[COUNT_IO_EXTENDER];
         };
 
-        void setCallback_publisher(void (*userDefinedCallback)(void)) {
+        void setCallback_publisher(void (*userDefinedCallback)(boolean)) {
             ptrPublisherCallback = userDefinedCallback; }
 
         void setCallback_failure(void (*userDefinedCallback)(void)) {
