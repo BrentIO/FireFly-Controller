@@ -66,13 +66,10 @@ class managerInputs{
 
     /** Checks the pins on the input controller for changes */
     void readInputPins(ioExtender *inputController){
-        readInputPins(inputController, false);
-    }
-
-
 
         uint16_t pinRead = 0;
 
+        //Read all of the pins in a single call to the hardware
         #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9555
             pinRead = inputController->hardware.read();
         #endif
@@ -82,22 +79,23 @@ class managerInputs{
             return;
         }
 
-        //Process each pin on the specified IO extender
+        //Set the controller's value to the updated value
+        inputController->previousRead = pinRead;
+
+        //Hardware detected a change; Process each pin on the specified IO extender
         for(int i = 0; i < COUNT_PINS_IO_EXTENDER; i++){
 
             inputState currentState = bitToInputState(bitRead(pinRead, i));
-            portChannel portChannel;
-
-            portChannel.port = portChannelPinMap[i][0] + inputController->portOffset;
-            portChannel.channel = portChannelPinMap[i][1];
 
             //Check if the value returned in the read is the same as the last read
             if(inputController->inputs[i].state == currentState){
                 continue;
             }
 
+            portChannel portChannel;
 
-            }
+            portChannel.port = portChannelPinMap[i][0] + inputController->portOffset;
+            portChannel.channel = portChannelPinMap[i][1];
 
             switch(inputController->inputs[i].type){
 
@@ -176,8 +174,6 @@ class managerInputs{
 
         }
 
-        //Set the controller's value to the updated value
-        inputController->previousRead = pinRead;
     }
 
 
