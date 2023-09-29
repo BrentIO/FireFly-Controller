@@ -137,17 +137,15 @@ class managerInputs{
                     //Check if input is in an abnormal state
                     if(currentState == inputState::STATE_CLOSED){
 
-                        inputController->inputs[i].timePreviousChange = millis();
+                        inputController->inputs[i].timeChange = int(esp_timer_get_time()/1000);
+                        inputController->inputs[i].changeHandled = false;
+                        inputController->inputs[i].changeHandledLong = false;
 
                         #ifdef DEBUG
                             #if DEBUG > 500
-                                Serial.println("[inputs] (readInputPins) IO Extender: 0x" + String(inputController->address, HEX) + " Pin: " + String(i) + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + " Type: " + String(inputController->inputs[i].type) + " New State: " + String(currentState) + " (Abnormal)");
+                                Serial.println("[inputs] (readInputPins) Time: " + String(inputController->inputs[i].timeChange) + " IO Extender: 0x" + String(inputController->address, HEX) + " Pin: " + String(i) + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + " Type: " + String(inputController->inputs[i].type) + " New State: " + String(currentState) + " (Abnormal)");
                             #endif
                         #endif
-
-                        if(this->ptrPublisherCallback){
-                            this->ptrPublisherCallback();
-                        }
 
                         break;
                     }
@@ -155,15 +153,16 @@ class managerInputs{
                     //Check if input is in normal state
                     if(currentState == inputState::STATE_OPEN){
                     
-                        inputController->inputs[i].timePreviousChange = 0;
+                        inputController->inputs[i].timeChange = 0;
+                        inputController->inputs[i].changeHandled = true;
+                        inputController->inputs[i].changeHandledLong = true;
 
                         #ifdef DEBUG
-                            #if DEBUG > 500
+                            #if DEBUG > 2500
                                 Serial.println("[inputs] (readInputPins) IO Extender: 0x" + String(inputController->address, HEX) + " Pin: " + String(i) + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + " Type: " + String(inputController->inputs[i].type) + " New State: " + String(currentState) + " (Normal)");
                             #endif
                         #endif
                         
-                        //TODO: Something
                         break;
                     }
 
@@ -172,17 +171,15 @@ class managerInputs{
                     //Check if input is in an abnormal state
                     if(currentState == inputState::STATE_OPEN){
 
-                        inputController->inputs[i].timePreviousChange = millis();
+                        inputController->inputs[i].timeChange = int(esp_timer_get_time()/1000);
+                        inputController->inputs[i].changeHandled = false;
+                        inputController->inputs[i].changeHandledLong = false;
                         
                         #ifdef DEBUG
-                            #if DEBUG > 500
-                                Serial.println("[inputs] (readInputPins) IO Extender: " + String(inputController->address, HEX) + " Pin: " + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + String(i) + " Type: " + String(inputController->inputs[i].type) + " New State: " + String(currentState) + " (Abnormal)");
+                            #if DEBUG > 2500
+                                Serial.println("[inputs] (readInputPins) Time: " + String(inputController->inputs[i].timeChange) + " IO Extender: " + String(inputController->address, HEX) + " Pin: " + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + String(i) + " Type: " + String(inputController->inputs[i].type) + " New State: " + String(currentState) + " (Abnormal)");
                             #endif
                         #endif
-
-                        if(this->ptrPublisherCallback){
-                            this->ptrPublisherCallback();
-                        }
 
                         break;
                     }
@@ -190,15 +187,16 @@ class managerInputs{
                     //Check if input is in normal state
                     if(currentState == inputState::STATE_CLOSED){
                     
-                        inputController->inputs[i].timePreviousChange = 0;
+                        inputController->inputs[i].timeChange = 0;
+                        inputController->inputs[i].changeHandled = true;
+                        inputController->inputs[i].changeHandledLong = true;
 
                         #ifdef DEBUG
-                            #if DEBUG > 500
+                            #if DEBUG > 2500
                                 Serial.println("[inputs] (readInputPins) IO Extender: " + String(inputController->address, HEX) + " Pin: " + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + String(i) + " Type: " + String(inputController->inputs[i].type) + " New State: " + String(currentState) + " (Normal)");
                             #endif
                         #endif
 
-                        //TODO: Something
                         break;
                     }
 
