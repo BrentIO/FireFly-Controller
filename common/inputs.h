@@ -303,11 +303,11 @@ class managerInputs{
             //Setup the input controllers
             for(int i = 0; i < COUNT_IO_EXTENDER; i++){
 
-                pinMode(this->inputControllers[i].interruptPin, INPUT_PULLUP);
-
                 this->inputControllers[i].interruptPin = pinsInterruptIoExtender[i];
                 this->inputControllers[i].address = addressesIoExtender[i];
                 this->inputControllers[i].portOffset = ((COUNT_PINS_IO_EXTENDER / COUNT_CHANNELS_PER_PORT) * i);
+
+                pinMode(this->inputControllers[i].interruptPin, INPUT);
                 
                 #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9555
                     this->inputControllers[i].hardware.attach(Wire, inputControllers[i].address);
