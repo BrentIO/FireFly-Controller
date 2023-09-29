@@ -1,6 +1,6 @@
-#define VERSION "2023.07.0002"
+#define VERSION "2023.09.0001"
 
-#define DEBUG 50
+#define DEBUG 200
 
 
 
