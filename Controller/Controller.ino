@@ -1,6 +1,6 @@
 #define VERSION "2023.09.0001"
 
-#define DEBUG 200
+#define DEBUG 501
 
 
 
@@ -210,13 +210,13 @@ void temperatureFailure(String location){
 };
 
 
-void inputPublisher(boolean longChange){
+void inputPublisher(managerInputs::portChannel portChannel, boolean longChange){
 
   #ifdef DEBUG
     if(longChange == false){
-      Serial.println("[main] (inputPublisher) A short input was made");
+      Serial.println("[main] (inputPublisher) A short input was made on port " + String(portChannel.port) + " channel " + String(portChannel.channel));
     }else{
-      Serial.println("[main] (inputPublisher) A long input was made");
+      Serial.println("[main] (inputPublisher) A long input was made on port " + String(portChannel.port) + " channel " + String(portChannel.channel));
     }
   #endif
 
