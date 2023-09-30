@@ -53,6 +53,35 @@ No libraries installed.
 If there are any installed libraries, uninstall them before proceeding.
 
 ---
+### Download required libraries
+
+https://github.com/bblanchon/ArduinoJson
+
+https://github.com/RobTillaart/I2C_EEPROM
+
+~~https://github.com/semcneil/PCA95x5~~
+
+Use https://github.com/BrentIO/PCA95x5 until https://github.com/semcneil/PCA95x5/pull/1 PR is merged
+
+https://github.com/RobTillaart/PCA9685_RT
+
+https://github.com/jpliew/PCT2075
+
+https://github.com/nickgammon/Regexp
+
+https://github.com/adafruit/Adafruit_SSD1306
+
+https://github.com/adafruit/Adafruit-GFX-Library
+
+https://github.com/adafruit/Adafruit_BusIO
+
+https://github.com/me-no-dev/ESPAsyncWebServer
+
+https://github.com/me-no-dev/AsyncTCP
+
+
+
+---
 ### Install the required libraries
 
 Download each library manually as a zip file.  Install each required library from disk.
@@ -61,7 +90,9 @@ Download each library manually as a zip file.  Install each required library fro
 
 `arduino-cli lib install --zip-path  /my/downloads/directory/I2C_EEPROM-1.7.1.zip`
 
-`arduino-cli lib install --zip-path /my/downloads/directory/PCA95x5-0.1.3.zip`
+~~`arduino-cli lib install --zip-path /my/downloads/directory/PCA95x5-0.1.3.zip`~~ 
+
+Version should be > 0.1.3, see PR comment above
 
 `arduino-cli lib install --zip-path /my/downloads/directory/PCA9685_RT-0.4.1.zip`
 
