@@ -32,6 +32,10 @@ class managerInputs{
         };
 
 
+        enum inputState{
+            STATE_OPEN = LOW,
+            STATE_CLOSED = HIGH
+        };
 
 
         struct inputPin{
@@ -44,8 +48,6 @@ class managerInputs{
 
         };
 
-    ioExtender inputControllers[COUNT_IO_EXTENDER];
-    const uint8_t portChannelPinMap[COUNT_PINS_IO_EXTENDER][2] = IO_EXTENDER_CHANNELS;
 
         struct ioExtender{
             #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9995
@@ -60,38 +62,46 @@ class managerInputs{
             uint8_t portOffset = 0; /* Indicates the first RJ45 port handled by this ioExtender.*/
         };
 
-    /** Convert a bit to inputState */
-    inputState bitToInputState(boolean value){
 
-        if(value == LOW){
-            return inputState::STATE_CLOSED;
-        }else{
-            return inputState::STATE_OPEN;
+        ioExtender inputControllers[COUNT_IO_EXTENDER];
+        const uint8_t portChannelPinMap[COUNT_PINS_IO_EXTENDER][2] = IO_EXTENDER_CHANNELS;
+
+        void (*ptrPublisherCallback)(portChannel, boolean);
+        void (*ptrFailureCallback)(uint8_t, failureReason);
+
+        /** Marks a given input controller as failed and raises a failed status */
+        void failInputController(ioExtender *inputController, failureReason failureReason){
+
+            if(inputController->enabled == false){
+                return;
+            }
+
+            if(failureReason == failureReason::SUCCESS_NO_ERROR){
+                #if DEBUG
+                    Serial.println(F("[inputs] (failInputController) Function is being called with no error present."));
+                #endif
+
+                return;
+            }
+
+            inputController->enabled = false;
+
+            if(this->ptrFailureCallback){
+                this->ptrFailureCallback(inputController->address, failureReason);
+            }
         }
 
-    }
 
-
-    /** Checks the pins on the input controller for changes */
-    void readInputPins(ioExtender *inputController){
-
-        uint16_t pinRead = 0;
-
-        //Read all of the pins in a single call to the hardware
-        #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9555
-            pinRead = inputController->hardware.read();
-        #endif
-
-        //Exit if the value returned from the controller is the same as the value that was previously read
-        if(pinRead == inputController->previousRead){
-            return;
+        /** Convert a bit to inputState */
+        inputState bitToInputState(boolean value){
+            if(value == LOW){
+                return inputState::STATE_CLOSED;
+            }else{
+                return inputState::STATE_OPEN;
+            }
         }
 
-        //Set the controller's value to the updated value
-        inputController->previousRead = pinRead;
 
-        //Hardware detected a change; Process each pin on the specified IO extender
-        for(int i = 0; i < COUNT_PINS_IO_EXTENDER; i++){
         failureReason i2cResponseToFailureReason(uint8_t i2cError){
 
             switch(i2cError){
@@ -116,14 +126,10 @@ class managerInputs{
                     return failureReason::OTHER_ERROR;
                     break;
 
-            inputState currentState = bitToInputState(bitRead(pinRead, i));
                 case 5:
                     return failureReason::TIMEOUT;
                     break;
 
-            //Check if the value returned in the read is the same as the last read
-            if(inputController->inputs[i].state == currentState){
-                continue;
                 case 10:
                     return failureReason::INVALID_HARDWARE_CONFIGURATION;
                     break;
@@ -133,141 +139,152 @@ class managerInputs{
             }
         }
 
-            portChannel portChannel;
 
-            portChannel.port = portChannelPinMap[i][0] + inputController->portOffset;
-            portChannel.channel = portChannelPinMap[i][1];
+        /** Checks the pins on the input controller for changes */
+        void readInputPins(ioExtender *inputController){
+            uint16_t pinRead = 0;
 
-            switch(inputController->inputs[i].type){
+            //Read all of the pins in a single call to the hardware
+            #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9555
+                pinRead = inputController->hardware.read();
 
-                case inputType::NORMALLY_OPEN:
+                if(inputController->hardware.i2c_error() != 0){
+                    failInputController(inputController, i2cResponseToFailureReason(inputController->hardware.i2c_error()));
+                    return;
+                }
 
-                    //Check if input is in an abnormal state
-                    if(currentState == inputState::STATE_CLOSED){
+            #endif
 
-                        inputController->inputs[i].timeChange = int(esp_timer_get_time()/1000);
-                        inputController->inputs[i].changeHandled = false;
-                        inputController->inputs[i].changeHandledLong = false;
-
-                        #ifdef DEBUG
-                            #if DEBUG > 500
-                                Serial.println("[inputs] (readInputPins) Time: " + String(inputController->inputs[i].timeChange) + " IO Extender: 0x" + String(inputController->address, HEX) + " Pin: " + String(i) + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + " Type: " + String(inputController->inputs[i].type) + " New State: " + String(currentState) + " (Abnormal)");
-                            #endif
-                        #endif
-
-                        break;
-                    }
-
-                    //Check if input is in normal state
-                    if(currentState == inputState::STATE_OPEN){
-                    
-                        inputController->inputs[i].timeChange = 0;
-                        inputController->inputs[i].changeHandled = true;
-                        inputController->inputs[i].changeHandledLong = true;
-
-                        #ifdef DEBUG
-                            #if DEBUG > 2500
-                                Serial.println("[inputs] (readInputPins) IO Extender: 0x" + String(inputController->address, HEX) + " Pin: " + String(i) + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + " Type: " + String(inputController->inputs[i].type) + " New State: " + String(currentState) + " (Normal)");
-                            #endif
-                        #endif
-                        
-                        break;
-                    }
-
-                case inputType::NORMALLY_CLOSED:
-
-                    //Check if input is in an abnormal state
-                    if(currentState == inputState::STATE_OPEN){
-
-                        inputController->inputs[i].timeChange = int(esp_timer_get_time()/1000);
-                        inputController->inputs[i].changeHandled = false;
-                        inputController->inputs[i].changeHandledLong = false;
-                        
-                        #ifdef DEBUG
-                            #if DEBUG > 2500
-                                Serial.println("[inputs] (readInputPins) Time: " + String(inputController->inputs[i].timeChange) + " IO Extender: " + String(inputController->address, HEX) + " Pin: " + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + String(i) + " Type: " + String(inputController->inputs[i].type) + " New State: " + String(currentState) + " (Abnormal)");
-                            #endif
-                        #endif
-
-                        break;
-                    }
-
-                    //Check if input is in normal state
-                    if(currentState == inputState::STATE_CLOSED){
-                    
-                        inputController->inputs[i].timeChange = 0;
-                        inputController->inputs[i].changeHandled = true;
-                        inputController->inputs[i].changeHandledLong = true;
-
-                        #ifdef DEBUG
-                            #if DEBUG > 2500
-                                Serial.println("[inputs] (readInputPins) IO Extender: " + String(inputController->address, HEX) + " Pin: " + " Port: " + String(portChannel.port) + " Channel: " + String(portChannel.channel) + String(i) + " Type: " + String(inputController->inputs[i].type) + " New State: " + String(currentState) + " (Normal)");
-                            #endif
-                        #endif
-
-                        break;
-                    }
-
+            //Exit if the value returned from the controller is the same as the value that was previously read
+            if(pinRead == inputController->previousRead){
+                return;
             }
 
-            //Set the value of the pin to the current state
-            inputController->inputs[i].state = currentState;
+            //Set the controller's value to the updated value
+            inputController->previousRead = pinRead;
 
+            //Hardware detected a change; Process each pin on the specified IO extender
+            for(int i = 0; i < COUNT_PINS_IO_EXTENDER; i++){
+
+                inputState currentState = bitToInputState(bitRead(pinRead, i));
+
+                //Check if the value returned in the read is the same as the last read
+                if(inputController->inputs[i].state == currentState){
+                    continue;
+                }
+
+                portChannel portChannel;
+
+                portChannel.port = portChannelPinMap[i][0] + inputController->portOffset;
+                portChannel.channel = portChannelPinMap[i][1];
+
+                switch(inputController->inputs[i].type){
+
+                    case inputType::NORMALLY_OPEN:
+
+                        //Check if input is in an abnormal state
+                        if(currentState == inputState::STATE_CLOSED){
+
+                            inputController->inputs[i].timeChange = int(esp_timer_get_time()/1000);
+                            inputController->inputs[i].changeHandled = false;
+                            inputController->inputs[i].changeHandledLong = false;
+
+                            break;
+                        }
+
+                        //Check if input is in normal state
+                        if(currentState == inputState::STATE_OPEN){
+                        
+                            inputController->inputs[i].timeChange = 0;
+                            inputController->inputs[i].changeHandled = true;
+                            inputController->inputs[i].changeHandledLong = true;
+                        
+                            break;
+                        }
+
+                    case inputType::NORMALLY_CLOSED:
+
+                        //Check if input is in an abnormal state
+                        if(currentState == inputState::STATE_OPEN){
+
+                            inputController->inputs[i].timeChange = int(esp_timer_get_time()/1000);
+                            inputController->inputs[i].changeHandled = false;
+                            inputController->inputs[i].changeHandledLong = false;
+                            
+                            break;
+                        }
+
+                        //Check if input is in normal state
+                        if(currentState == inputState::STATE_CLOSED){
+                        
+                            inputController->inputs[i].timeChange = 0;
+                            inputController->inputs[i].changeHandled = true;
+                            inputController->inputs[i].changeHandledLong = true;
+
+                            break;
+                        }
+                }
+
+                //Set the value of the pin to the current state
+                inputController->inputs[i].state = currentState;
+            }
         }
 
-    }
 
+        void processInputs(ioExtender *inputController){
 
-    void processInputs(ioExtender *inputController){
+            for(int i = 0; i < COUNT_PINS_IO_EXTENDER; i++){
 
-        for(int i = 0; i < COUNT_PINS_IO_EXTENDER; i++){
-
-            if(inputController->inputs[i].timeChange == 0){
-                continue;
-            }
-
-            if((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) < MINIMUM_CHANGE_DELAY){
-
-                //Change was not observed long enough yet
-                continue;
-            }
-
-            if(((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) > MINIMUM_CHANGE_DELAY) && ((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) < MINIMUM_LONG_CHANGE_DELAY)){
-
-                if(inputController->inputs[i].changeHandled == true){
+                if(inputController->inputs[i].timeChange == 0){
                     continue;
                 }
 
-                inputController->inputs[i].changeHandled = true;
+                if((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) < MINIMUM_CHANGE_DELAY){
 
-                //Raise  an event for a short change
-                if(this->ptrPublisherCallback){
-                    this->ptrPublisherCallback(false);
-                }
-
-                continue;
-            }
-
-            if((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) > MINIMUM_LONG_CHANGE_DELAY){
-
-                if(inputController->inputs[i].monitorLongChange == false){
+                    //Change was not observed long enough yet
                     continue;
                 }
 
-                if(inputController->inputs[i].changeHandledLong == true){
+                portChannel portChannel;
+
+                portChannel.port = portChannelPinMap[i][0] + inputController->portOffset;
+                portChannel.channel = portChannelPinMap[i][1];
+
+                if(((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) > MINIMUM_CHANGE_DELAY) && ((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) < MINIMUM_LONG_CHANGE_DELAY)){
+
+                    if(inputController->inputs[i].changeHandled == true){
+                        continue;
+                    }
+
+                    inputController->inputs[i].changeHandled = true;
+
+                    //Raise  an event for a short change
+                    if(this->ptrPublisherCallback){
+                        this->ptrPublisherCallback(portChannel, false);
+                    }
+
                     continue;
                 }
 
-                inputController->inputs[i].changeHandledLong = true;
+                if((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) > MINIMUM_LONG_CHANGE_DELAY){
 
-                //Raise  an event for a long change
-                if(this->ptrPublisherCallback){
-                    this->ptrPublisherCallback(true);
+                    if(inputController->inputs[i].monitorLongChange == false){
+                        continue;
+                    }
+
+                    if(inputController->inputs[i].changeHandledLong == true){
+                        continue;
+                    }
+
+                    inputController->inputs[i].changeHandledLong = true;
+
+                    //Raise  an event for a long change
+                    if(this->ptrPublisherCallback){
+                        this->ptrPublisherCallback(portChannel, true);
+                    }
                 }
             }
-
         }
-    }
 
 
         bool _initialized = false; /* If the class has been initialized. */
