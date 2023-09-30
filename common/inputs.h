@@ -2,17 +2,21 @@
 
 class managerInputs{
 
-    enum inputType{
-        NORMALLY_OPEN = 0,
-        NORMALLY_CLOSED = 1,
-    };
+    public:
 
 
-    enum inputState{
-        STATE_OPEN = LOW,
-        STATE_CLOSED = HIGH
-    };
 
+        /* Failure reason codes, roughly based on i2c return messages. */
+        enum failureReason{
+            SUCCESS_NO_ERROR = 0, 
+            DATA_TRANSMIT_BUFFER_ERROR = 1,
+            ADDRESS_OFFLINE = 2,
+            TRANSMIT_NOT_ACKNOLWEDGED = 3,
+            OTHER_ERROR = 4,
+            TIMEOUT = 5,
+            INVALID_HARDWARE_CONFIGURATION = 10,
+            UNKNOWN_ERROR = 11
+        };
 
     struct inputPin{
         int64_t timeChange = 0; /* Time (milliseconds) when the input state last changed.  Value is set to 0 when the state returns to its input type. Default 0.*/
@@ -24,6 +28,10 @@ class managerInputs{
 
     };
 
+        enum inputType{
+            NORMALLY_OPEN = 0,
+            NORMALLY_CLOSED = 1,
+        };
 
     struct ioExtender{
         #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9995
@@ -48,8 +56,6 @@ class managerInputs{
     ioExtender inputControllers[COUNT_IO_EXTENDER];
     const uint8_t portChannelPinMap[COUNT_PINS_IO_EXTENDER][2] = IO_EXTENDER_CHANNELS;
 
-    void (*ptrPublisherCallback)(boolean); //TODO: Determine correct signature
-    void (*ptrFailureCallback)(void); //TODO: Determine correct signature
 
 
     /** Convert a bit to inputState */
@@ -84,13 +90,46 @@ class managerInputs{
 
         //Hardware detected a change; Process each pin on the specified IO extender
         for(int i = 0; i < COUNT_PINS_IO_EXTENDER; i++){
+        failureReason i2cResponseToFailureReason(uint8_t i2cError){
+
+            switch(i2cError){
+
+                case 0:
+                    return failureReason::SUCCESS_NO_ERROR;
+                    break;
+
+                case 1:
+                    return failureReason::DATA_TRANSMIT_BUFFER_ERROR;
+                    break;
+
+                case 2:
+                    return failureReason::ADDRESS_OFFLINE;
+                    break;
+
+                case 3:
+                    return failureReason::TRANSMIT_NOT_ACKNOLWEDGED;
+                    break;
+
+                case 4:
+                    return failureReason::OTHER_ERROR;
+                    break;
 
             inputState currentState = bitToInputState(bitRead(pinRead, i));
+                case 5:
+                    return failureReason::TIMEOUT;
+                    break;
 
             //Check if the value returned in the read is the same as the last read
             if(inputController->inputs[i].state == currentState){
                 continue;
+                case 10:
+                    return failureReason::INVALID_HARDWARE_CONFIGURATION;
+                    break;
+
+                default:
+                    return failureReason::UNKNOWN_ERROR;
             }
+        }
 
             portChannel portChannel;
 
@@ -239,11 +278,14 @@ class managerInputs{
             structHealth inputControllers[COUNT_IO_EXTENDER];
         };
 
-        void setCallback_publisher(void (*userDefinedCallback)(boolean)) {
+
+        void setCallback_publisher(void (*userDefinedCallback)(portChannel, boolean)) {
             ptrPublisherCallback = userDefinedCallback; }
 
-        void setCallback_failure(void (*userDefinedCallback)(void)) {
+
+        void setCallback_failure(void (*userDefinedCallback)(uint8_t, failureReason)) {
             ptrFailureCallback = userDefinedCallback; }
+
 
         void begin(){
 
@@ -260,9 +302,10 @@ class managerInputs{
                     Serial.println(F("[inputs] (begin) COUNT_IO_EXTENDER and the length of PINS_INTERRUPT_IO_EXTENDER are mismatched in hardware.h; Disabling inputs."));
                 #endif
 
-                if(this->ptrFailureCallback){
-                    this->ptrFailureCallback();
-                }
+                ioExtender invalid;
+                invalid.address = 0;
+
+                failInputController(&invalid, failureReason::INVALID_HARDWARE_CONFIGURATION);
 
                 return;
 
@@ -274,23 +317,10 @@ class managerInputs{
                     Serial.println(F("[inputs] (begin) COUNT_IO_EXTENDER and the length of ADDRESSES_IO_EXTENDER are mismatched in hardware.h; Disabling inputs."));
                 #endif
 
-                if(this->ptrFailureCallback){
-                    this->ptrFailureCallback();
-                }
+                ioExtender invalid;
+                invalid.address = 0;
 
-                return;
-
-            }
-
-            if(COUNT_PINS_IO_EXTENDER != sizeof(portChannelPinMap)/sizeof(portChannelPinMap[0])){
-
-                #if DEBUG
-                    Serial.println(F("[inputs] (begin) COUNT_PINS_IO_EXTENDER and the length of IO_EXTENDER_CHANNELS are mismatched in hardware.h; Disabling inputs."));
-                #endif
-
-                if(this->ptrFailureCallback){
-                    this->ptrFailureCallback();
-                }
+                failInputController(&invalid, failureReason::INVALID_HARDWARE_CONFIGURATION);
 
                 return;
 
@@ -312,11 +342,7 @@ class managerInputs{
 
                     //Ensure we connected to the controller
                     if(this->inputControllers[i].hardware.i2c_error() != 0){
-                        this->inputControllers[i].enabled = false;
-
-                        if(this->ptrFailureCallback){
-                            this->ptrFailureCallback();
-                        }
+                        failInputController(&this->inputControllers[i], i2cResponseToFailureReason(this->inputControllers[i].hardware.i2c_error()));
                     }
 
                 #endif

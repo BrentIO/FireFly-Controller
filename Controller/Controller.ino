@@ -226,11 +226,17 @@ void inputPublisher(managerInputs::portChannel portChannel, boolean longChange){
 
 
 /** Handles failures of input controllers */
-void inputFailure(){
+void inputFailure(uint8_t address, managerInputs::failureReason failureReason){
 
   #ifdef DEBUG
-    Serial.println("[main] (inputFailure) An input controller is offline");
+    Serial.print("[main] (inputFailure) ");
+    Serial.print("Input controller at address 0x");
+    Serial.print(address, HEX);
+    Serial.println(" is being failed for reason " + String(failureReason));
   #endif
+
+  
+  oled.showError(("Inpt Ctl 0x" + String(address, HEX) + " fail " + String(failureReason)).c_str());
 
   //TODO: Add MQTT and stuff
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
