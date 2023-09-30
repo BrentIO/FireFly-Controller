@@ -4,6 +4,11 @@ class managerInputs{
 
     public:
 
+        /** Collection of port and channel that is unique per controller. */
+        struct portChannel{
+            uint8_t port; /* RJ45 port */
+            uint8_t channel; /* Wire within the RJ45 port */
+        };
 
 
         /* Failure reason codes, roughly based on i2c return messages. */
@@ -18,45 +23,42 @@ class managerInputs{
             UNKNOWN_ERROR = 11
         };
 
-    struct inputPin{
-        int64_t timeChange = 0; /* Time (milliseconds) when the input state last changed.  Value is set to 0 when the state returns to its input type. Default 0.*/
-        boolean changeHandled = true; /* If the change has been handled, to make the event singular. Default true. */
-        boolean changeHandledLong = true; /* If the long change has been handled, to make the event singular. Default true. */
-        inputState state = STATE_OPEN; /* The state entered at timeChange. Default STATE_OPEN.*/
-        inputType type = NORMALLY_OPEN; /* Defines if the input is normally open or normally closed. Default NORMALLY_OPEN.*/
-        boolean monitorLongChange = true; /* Defines if the pin should be monitored for long changes.  Should be _true_ for buttons and _false_ for reed switches. Default false.*/             //******** DEBUG DEBUG DEBUG ********
 
-    };
+    private:
 
         enum inputType{
             NORMALLY_OPEN = 0,
             NORMALLY_CLOSED = 1,
         };
 
-    struct ioExtender{
-        #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9995
-            PCA9555 hardware; /* Reference to the hardware. */
-        #endif
-
-        uint8_t interruptPin = 0; /* Interrupt pin. Default 0. */
-        uint8_t address = 0; /* I2C address. Default 0.*/
-        uint16_t previousRead = 0; /* Numeric value of the last read from the hardware. Default 0.*/
-        inputPin inputs[COUNT_PINS_IO_EXTENDER]; /* Input pins connected to the hardware.*/
-        bool enabled = true; /* Indicates if the controller is enabled. Default true.*/
-        uint8_t portOffset = 0; /* Indicates the first RJ45 port handled by this ioExtender.*/
-    };
 
 
-    struct portChannel{
-        uint8_t port; /* RJ45 port */
-        uint8_t channel; /* Wire within the RJ45 port */
-    };
 
+        struct inputPin{
+            int64_t timeChange = 0; /* Time (milliseconds) when the input state last changed.  Value is set to 0 when the state returns to its input type. Default 0.*/
+            boolean changeHandled = true; /* If the change has been handled, to make the event singular. Default true. */
+            boolean changeHandledLong = true; /* If the long change has been handled, to make the event singular. Default true. */
+            inputState state = STATE_OPEN; /* The state entered at timeChange. Default STATE_OPEN.*/
+            inputType type = NORMALLY_OPEN; /* Defines if the input is normally open or normally closed. Default NORMALLY_OPEN.*/
+            boolean monitorLongChange = false; /* Defines if the pin should be monitored for long changes.  Should be _true_ for buttons and _false_ for reed switches. Default false.*/
+
+        };
 
     ioExtender inputControllers[COUNT_IO_EXTENDER];
     const uint8_t portChannelPinMap[COUNT_PINS_IO_EXTENDER][2] = IO_EXTENDER_CHANNELS;
 
+        struct ioExtender{
+            #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9995
+                PCA9555 hardware; /* Reference to the hardware. */
+            #endif
 
+            uint8_t interruptPin = 0; /* Interrupt pin. Default 0. */
+            uint8_t address = 0; /* I2C address. Default 0.*/
+            uint16_t previousRead = 0; /* Numeric value of the last read from the hardware. Default 0.*/
+            inputPin inputs[COUNT_PINS_IO_EXTENDER]; /* Input pins connected to the hardware extender.*/
+            bool enabled = true; /* Indicates if the controller is enabled. Default true.*/
+            uint8_t portOffset = 0; /* Indicates the first RJ45 port handled by this ioExtender.*/
+        };
 
     /** Convert a bit to inputState */
     inputState bitToInputState(boolean value){
@@ -268,7 +270,7 @@ class managerInputs{
     }
 
 
-    bool _initialized = false; /* If the class has been initialized. */
+        bool _initialized = false; /* If the class has been initialized. */
 
 
     public:
