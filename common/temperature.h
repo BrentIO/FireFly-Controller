@@ -60,13 +60,30 @@ class managerTemperatureSensors{
             bool enabled = true; /* Indicates if the sensor is enabled. Default true */
 
 
+        /** Marks a given temperature sensor as failed and raises a callback event, if configured 
+         * @param temperatureSensor The temperature sensor being reported
+         * @param failureReason Reason code for the failure
+        */
+        void failTemperatureSensor(temperatureSensor *temperatureSensor, failureReason failureReason){
 
+            if(temperatureSensor->enabled == false){
+                return;
+            }
 
+            if(failureReason == failureReason::SUCCESS_NO_ERROR){
+                #if DEBUG
+                    Serial.println(F("[temperature] (failTemperatureSensor) Function is being called with no error present."));
+                #endif
+
+                return;
+            }
 
             temperatureSensor->enabled = false;
 
-    void (*ptrPublisherCallback)(String, float);
-    void (*ptrFailureCallback)(String);
+            if(this->ptrFailureCallback){
+                this->ptrFailureCallback(temperatureSensor->location, failureReason);
+            }
+        }
 
     public:
 
@@ -102,10 +119,10 @@ class managerTemperatureSensors{
                     Serial.println(F("[temperature] (begin) COUNT_TEMPERATURE_SENSOR and the length of ADDRESSES_TEMPERATURE_SENSOR are mismatched in hardware.h; Disabling temperature sensors."));
                 #endif
 
-                if(this->ptrFailureCallback){
-                    this->ptrFailureCallback(locationToString(UNKNOWN));
-                }
+                temperatureSensor invalid;
+                strcpy(invalid.location, "INVALID");
 
+                failTemperatureSensor(&invalid, failureReason::INVALID_HARDWARE_CONFIGURATION);
                 return;
 
             }
@@ -117,14 +134,9 @@ class managerTemperatureSensors{
 
                 #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
                     this->temperatureSensors[i].hardware = PCT2075(this->temperatureSensors[i].address);
-
                     if(this->temperatureSensors[i].hardware.getConfig() !=0){
-                        temperatureSensors[i].enabled = true;
 
-                        if(this->ptrFailureCallback){
-                            this->ptrFailureCallback(temperatureSensors[i].location);
-                        }
-
+                        failTemperatureSensor(&temperatureSensors[i], failureReason::OTHER_ERROR);
                         continue;
                     }
 
@@ -184,8 +196,6 @@ class managerTemperatureSensors{
                     //Ensure the hardware is still online
                     #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
                         if(this->temperatureSensors[i].hardware.getConfig() !=0){
-                            temperatureSensors[i].enabled = false;
-                            this->ptrFailureCallback(temperatureSensors[i].location);
                         }
                     #endif
                     
