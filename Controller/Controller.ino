@@ -267,16 +267,22 @@ void inputFailure(uint8_t address, managerInputs::failureReason failureReason){
 }
 
 
-/** Handles failures of output controllers */
-void outputFailure(){
+/** Handles failures of output controllers 
+ * @param address the hexidecimal address of the output controller that has failed
+ * @param failureReason the reason for the failure
+*/
+void outputFailure(uint8_t address, managerOutputs::failureReason failureReason){
 
   #ifdef DEBUG
-    Serial.println("[main] (outputFailure) An output controller is offline");
+    Serial.print("[main] (outputFailure) ");
+    Serial.print("Output controller at address 0x");
+    Serial.print(address, HEX);
+    Serial.println(" is being failed for reason " + String(failureReason));
   #endif
 
-  //TODO: Add MQTT and stuff
-  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
+  oled.showError(("Out Ctl 0x" + String(address, HEX) + " fail " + String(failureReason)).c_str());
 
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 }
 
 
