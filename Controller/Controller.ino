@@ -52,7 +52,7 @@ void setup() {
     frontPanel.begin();
 
     outputs.setCallback_failure(&outputFailure);
-    outputs.setCallback_publisher(&outputFailure);
+    outputs.setCallback_publisher(&outputPublisher);
     outputs.begin();
 
     inputs.setCallback_failure(&inputFailure);
