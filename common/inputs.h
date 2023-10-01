@@ -23,8 +23,8 @@ class managerInputs{
 
         /** Collection of port and channel that is unique */
         struct portChannel{
-            uint8_t port; /* RJ45 port */
-            uint8_t channel; /* Wire within the RJ45 port */
+            uint8_t port; /* RJ-45 port */
+            uint8_t channel; /* Wire within the RJ-45 port */
         };
 
 
@@ -110,7 +110,7 @@ class managerInputs{
             uint16_t previousRead = 0; /* Numeric value of the last read from the hardware. Default 0.*/
             inputPin inputs[COUNT_PINS_IO_EXTENDER]; /* Input pins connected to the hardware extender.*/
             bool enabled = true; /* Indicates if the controller is enabled. Default true.*/
-            uint8_t portOffset = 0; /* Indicates the first RJ45 port handled by this ioExtender.*/
+            uint8_t portOffset = 0; /* Indicates the first RJ-45 port handled by this ioExtender.*/
         };
 
 
