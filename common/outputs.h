@@ -16,40 +16,56 @@
  */
 class managerOutputs{
 
-    enum outputState{
-        STATE_HIGH = HIGH,
-        STATE_LOW = LOW
-    };
+    public:
 
 
-    enum outputType{
-        BINARY = 0,
-        VARIABLE = 1
-    };
 
 
-    struct outputPin{
-        outputState state = STATE_LOW;
-        outputType type = BINARY;
-    };
 
 
-    struct outputController{
-        uint8_t address = 0; /* I2C address. Default 0.*/
-        outputPin outputs[COUNT_PINS_OUTPUT_CONTROLLER];
-        bool enabled = true; /* Indicates if the controller is enabled. Default true.*/
 
-        #if MODEL_OUTPUT_CONTROLLER == ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
-            PCA9685 hardware = PCA9685(0); /* Reference to the hardware. */
-        #endif
+    private:
 
-    };
+        enum outputState{
+            STATE_HIGH = HIGH,
+            STATE_LOW = LOW
+        };
 
-    outputController outputControllers[COUNT_OUTPUT_CONTROLLER];
-    bool _initialized = false;
 
-    void (*ptrPublisherCallback)(void); //TODO: Determine correct signature
-    void (*ptrFailureCallback)(void); //TODO: Determine correct signature
+        /** Enumeration of the output type, which is either binary or variable (PWM) */
+        enum outputType{
+            BINARY = 0,
+            VARIABLE = 1
+        };
+
+
+        struct outputPin{
+            outputState state = STATE_LOW; //Output state will be low on start
+            outputType type = BINARY; //Default all outputs are binary for safety
+        };
+
+
+        struct outputController{
+            uint8_t address = 0; /* I2C address. Default 0.*/
+            outputPin outputs[COUNT_PINS_OUTPUT_CONTROLLER];
+            bool enabled = true; /* Indicates if the controller is enabled. Default true.*/
+
+            #if MODEL_OUTPUT_CONTROLLER == ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
+                PCA9685 hardware = PCA9685(0); /* Reference to the hardware. */
+            #endif
+
+        };
+
+        outputController outputControllers[COUNT_OUTPUT_CONTROLLER];
+
+
+        bool _initialized = false;
+
+
+        void (*ptrPublisherCallback)(void); //TODO: Determine correct signature
+
+        
+        void (*ptrFailureCallback)(void); //TODO: Determine correct signature
 
 
     public:
@@ -59,11 +75,14 @@ class managerOutputs{
             structHealth outputControllers[COUNT_OUTPUT_CONTROLLER];
         };
 
+
         void setCallback_publisher(void (*userDefinedCallback)(void)) {
             ptrPublisherCallback = userDefinedCallback; }
 
+
         void setCallback_failure(void (*userDefinedCallback)(void)) {
             ptrFailureCallback = userDefinedCallback; }
+
 
         void begin(){
 
