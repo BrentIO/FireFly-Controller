@@ -151,6 +151,28 @@ class managerTemperatureSensors{
         };
 
 
+        /** Get the health of the temperature sensors 
+         * @returns All temperature sensors and their bus state; the count of temperature sensors
+        */
+        healthResult health(){
+
+            healthResult returnValue;
+
+            if(this->_initialized != true){
+                return returnValue;
+            }
+
+            for(int i = 0; i < COUNT_TEMPERATURE_SENSOR; i++){
+                returnValue.sensor[i].address = this->temperatureSensors[i].address;
+                returnValue.sensor[i].enabled = this->temperatureSensors[i].enabled;
+            }
+
+            returnValue.count = COUNT_TEMPERATURE_SENSOR;
+
+            return returnValue;
+        }
+
+
         /** Callback function that is called when a temperature change is observed */
         void setCallback_publisher(void (*userDefinedCallback)(char*, float)) {
                     ptrPublisherCallback = userDefinedCallback; }
@@ -209,28 +231,6 @@ class managerTemperatureSensors{
 
             this->_initialized = true;
         };
-
-
-        /** Get the health of the temperature sensors 
-         * @returns All temperature sensors and their bus state; the count of temperature sensors
-        */
-        healthResult health(){
-
-            healthResult returnValue;
-
-            if(this->_initialized != true){
-                return returnValue;
-            }
-
-            for(int i = 0; i < COUNT_TEMPERATURE_SENSOR; i++){
-                returnValue.sensor[i].address = this->temperatureSensors[i].address;
-                returnValue.sensor[i].enabled = this->temperatureSensors[i].enabled;
-            }
-
-            returnValue.count = COUNT_TEMPERATURE_SENSOR;
-
-            return returnValue;
-        }
 
 
         /** Observes changes in temperature with each main loop() cycle based on a defined temperature delta and sleep period */
