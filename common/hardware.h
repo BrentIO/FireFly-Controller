@@ -42,6 +42,7 @@
         /* Temperature Sensor */
         #define COUNT_TEMPERATURE_SENSOR 1 /* The number of temperature sensors. */
         #define MODEL_TEMPERATURE_SENSOR ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
+        #define LOCATION_TEMPERATURE_SENSOR {"CENTER"}
 
         /* OLED Display */
         #define MODEL_OLED_DISPLAY ENUM_MODEL_OLED_SSD1306_128_32
@@ -85,6 +86,7 @@
         /* Temperature Sensor */
         #define COUNT_TEMPERATURE_SENSOR 1 /* The number of temperature sensors. */
         #define MODEL_TEMPERATURE_SENSOR ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
+        #define LOCATION_TEMPERATURE_SENSOR {"CENTER"}
 
         /* OLED Display */
         #define MODEL_OLED_DISPLAY ENUM_MODEL_OLED_SSD1306_128_32
@@ -127,6 +129,7 @@
         /* Temperature Sensor */
         #define COUNT_TEMPERATURE_SENSOR 1 /* The number of temperature sensors. */
         #define MODEL_TEMPERATURE_SENSOR ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
+        #define LOCATION_TEMPERATURE_SENSOR {"CENTER"}
 
         /* OLED Display */
         #define MODEL_OLED_DISPLAY ENUM_MODEL_OLED_SSD1306_128_32

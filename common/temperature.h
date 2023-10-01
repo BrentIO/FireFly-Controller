@@ -2,10 +2,6 @@
 
 class managerTemperatureSensors{
 
-    enum temperatureSensorLocation{
-        UNKNOWN = -1,
-        CENTER = 0
-    };
 
     struct temperatureSensor{
         uint8_t address = 0; /* I2C address. Default 0.*/
@@ -16,27 +12,15 @@ class managerTemperatureSensors{
 
         float previousRead = 0; /* Previous read temperature. Default 0. */
         unsigned long timePreviousRead = 0; /* Time (millis) when the sensor was last read. Default 0.*/
-        temperatureSensorLocation location;
         bool enabled = false; /* Indicates if the sensor is enabled. Default false.*/
     };
+            char* location; /* Physical location of the sensor */
 
-    temperatureSensor temperatureSensors[COUNT_TEMPERATURE_SENSOR];
     bool _initialized = false; /* If the class has been initialized. */
 
-    /** Convert a temperatureSensorLocation to string */
-    String locationToString(temperatureSensorLocation value){
 
-        switch(value){
 
-            case temperatureSensorLocation::CENTER:
-            return F("CENTER");
-            break;
 
-            default:
-            return F("UNKNOWN");
-            break;
-        }
-    };
 
     void (*ptrPublisherCallback)(String, float);
     void (*ptrFailureCallback)(String);
@@ -80,6 +64,7 @@ class managerTemperatureSensors{
             for(int i = 0; i < COUNT_TEMPERATURE_SENSOR; i++){
 
                 this->temperatureSensors[i].address = addressesTemperatureSensor[i];
+                this->temperatureSensors[i].location = locations[i];
 
                 #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
                     this->temperatureSensors[i].hardware = PCT2075(this->temperatureSensors[i].address);
@@ -88,7 +73,7 @@ class managerTemperatureSensors{
                         temperatureSensors[i].enabled = false;
 
                         if(this->ptrFailureCallback){
-                            this->ptrFailureCallback(locationToString(temperatureSensors[i].location));
+                            this->ptrFailureCallback(temperatureSensors[i].location);
                         }
 
                         continue;
@@ -96,19 +81,6 @@ class managerTemperatureSensors{
 
                     temperatureSensors[i].enabled = true;
 
-                #endif
-
-                #if PRODUCT_ID == 32322211
-
-                    switch(i){
-                        case 0:
-                            temperatureSensors[i].location = temperatureSensorLocation::CENTER;
-                            break;
-                        default:
-                            temperatureSensors[i].location = temperatureSensorLocation::UNKNOWN;
-                            break;
-                    }
-                
                 #endif
             }
 
@@ -164,7 +136,7 @@ class managerTemperatureSensors{
                     #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
                         if(this->temperatureSensors[i].hardware.getConfig() !=0){
                             temperatureSensors[i].enabled = false;
-                            this->ptrFailureCallback(locationToString(temperatureSensors[i].location));
+                            this->ptrFailureCallback(temperatureSensors[i].location);
                         }
                     #endif
                     
@@ -176,7 +148,7 @@ class managerTemperatureSensors{
 
                         //Publish an event for the change
                         if(this->ptrPublisherCallback){
-                            this->ptrPublisherCallback(locationToString(temperatureSensors[i].location), temperatureSensors[i].previousRead);
+                            this->ptrPublisherCallback(temperatureSensors[i].location, temperatureSensors[i].previousRead);
                         }
                     }      
                 }
