@@ -1,5 +1,19 @@
 #include "hardware.h"
 
+
+/** Input Manager
+ * 
+ * Configures and monitors the main inputs on the system using the IO Extenders.
+ * 
+ * ### Usage
+ *  Minimum usage includes `begin()`, which should be placed in the main `setup()` function, and `loop()`, which should be placed in the main `loop()` function.
+ * 
+ * 
+ * ### Callbacks
+ *  Two callback functions are supported:
+ * - `setCallback_publisher` which will be called when an input changes from its normal status to an abnormal status
+ * - `setCallback_failure` which will be called if there is an error during `begin()` or if one of the input controllers falls off the bus after being initialized
+ */
 class managerInputs{
 
     /**
@@ -378,7 +392,7 @@ class managerInputs{
             ptrFailureCallback = userDefinedCallback; }
 
 
-        /** Initializes all input controllers */
+        /** Initializes all input controllers. If unsuccessful, the failure callback will be called */
         void begin(){
 
             if(this->_initialized == true){
