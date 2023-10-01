@@ -237,9 +237,10 @@ void inputFailure(uint8_t address, managerInputs::failureReason failureReason){
 
   
   oled.showError(("Inpt Ctl 0x" + String(address, HEX) + " fail " + String(failureReason)).c_str());
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
+
 
   //TODO: Add MQTT and stuff
-  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 
 }
 
