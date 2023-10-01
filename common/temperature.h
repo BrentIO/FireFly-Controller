@@ -141,6 +141,8 @@ class managerTemperatureSensors{
 
             }
 
+            char* locations[COUNT_TEMPERATURE_SENSOR] = LOCATION_TEMPERATURE_SENSOR;
+
             for(int i = 0; i < COUNT_TEMPERATURE_SENSOR; i++){
 
                 this->temperatureSensors[i].address = addressesTemperatureSensor[i];
