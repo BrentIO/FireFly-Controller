@@ -55,14 +55,15 @@ class managerTemperatureSensors{
 
         float previousRead = 0; /* Previous read temperature. Default 0. */
         unsigned long timePreviousRead = 0; /* Time (millis) when the sensor was last read. Default 0.*/
-        bool enabled = false; /* Indicates if the sensor is enabled. Default false.*/
     };
             char* location; /* Physical location of the sensor */
+            bool enabled = true; /* Indicates if the sensor is enabled. Default true */
 
 
 
 
 
+            temperatureSensor->enabled = false;
 
     void (*ptrPublisherCallback)(String, float);
     void (*ptrFailureCallback)(String);
@@ -116,7 +117,7 @@ class managerTemperatureSensors{
                     this->temperatureSensors[i].hardware = PCT2075(this->temperatureSensors[i].address);
 
                     if(this->temperatureSensors[i].hardware.getConfig() !=0){
-                        temperatureSensors[i].enabled = false;
+                        temperatureSensors[i].enabled = true;
 
                         if(this->ptrFailureCallback){
                             this->ptrFailureCallback(temperatureSensors[i].location);
