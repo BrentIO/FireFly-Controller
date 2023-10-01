@@ -3,6 +3,10 @@
 #define DEBUG 501
 
 
+#ifdef DEBUG // DO NOT COMMIT
+  const char* ssid = "aveo_iot"; // DO NOT COMMIT
+  const char* password = "GxjC$R-YZ62TN$v-TZUZ&R0bwxsJ@7"; // DO NOT COMMIT
+#endif // DO NOT COMMIT
 
 #define NTP_SERVER_1 "pool.ntp.org"
 #define NTP_SERVER_2 "0.north-america.pool.ntp.org"
@@ -183,7 +187,10 @@ void loop() {
 
 }
 
-
+/** Handles changes in observed temperatures 
+ * @param location the location where the change was observed
+ * @param value the new temperature in degrees celsius
+*/
 void temperaturePublisher(char* location, float value){
 
   #ifdef DEBUG
@@ -197,7 +204,10 @@ void temperaturePublisher(char* location, float value){
 };
 
 
-/** Handles failures of temperature sensors */
+/** Handles failures of temperature sensors 
+ * @param location the location of the sensor that has failed
+ * @param failureReason the reason for the failure
+*/
 void temperatureFailure(char* location, managerTemperatureSensors::failureReason failureReason){
 
   #ifdef DEBUG
@@ -211,12 +221,15 @@ void temperatureFailure(char* location, managerTemperatureSensors::failureReason
 
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 
-
   //TODO: Add MQTT and stuff
 
 };
 
 
+/** Handles changes in observed inputs 
+ * @param portChannel the port and channel where the change was observed
+ * @param longChange when true, the change observed was a long in duration
+*/
 void inputPublisher(managerInputs::portChannel portChannel, boolean longChange){
 
   #ifdef DEBUG
@@ -232,7 +245,10 @@ void inputPublisher(managerInputs::portChannel portChannel, boolean longChange){
 }
 
 
-/** Handles failures of input controllers */
+/** Handles failures of input controllers 
+ * @param address the hexidecimal address of the input controller that has failed
+ * @param failureReason the reason for the failure
+*/
 void inputFailure(uint8_t address, managerInputs::failureReason failureReason){
 
   #ifdef DEBUG
@@ -242,10 +258,9 @@ void inputFailure(uint8_t address, managerInputs::failureReason failureReason){
     Serial.println(" is being failed for reason " + String(failureReason));
   #endif
 
-  
   oled.showError(("Inpt Ctl 0x" + String(address, HEX) + " fail " + String(failureReason)).c_str());
-  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 
   //TODO: Add MQTT and stuff
 
