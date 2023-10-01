@@ -145,6 +145,7 @@ class managerTemperatureSensors{
 
                 this->temperatureSensors[i].address = addressesTemperatureSensor[i];
                 this->temperatureSensors[i].location = locations[i];
+                temperatureSensors[i].enabled = true;
 
                 #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
                     this->temperatureSensors[i].hardware = PCT2075(this->temperatureSensors[i].address);
@@ -153,8 +154,6 @@ class managerTemperatureSensors{
                         failTemperatureSensor(&temperatureSensors[i], failureReason::OTHER_ERROR);
                         continue;
                     }
-
-                    temperatureSensors[i].enabled = true;
 
                 #endif
             }
