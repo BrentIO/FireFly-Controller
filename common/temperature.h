@@ -109,9 +109,11 @@ class managerTemperatureSensors{
         bool _initialized = false; /* If the class has been initialized. */
 
 
+        /** Reference to the callback function that will be called when a temperature change is sensed */
         void (*ptrPublisherCallback)(char*, float);
 
 
+        /** Reference to the callback function that will be called when a temperature sensor has failed */
         void (*ptrFailureCallback)(char*, failureReason);
 
 
@@ -142,20 +144,24 @@ class managerTemperatureSensors{
 
     public:
 
+        /** Object containing the count of temperature sensors and a list of each sensor's bus status */
         struct healthResult{
-            uint8_t count = 0;
-            structHealth sensor[COUNT_TEMPERATURE_SENSOR];
+            uint8_t count = 0; /** The number of temperature sensors */
+            structHealth sensor[COUNT_TEMPERATURE_SENSOR]; /** Array of temperature snsor health*/
         };
 
 
+        /** Callback function that is called when a temperature change is observed */
         void setCallback_publisher(void (*userDefinedCallback)(char*, float)) {
                     ptrPublisherCallback = userDefinedCallback; }
 
 
+        /** Callback function that is called when a temperature sensor failure occurs */
         void setCallback_failure(void (*userDefinedCallback)(char*, failureReason)) {
                     ptrFailureCallback = userDefinedCallback; }
         
 
+        /** Initializes all temperature sensors. If unsuccessful, the failure callback will be called */
         void begin(){
             
             if(this->_initialized == true){
@@ -205,7 +211,9 @@ class managerTemperatureSensors{
         };
 
 
-        /** Returns the value of each temperature sensor's bus status */
+        /** Get the health of the temperature sensors 
+         * @returns All temperature sensors and their bus state; the count of temperature sensors
+        */
         healthResult health(){
 
             healthResult returnValue;
@@ -225,6 +233,7 @@ class managerTemperatureSensors{
         }
 
 
+        /** Observes changes in temperature with each main loop() cycle based on a defined temperature delta and sleep period */
         void loop(){
 
             if(this->_initialized != true){
