@@ -59,13 +59,7 @@ https://github.com/bblanchon/ArduinoJson
 
 https://github.com/RobTillaart/I2C_EEPROM
 
-~~https://github.com/semcneil/PCA95x5~~
-
-Use https://github.com/BrentIO/PCA95x5 until https://github.com/semcneil/PCA95x5/pull/1 PR is merged
-
 https://github.com/RobTillaart/PCA9685_RT
-
-https://github.com/jpliew/PCT2075
 
 https://github.com/nickgammon/Regexp
 
@@ -90,13 +84,13 @@ Download each library manually as a zip file.  Install each required library fro
 
 `arduino-cli lib install --zip-path  /my/downloads/directory/I2C_EEPROM-1.7.1.zip`
 
-~~`arduino-cli lib install --zip-path /my/downloads/directory/PCA95x5-0.1.3.zip`~~ 
-
-Version should be > 0.1.3, see PR comment above
+`arduino-cli lib install --git-url https://github.com/BrentIO/PCA95x5.git`
 
 `arduino-cli lib install --zip-path /my/downloads/directory/PCA9685_RT-0.4.1.zip`
 
 `arduino-cli lib install --zip-path /my/downloads/directory/PCT2075-main.zip`
+
+`arduino-cli lib install --git-url https://github.com/BrentIO/PCT2075.git`
 
 `arduino-cli lib install --zip-path /my/downloads/directory/Regexp-0.1.1.zip`
 
