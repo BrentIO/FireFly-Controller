@@ -12,7 +12,6 @@
  * - `setCallback_publisher` which will be called when a sensor has changed temperature more than the programmed threshold since the last published temperature
  * - `setCallback_failure` which will be called if there is an error during `begin()` or if one of the sensors falls off the bus after being initialized
 */
-
 class managerTemperatureSensors{
 
     public:
