@@ -46,6 +46,47 @@ class managerTemperatureSensors{
 
     private:
 
+        /** Enumerates the i2c bus failure codes to a failureReason 
+         * @param i2cError The value returned from the i2c wire endTransmission() function
+         * @returns A failureReason enumeration mapped to the error code passed in
+        */
+        failureReason i2cResponseToFailureReason(uint8_t i2cError){
+
+            switch(i2cError){
+
+                case 0:
+                    return failureReason::SUCCESS_NO_ERROR;
+                    break;
+
+                case 1:
+                    return failureReason::DATA_TRANSMIT_BUFFER_ERROR;
+                    break;
+
+                case 2:
+                    return failureReason::ADDRESS_OFFLINE;
+                    break;
+
+                case 3:
+                    return failureReason::TRANSMIT_NOT_ACKNOLWEDGED;
+                    break;
+
+                case 4:
+                    return failureReason::OTHER_ERROR;
+                    break;
+
+                case 5:
+                    return failureReason::TIMEOUT;
+                    break;
+
+                case 10:
+                    return failureReason::INVALID_HARDWARE_CONFIGURATION;
+                    break;
+
+                default:
+                    return failureReason::UNKNOWN_ERROR;
+            }
+        }
+
 
         /** Represents an individual temperature sensor */
         struct temperatureSensor{
@@ -151,9 +192,9 @@ class managerTemperatureSensors{
 
                 #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
                     this->temperatureSensors[i].hardware = PCT2075(this->temperatureSensors[i].address);
-                    if(this->temperatureSensors[i].hardware.getConfig() !=0){
+                    if(this->temperatureSensors[i].hardware.i2c_error() !=0){
 
-                        failTemperatureSensor(&temperatureSensors[i], failureReason::OTHER_ERROR);
+                        failTemperatureSensor(&this->temperatureSensors[i], i2cResponseToFailureReason(this->temperatureSensors[i].hardware.i2c_error()));
                         continue;
                     }
 
@@ -210,9 +251,9 @@ class managerTemperatureSensors{
 
                     //Ensure the hardware is still online
                     #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
-                        if(this->temperatureSensors[i].hardware.getConfig() !=0){
+                        if(temperatureSensors[i].hardware.i2c_error() !=0){
 
-                            failTemperatureSensor(&temperatureSensors[i], failureReason::OTHER_ERROR);
+                            failTemperatureSensor(&temperatureSensors[i], i2cResponseToFailureReason(temperatureSensors[i].hardware.i2c_error()));
                             return;
                         }
                     #endif
