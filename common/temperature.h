@@ -211,6 +211,9 @@ class managerTemperatureSensors{
                     //Ensure the hardware is still online
                     #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
                         if(this->temperatureSensors[i].hardware.getConfig() !=0){
+
+                            failTemperatureSensor(&temperatureSensors[i], failureReason::OTHER_ERROR);
+                            return;
                         }
                     #endif
                     
