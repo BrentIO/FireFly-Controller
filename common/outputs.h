@@ -18,10 +18,32 @@ class managerOutputs{
 
     public:
 
+        /** Failure reason codes, roughly based on i2c return messages */
+        enum failureReason{
+            /// @brief Request was successful, no error was returned
+            SUCCESS_NO_ERROR = 0, 
 
+            /// @brief Data too long to fit in transmit buffer
+            DATA_TRANSMIT_BUFFER_ERROR = 1,
 
+            /// @brief Received NACK on transmit of address
+            ADDRESS_OFFLINE = 2,
 
+            /// @brief Received NACK on transmit of data
+            TRANSMIT_NOT_ACKNOLWEDGED = 3,
 
+            /// @brief Other error
+            OTHER_ERROR = 4,
+
+            /// @brief Timeout
+            TIMEOUT = 5,
+
+            /// @brief Invalid hardware configuration
+            INVALID_HARDWARE_CONFIGURATION = 10,
+
+            /// @brief Unknown/undocumented failure
+            UNKNOWN_ERROR = 11
+        };
 
 
     private:
@@ -66,6 +88,32 @@ class managerOutputs{
 
         
         void (*ptrFailureCallback)(void); //TODO: Determine correct signature
+
+
+        /** Marks a given output controller as failed and raises a callback event, if configured 
+         * @param outputController The input controller being reported
+         * @param failureReason Reason code for the failure
+        */
+        void failOutputController(outputController *outputController, failureReason failureReason){
+
+            if(outputController->enabled == false){
+                return;
+            }
+
+            if(failureReason == failureReason::SUCCESS_NO_ERROR){
+                #if DEBUG
+                    Serial.println(F("[outputs] (failOutputController) Function is being called with no error present."));
+                #endif
+
+                return;
+            }
+
+            outputController->enabled = false;
+
+            if(this->ptrFailureCallback){
+                this->ptrFailureCallback(outputController->address, failureReason);
+            }
+        }
 
 
     public:
