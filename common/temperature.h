@@ -45,6 +45,10 @@ class managerTemperatureSensors{
                 return;
             }
 
+            if(COUNT_TEMPERATURE_SENSOR == 0){
+                return;
+            }
+
             const uint8_t addressesTemperatureSensor[] = ADDRESSES_TEMPERATURE_SENSOR;
 
             if(COUNT_TEMPERATURE_SENSOR != sizeof(addressesTemperatureSensor)/sizeof(uint8_t)){
