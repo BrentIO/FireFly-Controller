@@ -179,7 +179,7 @@
     #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
         #include <PCT2075.h> // https://github.com/jpliew/PCT2075
 
-        #define MILLS_TEMPERATURE_SLEEP_DURATION 500 /* Number of millis to wait between reading the temperatures. Default 500. */
+        #define MILLS_TEMPERATURE_SLEEP_DURATION 1000 /* Number of millis to wait between reading the temperatures. Default 1000. */
         #define DEGREES_TEMPERATURE_VARIATION_ALLOWED 0.25 /* Number of degrees allowed variance between temperature reads before the new value is stored and reported. Default 0.25. */
 
     #endif
