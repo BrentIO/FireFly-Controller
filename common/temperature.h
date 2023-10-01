@@ -46,18 +46,32 @@ class managerTemperatureSensors{
 
     private:
 
-    struct temperatureSensor{
-        uint8_t address = 0; /* I2C address. Default 0.*/
 
-        #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
-            PCT2075 hardware = PCT2075(0); /* Reference to the hardware. */
-        #endif
+        /** Represents an individual temperature sensor */
+        struct temperatureSensor{
+            uint8_t address = 0; /* I2C address. Default 0.*/
 
-        float previousRead = 0; /* Previous read temperature. Default 0. */
-        unsigned long timePreviousRead = 0; /* Time (millis) when the sensor was last read. Default 0.*/
-    };
+            #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
+                PCT2075 hardware = PCT2075(0); /* Reference to the hardware. */
+            #endif
+
+            float previousRead = 0; /* Previous read temperature in degrees celsius. Default 0 */
+            unsigned long timePreviousRead = 0; /* Time (millis) when the sensor was last read. Default 0 */
             char* location; /* Physical location of the sensor */
             bool enabled = true; /* Indicates if the sensor is enabled. Default true */
+        };
+
+
+        temperatureSensor temperatureSensors[COUNT_TEMPERATURE_SENSOR];
+
+
+        bool _initialized = false; /* If the class has been initialized. */
+
+
+        void (*ptrPublisherCallback)(char*, float);
+
+
+        void (*ptrFailureCallback)(char*, failureReason);
 
 
         /** Marks a given temperature sensor as failed and raises a callback event, if configured 
