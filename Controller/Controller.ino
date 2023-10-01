@@ -2,12 +2,6 @@
 
 #define DEBUG 501
 
-
-#ifdef DEBUG // DO NOT COMMIT
-  const char* ssid = "aveo_iot"; // DO NOT COMMIT
-  const char* password = "GxjC$R-YZ62TN$v-TZUZ&R0bwxsJ@7"; // DO NOT COMMIT
-#endif // DO NOT COMMIT
-
 #define NTP_SERVER_1 "pool.ntp.org"
 #define NTP_SERVER_2 "0.north-america.pool.ntp.org"
 #define NTP_SERVER_3 "0.europe.pool.ntp.org"
