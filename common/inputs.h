@@ -403,10 +403,6 @@ class managerInputs{
                 return;
             }
 
-            if(COUNT_IO_EXTENDER == 0){
-                return;
-            }
-
             const uint8_t pinsInterruptIoExtender[] = PINS_INTERRUPT_IO_EXTENDER;
             const uint8_t addressesIoExtender[] = ADDRESSES_IO_EXTENDER;
 
