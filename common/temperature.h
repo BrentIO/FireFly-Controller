@@ -75,10 +75,12 @@ class managerTemperatureSensors{
             structHealth sensor[COUNT_TEMPERATURE_SENSOR];
         };
 
-        void setCallback_publisher(void (*userDefinedCallback)(String, float)) {
+
+        void setCallback_publisher(void (*userDefinedCallback)(char*, float)) {
                     ptrPublisherCallback = userDefinedCallback; }
 
-        void setCallback_failure(void (*userDefinedCallback)(String)) {
+
+        void setCallback_failure(void (*userDefinedCallback)(char*, failureReason)) {
                     ptrFailureCallback = userDefinedCallback; }
         
 

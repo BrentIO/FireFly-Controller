@@ -184,10 +184,10 @@ void loop() {
 }
 
 
-void temperaturePublisher(String location, float value){
+void temperaturePublisher(char* location, float value){
 
   #ifdef DEBUG
-    Serial.println("[main] (temperaturePublisher) New Temperature: " + String(value) + " at " + location);
+    Serial.println("[main] (temperaturePublisher) New Temperature: " + String(value) + " at " + String(location));
   #endif
 
   oled.logEvent(("Temp: " + String(value) + char(0xF8) + "C").c_str(),managerOled::LOG_LEVEL_INFO);
@@ -198,14 +198,21 @@ void temperaturePublisher(String location, float value){
 
 
 /** Handles failures of temperature sensors */
-void temperatureFailure(String location){
+void temperatureFailure(char* location, managerTemperatureSensors::failureReason failureReason){
 
   #ifdef DEBUG
-    Serial.println("[main] (temperatureFailure) Temperature sensor at " + location + " is offline");
+    Serial.print("[main] (temperatureFailure) ");
+    Serial.print("Temperature sensor at ");
+    Serial.print(location);
+    Serial.println(" is being failed for reason " + String(failureReason));
   #endif
 
-  //TODO: Add MQTT and stuff
+  oled.showError(("Temp sens at " + String(location) + " fail " + String(failureReason)).c_str());
+
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
+
+
+  //TODO: Add MQTT and stuff
 
 };
 
