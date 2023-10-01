@@ -15,6 +15,36 @@
 
 class managerTemperatureSensors{
 
+    public:
+
+        /** Failure reason codes, roughly based on i2c return messages */
+        enum failureReason{
+            /// @brief Request was successful, no error was returned
+            SUCCESS_NO_ERROR = 0, 
+
+            /// @brief Data too long to fit in transmit buffer
+            DATA_TRANSMIT_BUFFER_ERROR = 1,
+
+            /// @brief Received NACK on transmit of address
+            ADDRESS_OFFLINE = 2,
+
+            /// @brief Received NACK on transmit of data
+            TRANSMIT_NOT_ACKNOLWEDGED = 3,
+
+            /// @brief Other error
+            OTHER_ERROR = 4,
+
+            /// @brief Timeout
+            TIMEOUT = 5,
+
+            /// @brief Invalid hardware configuration
+            INVALID_HARDWARE_CONFIGURATION = 10,
+
+            /// @brief Unknown/undocumented failure
+            UNKNOWN_ERROR = 11
+        };
+
+    private:
 
     struct temperatureSensor{
         uint8_t address = 0; /* I2C address. Default 0.*/
@@ -29,7 +59,6 @@ class managerTemperatureSensors{
     };
             char* location; /* Physical location of the sensor */
 
-    bool _initialized = false; /* If the class has been initialized. */
 
 
 
