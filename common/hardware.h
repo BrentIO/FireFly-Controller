@@ -29,7 +29,7 @@
         #define COUNT_IO_EXTENDER 8 /* The number of IO extenders. */
         #define MODEL_IO_EXTENDER ENUM_MODEL_IO_EXTENDER_PCA9995 /* IO Extender Model. */
         #define COUNT_PINS_IO_EXTENDER 16 /* The number of pins on each IO extender. */
-        #define COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ45 port that are usable. */
+        #define COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ-45 port that are usable. */
         #define IO_EXTENDER_CHANNELS {{1,1},{1,2},{1,3},{2,6},{1,6},{2,3},{2,2},{2,1},{3,1},{3,2},{3,3},{4,6},{3,6},{4,3},{4,2},{4,1}} /* Physical mapping of the {port,channel} by pin */
         
         /* Output Controller */
@@ -73,7 +73,7 @@
         #define COUNT_IO_EXTENDER 8 /* The number of IO extenders. */
         #define MODEL_IO_EXTENDER ENUM_MODEL_IO_EXTENDER_PCA9995 /* IO Extender Model. */
         #define COUNT_PINS_IO_EXTENDER 16 /* The number of pins on each IO extender. */
-        #define COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ45 port that are usable. */
+        #define COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ-45 port that are usable. */
         #define IO_EXTENDER_CHANNELS {{1,1},{1,2},{1,3},{2,6},{1,6},{2,3},{2,2},{2,1},{3,1},{3,2},{3,3},{4,6},{3,6},{4,3},{4,2},{4,1}} /* Physical mapping of the {port,channel} by pin */
         
         /* Output Controller */
@@ -117,7 +117,7 @@
         #define COUNT_IO_EXTENDER 2 /* The number of IO extenders. */
         #define MODEL_IO_EXTENDER ENUM_MODEL_IO_EXTENDER_PCA9995 /* IO Extender Model. */
         #define COUNT_PINS_IO_EXTENDER 16 /* The number of pins on each IO extender. */
-        #define COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ45 port that are usable. */
+        #define COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ-45 port that are usable. */
         #define IO_EXTENDER_CHANNELS {{1,1},{1,2},{1,3},{2,6},{1,6},{2,3},{2,2},{2,1},{3,1},{3,2},{3,3},{4,6},{3,6},{4,3},{4,2},{4,1}} /* Physical mapping of the {port,channel} by pin */
         
         /* Output Controller */
