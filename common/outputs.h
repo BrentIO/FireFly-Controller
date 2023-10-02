@@ -74,7 +74,7 @@ class managerOutputs{
         outputController outputControllers[COUNT_OUTPUT_CONTROLLER];
 
 
-        bool _initialized = false;
+        bool _initialized = false; /* If the class has been initialized. */
 
 
         /** Reference to the callback function that will be called when an output controller has failed */
