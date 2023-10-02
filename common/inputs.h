@@ -108,23 +108,23 @@ class managerInputs{
         };
 
 
-        /** ioExtender represents a physical integrated circuit chip installed on the hardware.
+        /** ioExtender represents a physical integrated circuit chip installed on the hardware
          * 
-         * Each ioExtender is configured with an i2c address and interrupt pin.
+         * Each ioExtender is configured with an i2c address and interrupt pin
          * 
-         * It contains current information, such as the previous read value from the chip, if it is enabled or disabled, as well as contains a collection if inputPins.
+         * It contains current information, such as the previous read value from the chip, if it is enabled or disabled, as well as contains a collection if inputPins
         */
         struct ioExtender{
             #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9995
-                PCA9555 hardware; /* Reference to the hardware. */
+                PCA9555 hardware; /* Reference to the hardware */
             #endif
 
-            uint8_t interruptPin = 0; /* Interrupt pin. Default 0. */
-            uint8_t address = 0; /* I2C address. Default 0.*/
-            uint16_t previousRead = 0; /* Numeric value of the last read from the hardware. Default 0.*/
-            inputPin inputs[COUNT_PINS_IO_EXTENDER]; /* Input pins connected to the hardware extender.*/
-            bool enabled = true; /* Indicates if the controller is enabled. Default true.*/
-            uint8_t portOffset = 0; /* Indicates the first RJ-45 port handled by this ioExtender.*/
+            uint8_t interruptPin = 0; /* Interrupt pin. Default 0 */
+            uint8_t address = 0; /* I2C address. Default 0 */
+            uint16_t previousRead = 0; /* Numeric value of the last read from the hardware. Default 0 */
+            inputPin inputs[COUNT_PINS_IO_EXTENDER]; /* Input pins connected to the hardware extender */
+            bool enabled = true; /* Indicates if the controller is enabled. Default true */
+            uint8_t portOffset = 0; /* Indicates the first RJ-45 port handled by this ioExtender */
         };
 
 
