@@ -47,12 +47,6 @@ class managerOutputs{
 
     private:
 
-        enum outputState{
-            STATE_HIGH = HIGH,
-            STATE_LOW = LOW
-        };
-
-
         /** Enumeration of the output type, which is either binary or variable (PWM) */
         enum outputType{
             BINARY = 0,
@@ -61,7 +55,7 @@ class managerOutputs{
 
 
         struct outputPin{
-            outputState state = STATE_LOW; //Output state will be low on start
+            uint8_t state = 0; //The state of the output as a percentage from 0 to 100
             outputType type = BINARY; //Default all outputs are binary for safety
         };
 
