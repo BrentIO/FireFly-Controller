@@ -123,7 +123,8 @@
         /* Output Controller */
         #define COUNT_OUTPUT_CONTROLLER 1 /* The number of output controllers. */
         #define MODEL_OUTPUT_CONTROLLER ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
-        #define OUTPUT_CONTROLLER_PORTS {2,1,3,4,6,5,7,8,10,9,11,12,14,13,15,16} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
+        #define COUNT_PINS_OUTPUT_CONTROLLER 6
+        #define OUTPUT_CONTROLLER_PORTS {2,1,3,4,6,5} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
 
         /* External EEPROM */
         #define MODEL_EEPROM_EXTERNAL ENUM_MODEL_EEPROM_EXTERNAL_24LCXXX
