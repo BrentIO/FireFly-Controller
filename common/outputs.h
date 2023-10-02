@@ -57,6 +57,7 @@ class managerOutputs{
         struct outputPin{
             uint8_t state = 0; //The state of the output as a percentage from 0 to 100
             outputType type = BINARY; //Default all outputs are binary for safety
+            uint8_t port = 0; /* Human-readable port number */
         };
 
 
@@ -184,8 +185,26 @@ class managerOutputs{
                 return;
             }
 
+            uint8_t portPinMap[COUNT_PINS_OUTPUT_CONTROLLER * COUNT_OUTPUT_CONTROLLER] = OUTPUT_CONTROLLER_PORTS;
+
             for(int i = 0; i < COUNT_OUTPUT_CONTROLLER; i++){
                 this->outputControllers[i].address = addressesOutputController[i];
+                
+                for(int j = 0; j < COUNT_PINS_OUTPUT_CONTROLLER; j++){
+
+                    if(portPinMap[j] == 0){
+
+                         #if DEBUG
+                            Serial.println(F("[outputs] (begin) COUNT_PINS_OUTPUT_CONTROLLER and the length of OUTPUT_CONTROLLER_PORTS are mismatched in hardware.h; Disabling outputs."));
+                        #endif
+
+                        failOutputController(&this->outputControllers[i], failureReason::INVALID_HARDWARE_CONFIGURATION);
+
+                        return;
+                    }
+
+                    this->outputControllers[i].outputs[j].port = portPinMap[j];
+                }
 
                 #if MODEL_OUTPUT_CONTROLLER == ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
                     this->outputControllers[i].hardware = PCA9685(outputControllers[i].address);
@@ -200,8 +219,8 @@ class managerOutputs{
                         failOutputController(&this->outputControllers[i], i2cResponseToFailureReason(outputControllers[i].hardware.lastError()));
                     }
 
-                #endif
 
+                #endif
             }
 
             this->_initialized = true;
