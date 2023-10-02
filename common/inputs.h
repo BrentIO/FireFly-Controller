@@ -37,7 +37,7 @@ class managerInputs{
 
         /** Collection of port and channel that is unique */
         struct portChannel{
-            uint8_t port; /* RJ-45 port */
+            uint8_t port; /* Human-readable RJ-45 port */
             uint8_t channel; /* Wire within the RJ-45 port */
         };
 
