@@ -10,8 +10,7 @@
  * 
  * 
  * ### Callbacks
- *  Two callback functions are supported:
- * - `setCallback_publisher` which will be called when an input changes from its normal status to an abnormal status
+ *  One callback function is supported:
  * - `setCallback_failure` which will be called if there is an error during `begin()` or if one of the input controllers falls off the bus after being initialized
  */
 class managerOutputs{
@@ -82,9 +81,6 @@ class managerOutputs{
 
 
         bool _initialized = false;
-
-
-        void (*ptrPublisherCallback)(void); //TODO: Determine correct signature
 
 
         /** Reference to the callback function that will be called when an output controller has failed */
@@ -165,10 +161,6 @@ class managerOutputs{
             uint8_t count = 0;
             structHealth outputControllers[COUNT_OUTPUT_CONTROLLER];
         };
-
-
-        void setCallback_publisher(void (*userDefinedCallback)(void)) {
-            ptrPublisherCallback = userDefinedCallback; }
 
 
         /** Callback function that is called when an output controller failure occurs */

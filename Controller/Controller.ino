@@ -46,7 +46,6 @@ void setup() {
     frontPanel.begin();
 
     outputs.setCallback_failure(&outputFailure);
-    outputs.setCallback_publisher(&outputPublisher);
     outputs.begin();
 
     inputs.setCallback_failure(&inputFailure);
@@ -277,17 +276,6 @@ void outputFailure(uint8_t address, managerOutputs::failureReason failureReason)
   oled.showError(("Out Ctl 0x" + String(address, HEX) + " fail " + String(failureReason)).c_str());
 
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
-}
-
-
-void outputPublisher(){
-
-  #ifdef DEBUG
-    Serial.println("[main] (outputPublisher) An output was changed");
-  #endif
-
-  //TODO: Add MQTT and stuff
-
 }
 
 
