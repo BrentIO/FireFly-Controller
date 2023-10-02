@@ -30,6 +30,7 @@
         #define MODEL_IO_EXTENDER ENUM_MODEL_IO_EXTENDER_PCA9995 /* IO Extender Model. */
         #define COUNT_PINS_IO_EXTENDER 16 /* The number of pins on each IO extender. */
         #define COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ45 port that are usable. */
+        #define IO_EXTENDER_CHANNELS {{1,1},{1,2},{1,3},{2,6},{1,6},{2,3},{2,2},{2,1},{3,1},{3,2},{3,3},{4,6},{3,6},{4,3},{4,2},{4,1}} /* Physical mapping of the {port,channel} by pin */
         
         /* Output Controller */
         #define COUNT_OUTPUT_CONTROLLER 2 /* The number of output controllers. */
@@ -56,7 +57,6 @@
 
         /* I2C Addresses */
         #define ADDRESSES_IO_EXTENDER {0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27} /* I2C addresses for the IO extenders, order must match the PINS_INTERRUPT_IO_EXTENDER and should be sequential with the port numbers. */
-        #define IO_EXTENDER_CHANNELS {{1,1},{1,2},{1,3},{2,6},{1,6},{2,3},{2,2},{2,1},{3,1},{3,2},{3,3},{4,6},{3,6},{4,3},{4,2},{4,1}} /* Physical mapping of the {port,channel} by pin */
         #define ADDRESSES_OUTPUT_CONTROLLER {0x40,0x42} /* I2C addresses for the output controllers. */
         #define ADDRESSES_TEMPERATURE_SENSOR {0x48} /* I2C addresses of the on-board temperature sensors. */
         #define ADDRESS_EEPROM 0x50 /* I2C addresses of the external EEPROM. */
@@ -74,10 +74,12 @@
         #define MODEL_IO_EXTENDER ENUM_MODEL_IO_EXTENDER_PCA9995 /* IO Extender Model. */
         #define COUNT_PINS_IO_EXTENDER 16 /* The number of pins on each IO extender. */
         #define COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ45 port that are usable. */
+        #define IO_EXTENDER_CHANNELS {{1,1},{1,2},{1,3},{2,6},{1,6},{2,3},{2,2},{2,1},{3,1},{3,2},{3,3},{4,6},{3,6},{4,3},{4,2},{4,1}} /* Physical mapping of the {port,channel} by pin */
         
         /* Output Controller */
         #define COUNT_OUTPUT_CONTROLLER 2 /* The number of output controllers. */
         #define MODEL_OUTPUT_CONTROLLER ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
+        #define OUTPUT_CONTROLLER_PORTS {2,1,3,4,6,5,7,8,10,9,11,12,14,13,15,16} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
 
         /* External EEPROM */
         #define MODEL_EEPROM_EXTERNAL ENUM_MODEL_EEPROM_EXTERNAL_24LCXXX
@@ -100,7 +102,6 @@
 
         /* I2C Addresses */
         #define ADDRESSES_IO_EXTENDER {0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27} /* I2C addresses for the IO extenders, order must match the PINS_INTERRUPT_IO_EXTENDER. */
-        #define IO_EXTENDER_CHANNELS {{1,1},{1,2},{1,3},{2,6},{1,6},{2,3},{2,2},{2,1},{3,1},{3,2},{3,3},{4,6},{3,6},{4,3},{4,2},{4,1}} /* Physical mapping of the {port,channel} by pin */
         #define ADDRESSES_OUTPUT_CONTROLLER {0x40,0x41} /* I2C addresses for the output controllers. */
         #define ADDRESSES_TEMPERATURE_SENSOR {0x48} /* I2C addresses of the on-board temperature sensors. */
         #define ADDRESS_EEPROM 0x50 /* I2C addresses of the external EEPROM. */
@@ -117,10 +118,12 @@
         #define MODEL_IO_EXTENDER ENUM_MODEL_IO_EXTENDER_PCA9995 /* IO Extender Model. */
         #define COUNT_PINS_IO_EXTENDER 16 /* The number of pins on each IO extender. */
         #define COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ45 port that are usable. */
+        #define IO_EXTENDER_CHANNELS {{1,1},{1,2},{1,3},{2,6},{1,6},{2,3},{2,2},{2,1},{3,1},{3,2},{3,3},{4,6},{3,6},{4,3},{4,2},{4,1}} /* Physical mapping of the {port,channel} by pin */
         
         /* Output Controller */
         #define COUNT_OUTPUT_CONTROLLER 1 /* The number of output controllers. */
         #define MODEL_OUTPUT_CONTROLLER ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
+        #define OUTPUT_CONTROLLER_PORTS {2,1,3,4,6,5,7,8,10,9,11,12,14,13,15,16} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
 
         /* External EEPROM */
         #define MODEL_EEPROM_EXTERNAL ENUM_MODEL_EEPROM_EXTERNAL_24LCXXX
@@ -143,7 +146,6 @@
 
         /* I2C Addresses */
         #define ADDRESSES_IO_EXTENDER {0x20,0x21} /* I2C addresses for the IO extenders, order must match the PINS_INTERRUPT_IO_EXTENDER and should be sequential with the port numbers. */
-        #define IO_EXTENDER_CHANNELS {{1,1},{1,2},{1,3},{2,6},{1,6},{2,3},{2,2},{2,1},{3,1},{3,2},{3,3},{4,6},{3,6},{4,3},{4,2},{4,1}} /* Physical mapping of the {port,channel} by pin */
         #define ADDRESSES_OUTPUT_CONTROLLER {0x40} /* I2C addresses for the output controllers. */
         #define ADDRESSES_TEMPERATURE_SENSOR {0x48} /* I2C addresses of the on-board temperature sensors. */
         #define ADDRESS_EEPROM 0x50 /* I2C addresses of the external EEPROM. */
