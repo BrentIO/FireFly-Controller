@@ -170,9 +170,18 @@
     #if MODEL_OUTPUT_CONTROLLER == ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
         #include <PCA9685.h> // https://github.com/RobTillaart/PCA9685_RT
 
-        #define MAXIMUM_PWM 4095 /* Maximum value for PWM */
-        #define FREQUENCY_PWM 1500 /* PWM Frequency in Hz */
-        #define COUNT_PINS_OUTPUT_CONTROLLER 16 /* The number of pins on each output controller. */
+        #ifndef MAXIMUM_PWM
+            #define MAXIMUM_PWM 4095 /* Maximum value for PWM */
+        #endif
+
+        #ifndef FREQUENCY_PWM
+            #define FREQUENCY_PWM 1500 /* PWM Frequency in Hz */
+        #endif
+
+        #ifndef COUNT_PINS_OUTPUT_CONTROLLER
+            #define COUNT_PINS_OUTPUT_CONTROLLER 16 /* The number of pins on each output controller. */
+        #endif
+
     #endif
 
 
