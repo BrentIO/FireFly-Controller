@@ -182,10 +182,8 @@ class managerOutputs{
                 failOutputController(&invalid, failureReason::INVALID_HARDWARE_CONFIGURATION);
 
                 return;
-
             }
 
-            //Setup output controllers
             for(int i = 0; i < COUNT_OUTPUT_CONTROLLER; i++){
                 this->outputControllers[i].address = addressesOutputController[i];
 
@@ -198,7 +196,6 @@ class managerOutputs{
 
                     this->outputControllers[i].hardware.setFrequency(FREQUENCY_PWM);
                     
-                    //Ensure the controller is online
                     if(outputControllers[i].hardware.lastError() != 0){
                         failOutputController(&this->outputControllers[i], i2cResponseToFailureReason(outputControllers[i].hardware.lastError()));
                     }
@@ -208,7 +205,6 @@ class managerOutputs{
             }
 
             this->_initialized = true;
-
         }
 
         /** Returns the value of each output controller's bus status */
