@@ -24,8 +24,6 @@
         /* Input IO Extender */
         #define IO_EXTENDER_MODEL ENUM_IO_EXTENDER_MODEL_PCA9995 /* IO Extender Model */
         #define IO_EXTENDER_COUNT 8 /* The number of IO extenders */
-        #define IO_EXTENDER_COUNT_PINS 16 /* The number of pins on each IO extender */
-        #define IO_EXTENDER_COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ-45 port that are usable */
         #define IO_EXTENDER_ADDRESSES {0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27} /* I2C addresses for the IO extenders, order must match the PINS_INTERRUPT_IO_EXTENDER and should be sequential with the port numbers */
         #define IO_EXTENDER_CHANNELS {{1,1},{1,2},{1,3},{2,6},{1,6},{2,3},{2,2},{2,1},{3,1},{3,2},{3,3},{4,6},{3,6},{4,3},{4,2},{4,1}} /* Physical mapping of the {port,channel} by pin */
         #define IO_EXTENDER_INTERRUPT_PINS {35,25,26,27,4,5,18,19} /* Interrupt pins for the IO extenders, order must match the ADDRESSES_IO_EXTENDER */
@@ -33,13 +31,11 @@
         /* Output Controller */
         #define OUTPUT_CONTROLLER_MODEL ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
         #define OUTPUT_CONTROLLER_COUNT 2 /* The number of output controllers */
-        #define OUTPUT_CONTROLLER_COUNT_PINS 16 /* Special for this model */
         #define OUTPUT_CONTROLLER_ADDRESSES {0x40,0x42} /* I2C addresses for the output controllers */
         #define OUTPUT_CONTROLLER_PORTS {2,1,3,4,6,5,7,8,10,9,11,12,14,13,15,16} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
 
         /* External EEPROM */
         #define EEPROM_EXTERNAL_MODEL ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX
-        #define EEPROM_EXTERNAL_SIZE 256 /* Six of the external EEPROM.  NOTE: Divide the device size in Kbits by 8. */
         #define EEPROM_EXTERNAL_WRITE_PROTECT_PIN 23 /* EEPROM write protect pin.  When low, write protect is disabled */
         #define EEPROM_EXTERNAL_ADDRESS 0x50 /* I2C addresses of the external EEPROM */
 
@@ -69,8 +65,6 @@
         /* Input IO Extender */
         #define IO_EXTENDER_MODEL ENUM_IO_EXTENDER_MODEL_PCA9995 /* IO Extender Model */
         #define IO_EXTENDER_COUNT 8 /* The number of IO extenders */
-        #define IO_EXTENDER_COUNT_PINS 16 /* The number of pins on each IO extender */
-        #define IO_EXTENDER_COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ-45 port that are usable */
         #define IO_EXTENDER_ADDRESSES {0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27} /* I2C addresses for the IO extenders, order must match the PINS_INTERRUPT_IO_EXTENDER and should be sequential with the port numbers */
         #define IO_EXTENDER_CHANNELS {{1,1},{1,2},{1,3},{2,6},{1,6},{2,3},{2,2},{2,1},{3,1},{3,2},{3,3},{4,6},{3,6},{4,3},{4,2},{4,1}} /* Physical mapping of the {port,channel} by pin */
         #define IO_EXTENDER_INTERRUPT_PINS {35,25,26,27,4,5,18,19} /* Interrupt pins for the IO extenders, order must match the ADDRESSES_IO_EXTENDER */
@@ -78,13 +72,11 @@
         /* Output Controller */
         #define OUTPUT_CONTROLLER_MODEL ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
         #define OUTPUT_CONTROLLER_COUNT 2 /* The number of output controllers */
-        #define OUTPUT_CONTROLLER_COUNT_PINS 16 /* Special for this model */
         #define OUTPUT_CONTROLLER_ADDRESSES {0x40,0x42} /* I2C addresses for the output controllers */
         #define OUTPUT_CONTROLLER_PORTS {2,1,3,4,6,5,7,8,10,9,11,12,14,13,15,16} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
 
         /* External EEPROM */
         #define EEPROM_EXTERNAL_MODEL ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX
-        #define EEPROM_EXTERNAL_SIZE 256 /* Six of the external EEPROM.  NOTE: Divide the device size in Kbits by 8. */
         #define EEPROM_EXTERNAL_WRITE_PROTECT_PIN 23 /* EEPROM write protect pin.  When low, write protect is disabled */
         #define EEPROM_EXTERNAL_ADDRESS 0x50 /* I2C addresses of the external EEPROM */
 
@@ -112,8 +104,6 @@
         /* Input IO Extender */
         #define IO_EXTENDER_MODEL ENUM_IO_EXTENDER_MODEL_PCA9995 /* IO Extender Model */
         #define IO_EXTENDER_COUNT 2 /* The number of IO extenders */
-        #define IO_EXTENDER_COUNT_PINS 16 /* The number of pins on each IO extender */
-        #define IO_EXTENDER_COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ-45 port that are usable */
         #define IO_EXTENDER_ADDRESSES {0x20,0x21} /* I2C addresses for the IO extenders, order must match the PINS_INTERRUPT_IO_EXTENDER and should be sequential with the port numbers */
         #define IO_EXTENDER_CHANNELS {{1,1},{1,2},{1,3},{2,6},{1,6},{2,3},{2,2},{2,1},{3,1},{3,2},{3,3},{4,6},{3,6},{4,3},{4,2},{4,1}} /* Physical mapping of the {port,channel} by pin */
         #define IO_EXTENDER_INTERRUPT_PINS {34,35} /* Interrupt pins for the IO extenders, order must match the ADDRESSES_IO_EXTENDER */
@@ -127,7 +117,6 @@
 
         /* External EEPROM */
         #define EEPROM_EXTERNAL_MODEL ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX
-        #define EEPROM_EXTERNAL_SIZE 256 /* Six of the external EEPROM.  NOTE: Divide the device size in Kbits by 8. */
         #define EEPROM_EXTERNAL_WRITE_PROTECT_PIN 23 /* EEPROM write protect pin.  When low, write protect is disabled */
         #define EEPROM_EXTERNAL_ADDRESS 0x50 /* I2C addresses of the external EEPROM */
 
@@ -167,6 +156,14 @@
         #include <PCA95x5.h> // https://github.com/BrentIO/PCA95x5
 
 
+        #ifndef IO_EXTENDER_COUNT_PINS
+            #define IO_EXTENDER_COUNT_PINS 16 /* The number of pins on each IO extender */
+        #endif
+
+        #ifndef IO_EXTENDER_COUNT_CHANNELS_PER_PORT
+            #define IO_EXTENDER_COUNT_CHANNELS_PER_PORT 4 /* Number of channels (wires) per RJ-45 port that are usable */
+        #endif
+
         #ifndef IO_EXTENDER_MINIMUM_CHANGE_DELAY
             #define IO_EXTENDER_MINIMUM_CHANGE_DELAY 100 /* Milliseconds between a change being detected and an event triggering. This also handles debouncing for the main I/O.  */
         #endif
@@ -198,6 +195,11 @@
 
     #if EEPROM_EXTERNAL_MODEL == ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX
         #include <I2C_eeprom.h> // https://github.com/RobTillaart/I2C_EEPROM
+
+        #ifndef EEPROM_EXTERNAL_SIZE
+            #define EEPROM_EXTERNAL_SIZE 256 /* Six of the external EEPROM.  NOTE: Divide the device size in Kbits by 8. */
+        #endif
+
     #endif
 
 
