@@ -63,16 +63,16 @@ class managerOutputs{
 
         struct outputController{
             uint8_t address = 0; /* I2C address. Default 0.*/
-            outputPin outputs[COUNT_PINS_OUTPUT_CONTROLLER];
+            outputPin outputs[OUTPUT_CONTROLLER_COUNT_PINS];
             bool enabled = true; /* Indicates if the controller is enabled. Default true */
 
-            #if MODEL_OUTPUT_CONTROLLER == ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
+            #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
                 PCA9685 hardware = PCA9685(0); /* Reference to the hardware. */
             #endif
 
         };
 
-        outputController outputControllers[COUNT_OUTPUT_CONTROLLER];
+        outputController outputControllers[OUTPUT_CONTROLLER_COUNT];
 
 
         bool _initialized = false; /* If the class has been initialized. */
@@ -154,7 +154,7 @@ class managerOutputs{
 
         struct healthResult{
             uint8_t count = 0;
-            structHealth outputControllers[COUNT_OUTPUT_CONTROLLER];
+            structHealth outputControllers[OUTPUT_CONTROLLER_COUNT];
         };
 
 
@@ -169,12 +169,12 @@ class managerOutputs{
                 return;
             }
 
-            const uint8_t addressesOutputController[] = ADDRESSES_OUTPUT_CONTROLLER;
+            const uint8_t addressesOutputController[] = OUTPUT_CONTROLLER_ADDRESSES;
 
-            if(COUNT_OUTPUT_CONTROLLER != sizeof(addressesOutputController)/sizeof(uint8_t)){
+            if(OUTPUT_CONTROLLER_COUNT != sizeof(addressesOutputController)/sizeof(uint8_t)){
 
                 #if DEBUG
-                    Serial.println(F("[outputs] (begin) COUNT_OUTPUT_CONTROLLER and the length of ADDRESSES_OUTPUT_CONTROLLER are mismatched in hardware.h; Disabling outputs."));
+                    Serial.println(F("[outputs] (begin) OUTPUT_CONTROLLER_ADDRESSES and the length of OUTPUT_CONTROLLER_ADDRESSES are mismatched in hardware.h; Disabling outputs."));
                 #endif
 
                 outputController invalid;
@@ -185,17 +185,17 @@ class managerOutputs{
                 return;
             }
 
-            uint8_t portPinMap[COUNT_PINS_OUTPUT_CONTROLLER * COUNT_OUTPUT_CONTROLLER] = OUTPUT_CONTROLLER_PORTS;
+            uint8_t portPinMap[OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT] = OUTPUT_CONTROLLER_PORTS;
 
-            for(int i = 0; i < COUNT_OUTPUT_CONTROLLER; i++){
+            for(int i = 0; i < OUTPUT_CONTROLLER_COUNT; i++){
                 this->outputControllers[i].address = addressesOutputController[i];
                 
-                for(int j = 0; j < COUNT_PINS_OUTPUT_CONTROLLER; j++){
+                for(int j = 0; j < OUTPUT_CONTROLLER_COUNT_PINS; j++){
 
                     if(portPinMap[j] == 0){
 
                          #if DEBUG
-                            Serial.println(F("[outputs] (begin) COUNT_PINS_OUTPUT_CONTROLLER and the length of OUTPUT_CONTROLLER_PORTS are mismatched in hardware.h; Disabling outputs."));
+                            Serial.println(F("[outputs] (begin) OUTPUT_CONTROLLER_COUNT_PINS and the length of OUTPUT_CONTROLLER_PORTS are mismatched in hardware.h; Disabling outputs."));
                         #endif
 
                         failOutputController(&this->outputControllers[i], failureReason::INVALID_HARDWARE_CONFIGURATION);
@@ -206,14 +206,14 @@ class managerOutputs{
                     this->outputControllers[i].outputs[j].port = portPinMap[j];
                 }
 
-                #if MODEL_OUTPUT_CONTROLLER == ENUM_MODEL_OUTPUT_CONTROLLER_PCA9685
+                #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
                     this->outputControllers[i].hardware = PCA9685(outputControllers[i].address);
 
                     if(this->outputControllers[i].hardware.begin() == false){
                         failOutputController(&this->outputControllers[i], i2cResponseToFailureReason(outputControllers[i].hardware.lastError()));
                     };
 
-                    this->outputControllers[i].hardware.setFrequency(FREQUENCY_PWM);
+                    this->outputControllers[i].hardware.setFrequency(OUTPUT_CONTROLLER_FREQUENCY_PWM);
                     
                     if(outputControllers[i].hardware.lastError() != 0){
                         failOutputController(&this->outputControllers[i], i2cResponseToFailureReason(outputControllers[i].hardware.lastError()));
@@ -235,12 +235,12 @@ class managerOutputs{
                 return returnValue;
             }
 
-            for(int i = 0; i < COUNT_OUTPUT_CONTROLLER; i++){
+            for(int i = 0; i < OUTPUT_CONTROLLER_COUNT; i++){
                 returnValue.outputControllers[i].address = this->outputControllers[i].address;
                 returnValue.outputControllers[i].enabled = this->outputControllers[i].enabled;
             }
 
-            returnValue.count = COUNT_OUTPUT_CONTROLLER;
+            returnValue.count = OUTPUT_CONTROLLER_COUNT;
 
             return returnValue;
         }

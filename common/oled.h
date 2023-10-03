@@ -52,16 +52,16 @@
             pages _activePage = PAGE_EVENT_LOG;
             boolean _isSleeping = false;
             boolean _isDimmed = false;
-            char _errorText[CHARACTERS_PER_LINE * 2];
+            char _errorText[OLED_CHARACTERS_PER_LINE * 2];
             int _factory_reset_value = 0;
-            char events[NUMBER_OF_LINES][CHARACTERS_PER_LINE + 1];
+            char events[OLED_NUMBER_OF_LINES][OLED_CHARACTERS_PER_LINE + 1];
             unsigned long _timeLastAction = 0;
             unsigned long _timeIntroShown = 0;
 
             #define DIM_AFTER_MS 10000
             #define SLEEP_AFTER_MS 15000
 
-            #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+            #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                 Adafruit_SSD1306 hardware;
             #endif
 
@@ -72,7 +72,7 @@
                     return;
                 }
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                     this->hardware.clearDisplay();
                     this->hardware.invertDisplay(false);
                 #endif
@@ -85,7 +85,7 @@
                     return;
                 }
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                     this->hardware.display();
                 #endif
 
@@ -103,7 +103,7 @@
                     return;
                 }
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                     this->hardware.dim(true);
                 #endif
 
@@ -123,7 +123,7 @@
                     return;
                 }
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                     this->hardware.ssd1306_command(SSD1306_DISPLAYOFF);
                 #endif
 
@@ -144,7 +144,7 @@
 
                 if(this->_isDimmed == true){
 
-                    #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                    #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                         this->hardware.dim(false);
                     #endif
 
@@ -153,7 +153,7 @@
 
                 if(this->_isSleeping == true){
 
-                    #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                    #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                         this->hardware.dim(false);  //Required because without it the display only turns back on to a dimmed display
                         this->hardware.ssd1306_command(SSD1306_DISPLAYON);
                     #endif
@@ -192,12 +192,12 @@
                     total = total +1;
                 }
 
-                int val = map(page, 1, total, 1, DISPLAY_HEIGHT-SCROLL_BAR_HEIGHT-1);
+                int val = map(page, 1, total, 1, OLED_DISPLAY_HEIGHT-OLED_SCROLL_BAR_HEIGHT-1);
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                     this->hardware.setTextColor(SSD1306_WHITE);
-                    this->hardware.fillRect((DISPLAY_WIDTH-SCROLL_BAR_WIDTH),0,SCROLL_BAR_WIDTH, DISPLAY_HEIGHT, SSD1306_WHITE); //Scroll Bar
-                    this->hardware.fillRect((DISPLAY_WIDTH-SCROLL_BAR_WIDTH),val,SCROLL_BAR_WIDTH,SCROLL_BAR_HEIGHT, SSD1306_BLACK); //Scroll position
+                    this->hardware.fillRect((OLED_DISPLAY_WIDTH-OLED_SCROLL_BAR_WIDTH),0,OLED_SCROLL_BAR_WIDTH, OLED_DISPLAY_HEIGHT, SSD1306_WHITE); //Scroll Bar
+                    this->hardware.fillRect((OLED_DISPLAY_WIDTH-OLED_SCROLL_BAR_WIDTH),val,OLED_SCROLL_BAR_WIDTH,OLED_SCROLL_BAR_HEIGHT, SSD1306_BLACK); //Scroll position
                 #endif      
             }
 
@@ -208,7 +208,7 @@
                     return;
                 }
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                     #define LOGO_WIDTH  20
                     #define LOGO_HEIGHT 10
 
@@ -227,8 +227,8 @@
 
                     this->_wake();
                     this->_clear();
-                    this->hardware.drawBitmap(0, (DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                    this->hardware.setCursor(LOGO_WIDTH + 2, DISPLAY_HEIGHT / 2);
+                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                    this->hardware.setCursor(LOGO_WIDTH + 2, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.println(F("P5 Software"));
@@ -249,7 +249,7 @@
 
                 this->_clear();
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                     this->hardware.setCursor(0, 0);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
 
@@ -268,7 +268,7 @@
                     return;
                 }
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     #define LOGO_WIDTH  20
                     #define LOGO_HEIGHT 20
@@ -298,8 +298,8 @@
 
                     this->_wake();
                     this->_clear();
-                    this->hardware.drawBitmap(0, (DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                    this->hardware.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
+                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                    this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.println(F("Event Log"));
@@ -319,7 +319,7 @@
                     return;
                 }
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     #define LOGO_WIDTH  20
                     #define LOGO_HEIGHT 20
@@ -349,8 +349,8 @@
 
                     this->_wake();
                     this->_clear();
-                    this->hardware.drawBitmap(0, (DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                    this->hardware.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
+                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                    this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.println(F("Network"));
@@ -370,7 +370,7 @@
                     return;
                 }
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     #define LOGO_WIDTH  20
                     #define LOGO_HEIGHT 20
@@ -400,8 +400,8 @@
 
                     this->_wake();
                     this->_clear();
-                    this->hardware.drawBitmap(0, (DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                    this->hardware.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
+                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                    this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.println(F("Hardware"));
@@ -422,7 +422,7 @@
                     return;
                 }
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     #define LOGO_WIDTH  20
                     #define LOGO_HEIGHT 20
@@ -452,8 +452,8 @@
 
                     this->_wake();
                     this->_clear();
-                    this->hardware.drawBitmap(0, (DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                    this->hardware.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
+                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                    this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.println(F("Software"));
@@ -474,7 +474,7 @@
                     return;
                 }
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     #define LOGO_WIDTH  20
                     #define LOGO_HEIGHT 20
@@ -504,8 +504,8 @@
 
                     this->_wake();
                     this->_clear();
-                    this->hardware.drawBitmap(0, (DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                    this->hardware.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
+                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                    this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.println(F("Status"));
@@ -525,7 +525,7 @@
                     return;
                 }
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     #define LOGO_WIDTH  20
                     #define LOGO_HEIGHT 20
@@ -555,8 +555,8 @@
 
                     this->_wake();
                     this->_clear();
-                    this->hardware.drawBitmap(0, (DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                    this->hardware.setCursor(LOGO_WIDTH + 5, DISPLAY_HEIGHT / 2);
+                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                    this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.println(F("Error"));
@@ -575,7 +575,7 @@
                     return;
                 }
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     this->_wake();
                     this->_clear();
@@ -590,7 +590,7 @@
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.println(F("     Factory Reset    "));
                     this->hardware.setFont(&Prototype9pt7b);
-                    this->hardware.setCursor(DISPLAY_WIDTH / 2, 26);
+                    this->hardware.setCursor(OLED_DISPLAY_WIDTH / 2, 26);
                     this->hardware.println(this->_factory_reset_value);
                     this->hardware.setFont();
 
@@ -609,7 +609,7 @@
 
                 this->_clear();
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setCursor(0, 0);
 
@@ -640,7 +640,7 @@
                     return;
                 }
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     #define LOGO_WIDTH  20
                     #define LOGO_HEIGHT 20
@@ -692,8 +692,8 @@
                         case wifi_mode_t::WIFI_MODE_STA:
 
                             if(this->_wifiInfo->isConnected() == false){
-                                this->hardware.drawBitmap(0,(DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                                this->hardware.setCursor(LOGO_WIDTH + 16, (DISPLAY_HEIGHT/2)-3);
+                                this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                                this->hardware.setCursor(LOGO_WIDTH + 16, (OLED_DISPLAY_HEIGHT/2)-3);
                                 this->hardware.println(F("Disconnected"));
                             } else {
 
@@ -713,14 +713,14 @@
                             break;
 
                         case wifi_mode_t::WIFI_MODE_NULL:
-                            this->hardware.drawBitmap(0,(DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                            this->hardware.setCursor(LOGO_WIDTH + 10, (DISPLAY_HEIGHT/2)-3);
+                            this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                            this->hardware.setCursor(LOGO_WIDTH + 10, (OLED_DISPLAY_HEIGHT/2)-3);
                             this->hardware.println(F("Not Initialized"));
                             break;
 
                         default:
-                            this->hardware.drawBitmap(0,(DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                            this->hardware.setCursor(LOGO_WIDTH + 20, (DISPLAY_HEIGHT/2)-3);
+                            this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                            this->hardware.setCursor(LOGO_WIDTH + 20, (OLED_DISPLAY_HEIGHT/2)-3);
                             this->hardware.println(F("Unknown"));
                             break;
                     }
@@ -738,7 +738,7 @@
                     return;
                 }
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     #define LOGO_WIDTH  20
                     #define LOGO_HEIGHT 20
@@ -784,7 +784,7 @@
 
                 this->_clear();
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setCursor(0, 0);
@@ -807,7 +807,7 @@
 
                 this->_clear();
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setCursor(0, 0); 
                     this->hardware.println("STATUS STUB");
@@ -827,7 +827,7 @@
 
                 this->_clear();
 
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                     this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); //Inverted text
                     this->hardware.setCursor(0, 0);
                     this->hardware.println(F("        ERROR        "));
@@ -882,10 +882,10 @@
                     return;
                 }
                     
-                #if MODEL_OLED_DISPLAY == ENUM_MODEL_OLED_SSD1306_128_32
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     //Attempt to connect to the display on the bus
-                    Wire.beginTransmission(ADDRESS_OLED);
+                    Wire.beginTransmission(OLED_ADDRESS);
 
                     if(Wire.endTransmission()!=0){
 
@@ -897,7 +897,7 @@
 
                     this->hardware = Adafruit_SSD1306(128, 32, &Wire, -1);
 
-                    if(this->hardware.begin(SSD1306_SWITCHCAPVCC, ADDRESS_OLED) == false){
+                    if(this->hardware.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS) == false){
                         if(this->ptrFailureCallback){
                             this->ptrFailureCallback(failureCode::UNABLE_TO_START);
                         }
@@ -919,7 +919,7 @@
 
                 structHealth returnValue;
 
-                returnValue.address = ADDRESS_OLED;
+                returnValue.address = OLED_ADDRESS;
                 returnValue.enabled = this->_initialized;
 
                 return returnValue;
@@ -931,12 +931,12 @@
                 //Copy the elements down one element
                 for(int i = 2; i >= 0; i--){
 
-                    strncpy(this->events[i+1], this->events[i], CHARACTERS_PER_LINE);
+                    strncpy(this->events[i+1], this->events[i], OLED_CHARACTERS_PER_LINE);
                     
                 }
 
                 //Write the requested chars to the first element in the array
-                strncpy(this->events[0], text, CHARACTERS_PER_LINE);
+                strncpy(this->events[0], text, OLED_CHARACTERS_PER_LINE);
                 
                 //Turn on the display for notification
                 if(type == LOG_LEVEL_NOTIFICATION){

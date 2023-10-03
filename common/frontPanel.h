@@ -46,10 +46,10 @@ class managerFrontPanel{
     public:
 
         void begin(){
-            pinMode(PIN_OLED_BUTTON, INPUT_PULLUP);
-            pinMode(PIN_OLED_LED, OUTPUT);
+            pinMode(OLED_BUTTON_PIN, INPUT_PULLUP);
+            pinMode(OLED_LED_PIN, OUTPUT);
 
-            inputState currentState = bitToInputState(digitalRead(PIN_OLED_BUTTON));
+            inputState currentState = bitToInputState(digitalRead(OLED_BUTTON_PIN));
 
             if(currentState == inputState::STATE_CLOSED){
 
@@ -75,19 +75,19 @@ class managerFrontPanel{
 
             switch(value){
                 case managerFrontPanel::status::FAILURE:
-                    digitalWrite(PIN_OLED_LED, LOW);
+                    digitalWrite(OLED_LED_PIN, LOW);
                     break;
 
                 case managerFrontPanel::status::NORMAL:
-                    digitalWrite(PIN_OLED_LED, HIGH);
+                    digitalWrite(OLED_LED_PIN, HIGH);
                     break;
 
                 case managerFrontPanel::status::TROUBLE:
-                    digitalWrite(PIN_OLED_LED, LOW);
+                    digitalWrite(OLED_LED_PIN, LOW);
                     break;                        
 
                 default:
-                    digitalWrite(PIN_OLED_LED, LOW);
+                    digitalWrite(OLED_LED_PIN, LOW);
                     _ledStatus = managerFrontPanel::status::TROUBLE;
                     break;
             }
@@ -97,13 +97,13 @@ class managerFrontPanel{
 
         inputState getButtonState(){
 
-            return bitToInputState(digitalRead(PIN_OLED_BUTTON));
+            return bitToInputState(digitalRead(OLED_BUTTON_PIN));
 
         }
 
         void loop(){
 
-            inputState currentState = bitToInputState(digitalRead(PIN_OLED_BUTTON));
+            inputState currentState = bitToInputState(digitalRead(OLED_BUTTON_PIN));
 
             if(currentState == state){
                 return;
@@ -137,7 +137,7 @@ class managerFrontPanel{
                 }
 
                 //Turn off the front panel LED during a button press
-                digitalWrite(PIN_OLED_LED, LOW);
+                digitalWrite(OLED_LED_PIN, LOW);
 
                 state = currentState;
 
@@ -157,7 +157,7 @@ class managerFrontPanel{
                 if(_ledStatus == managerFrontPanel::status::NORMAL){
 
                     //The status is normal, turn the LED back on
-                    digitalWrite(PIN_OLED_LED, HIGH);
+                    digitalWrite(OLED_LED_PIN, HIGH);
                 }
 
                 state = currentState;

@@ -91,7 +91,7 @@ class managerTemperatureSensors{
         struct temperatureSensor{
             uint8_t address = 0; /* I2C address. Default 0.*/
 
-            #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
+            #if TEMPERATURE_SENSOR_MODEL == ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075
                 PCT2075 hardware = PCT2075(0); /* Reference to the hardware. */
             #endif
 
@@ -102,7 +102,7 @@ class managerTemperatureSensors{
         };
 
 
-        temperatureSensor temperatureSensors[COUNT_TEMPERATURE_SENSOR];
+        temperatureSensor temperatureSensors[TEMPERATURE_SENSOR_COUNT];
 
 
         bool _initialized = false; /* If the class has been initialized. */
@@ -146,7 +146,7 @@ class managerTemperatureSensors{
         /** Object containing the count of temperature sensors and a list of each sensor's bus status */
         struct healthResult{
             uint8_t count = 0; /** The number of temperature sensors */
-            structHealth sensor[COUNT_TEMPERATURE_SENSOR]; /** Array of temperature snsor health*/
+            structHealth sensor[TEMPERATURE_SENSOR_COUNT]; /** Array of temperature snsor health*/
         };
 
 
@@ -161,12 +161,12 @@ class managerTemperatureSensors{
                 return returnValue;
             }
 
-            for(int i = 0; i < COUNT_TEMPERATURE_SENSOR; i++){
+            for(int i = 0; i < TEMPERATURE_SENSOR_COUNT; i++){
                 returnValue.sensor[i].address = this->temperatureSensors[i].address;
                 returnValue.sensor[i].enabled = this->temperatureSensors[i].enabled;
             }
 
-            returnValue.count = COUNT_TEMPERATURE_SENSOR;
+            returnValue.count = TEMPERATURE_SENSOR_COUNT;
 
             return returnValue;
         }
@@ -189,16 +189,16 @@ class managerTemperatureSensors{
                 return;
             }
 
-            if(COUNT_TEMPERATURE_SENSOR == 0){
+            if(TEMPERATURE_SENSOR_COUNT == 0){
                 return;
             }
 
-            const uint8_t addressesTemperatureSensor[] = ADDRESSES_TEMPERATURE_SENSOR;
+            const uint8_t addressesTemperatureSensor[] = TEMPERATURE_SENSOR_ADDRESSES;
 
-            if(COUNT_TEMPERATURE_SENSOR != sizeof(addressesTemperatureSensor)/sizeof(uint8_t)){
+            if(TEMPERATURE_SENSOR_COUNT != sizeof(addressesTemperatureSensor)/sizeof(uint8_t)){
 
                 #if DEBUG
-                    Serial.println(F("[temperature] (begin) COUNT_TEMPERATURE_SENSOR and the length of ADDRESSES_TEMPERATURE_SENSOR are mismatched in hardware.h; Disabling temperature sensors."));
+                    Serial.println(F("[temperature] (begin) TEMPERATURE_SENSOR_COUNT and the length of TEMPERATURE_SENSOR_ADDRESSES are mismatched in hardware.h; Disabling temperature sensors."));
                 #endif
 
                 temperatureSensor invalid;
@@ -209,15 +209,15 @@ class managerTemperatureSensors{
 
             }
 
-            char* locations[COUNT_TEMPERATURE_SENSOR] = LOCATION_TEMPERATURE_SENSOR;
+            char* locations[TEMPERATURE_SENSOR_COUNT] = TEMPERATURE_SENSOR_LOCATIONS;
 
-            for(int i = 0; i < COUNT_TEMPERATURE_SENSOR; i++){
+            for(int i = 0; i < TEMPERATURE_SENSOR_COUNT; i++){
 
                 this->temperatureSensors[i].address = addressesTemperatureSensor[i];
                 this->temperatureSensors[i].location = locations[i];
                 temperatureSensors[i].enabled = true;
 
-                #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
+                #if TEMPERATURE_SENSOR_MODEL == ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075
                     this->temperatureSensors[i].hardware = PCT2075(this->temperatureSensors[i].address);
                     if(this->temperatureSensors[i].hardware.i2c_error() !=0){
 
@@ -240,17 +240,17 @@ class managerTemperatureSensors{
             }
 
             //Loop through each temperature sensor on the board
-            for(int i = 0; i < COUNT_TEMPERATURE_SENSOR; i++){
+            for(int i = 0; i < TEMPERATURE_SENSOR_COUNT; i++){
 
                 if(temperatureSensors[i].enabled == false){
                     continue;
                 }
 
                 //If the timer has expired OR if the temperature sensor has never been read, read it
-                if((millis() - temperatureSensors[i].timePreviousRead > MILLS_TEMPERATURE_SLEEP_DURATION) || (temperatureSensors[i].timePreviousRead == 0)){
+                if((millis() - temperatureSensors[i].timePreviousRead > TEMPERATURE_SENSOR_SLEEP_DURATION_MILLIS) || (temperatureSensors[i].timePreviousRead == 0)){
 
                     //Temperatures will be reported in degrees C
-                    #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
+                    #if TEMPERATURE_SENSOR_MODEL == ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075
                         float currentRead = temperatureSensors[i].hardware.getTempC();
                     #endif
 
@@ -258,7 +258,7 @@ class managerTemperatureSensors{
                     temperatureSensors[i].timePreviousRead = millis();
 
                     //Ensure the hardware is still online
-                    #if MODEL_TEMPERATURE_SENSOR == ENUM_MODEL_TEMPERATURE_SENSOR_PCT2075
+                    #if TEMPERATURE_SENSOR_MODEL == ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075
                         if(temperatureSensors[i].hardware.i2c_error() !=0){
 
                             failTemperatureSensor(&temperatureSensors[i], i2cResponseToFailureReason(temperatureSensors[i].hardware.i2c_error()));
@@ -266,8 +266,8 @@ class managerTemperatureSensors{
                         }
                     #endif
                     
-                    //Check if the delta between the two reads is more than the DEGREES_TEMPERATURE_VARIATION_ALLOWED
-                    if(abs(currentRead - temperatureSensors[i].previousRead) > DEGREES_TEMPERATURE_VARIATION_ALLOWED){
+                    //Check if the delta between the two reads is more than the TEMPERATURE_SENSOR_DEGREES_VARIATION_ALLOWED
+                    if(abs(currentRead - temperatureSensors[i].previousRead) > TEMPERATURE_SENSOR_DEGREES_VARIATION_ALLOWED){
 
                         //Store the new temperature reading
                         temperatureSensors[i].previousRead = currentRead;

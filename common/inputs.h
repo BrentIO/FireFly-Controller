@@ -116,20 +116,20 @@ class managerInputs{
          * It contains current information, such as the previous read value from the chip, if it is enabled or disabled, as well as contains a collection if inputPins
         */
         struct ioExtender{
-            #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9995
+            #if IO_EXTENDER_MODEL == ENUM_IO_EXTENDER_MODEL_PCA9995
                 PCA9555 hardware; /* Reference to the hardware */
             #endif
 
             uint8_t interruptPin = 0; /* Interrupt pin. Default 0 */
             uint8_t address = 0; /* I2C address. Default 0 */
             uint16_t previousRead = 0; /* Numeric value of the last read from the hardware. Default 0 */
-            inputPin inputs[COUNT_PINS_IO_EXTENDER]; /* Input pins connected to the hardware extender */
+            inputPin inputs[IO_EXTENDER_COUNT_PINS]; /* Input pins connected to the hardware extender */
             bool enabled = true; /* Indicates if the controller is enabled. Default true */
         };
 
 
         /** Collection of input controllers (ioExtnder) attached to the motherboard */
-        ioExtender inputControllers[COUNT_IO_EXTENDER];
+        ioExtender inputControllers[IO_EXTENDER_COUNT];
 
 
         /** Reference to the callback function that will be called when an input is sensed */
@@ -225,7 +225,7 @@ class managerInputs{
             uint16_t pinRead = 0;
 
             //Read all of the pins in a single call to the hardware
-            #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9555
+            #if IO_EXTENDER_MODEL == ENUM_IO_EXTENDER_MODEL_PCA9995
                 pinRead = inputController->hardware.read();
 
                 if(inputController->hardware.i2c_error() != 0){
@@ -244,7 +244,7 @@ class managerInputs{
             inputController->previousRead = pinRead;
 
             //Hardware detected a change; Process each pin on the specified IO extender
-            for(int i = 0; i < COUNT_PINS_IO_EXTENDER; i++){
+            for(int i = 0; i < IO_EXTENDER_COUNT_PINS; i++){
 
                 inputState currentState = bitToInputState(bitRead(pinRead, i));
 
@@ -308,19 +308,19 @@ class managerInputs{
 
         void processInputs(ioExtender *inputController){
 
-            for(int i = 0; i < COUNT_PINS_IO_EXTENDER; i++){
+            for(int i = 0; i < IO_EXTENDER_COUNT_PINS; i++){
 
                 if(inputController->inputs[i].timeChange == 0){
                     continue;
                 }
 
-                if((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) < MINIMUM_CHANGE_DELAY){
+                if((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) < IO_EXTENDER_MINIMUM_CHANGE_DELAY){
 
                     //Change was not observed long enough yet
                     continue;
                 }
 
-                if(((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) > MINIMUM_CHANGE_DELAY) && ((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) < MINIMUM_LONG_CHANGE_DELAY)){
+                if(((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) > IO_EXTENDER_MINIMUM_CHANGE_DELAY) && ((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) < IO_EXTENDER_MINIMUM_LONG_CHANGE_DELAY)){
 
                     if(inputController->inputs[i].changeHandled == true){
                         continue;
@@ -336,7 +336,7 @@ class managerInputs{
                     continue;
                 }
 
-                if((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) > MINIMUM_LONG_CHANGE_DELAY){
+                if((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) > IO_EXTENDER_MINIMUM_LONG_CHANGE_DELAY){
 
                     if(inputController->inputs[i].monitorLongChange == false){
                         continue;
@@ -365,7 +365,7 @@ class managerInputs{
         /** Object containing the count of controllers and a list of each controller's bus status */
         struct healthResult{
             uint8_t count = 0; /** The number of input controllers */
-            structHealth inputControllers[COUNT_IO_EXTENDER]; /** Array of input controller health */
+            structHealth inputControllers[IO_EXTENDER_COUNT]; /** Array of input controller health */
         };
 
         /** Callback function that is called when an input is made */
@@ -385,14 +385,14 @@ class managerInputs{
                 return;
             }
 
-            if(COUNT_IO_EXTENDER == 0){
+            if(IO_EXTENDER_COUNT == 0){
                 return;
             }
 
-            const uint8_t pinsInterruptIoExtender[] = PINS_INTERRUPT_IO_EXTENDER;
-            const uint8_t addressesIoExtender[] = ADDRESSES_IO_EXTENDER;
+            const uint8_t pinsInterruptIoExtender[] = IO_EXTENDER_INTERRUPT_PINS;
+            const uint8_t addressesIoExtender[] = IO_EXTENDER_ADDRESSES;
 
-            if(COUNT_IO_EXTENDER != sizeof(pinsInterruptIoExtender)/sizeof(uint8_t)){
+            if(IO_EXTENDER_COUNT != sizeof(pinsInterruptIoExtender)/sizeof(uint8_t)){
 
                 #if DEBUG
                     Serial.println(F("[inputs] (begin) COUNT_IO_EXTENDER and the length of PINS_INTERRUPT_IO_EXTENDER are mismatched in hardware.h; Disabling inputs."));
@@ -406,7 +406,7 @@ class managerInputs{
                 return;
             }
 
-            if(COUNT_IO_EXTENDER != sizeof(addressesIoExtender)/sizeof(uint8_t)){
+            if(IO_EXTENDER_COUNT != sizeof(addressesIoExtender)/sizeof(uint8_t)){
 
                 #if DEBUG
                     Serial.println(F("[inputs] (begin) COUNT_IO_EXTENDER and the length of ADDRESSES_IO_EXTENDER are mismatched in hardware.h; Disabling inputs."));
@@ -421,17 +421,17 @@ class managerInputs{
             }
 
             /** Defines the port and channel for a given input controller */
-            uint8_t portChannelPinMap[COUNT_PINS_IO_EXTENDER][2] = IO_EXTENDER_CHANNELS;
+            uint8_t portChannelPinMap[IO_EXTENDER_COUNT_PINS][2] = IO_EXTENDER_CHANNELS;
 
             //Setup the input controllers
-            for(int i = 0; i < COUNT_IO_EXTENDER; i++){
+            for(int i = 0; i < IO_EXTENDER_COUNT; i++){
 
                 this->inputControllers[i].interruptPin = pinsInterruptIoExtender[i];
                 this->inputControllers[i].address = addressesIoExtender[i];
 
                 pinMode(this->inputControllers[i].interruptPin, INPUT);
                 
-                #if MODEL_IO_EXTENDER == ENUM_MODEL_IO_EXTENDER_PCA9555
+                #if IO_EXTENDER_MODEL == ENUM_IO_EXTENDER_MODEL_PCA9995
                     this->inputControllers[i].hardware.attach(Wire, inputControllers[i].address);
                     this->inputControllers[i].hardware.polarity(PCA95x5::Polarity::ORIGINAL_ALL);
                     this->inputControllers[i].hardware.direction(PCA95x5::Direction::IN_ALL);
@@ -443,8 +443,8 @@ class managerInputs{
 
                 #endif
 
-                for(int j = 0; j < COUNT_PINS_IO_EXTENDER; j++){
-                    this->inputControllers[i].inputs[j].port_channel.port = portChannelPinMap[j][0] + ((COUNT_PINS_IO_EXTENDER / COUNT_CHANNELS_PER_PORT) * i);
+                for(int j = 0; j < IO_EXTENDER_COUNT_PINS; j++){
+                    this->inputControllers[i].inputs[j].port_channel.port = portChannelPinMap[j][0] + ((IO_EXTENDER_COUNT_PINS / IO_EXTENDER_COUNT_CHANNELS_PER_PORT) * i);
                     this->inputControllers[i].inputs[j].port_channel.channel = portChannelPinMap[j][1];
 
                 }
@@ -467,12 +467,12 @@ class managerInputs{
                 return returnValue;
             }
 
-            for(int i = 0; i < COUNT_IO_EXTENDER; i++){
+            for(int i = 0; i < IO_EXTENDER_COUNT; i++){
                 returnValue.inputControllers[i].address = this->inputControllers[i].address;
                 returnValue.inputControllers[i].enabled = this->inputControllers[i].enabled;
             }
 
-            returnValue.count = COUNT_IO_EXTENDER;
+            returnValue.count = IO_EXTENDER_COUNT;
 
             return returnValue;
         }
@@ -484,7 +484,7 @@ class managerInputs{
                 return;
             }
 
-            for(int i = 0; i < COUNT_IO_EXTENDER; i++){
+            for(int i = 0; i < IO_EXTENDER_COUNT; i++){
 
                 //Ignore disabled input controllers
                 if(this->inputControllers[i].enabled == false){

@@ -13,7 +13,7 @@ class managerExternalEEPROM{
 
     private:
 
-        #if MODEL_EEPROM_EXTERNAL == ENUM_MODEL_EEPROM_EXTERNAL_24LCXXX
+        #if EEPROM_EXTERNAL_MODEL == ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX
             I2C_eeprom hardware = I2C_eeprom(0); /* Reference to the hardware. */
         #endif
 
@@ -31,7 +31,7 @@ class managerExternalEEPROM{
                 return;
             }
 
-            #if MODEL_EEPROM_EXTERNAL == ENUM_MODEL_EEPROM_EXTERNAL_24LCXXX
+            #if EEPROM_EXTERNAL_MODEL == ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX
                 hardware.readBlock(0, (uint8_t *) &this->data, sizeof(this->data));
             #endif
 
@@ -59,8 +59,8 @@ class managerExternalEEPROM{
                 return;
             }
 
-            #if MODEL_EEPROM_EXTERNAL == ENUM_MODEL_EEPROM_EXTERNAL_24LCXXX
-                this->hardware = I2C_eeprom(ADDRESS_EEPROM,SIZE_EEPROM);
+            #if EEPROM_EXTERNAL_MODEL == ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX
+                this->hardware = I2C_eeprom(EEPROM_EXTERNAL_ADDRESS,EEPROM_EXTERNAL_SIZE);
                 this->hardware.begin();
 
                 //Ensure the hardware is online
@@ -81,7 +81,7 @@ class managerExternalEEPROM{
 
                 this->enabled = true;
 
-                pinMode(PIN_EEPROM_WP, OUTPUT);
+                pinMode(EEPROM_EXTERNAL_WRITE_PROTECT_PIN, OUTPUT);
 
             #endif
 
@@ -97,7 +97,7 @@ class managerExternalEEPROM{
 
             structHealth returnValue;
 
-            returnValue.address = ADDRESS_EEPROM;
+            returnValue.address = EEPROM_EXTERNAL_ADDRESS;
             returnValue.enabled = this->enabled;
 
             return returnValue;
@@ -125,14 +125,14 @@ class managerExternalEEPROM{
             }
             
             //Disable write protection
-            digitalWrite(PIN_EEPROM_WP, LOW);
+            digitalWrite(EEPROM_EXTERNAL_WRITE_PROTECT_PIN, LOW);
             delay(10);
 
             //Write the deviceInfo object to the external EEPROM
             int writeResponse = this->hardware.writeBlock(0, (uint8_t *) &this->data, sizeof(this->data));
 
             //Enable write protection
-            digitalWrite(PIN_EEPROM_WP, HIGH);
+            digitalWrite(EEPROM_EXTERNAL_WRITE_PROTECT_PIN, HIGH);
 
             if(writeResponse == 0){
                 return true;
@@ -178,16 +178,16 @@ class managerExternalEEPROM{
             int writeResponse = 0;
 
             //Disable write protection
-            digitalWrite(PIN_EEPROM_WP, LOW);
+            digitalWrite(EEPROM_EXTERNAL_WRITE_PROTECT_PIN, LOW);
             delay(10);
 
-            for (uint32_t address = 0; address < SIZE_EEPROM; address += 128)
+            for (uint32_t address = 0; address < EEPROM_EXTERNAL_SIZE; address += 128)
             {
                 writeResponse += this->hardware.setBlock(address, 0xff, 128);
             }
 
             //Enable write protection
-            digitalWrite(PIN_EEPROM_WP, HIGH);
+            digitalWrite(EEPROM_EXTERNAL_WRITE_PROTECT_PIN, HIGH);
 
             if(writeResponse == 0){
                 strcpy(this->data.uuid, "");
