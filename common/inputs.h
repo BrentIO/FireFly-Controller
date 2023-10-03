@@ -105,6 +105,7 @@ class managerInputs{
             inputState state = STATE_OPEN; /* The state entered at timeChange. Default STATE_OPEN.*/
             inputType type = NORMALLY_OPEN; /* Defines if the input is normally open or normally closed. Default NORMALLY_OPEN.*/
             boolean monitorLongChange = false; /* Defines if the pin should be monitored for long changes.  Should be _true_ for buttons and _false_ for reed switches. Default false.*/
+            portChannel port_channel; /* The RJ-45 port and channel this input pin is connected to */
         };
 
 
@@ -124,16 +125,11 @@ class managerInputs{
             uint16_t previousRead = 0; /* Numeric value of the last read from the hardware. Default 0 */
             inputPin inputs[COUNT_PINS_IO_EXTENDER]; /* Input pins connected to the hardware extender */
             bool enabled = true; /* Indicates if the controller is enabled. Default true */
-            uint8_t portOffset = 0; /* Indicates the first RJ-45 port handled by this ioExtender */
         };
 
 
         /** Collection of input controllers (ioExtnder) attached to the motherboard */
         ioExtender inputControllers[COUNT_IO_EXTENDER];
-
-
-        /** Defines the port and channel for a given input controller */
-        const uint8_t portChannelPinMap[COUNT_PINS_IO_EXTENDER][2] = IO_EXTENDER_CHANNELS;
 
 
         /** Reference to the callback function that will be called when an input is sensed */
@@ -257,11 +253,6 @@ class managerInputs{
                     continue;
                 }
 
-                portChannel portChannel;
-
-                portChannel.port = portChannelPinMap[i][0] + inputController->portOffset;
-                portChannel.channel = portChannelPinMap[i][1];
-
                 switch(inputController->inputs[i].type){
 
                     case inputType::NORMALLY_OPEN:
@@ -329,11 +320,6 @@ class managerInputs{
                     continue;
                 }
 
-                portChannel portChannel;
-
-                portChannel.port = portChannelPinMap[i][0] + inputController->portOffset;
-                portChannel.channel = portChannelPinMap[i][1];
-
                 if(((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) > MINIMUM_CHANGE_DELAY) && ((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) < MINIMUM_LONG_CHANGE_DELAY)){
 
                     if(inputController->inputs[i].changeHandled == true){
@@ -344,7 +330,7 @@ class managerInputs{
 
                     //Raise  an event for a short change
                     if(this->ptrPublisherCallback){
-                        this->ptrPublisherCallback(portChannel, false);
+                        this->ptrPublisherCallback(inputController->inputs[i].port_channel, false);
                     }
 
                     continue;
@@ -364,7 +350,7 @@ class managerInputs{
 
                     //Raise  an event for a long change
                     if(this->ptrPublisherCallback){
-                        this->ptrPublisherCallback(portChannel, true);
+                        this->ptrPublisherCallback(inputController->inputs[i].port_channel, true);
                     }
                 }
             }
@@ -434,12 +420,14 @@ class managerInputs{
                 return;
             }
 
+            /** Defines the port and channel for a given input controller */
+            uint8_t portChannelPinMap[COUNT_PINS_IO_EXTENDER][2] = IO_EXTENDER_CHANNELS;
+
             //Setup the input controllers
             for(int i = 0; i < COUNT_IO_EXTENDER; i++){
 
                 this->inputControllers[i].interruptPin = pinsInterruptIoExtender[i];
                 this->inputControllers[i].address = addressesIoExtender[i];
-                this->inputControllers[i].portOffset = ((COUNT_PINS_IO_EXTENDER / COUNT_CHANNELS_PER_PORT) * i);
 
                 pinMode(this->inputControllers[i].interruptPin, INPUT);
                 
@@ -454,6 +442,12 @@ class managerInputs{
                     }
 
                 #endif
+
+                for(int j = 0; j < COUNT_PINS_IO_EXTENDER; j++){
+                    this->inputControllers[i].inputs[j].port_channel.port = portChannelPinMap[j][0] + ((COUNT_PINS_IO_EXTENDER / COUNT_CHANNELS_PER_PORT) * i);
+                    this->inputControllers[i].inputs[j].port_channel.channel = portChannelPinMap[j][1];
+
+                }
 
                 //Get the current input states
                 this->readInputPins(&this->inputControllers[i]);
