@@ -31,7 +31,7 @@
         /* Output Controller */
         #define OUTPUT_CONTROLLER_MODEL ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
         #define OUTPUT_CONTROLLER_COUNT 2 /* The number of output controllers */
-        #define OUTPUT_CONTROLLER_ADDRESSES {0x40,0x42} /* I2C addresses for the output controllers */
+        #define OUTPUT_CONTROLLER_ADDRESSES {0x40,0x42} /* DEFECT on this model I2C addresses for the output controllers */
         #define OUTPUT_CONTROLLER_PORTS {2,1,3,4,6,5,7,8,10,9,11,12,14,13,15,16} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
 
         /* External EEPROM */
@@ -72,7 +72,7 @@
         /* Output Controller */
         #define OUTPUT_CONTROLLER_MODEL ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
         #define OUTPUT_CONTROLLER_COUNT 2 /* The number of output controllers */
-        #define OUTPUT_CONTROLLER_ADDRESSES {0x40,0x42} /* I2C addresses for the output controllers */
+        #define OUTPUT_CONTROLLER_ADDRESSES {0x40,0x41} /* I2C addresses for the output controllers */
         #define OUTPUT_CONTROLLER_PORTS {2,1,3,4,6,5,7,8,10,9,11,12,14,13,15,16} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
 
         /* External EEPROM */
