@@ -54,7 +54,6 @@
         /* Ethernet */
         #define ETHERNET_PIN 0 /* Ethernet hardware control flow pin */
 
-
     #endif
 
 
@@ -96,6 +95,7 @@
         #define ETHERNET_PIN 0 /* Ethernet hardware control flow pin */
 
     #endif
+
 
     #if PRODUCT_HEX == 0x08062305
 
@@ -154,7 +154,6 @@
 
     #if IO_EXTENDER_MODEL == ENUM_IO_EXTENDER_MODEL_PCA9995
         #include <PCA95x5.h> // https://github.com/BrentIO/PCA95x5
-
 
         #ifndef IO_EXTENDER_COUNT_PINS
             #define IO_EXTENDER_COUNT_PINS 16 /* The number of pins on each IO extender */
@@ -233,6 +232,7 @@
         #define OLED_SCROLL_BAR_HEIGHT (OLED_SCROLL_BAR_WIDTH * 2)
         #define OLED_CHARACTERS_PER_LINE 21
         #define OLED_NUMBER_OF_LINES 4
+        
     #endif
 
 
