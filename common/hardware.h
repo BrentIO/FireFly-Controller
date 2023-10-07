@@ -47,7 +47,6 @@
 
         /* OLED Display and Button */
         #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32
-        #define OLED_ADDRESS 0x3C /* I2C addresses of the OLED Display.  NOTE: This can be modifed on the display itself, default is 0x3C */
         #define OLED_BUTTON_PIN 32 /* Button for the front panel */
         #define OLED_LED_PIN 33 /* LED for the front panel button */
         
@@ -87,7 +86,6 @@
 
         /* OLED Display and Button */
         #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32
-        #define OLED_ADDRESS 0x3C /* I2C addresses of the OLED Display.  NOTE: This can be modifed on the display itself, default is 0x3C */
         #define OLED_BUTTON_PIN 32 /* Button for the front panel */
         #define OLED_LED_PIN 33 /* LED for the front panel button */
         
@@ -128,7 +126,6 @@
 
         /* OLED Display and Button */
         #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32
-        #define OLED_ADDRESS 0x3C /* I2C addresses of the OLED Display.  NOTE: This can be modifed on the display itself, default is 0x3C */
         #define OLED_BUTTON_PIN 32 /* Button for the front panel */
         #define OLED_LED_PIN 33 /* LED for the front panel button */
         
@@ -232,6 +229,10 @@
         #define OLED_SCROLL_BAR_HEIGHT (OLED_SCROLL_BAR_WIDTH * 2)
         #define OLED_CHARACTERS_PER_LINE 21
         #define OLED_NUMBER_OF_LINES 4
+
+        #ifndef OLED_ADDRESS
+            #define OLED_ADDRESS 0x3C /* I2C addresses of the OLED Display.  NOTE: This can be modifed on the display itself, default is 0x3C */
+        #endif
         
     #endif
 
