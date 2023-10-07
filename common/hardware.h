@@ -237,6 +237,28 @@
     #endif
 
 
+    /* Check to ensure configuration is acceptable */
+    #ifndef IO_EXTENDER_MODEL
+        #error IO_EXTENDER_MODEL not set
+    #endif
+
+    #ifndef OUTPUT_CONTROLLER_MODEL
+        #error OUTPUT_CONTROLLER_MODEL not set
+    #endif
+
+    #ifndef EEPROM_EXTERNAL_MODEL
+        #error EEPROM_EXTERNAL_MODEL not set
+    #endif
+
+    #ifndef TEMPERATURE_SENSOR_MODEL
+        #error TEMPERATURE_SENSOR_MODEL not set
+    #endif
+
+    #ifndef OLED_DISPLAY_MODEL
+        #error OLED_DISPLAY_MODEL not set
+    #endif
+
+
     /** Common health status for all peripherals. */
     struct structHealth{
         uint8_t address; /* I2C address.*/
