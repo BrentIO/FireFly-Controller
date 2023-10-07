@@ -223,12 +223,12 @@
         #include <Adafruit_GFX.h>
         #include <Adafruit_SSD1306.h> //https://github.com/adafruit/Adafruit_SSD1306
 
-        #define OLED_DISPLAY_WIDTH 128
-        #define OLED_DISPLAY_HEIGHT 32
-        #define OLED_SCROLL_BAR_WIDTH 2
-        #define OLED_SCROLL_BAR_HEIGHT (OLED_SCROLL_BAR_WIDTH * 2)
-        #define OLED_CHARACTERS_PER_LINE 21
-        #define OLED_NUMBER_OF_LINES 4
+        #define OLED_DISPLAY_WIDTH 128 /* Width, in number of pixels */
+        #define OLED_DISPLAY_HEIGHT 32 /* Height, in numberof pixel s*/
+        #define OLED_SCROLL_BAR_WIDTH 2 /* Width of the scrollbar displayed on the right side of the OLED */
+        #define OLED_SCROLL_BAR_HEIGHT (OLED_SCROLL_BAR_WIDTH * 2) /* Height of the scrollbar */
+        #define OLED_CHARACTERS_PER_LINE 21 /* Number of characters that can be printed per line */
+        #define OLED_NUMBER_OF_LINES 4 /* Number of lines that can be printed on the display */
 
         #ifndef OLED_ADDRESS
             #define OLED_ADDRESS 0x3C /* I2C addresses of the OLED Display.  NOTE: This can be modifed on the display itself, default is 0x3C */
