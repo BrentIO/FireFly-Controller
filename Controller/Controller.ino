@@ -69,10 +69,11 @@ void setup() {
     oled.setUUID(externalEEPROM.data.uuid);
 
     connectWiFi();
+    connectEthernet();
 
     configTime(0,0, NTP_SERVER_1, NTP_SERVER_2, NTP_SERVER_3);
 
-    setBootTime();    
+    setBootTime();
 
     //System has started, show normal state
     frontPanel.setStatus(managerFrontPanel::status::NORMAL);
@@ -114,16 +115,55 @@ void connectWiFi(){
   
     if(WiFi.status() == WL_CONNECTED){
 
+
+void connectEthernet(){
+
+  #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+
+    SPI.begin(SPI_SCK_PIN,SPI_MISO_PIN,SPI_MOSI_PIN,ETHERNET_PIN);
+
+    uint8_t macAddress[6];
+
+    #ifdef ESP32
+      esp_read_mac(macAddress, ESP_MAC_ETH);
+    #endif
+
+    #ifndef ESP32
+      #pragma message "MAC Address using DE:AD:BE:EF because we can't source the MAC Address from an ESP32"
+      macAddress[0] = 0xDE;
+      macAddress[1] = 0xAD;
+      macAddress[2] = 0xBE;
+      macAddress[3] = 0xEF;
+      macAddress[4] = 0xFE;
+      macAddress[5] = 0xED;
+    #endif
+
+    //Set Ethernet pins for output
+    pinMode(ETHERNET_PIN, OUTPUT);
+
+    delay(500);
+
+    //Disable Ethernet
+    digitalWrite(ETHERNET_PIN, LOW);
+
+    delay(500);
+
+    Ethernet.init(ETHERNET_PIN);
+
+    if(Ethernet.begin(macAddress) == 1){
+
       #ifdef DEBUG
-        Serial.println("[main] (connectWiFi) WiFi Connected");
+        Serial.println("[main] (connectEthernet) Ethernet Connected");
       #endif
 
-      oled.logEvent("WiFi Connected",managerOled::LOG_LEVEL_INFO);
+      oled.logEvent("Ethernet Connected",managerOled::LOG_LEVEL_INFO);
+    }else{
+      oled.logEvent("Ethernet Failure",managerOled::LOG_LEVEL_INFO);
     }
-  
 
-  oled.setWiFiInfo(&WiFi);
+    oled.setEthernetInfo(&Ethernet);
 
+  #endif
 }
 
 
@@ -175,6 +215,51 @@ void loop() {
   frontPanel.loop();
   temperatureSensors.loop();
   oled.loop();
+
+  outputs.configurePort(2, nsOutputs::outputPin::VARIABLE); //FOR DEBUG ONLY
+
+  #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+
+    switch(Ethernet.maintain()){
+
+      case 1: //Renew Failed
+        #ifdef DEBUG
+          Serial.println("[main] (loop) DHCP Lease Fail");
+        #endif
+
+        oled.logEvent("DHCP Lease Fail", managerOled::logLevel::LOG_LEVEL_INFO);
+        break;
+
+      case 2: //Renew Success
+        #ifdef DEBUG
+          Serial.println("[main] (loop) DHCP Lease OK");
+        #endif
+
+        oled.logEvent("DHCP Lease OK", managerOled::logLevel::LOG_LEVEL_INFO);
+        break;
+
+      case 3: //Rebind Fail
+        #ifdef DEBUG
+          Serial.println("[main] (loop) DHCP Rebind Fail");
+        #endif
+
+        oled.logEvent("DHCP Rebind Fail", managerOled::logLevel::LOG_LEVEL_INFO);
+        break;
+
+      case 4: //Rebind Success
+        #ifdef DEBUG
+          Serial.println("[main] (loop) DHCP Rebind OK");
+        #endif
+        
+        oled.logEvent("DHCP Rebind OK", managerOled::logLevel::LOG_LEVEL_INFO);
+        break;
+
+      default:
+        break;
+
+    };
+
+  #endif
 
 }
 
