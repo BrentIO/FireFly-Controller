@@ -2,10 +2,6 @@
 
 #define DEBUG 501
 
-#define NTP_SERVER_1 "pool.ntp.org"
-#define NTP_SERVER_2 "0.north-america.pool.ntp.org"
-#define NTP_SERVER_3 "0.europe.pool.ntp.org"
-#define WIFI_TIMEOUT 10000 //Number of milliseconds before WiFi will time out
 
 
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
@@ -16,9 +12,11 @@
 #include "common/frontPanel.h"
 #include "common/externalEEPROM.h"
 #include "common/oled.h"
-#include <WiFi.h>
 #include "time.h"
 
+#define NTP_SERVER_1 "pool.ntp.org"
+#define NTP_SERVER_2 "0.north-america.pool.ntp.org"
+#define NTP_SERVER_3 "0.europe.pool.ntp.org"
 
 managerOutputs outputs;
 managerInputs inputs;
