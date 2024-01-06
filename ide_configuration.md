@@ -55,54 +55,27 @@ If there are any installed libraries, uninstall them before proceeding.
 ---
 ### Download required libraries
 
-https://github.com/bblanchon/ArduinoJson
+Download each library below as a zip file.
 
-https://github.com/RobTillaart/I2C_EEPROM
-
-https://github.com/RobTillaart/PCA9685_RT
-
-https://github.com/nickgammon/Regexp
-
-https://github.com/adafruit/Adafruit_SSD1306
-
-https://github.com/adafruit/Adafruit-GFX-Library
-
-https://github.com/adafruit/Adafruit_BusIO
-
-https://github.com/me-no-dev/ESPAsyncWebServer
-
-https://github.com/me-no-dev/AsyncTCP
+| Library | Version | URL |
+|---------|---------|-----|
+| ArduinoJson | 6.20.1 | https://github.com/bblanchon/ArduinoJson |
+| I2C_EEPROM | 1.7.1 | https://github.com/RobTillaart/I2C_EEPROM |
+| PCA95x5 | 2023.10.2 | https://github.com/BrentIO/PCA95x5 |
+| PCA9685_RT | 0.4.1 | https://github.com/RobTillaart/PCA9685_RT |
+| Regexp | 0.1.1 | https://github.com/nickgammon/Regexp |
+| Adafruit_SSD1306 | 2.5.7 | https://github.com/adafruit/Adafruit_SSD1306 |
+| Adafruit-GFX-Library | 1.11.5 | https://github.com/adafruit/Adafruit-GFX-Library |
+| Adafruit_BusIO | 1.14.1 | https://github.com/adafruit/Adafruit_BusIO |
+| ESPAsyncWebServer | Master | https://github.com/me-no-dev/ESPAsyncWebServer |
+| AsyncTCP | Master | https://github.com/me-no-dev/AsyncTCP |
+| Ethernet | 2.0.2 | https://github.com/arduino-libraries/Ethernet |
 
 
+Install each library above using the following command:
 
----
-### Install the required libraries
+`arduino-cli lib install --zip-path /my/downloads/directory/library_name.zip`
 
-Download each library manually as a zip file.  Install each required library from disk.
-
-`arduino-cli lib install --zip-path /my/downloads/directory/ArduinoJson-6.20.1.zip`
-
-`arduino-cli lib install --zip-path  /my/downloads/directory/I2C_EEPROM-1.7.1.zip`
-
-`arduino-cli lib install --git-url https://github.com/BrentIO/PCA95x5.git`
-
-`arduino-cli lib install --zip-path /my/downloads/directory/PCA9685_RT-0.4.1.zip`
-
-`arduino-cli lib install --zip-path /my/downloads/directory/PCT2075-main.zip`
-
-`arduino-cli lib install --git-url https://github.com/BrentIO/PCT2075.git`
-
-`arduino-cli lib install --zip-path /my/downloads/directory/Regexp-0.1.1.zip`
-
-`arduino-cli lib install --zip-path /my/downloads/directory/Adafruit_SSD1306-2.5.7.zip`
-
-`arduino-cli lib install --zip-path /my/downloads/directory/Adafruit-GFX-Library-1.11.5.zip`
-
-`arduino-cli lib install --zip-path /my/downloads/directory/Adafruit_BusIO-1.14.1.zip`
-
-`arduino-cli lib install --zip-path /my/downloads/directory/ESPAsyncWebServer-master.zip`
-
-`arduino-cli lib install --zip-path /my/downloads/directory/AsyncTCP-master.zip`
 
 ---
 ## **Visual Studio IDE Configuration**
