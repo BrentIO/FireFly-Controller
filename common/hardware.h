@@ -9,12 +9,15 @@
         #error Build failed, missing ESP32 definition. Ensure it was set in ./.vscode/arduino.json {"buildPreferences":[["build.extra_flags","-DESP32"]]}
     #endif
 
+
     /* Define hardware enumeration constants */
     #define ENUM_IO_EXTENDER_MODEL_PCA9995 0 /* PCA9555 */
     #define ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685 0 /* PCA9685 */
     #define ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX 0 /* 24LC024 + Family */
     #define ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 0 /* PCT2075 */
     #define ENUM_OLED_MODEL_SSD1306_128_32 0 /* SSD1306 128x32px */
+    #define ENUM_ETHERNET_MODEL_W5500 1 /* WIZnet W5500 */
+    #define ENUM_ETHERNET_MODEL_NONE 0 /* For hardware without Ethernet */
 
     /* Hardware Types */
     #if PRODUCT_HEX == 0x32322211
@@ -51,6 +54,7 @@
         #define OLED_LED_PIN 33 /* LED for the front panel button */
         
         /* Ethernet */
+        #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_W5500
         #define ETHERNET_PIN 0 /* Ethernet hardware control flow pin */
 
     #endif
@@ -90,6 +94,7 @@
         #define OLED_LED_PIN 33 /* LED for the front panel button */
         
         /* Ethernet */
+        #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_W5500
         #define ETHERNET_PIN 0 /* Ethernet hardware control flow pin */
 
     #endif
@@ -130,7 +135,13 @@
         #define OLED_LED_PIN 33 /* LED for the front panel button */
         
         /* Ethernet */
-        #define ETHERNET_PIN 0 /* Ethernet hardware control flow pin */
+        #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_W5500
+        #define ETHERNET_PIN 25 /* Ethernet hardware control flow pin */
+
+        /* SPI Configuration */
+        #define SPI_SCK_PIN 14
+        #define SPI_MISO_PIN 12
+        #define SPI_MOSI_PIN 13
 
     #endif
 
@@ -237,6 +248,27 @@
     #endif
 
 
+    #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+        #include <SPI.h>
+        #include <Ethernet.h>
+
+        #ifndef SPI_SCK_PIN
+            #error SPI_SCK_PIN not set
+        #endif
+
+        #ifndef SPI_MISO_PIN
+            #error SPI_MISO_PIN not set
+        #endif
+
+        #ifndef SPI_MOSI_PIN
+            #error SPI_MISO_PIN not set
+        #endif
+
+        #ifndef ETHERNET_PIN
+            #error ETHERNET_PIN not set
+        #endif
+
+    #endif
     /* Check to ensure configuration is acceptable */
     #ifndef IO_EXTENDER_MODEL
         #error IO_EXTENDER_MODEL not set

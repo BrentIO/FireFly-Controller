@@ -51,6 +51,12 @@
             #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
                 WiFiClass *_wifiInfo;
             #endif
+
+            #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+                EthernetClass *_ethernetInfo;
+            #endif
+
+            boolean _ethernetConnectedPreviously = false;
             pages _activePage = PAGE_EVENT_LOG;
             boolean _isSleeping = false;
             boolean _isDimmed = false;
@@ -775,6 +781,52 @@
                     this->hardware.drawBitmap(0,0, ethernet_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
                 #endif
 
+                #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+
+                    if(this->_ethernetInfo->hardwareStatus() == EthernetHardwareStatus::EthernetNoHardware){
+                        this->hardware.setCursor(LOGO_WIDTH + 10, (OLED_DISPLAY_HEIGHT/2)-3);
+                        this->hardware.println(F("No Hardware"));
+                    }else{
+                        uint8_t macAddress[6];
+                        char macAddress_display[18];
+                        this->_ethernetInfo->MACAddress(macAddress);
+                        sprintf(macAddress_display, "%2X:%2X:%2X:%2X:%2X:%2X", macAddress[0], macAddress[1], macAddress[2], macAddress[3], macAddress[4], macAddress[5]);
+                        this->hardware.setCursor(LOGO_WIDTH + 3, 16);
+                        this->hardware.println(macAddress_display);
+                    }
+
+                    switch(this->_ethernetInfo->linkStatus()){
+                        case EthernetLinkStatus::LinkON:
+                            if(this->_ethernetConnectedPreviously == false){
+                                this->_ethernetConnectedPreviously = true;
+                                this->logEvent("Ethernet Connected",this->LOG_LEVEL_INFO);
+                            }
+                            this->hardware.setCursor(LOGO_WIDTH + 3, 0);
+                            this->hardware.println(F("Connected"));
+                            this->hardware.setCursor(LOGO_WIDTH + 3, 8);
+                            this->hardware.println(this->_ethernetInfo->localIP());
+                            break;
+
+                        case EthernetLinkStatus::LinkOFF:
+                            if(this->_ethernetConnectedPreviously == true){
+                                this->_ethernetConnectedPreviously = false;
+                                this->logEvent("Ethernet Disconnected",this->LOG_LEVEL_INFO);
+                            }
+                            this->hardware.setCursor(LOGO_WIDTH + 3, 0);
+                            this->hardware.println(F("Disconnected"));
+                            break;
+
+                        case EthernetLinkStatus::Unknown:
+                            if(this->_ethernetConnectedPreviously == true){
+                                this->_ethernetConnectedPreviously = false;
+                                this->logEvent("Ethernet Unknown",this->LOG_LEVEL_INFO);
+                            }
+                            this->hardware.setCursor(LOGO_WIDTH + 3, 0);
+                            this->hardware.println(F("Unknown"));
+                        break;
+                    }
+                #endif
+
                 this->_drawScrollBar(PAGE_ETHERNET);
                 this->_commit();
 
@@ -858,22 +910,34 @@
                 this->_uuid = value;
             }
 
-            void setEthernetIPAddress(IPAddress value){
-                this->_ethernetIp = value;
-            }
+            #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
 
-            void setWiFiInfo(WiFiClass *value){
+                void setEthernetInfo(EthernetClass *value){
+                    this->_ethernetInfo = value;
 
-                this->_wifiInfo = value;
-
-                if(this->_wifiInfo->getMode() == wifi_mode_t::WIFI_MODE_NULL){
-                    #ifdef DEBUG
-                        Serial.println(F("[oled] (setWiFiInfo) Attempted to set WiFi it has not been initialized (WIFI_MODE_NULL)"));
-                    #endif
-                    return;
+                    if(this->_ethernetInfo->linkStatus() == EthernetLinkStatus::LinkON){
+                        this->_ethernetConnectedPreviously = true;
+                    }
                 }
 
-            }
+            #endif
+
+            #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+
+                void setWiFiInfo(WiFiClass *value){
+
+                    this->_wifiInfo = value;
+
+                    if(this->_wifiInfo->getMode() == wifi_mode_t::WIFI_MODE_NULL){
+                        #ifdef DEBUG
+                            Serial.println(F("[oled] (setWiFiInfo) Attempted to set WiFi it has not been initialized (WIFI_MODE_NULL)"));
+                        #endif
+                        return;
+                    }
+
+                }
+
+            #endif
 
             void setFactoryResetValue(int value){
                 this->_factory_reset_value = value;
@@ -1010,7 +1074,15 @@
                     case PAGE_NETWORK_INTRO:
 
                         if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
-                            showPage(PAGE_WIFI);
+
+                            #ifdef WIFI_MODEL
+                                showPage(PAGE_WIFI);
+                            #endif
+
+                            #if !defined(WIFI_MODEL) && defined(ETHERNET_MODEL)
+                                showPage(PAGE_ETHERNET);
+                            #endif
+
                         } 
                         break;
 
@@ -1093,16 +1165,25 @@
                             break;
                     #endif
 
-                    case PAGE_ETHERNET:
-                        this->_activePage = PAGE_ETHERNET;
-                        _showPage_Ethernet();
-                        break;
+                    #ifdef ETHERNET_MODEL
 
-                    case PAGE_NETWORK_INTRO:
-                        this->_activePage = PAGE_NETWORK_INTRO;
-                        _showPage_Network_Intro();
-                        break;
+                        case PAGE_ETHERNET:
+                            this->_activePage = PAGE_ETHERNET;
+                            _showPage_Ethernet();
+                            break;
 
+                    #endif
+
+                    #if defined(WIFI_MODEL) || defined(ETHERNET_MODEL)
+
+                        case PAGE_NETWORK_INTRO:
+                            this->_activePage = PAGE_NETWORK_INTRO;
+                            _showPage_Network_Intro();
+                            break;
+
+                    #endif
+
+                    
                     case PAGE_STATUS:
                         this->_activePage = PAGE_STATUS;
                         _showPage_Status();
@@ -1170,8 +1251,14 @@
                 switch(this->_activePage){
 
                     case PAGE_EVENT_LOG:
-                        showPage(PAGE_NETWORK_INTRO);
-                        break;
+
+                        #if defined(WIFI_MODEL) || defined(ETHERNET_MODEL)
+                            showPage(PAGE_NETWORK_INTRO);
+                            break;
+                        #else
+                            showPage(PAGE_STATUS_INTRO);
+                            break;
+                        #endif
 
                     case PAGE_EVENT_LOG_INTRO:
                         showPage(PAGE_NETWORK_INTRO);
