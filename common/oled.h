@@ -47,8 +47,10 @@
             bool _initialized = false;
             char* _productId;
             char* _uuid;
-            WiFiClass *_wifiInfo;
-            IPAddress _ethernetIp;
+
+            #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+                WiFiClass *_wifiInfo;
+            #endif
             pages _activePage = PAGE_EVENT_LOG;
             boolean _isSleeping = false;
             boolean _isDimmed = false;
@@ -670,60 +672,63 @@
 
                     this->_clear();
 
-                    switch(this->_wifiInfo->getMode()){
+                    #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
-                        case wifi_mode_t::WIFI_MODE_AP:
+                        switch(this->_wifiInfo->getMode()){
 
-                            this->hardware.drawBitmap(0,0, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                            this->hardware.setCursor(LOGO_WIDTH + 3, 0);
-                            this->hardware.println(this->_wifiInfo->softAPSSID()); 
-                            this->hardware.setCursor(LOGO_WIDTH + 3, 8);
-                            this->hardware.println(this->_wifiInfo->softAPIP());
-                            this->hardware.setCursor(LOGO_WIDTH + 3, 16);
-                            this->hardware.println(this->_wifiInfo->softAPmacAddress());
-                            this->hardware.setCursor(LOGO_WIDTH + 3, 24);
-                            this->hardware.println("Clients: " + String(this->_wifiInfo->softAPgetStationNum()));
-                            this->hardware.setCursor(4, LOGO_HEIGHT+5);
-                            this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); // Draw black text
-                            this->hardware.println(F("AP"));
-                            this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
-                            break;
-
-                        case wifi_mode_t::WIFI_MODE_STA:
-
-                            if(this->_wifiInfo->isConnected() == false){
-                                this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                                this->hardware.setCursor(LOGO_WIDTH + 16, (OLED_DISPLAY_HEIGHT/2)-3);
-                                this->hardware.println(F("Disconnected"));
-                            } else {
+                            case wifi_mode_t::WIFI_MODE_AP:
 
                                 this->hardware.drawBitmap(0,0, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
                                 this->hardware.setCursor(LOGO_WIDTH + 3, 0);
-                                this->hardware.println(this->_wifiInfo->SSID());
+                                this->hardware.println(this->_wifiInfo->softAPSSID()); 
                                 this->hardware.setCursor(LOGO_WIDTH + 3, 8);
-                                this->hardware.println(this->_wifiInfo->localIP());
+                                this->hardware.println(this->_wifiInfo->softAPIP());
                                 this->hardware.setCursor(LOGO_WIDTH + 3, 16);
-                                this->hardware.println(this->_wifiInfo->macAddress());
-                                this->hardware.setCursor(2, LOGO_HEIGHT+5);
+                                this->hardware.println(this->_wifiInfo->softAPmacAddress());
+                                this->hardware.setCursor(LOGO_WIDTH + 3, 24);
+                                this->hardware.println("Clients: " + String(this->_wifiInfo->softAPgetStationNum()));
+                                this->hardware.setCursor(4, LOGO_HEIGHT+5);
                                 this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); // Draw black text
-                                this->hardware.println(F("STA"));
+                                this->hardware.println(F("AP"));
                                 this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
-                            }
-                            
-                            break;
+                                break;
 
-                        case wifi_mode_t::WIFI_MODE_NULL:
-                            this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                            this->hardware.setCursor(LOGO_WIDTH + 10, (OLED_DISPLAY_HEIGHT/2)-3);
-                            this->hardware.println(F("Not Initialized"));
-                            break;
+                            case wifi_mode_t::WIFI_MODE_STA:
 
-                        default:
-                            this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                            this->hardware.setCursor(LOGO_WIDTH + 20, (OLED_DISPLAY_HEIGHT/2)-3);
-                            this->hardware.println(F("Unknown"));
-                            break;
-                    }
+                                if(this->_wifiInfo->isConnected() == false){
+                                    this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                                    this->hardware.setCursor(LOGO_WIDTH + 16, (OLED_DISPLAY_HEIGHT/2)-3);
+                                    this->hardware.println(F("Disconnected"));
+                                } else {
+
+                                    this->hardware.drawBitmap(0,0, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                                    this->hardware.setCursor(LOGO_WIDTH + 3, 0);
+                                    this->hardware.println(this->_wifiInfo->SSID());
+                                    this->hardware.setCursor(LOGO_WIDTH + 3, 8);
+                                    this->hardware.println(this->_wifiInfo->localIP());
+                                    this->hardware.setCursor(LOGO_WIDTH + 3, 16);
+                                    this->hardware.println(this->_wifiInfo->macAddress());
+                                    this->hardware.setCursor(2, LOGO_HEIGHT+5);
+                                    this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); // Draw black text
+                                    this->hardware.println(F("STA"));
+                                    this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
+                                }
+                                
+                                break;
+
+                            case wifi_mode_t::WIFI_MODE_NULL:
+                                this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                                this->hardware.setCursor(LOGO_WIDTH + 10, (OLED_DISPLAY_HEIGHT/2)-3);
+                                this->hardware.println(F("Not Initialized"));
+                                break;
+
+                            default:
+                                this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                                this->hardware.setCursor(LOGO_WIDTH + 20, (OLED_DISPLAY_HEIGHT/2)-3);
+                                this->hardware.println(F("Unknown"));
+                                break;
+                        }
+                    #endif
 
                 #endif
                 
@@ -1079,11 +1084,14 @@
                         this->_activePage = PAGE_EVENT_LOG_INTRO;
                         _showPage_EventLog_Intro();
                         break;
+
+                    #ifdef WIFI_MODEL
                     
-                    case PAGE_WIFI:
-                        this->_activePage = PAGE_WIFI;
-                        _showPage_WiFi();
-                        break;
+                        case PAGE_WIFI:
+                            this->_activePage = PAGE_WIFI;
+                            _showPage_WiFi();
+                            break;
+                    #endif
 
                     case PAGE_ETHERNET:
                         this->_activePage = PAGE_ETHERNET;

@@ -85,35 +85,51 @@ void setup() {
 
 void connectWiFi(){
 
-  WiFi.begin(ssid, password);
+  #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
-  #ifdef DEBUG
-    Serial.println("[main] (connectWiFi) Connecting to WiFi");
-  #endif
-
-  const unsigned long time_now = millis();
-
-  while(WiFi.status() != WL_CONNECTED){
-
-    if((unsigned long)(millis() - time_now) >= WIFI_TIMEOUT){
-
-      #ifdef DEBUG
-        Serial.println("[main] (connectWiFi) WiFi Timeout");
-        oled.logEvent("WiFi Timeout",managerOled::LOG_LEVEL_INFO);
-        break;
-
-      #endif
-    }
+    WiFi.begin(ssid, password);
 
     #ifdef DEBUG
-      Serial.print(".");
+      Serial.println("[main] (connectWiFi) Connecting to WiFi");
     #endif
 
-    delay(100);
-  }
+    const unsigned long time_now = millis();
 
+    while(WiFi.status() != WL_CONNECTED){
+
+      if((unsigned long)(millis() - time_now) >= WIFI_TIMEOUT){
+
+        #ifdef DEBUG
+          Serial.println("[main] (connectWiFi) WiFi Timeout");
+          oled.logEvent("WiFi Timeout",managerOled::LOG_LEVEL_INFO);
+          break;
+
+        #endif
+      }
+
+      #ifdef DEBUG
+        Serial.print(".");
+      #endif
+
+      delay(100);
+    }
+
+      if(WiFi.status() == WL_CONNECTED){
+
+        #ifdef DEBUG
+          Serial.println("[main] (connectWiFi) WiFi Connected");
+        #endif
+
+        oled.logEvent("WiFi Connected",managerOled::LOG_LEVEL_INFO);
+      }
   
-    if(WiFi.status() == WL_CONNECTED){
+
+    oled.setWiFiInfo(&WiFi);
+
+  #endif
+
+}
+
 
 
 void connectEthernet(){
