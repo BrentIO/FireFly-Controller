@@ -18,6 +18,9 @@
     #define ENUM_OLED_MODEL_SSD1306_128_32 0 /* SSD1306 128x32px */
     #define ENUM_ETHERNET_MODEL_W5500 1 /* WIZnet W5500 */
     #define ENUM_ETHERNET_MODEL_NONE 0 /* For hardware without Ethernet */
+    #define ENUM_WIFI_MODEL_ESP32 1 /* ESP32 Embedded WiFi */
+    #define ENUM_WIFI_MODEL_NONE 0 /* For hardware without WiFi */
+
 
     /* Hardware Types */
     #if PRODUCT_HEX == 0x32322211
@@ -56,6 +59,9 @@
         /* Ethernet */
         #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_W5500
         #define ETHERNET_PIN 0 /* Ethernet hardware control flow pin */
+
+        /* WiFi */
+        #define WIFI_MODEL ENUM_WIFI_MODEL_ESP32
 
     #endif
 
@@ -97,6 +103,9 @@
         #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_W5500
         #define ETHERNET_PIN 0 /* Ethernet hardware control flow pin */
 
+        /* WiFi */
+        #define WIFI_MODEL ENUM_WIFI_MODEL_ESP32
+
     #endif
 
 
@@ -137,6 +146,9 @@
         /* Ethernet */
         #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_W5500
         #define ETHERNET_PIN 25 /* Ethernet hardware control flow pin */
+
+        /* WiFi */
+        //#define WIFI_MODEL ENUM_WIFI_MODEL_ESP32
 
         /* SPI Configuration */
         #define SPI_SCK_PIN 14
@@ -269,6 +281,25 @@
         #endif
 
     #endif
+
+
+    #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+        #include <WiFi.h>
+    #endif
+
+
+    #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
+
+        #ifndef WIFI_TIMEOUT
+            #define WIFI_TIMEOUT 10000 //Number of milliseconds before WiFi will time out
+        #endif
+
+    #endif
+
+    #ifdef ESP32
+        #include <esp_chip_info.h> // https://github.com/espressif/arduino-esp32
+    #endif
+
     /* Check to ensure configuration is acceptable */
     #ifndef IO_EXTENDER_MODEL
         #error IO_EXTENDER_MODEL not set
