@@ -23,8 +23,6 @@
                 PAGE_WIFI = 2,
                 PAGE_ETHERNET = 3,
                 PAGE_NETWORK_INTRO = 20,
-                PAGE_STATUS = 4,
-                PAGE_STATUS_INTRO = 40,
                 PAGE_HARDWARE = 5,
                 PAGE_HARDWARE_INTRO = 50,
                 PAGE_SOFTWARE = 6,
@@ -476,57 +474,6 @@
             }
 
 
-            void _showPage_Status_Intro(){
-
-                if(this->_initialized != true){
-                    return;
-                }
-
-                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
-
-                    #define LOGO_WIDTH  20
-                    #define LOGO_HEIGHT 20
-
-                    const uint8_t PROGMEM logo[] = {
-                        0b00000000,0b00000000,0b00000000,
-                        0b00000000,0b00000000,0b00000000,
-                        0b00000000,0b11110000,0b00000000,
-                        0b00000011,0b11111100,0b00000000,
-                        0b00000111,0b11111110,0b00000000,
-                        0b00001111,0b11111111,0b00000000,
-                        0b00011111,0b11111111,0b10000000,
-                        0b00011111,0b11111011,0b10000000,
-                        0b00111111,0b11110011,0b11000000,
-                        0b00111111,0b11100111,0b11000000,
-                        0b00111110,0b01001111,0b11000000,
-                        0b00111111,0b00011111,0b11000000,
-                        0b00011111,0b10111111,0b10000000,
-                        0b00011111,0b11111111,0b10000000,
-                        0b00001111,0b11111111,0b00000000,
-                        0b00000111,0b11111110,0b00000000,
-                        0b00000011,0b11111100,0b00000000,
-                        0b00000000,0b11110000,0b00000000,
-                        0b00000000,0b00000000,0b00000000,
-                        0b00000000,0b00000000,0b00000000,
-                    };
-
-                    this->_wake();
-                    this->_clear();
-                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                    this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
-                    this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
-                    this->hardware.setFont(&Prototype9pt7b);
-                    this->hardware.println(F("Status"));
-                    this->hardware.setFont();
-                    this->_drawScrollBar(PAGE_STATUS);
-
-                #endif
-
-                _timeIntroShown = millis();
-                this->_commit();   
-            }
-
-
             void _showPage_Error_Intro(){
 
                 if(this->_initialized != true){
@@ -569,7 +516,7 @@
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.println(F("Error"));
                     this->hardware.setFont();
-                    this->_drawScrollBar(PAGE_STATUS);
+                    this->_drawScrollBar(PAGE_ERROR);
 
                 #endif
 
@@ -856,26 +803,6 @@
             }
 
 
-            void _showPage_Status(){
-
-                if(this->_initialized != true){
-                    return;
-                }
-
-                this->_clear();
-
-                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
-                    this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
-                    this->hardware.setCursor(0, 0); 
-                    this->hardware.println("STATUS STUB");
-                #endif
-
-                this->_drawScrollBar(PAGE_STATUS);
-                this->_commit();
-
-            }
-
-
             void _showPage_Error(){
 
                 if(this->_initialized != true){
@@ -1086,13 +1013,6 @@
                         } 
                         break;
 
-                    case PAGE_STATUS_INTRO:
-
-                        if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
-                            showPage(PAGE_STATUS);
-                        } 
-                        break;
-
                     case PAGE_HARDWARE_INTRO:
 
                         if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
@@ -1183,17 +1103,6 @@
 
                     #endif
 
-                    
-                    case PAGE_STATUS:
-                        this->_activePage = PAGE_STATUS;
-                        _showPage_Status();
-                        break;
-
-                    case PAGE_STATUS_INTRO:
-                        this->_activePage = PAGE_STATUS_INTRO;
-                        _showPage_Status_Intro();
-                        break;
-
                     case PAGE_HARDWARE:
                         this->_activePage = PAGE_HARDWARE;
                         _showPage_Hardware();
@@ -1256,7 +1165,7 @@
                             showPage(PAGE_NETWORK_INTRO);
                             break;
                         #else
-                            showPage(PAGE_STATUS_INTRO);
+                            showPage(PAGE_HARDWARE_INTRO);
                             break;
                         #endif
 
@@ -1270,11 +1179,6 @@
 
                     case PAGE_ETHERNET:
                     case PAGE_NETWORK_INTRO:
-                        showPage(PAGE_STATUS_INTRO);
-                        break;
-
-                    case PAGE_STATUS:
-                    case PAGE_STATUS_INTRO:
                         showPage(PAGE_HARDWARE_INTRO);
                         break;
 
