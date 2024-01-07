@@ -148,7 +148,7 @@
         #define ETHERNET_PIN 25 /* Ethernet hardware control flow pin */
 
         /* WiFi */
-        //#define WIFI_MODEL ENUM_WIFI_MODEL_ESP32
+        #define WIFI_MODEL ENUM_WIFI_MODEL_ESP32
 
         /* SPI Configuration */
         #define SPI_SCK_PIN 14
