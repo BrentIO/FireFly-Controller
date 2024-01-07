@@ -263,6 +263,7 @@
     #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
         #include <SPI.h>
         #include <Ethernet.h>
+        #include <EthernetUdp.h>
 
         #ifndef SPI_SCK_PIN
             #error SPI_SCK_PIN not set
@@ -280,6 +281,10 @@
             #error ETHERNET_PIN not set
         #endif
 
+    #endif
+
+    #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
+        #define ETHERNET_TIMEOUT 10000 //Number of milliseconds before WiFi will time out
     #endif
 
 

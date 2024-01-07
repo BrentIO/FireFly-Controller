@@ -70,6 +70,7 @@ Download each library below as a zip file.
 | ESPAsyncWebServer | Master | https://github.com/me-no-dev/ESPAsyncWebServer |
 | AsyncTCP | Master | https://github.com/me-no-dev/AsyncTCP |
 | Ethernet | 2.0.2 | https://github.com/arduino-libraries/Ethernet |
+| NTPClient | 3.2.1 | https://github.com/arduino-libraries/NTPClient |
 
 
 Install each library above using the following command:

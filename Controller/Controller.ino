@@ -12,11 +12,8 @@
 #include "common/frontPanel.h"
 #include "common/externalEEPROM.h"
 #include "common/oled.h"
-#include "time.h"
+#include <NTPClient.h>
 
-#define NTP_SERVER_1 "pool.ntp.org"
-#define NTP_SERVER_2 "0.north-america.pool.ntp.org"
-#define NTP_SERVER_3 "0.europe.pool.ntp.org"
 
 managerOutputs outputs;
 managerInputs inputs;
@@ -24,7 +21,7 @@ managerTemperatureSensors temperatureSensors;
 managerFrontPanel frontPanel;
 managerExternalEEPROM externalEEPROM;
 managerOled oled;
-unsigned long bootTime;
+unsigned long bootTime = 0;
 
 
 void setup() {
@@ -71,21 +68,19 @@ void setup() {
     connectWiFi();
     connectEthernet();
 
-    configTime(0,0, NTP_SERVER_1, NTP_SERVER_2, NTP_SERVER_3);
-
     setBootTime();
 
     //System has started, show normal state
     frontPanel.setStatus(managerFrontPanel::status::NORMAL);
 
     oled.showPage(managerOled::PAGE_EVENT_LOG);
-     
+    
 }
 
 
 void connectWiFi(){
 
-  #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+  #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
 
     WiFi.begin(ssid, password);
 
@@ -114,15 +109,14 @@ void connectWiFi(){
       delay(100);
     }
 
-      if(WiFi.status() == WL_CONNECTED){
+    if(WiFi.status() == WL_CONNECTED){
 
-        #ifdef DEBUG
-          Serial.println("[main] (connectWiFi) WiFi Connected");
-        #endif
+      #ifdef DEBUG
+        Serial.println("[main] (connectWiFi) WiFi Connected");
+      #endif
 
-        oled.logEvent("WiFi Connected",managerOled::LOG_LEVEL_INFO);
-      }
-  
+      oled.logEvent("WiFi Connected",managerOled::LOG_LEVEL_INFO);
+    }
 
     oled.setWiFiInfo(&WiFi);
 
@@ -134,7 +128,7 @@ void connectWiFi(){
 
 void connectEthernet(){
 
-  #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+  #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
 
     SPI.begin(SPI_SCK_PIN,SPI_MISO_PIN,SPI_MOSI_PIN,ETHERNET_PIN);
 
@@ -166,15 +160,23 @@ void connectEthernet(){
 
     Ethernet.init(ETHERNET_PIN);
 
-    if(Ethernet.begin(macAddress) == 1){
+    switch(Ethernet.begin(macAddress, ETHERNET_TIMEOUT)){
 
-      #ifdef DEBUG
-        Serial.println("[main] (connectEthernet) Ethernet Connected");
-      #endif
+      case 1:
 
-      oled.logEvent("Ethernet Connected",managerOled::LOG_LEVEL_INFO);
-    }else{
-      oled.logEvent("Ethernet Failure",managerOled::LOG_LEVEL_INFO);
+        #ifdef DEBUG
+          Serial.println("[main] (connectEthernet) Ethernet Connected");
+        #endif
+
+      break;
+
+      default:
+        #ifdef DEBUG
+          Serial.println("[main] (connectEthernet) Ethernet Timeout");
+        #endif
+
+        oled.logEvent("Ethernet Timeout",managerOled::LOG_LEVEL_INFO);
+      break;
     }
 
     oled.setEthernetInfo(&Ethernet);
@@ -183,29 +185,70 @@ void connectEthernet(){
 }
 
 
-unsigned long getTime() {
-  /* Retrieves current GMT time. */
-
-  time_t now;
-  struct tm timeinfo;
-
-  if (!getLocalTime(&timeinfo)) {
-    
-    #ifdef DEBUG
-      Serial.println("[main] (getTime) unable to getLocalTime");
-    #endif
-
-    return(0);
-  }
-
-  return time(&now);
-
-}
-
-
 void setBootTime(){
 
-  bootTime = getTime();
+  if(bootTime != 0){
+    return;
+  }
+
+  #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
+
+    WiFiUDP wifiNtpUdp;
+    NTPClient wifiTimeClient(wifiNtpUdp);
+
+    wifiTimeClient.begin(); 
+  
+    if(WiFi.isConnected()){
+
+      wifiTimeClient.update();
+      bootTime = wifiTimeClient.getEpochTime();
+    }
+
+    if(bootTime < 10000){
+        bootTime = 0;
+    }
+
+  #endif
+
+  if(bootTime != 0){
+
+    #ifdef DEBUG > 1000
+      Serial.println("[main] (setBootTime) WiFi set boot time to " + String(bootTime));
+    #endif
+
+    oled.logEvent("Boot time set (W)", managerOled::logLevel::LOG_LEVEL_INFO);
+    return;
+  }
+
+  #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
+
+    EthernetUDP ethernetNtpUdp;
+    NTPClient ethernetTimeClient(ethernetNtpUdp);
+
+    ethernetTimeClient.begin();
+
+    if(Ethernet.linkStatus() == EthernetLinkStatus::LinkON){
+
+      ethernetTimeClient.update();
+      bootTime = ethernetTimeClient.getEpochTime();
+    }
+
+    if(bootTime < 10000){
+      bootTime = 0;
+    }
+
+  #endif
+
+  if(bootTime != 0){
+
+    oled.logEvent("Boot time set (E)", managerOled::logLevel::LOG_LEVEL_INFO);
+
+    #ifdef DEBUG > 1000
+      Serial.println("[main] (setBootTime) Ethernet set boot time to " + String(bootTime));
+    #endif
+
+    return;
+  }
 
   if(bootTime == 0){
     oled.logEvent("Unknown boot time", managerOled::logLevel::LOG_LEVEL_INFO);
@@ -213,13 +256,6 @@ void setBootTime(){
       #ifdef DEBUG
         Serial.println("[main] (setBootTime) Failed to set boot time, defaulting to 0.");
       #endif
-
-  }else{
-    oled.logEvent("Boot time set", managerOled::logLevel::LOG_LEVEL_INFO);
-
-    #ifdef DEBUG > 1000
-      Serial.println("[main] (setBootTime) Boot time set to " + String(bootTime));
-    #endif
   }
 
 }
@@ -235,46 +271,7 @@ void loop() {
   outputs.configurePort(2, nsOutputs::outputPin::VARIABLE); //FOR DEBUG ONLY
 
   #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
-
-    switch(Ethernet.maintain()){
-
-      case 1: //Renew Failed
-        #ifdef DEBUG
-          Serial.println("[main] (loop) DHCP Lease Fail");
-        #endif
-
-        oled.logEvent("DHCP Lease Fail", managerOled::logLevel::LOG_LEVEL_INFO);
-        break;
-
-      case 2: //Renew Success
-        #ifdef DEBUG
-          Serial.println("[main] (loop) DHCP Lease OK");
-        #endif
-
-        oled.logEvent("DHCP Lease OK", managerOled::logLevel::LOG_LEVEL_INFO);
-        break;
-
-      case 3: //Rebind Fail
-        #ifdef DEBUG
-          Serial.println("[main] (loop) DHCP Rebind Fail");
-        #endif
-
-        oled.logEvent("DHCP Rebind Fail", managerOled::logLevel::LOG_LEVEL_INFO);
-        break;
-
-      case 4: //Rebind Success
-        #ifdef DEBUG
-          Serial.println("[main] (loop) DHCP Rebind OK");
-        #endif
-        
-        oled.logEvent("DHCP Rebind OK", managerOled::logLevel::LOG_LEVEL_INFO);
-        break;
-
-      default:
-        break;
-
-    };
-
+    Ethernet.maintain();
   #endif
 
 }
