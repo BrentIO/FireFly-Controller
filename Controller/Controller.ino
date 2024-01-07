@@ -4,7 +4,7 @@
 
 
 
-#include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
+#include <ArduinoJson.h>
 #include "common/hardware.h"
 #include "common/outputs.h"
 #include "common/inputs.h"
