@@ -22,6 +22,10 @@ managerFrontPanel frontPanel;
 managerExternalEEPROM externalEEPROM;
 managerOled oled;
 unsigned long bootTime = 0;
+boolean ethernetConnected = false;
+unsigned long ethernetLastConnectAttempt = 0;
+boolean wifiConnected = true;
+
 
 
 void setup() {
@@ -65,12 +69,16 @@ void setup() {
     oled.setProductID(externalEEPROM.data.product_id);
     oled.setUUID(externalEEPROM.data.uuid);
 
-    connectWiFi();
-    connectEthernet();
+    #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
+      SPI.begin(SPI_SCK_PIN,SPI_MISO_PIN,SPI_MOSI_PIN,ETHERNET_PIN);
+    #endif
+
+    if(connectEthernet() == false){
+      connectWiFi();
+    }
 
     setBootTime();
 
-    //System has started, show normal state
     frontPanel.setStatus(managerFrontPanel::status::NORMAL);
 
     oled.showPage(managerOled::PAGE_EVENT_LOG);
@@ -89,6 +97,7 @@ void connectWiFi(){
     #endif
 
     const unsigned long time_now = millis();
+    boolean attemptingToConnectShown = false;
 
     while(WiFi.status() != WL_CONNECTED){
 
@@ -105,6 +114,17 @@ void connectWiFi(){
       #ifdef DEBUG
         Serial.print(".");
       #endif
+
+      if((unsigned long)(millis() - time_now) >= (int)(WIFI_TIMEOUT/2) && attemptingToConnectShown == false){
+
+        #ifdef DEBUG
+          Serial.println("[main] (connectWiFi) Attempting to Connect to WiFi");
+        #endif
+
+        oled.logEvent("Attempting WiFi",managerOled::LOG_LEVEL_INFO);
+
+        attemptingToConnectShown = true;
+      }
 
       delay(100);
     }
@@ -126,11 +146,15 @@ void connectWiFi(){
 
 
 
-void connectEthernet(){
+boolean connectEthernet(){
+
+  boolean returnValue = false;
 
   #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
 
-    SPI.begin(SPI_SCK_PIN,SPI_MISO_PIN,SPI_MOSI_PIN,ETHERNET_PIN);
+    if((millis() - ethernetLastConnectAttempt < 60000) && (ethernetLastConnectAttempt != 0)){
+      return returnValue;
+    }
 
     uint8_t macAddress[6];
 
@@ -151,37 +175,60 @@ void connectEthernet(){
     //Set Ethernet pins for output
     pinMode(ETHERNET_PIN, OUTPUT);
 
-    delay(500);
-
     //Disable Ethernet
     digitalWrite(ETHERNET_PIN, LOW);
 
-    delay(500);
-
     Ethernet.init(ETHERNET_PIN);
 
-    switch(Ethernet.begin(macAddress, ETHERNET_TIMEOUT)){
+    if(Ethernet.linkStatus() != EthernetLinkStatus::LinkON){
 
-      case 1:
+      Ethernet.begin(macAddress, 0);
 
-        #ifdef DEBUG
-          Serial.println("[main] (connectEthernet) Ethernet Connected");
-        #endif
+      #ifdef DEBUG
+        Serial.println("[main] (connectEthernet) Ethernet Link Failure");
+      #endif
 
-      break;
+      oled.logEvent("Ethernet Link Failure",managerOled::LOG_LEVEL_INFO);
 
-      default:
-        #ifdef DEBUG
-          Serial.println("[main] (connectEthernet) Ethernet Timeout");
-        #endif
+      ethernetConnected = false;
+      ethernetLastConnectAttempt = millis();
 
-        oled.logEvent("Ethernet Timeout",managerOled::LOG_LEVEL_INFO);
-      break;
+    }else{
+
+      switch(Ethernet.begin(macAddress, ETHERNET_TIMEOUT)){
+
+        case 1:
+
+          #ifdef DEBUG
+            Serial.println("[main] (connectEthernet) Ethernet Connected");
+          #endif
+
+          oled.logEvent("Ethernet Connected",managerOled::LOG_LEVEL_INFO);
+
+          returnValue = true;
+          ethernetConnected = true;
+          ethernetLastConnectAttempt = 0;
+
+        break;
+
+        default:
+          #ifdef DEBUG
+            Serial.println("[main] (connectEthernet) Ethernet DHCP Timeout");
+          #endif
+
+          ethernetConnected = true;
+          ethernetLastConnectAttempt = 0;
+          oled.logEvent("DHCP Timeout (E)",managerOled::LOG_LEVEL_INFO);
+        break;
+      }
+      
     }
 
     oled.setEthernetInfo(&Ethernet);
 
   #endif
+
+  return returnValue;
 }
 
 
@@ -191,50 +238,18 @@ void setBootTime(){
     return;
   }
 
-  #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
-
-    WiFiUDP wifiNtpUdp;
-    NTPClient wifiTimeClient(wifiNtpUdp);
-
-    wifiTimeClient.begin(); 
-  
-    if(WiFi.isConnected()){
-
-      wifiTimeClient.update();
-      bootTime = wifiTimeClient.getEpochTime();
-    }
-
-    if(bootTime < 10000){
-        bootTime = 0;
-    }
-
-  #endif
-
-  if(bootTime != 0){
-
-    #ifdef DEBUG > 1000
-      Serial.println("[main] (setBootTime) WiFi set boot time to " + String(bootTime));
-    #endif
-
-    oled.logEvent("Boot time set (W)", managerOled::logLevel::LOG_LEVEL_INFO);
-    return;
-  }
-
   #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
 
     EthernetUDP ethernetNtpUdp;
     NTPClient ethernetTimeClient(ethernetNtpUdp);
 
-    ethernetTimeClient.begin();
-
     if(Ethernet.linkStatus() == EthernetLinkStatus::LinkON){
-
+      ethernetTimeClient.begin();
       ethernetTimeClient.update();
-      bootTime = ethernetTimeClient.getEpochTime();
-    }
 
-    if(bootTime < 10000){
-      bootTime = 0;
+      if(ethernetTimeClient.getEpochTime() > 10000){
+        bootTime = ethernetTimeClient.getEpochTime() - (millis()/1000);
+      }
     }
 
   #endif
@@ -247,6 +262,32 @@ void setBootTime(){
       Serial.println("[main] (setBootTime) Ethernet set boot time to " + String(bootTime));
     #endif
 
+    return;
+  }
+
+  #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
+
+    WiFiUDP wifiNtpUdp;
+    NTPClient wifiTimeClient(wifiNtpUdp);
+  
+    if(WiFi.isConnected()){
+      wifiTimeClient.begin(); 
+      wifiTimeClient.update();
+
+      if(wifiTimeClient.getEpochTime() > 10000){
+        bootTime = wifiTimeClient.getEpochTime() - (millis()/1000);
+      }
+    }
+
+  #endif
+
+  if(bootTime != 0){
+
+    #ifdef DEBUG > 1000
+      Serial.println("[main] (setBootTime) WiFi set boot time to " + String(bootTime));
+    #endif
+
+    oled.logEvent("Boot time set (W)", managerOled::logLevel::LOG_LEVEL_INFO);
     return;
   }
 
@@ -270,8 +311,21 @@ void loop() {
 
   outputs.configurePort(2, nsOutputs::outputPin::VARIABLE); //FOR DEBUG ONLY
 
-  #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
-    Ethernet.maintain();
+  #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
+
+    if(Ethernet.linkStatus() == EthernetLinkStatus::LinkON){
+
+      if(ethernetConnected == false){
+        if(connectEthernet() == true){
+          setBootTime();
+        }
+      }
+
+      if(Ethernet.maintain() == 1){
+        oled.logEvent("DHCP Failure (E)", managerOled::logLevel::LOG_LEVEL_ERROR);
+      }
+    }
+
   #endif
 
 }

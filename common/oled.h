@@ -46,15 +46,17 @@
             char* _productId;
             char* _uuid;
 
-            #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+            #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
                 WiFiClass *_wifiInfo;
             #endif
 
-            #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+            #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
                 EthernetClass *_ethernetInfo;
             #endif
 
-            boolean _ethernetConnectedPreviously = false;
+            boolean _ethernetPreviousLinkState = false;
+            boolean _wifiIsSet = false;
+            boolean _ethernetIsSet = false;
             pages _activePage = PAGE_EVENT_LOG;
             boolean _isSleeping = false;
             boolean _isDimmed = false;
@@ -650,8 +652,10 @@
 
                                 if(this->_wifiInfo->isConnected() == false){
                                     this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                                    this->hardware.setCursor(LOGO_WIDTH + 16, (OLED_DISPLAY_HEIGHT/2)-3);
+                                    this->hardware.setCursor(LOGO_WIDTH + 3, 0);
                                     this->hardware.println(F("Disconnected"));
+                                    this->hardware.setCursor(LOGO_WIDTH + 3, 16);
+                                    this->hardware.println(this->_wifiInfo->macAddress());
                                 } else {
 
                                     this->hardware.drawBitmap(0,0, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
@@ -725,10 +729,10 @@
                     };
 
                     this->_clear();
-                    this->hardware.drawBitmap(0,0, ethernet_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                    this->hardware.drawBitmap(0,5, ethernet_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
                 #endif
 
-                #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+                #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
 
                     if(this->_ethernetInfo->hardwareStatus() == EthernetHardwareStatus::EthernetNoHardware){
                         this->hardware.setCursor(LOGO_WIDTH + 10, (OLED_DISPLAY_HEIGHT/2)-3);
@@ -744,8 +748,8 @@
 
                     switch(this->_ethernetInfo->linkStatus()){
                         case EthernetLinkStatus::LinkON:
-                            if(this->_ethernetConnectedPreviously == false){
-                                this->_ethernetConnectedPreviously = true;
+                            if(this->_ethernetPreviousLinkState == false){
+                                this->_ethernetPreviousLinkState = true;
                                 this->logEvent("Ethernet Connected",this->LOG_LEVEL_INFO);
                             }
                             this->hardware.setCursor(LOGO_WIDTH + 3, 0);
@@ -755,8 +759,8 @@
                             break;
 
                         case EthernetLinkStatus::LinkOFF:
-                            if(this->_ethernetConnectedPreviously == true){
-                                this->_ethernetConnectedPreviously = false;
+                            if(this->_ethernetPreviousLinkState == true){
+                                this->_ethernetPreviousLinkState = false;
                                 this->logEvent("Ethernet Disconnected",this->LOG_LEVEL_INFO);
                             }
                             this->hardware.setCursor(LOGO_WIDTH + 3, 0);
@@ -764,8 +768,8 @@
                             break;
 
                         case EthernetLinkStatus::Unknown:
-                            if(this->_ethernetConnectedPreviously == true){
-                                this->_ethernetConnectedPreviously = false;
+                            if(this->_ethernetPreviousLinkState == true){
+                                this->_ethernetPreviousLinkState = false;
                                 this->logEvent("Ethernet Unknown",this->LOG_LEVEL_INFO);
                             }
                             this->hardware.setCursor(LOGO_WIDTH + 3, 0);
@@ -837,23 +841,25 @@
                 this->_uuid = value;
             }
 
-            #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+            #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
 
                 void setEthernetInfo(EthernetClass *value){
                     this->_ethernetInfo = value;
+                    this->_ethernetIsSet = true;
 
                     if(this->_ethernetInfo->linkStatus() == EthernetLinkStatus::LinkON){
-                        this->_ethernetConnectedPreviously = true;
+                        this->_ethernetPreviousLinkState = true;
                     }
                 }
 
             #endif
 
-            #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+            #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
 
                 void setWiFiInfo(WiFiClass *value){
 
                     this->_wifiInfo = value;
+                    this->_wifiIsSet = true;
 
                     if(this->_wifiInfo->getMode() == wifi_mode_t::WIFI_MODE_NULL){
                         #ifdef DEBUG
@@ -1002,16 +1008,19 @@
 
                         if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
 
-                            #ifdef WIFI_MODEL
+                            if(this->_wifiIsSet == true){
                                 showPage(PAGE_WIFI);
-                            #endif
+                                break;
+                            }
 
-                            #if !defined(WIFI_MODEL) && defined(ETHERNET_MODEL)
+                            #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
+
                                 showPage(PAGE_ETHERNET);
+                                break;
+                                
                             #endif
 
                         } 
-                        break;
 
                     case PAGE_HARDWARE_INTRO:
 
@@ -1077,8 +1086,7 @@
                         _showPage_EventLog_Intro();
                         break;
 
-                    #ifdef WIFI_MODEL
-                    
+                    #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
                         case PAGE_WIFI:
                             this->_activePage = PAGE_WIFI;
                             _showPage_WiFi();
@@ -1094,7 +1102,7 @@
 
                     #endif
 
-                    #if defined(WIFI_MODEL) || defined(ETHERNET_MODEL)
+                    #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE || ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
 
                         case PAGE_NETWORK_INTRO:
                             this->_activePage = PAGE_NETWORK_INTRO;
