@@ -288,12 +288,9 @@
     #endif
 
 
-    #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
-        #include <WiFi.h>
-    #endif
-
-
     #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
+
+        #include <WiFi.h>
 
         #ifndef WIFI_TIMEOUT
             #define WIFI_TIMEOUT 10000 //Number of milliseconds before WiFi will time out
@@ -301,26 +298,32 @@
 
     #endif
 
+
     #ifdef ESP32
         #include <esp_chip_info.h> // https://github.com/espressif/arduino-esp32
     #endif
+
 
     /* Check to ensure configuration is acceptable */
     #ifndef IO_EXTENDER_MODEL
         #error IO_EXTENDER_MODEL not set
     #endif
 
+
     #ifndef OUTPUT_CONTROLLER_MODEL
         #error OUTPUT_CONTROLLER_MODEL not set
     #endif
+
 
     #ifndef EEPROM_EXTERNAL_MODEL
         #error EEPROM_EXTERNAL_MODEL not set
     #endif
 
+
     #ifndef TEMPERATURE_SENSOR_MODEL
         #error TEMPERATURE_SENSOR_MODEL not set
     #endif
+
 
     #ifndef OLED_DISPLAY_MODEL
         #error OLED_DISPLAY_MODEL not set
