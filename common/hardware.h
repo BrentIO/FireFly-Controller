@@ -265,6 +265,10 @@
         #include <Ethernet.h>
         #include <EthernetUdp.h>
 
+        #ifndef DEBUG
+            #define _ETHERNET_WEBSERVER_LOGLEVEL_ 0 /* Prevents messages from async web server */
+        #endif
+
         #ifndef SPI_SCK_PIN
             #error SPI_SCK_PIN not set
         #endif
