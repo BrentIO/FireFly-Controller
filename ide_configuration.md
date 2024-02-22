@@ -205,14 +205,28 @@ If the upload function does not work, but the application compiles correctly, re
 
 ---
 
-# Creating the LittleFS image
+# Creating the LittleFS image (16MB Board)
 
 The size is from the partition table -- 0x360000 = 3538944
 
-`~Library/Arduino15/packages/esp32/tools/mklittlefs/3.0.0-gnu12-dc7f933/mklittlefs -s 3538944 -c /Users/brent/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/data /Users/brent/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/littlefs.bin`
+`~/Library/Arduino15/packages/esp32/tools/mklittlefs/3.0.0-gnu12-dc7f933/mklittlefs -s 3538944 -c ~/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/data ~/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/littlefs.bin`
 
-# Flashing the littelfs image
+# Flashing the littelfs image (16MB Board)
 
 The location is the start location for spiffs 0xC90000
 
-`"/Users/brent/Library/Arduino15/packages/esp32/tools/esptool_py/4.5.1/esptool" --chip esp32 --port "/dev/tty.SLAB_USBtoUART" --baud 921600  --before default_reset --after hard_reset write_flash  -z --flash_mode dio --flash_freq 80m --flash_size 16MB 0xC90000 /Users/brent/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/littlefs.bin`
+`~/Library/Arduino15/packages/esp32/tools/esptool_py/4.5.1/esptool --chip esp32 --port "/dev/tty.SLAB_USBtoUART" --baud 921600  --before default_reset --after hard_reset write_flash  -z --flash_mode dio --flash_freq 80m --flash_size 16MB 0xC90000 ~/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/littlefs.bin`
+
+---
+
+# Creating the LittleFS image (4MB Board)
+
+The size is from the partition table -- 0x360000 = 3538944
+
+`~/Library/Arduino15/packages/esp32/tools/mklittlefs/3.0.0-gnu12-dc7f933/mklittlefs -s 0x160000 -c ~/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/data ~/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/littlefs-sm.bin`
+
+# Flashing the littelfs image (4MB Board)
+
+The location is the start location for spiffs 0xC90000
+
+`~/Library/Arduino15/packages/esp32/tools/esptool_py/4.5.1/esptool --chip esp32 --port "/dev/tty.SLAB_USBtoUART" --baud 921600 --before default_reset --after hard_reset write_flash  -z --flash_mode dio --flash_freq 80m --flash_size 4MB 0x290000 ~/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/littlefs-sm.bin`
