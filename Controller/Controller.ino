@@ -14,14 +14,20 @@
 #include "common/oled.h"
 #include <NTPClient.h>
 
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h> 
+#include "AsyncJson.h"
 
-managerOutputs outputs;
+
+nsOutputs::managerOutputs outputs;
 managerInputs inputs;
 managerTemperatureSensors temperatureSensors;
 managerFrontPanel frontPanel;
 managerExternalEEPROM externalEEPROM;
 managerOled oled;
 unsigned long bootTime = 0;
+bool increasing = true;                                                                     ///FOR DEBUG ONLY
+
 boolean ethernetConnected = false;
 unsigned long ethernetLastConnectAttempt = 0;
 boolean wifiConnected = true;
@@ -378,6 +384,74 @@ void inputPublisher(managerInputs::portChannel portChannel, boolean longChange){
   #ifdef DEBUG
     if(longChange == false){
       Serial.println("[main] (inputPublisher) A short input was made on port " + String(portChannel.port) + " channel " + String(portChannel.channel));
+
+      uint8_t output_port = 2;
+      uint8_t value = outputs.getPortValue(output_port);
+
+      if(portChannel.port == 1){
+
+        switch(portChannel.channel){
+
+          case 2:
+            Serial.println(outputs.setPortValue(output_port, (value + 10)));
+            Serial.println("Increasing, New brightness: " + String(outputs.getPortValue(output_port)));
+
+            break;
+
+
+          case 6:
+            Serial.println(outputs.setPortValue(output_port, (value - 10)));
+            Serial.println("Decreasing, New brightness: " + String(outputs.getPortValue(output_port)));
+            break;
+        }
+
+
+      }
+
+
+      
+
+      /*Serial.println("Current Brightness: " + String(value));
+
+      
+
+      if(value == 0){
+        increasing = true;
+        
+        Serial.println("4 New brightness: " + String(outputs.getPortValue(output_port)));
+        return;
+      }
+
+      if(value < 100 && increasing == true){
+        outputs.setPortValue(output_port, (((value + 5) + 2) % 5) * 5);
+        Serial.println("1 New brightness: " + String(outputs.getPortValue(output_port)));
+        return;
+      }
+
+      if(value < 100 && increasing == false){
+        outputs.setPortValue(output_port, (((value - 5) + 2) % 5) * 5);
+        Serial.println("2 New brightness: " + String(outputs.getPortValue(output_port)));
+        return;
+      }
+
+      if(value == 100){
+        increasing = false;
+        outputs.setPortValue(output_port, value - (((value - 5) + 2) % 5) * 5);
+        Serial.println("3 New brightness: " + String(outputs.getPortValue(output_port)));
+        return;
+      }*/
+
+      /*if(value == 0){
+        Serial.println(outputs.setPortValue(output_port, 77));
+        Serial.println("New brightness: " + String(outputs.getPortValue(output_port)));
+      }
+
+      if(value != 0){
+        Serial.println(outputs.setPortValue(output_port, 0));
+        Serial.println("New brightness: " + String(outputs.getPortValue(output_port)));
+      }*/
+
+
     }else{
       Serial.println("[main] (inputPublisher) A long input was made on port " + String(portChannel.port) + " channel " + String(portChannel.channel));
     }
