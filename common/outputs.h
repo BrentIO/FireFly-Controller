@@ -1,24 +1,13 @@
 #include "hardware.h"
 
+namespace nsOutputs{
 
-/** Output Manager
- * 
- * Configures outputs on the system using the LED output controllers.
- * 
- * ### Usage
- *  Minimum usage includes `begin()`, which should be placed in the main `setup()` function, and `loop()`, which should be placed in the main `loop()` function.
- * 
- * 
- * ### Callbacks
- *  One callback function is supported:
- * - `setCallback_failure` which will be called if there is an error during `begin()` or if one of the input controllers falls off the bus after being initialized
- */
-class managerOutputs{
+    /** Failure reason codes, roughly based on i2c return messages */
+    enum failureReason{
 
-    public:
+        // PCA9685 has specific failure codes built into the library
+        #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
 
-        /** Failure reason codes, roughly based on i2c return messages */
-        enum failureReason{
             /// @brief Request was successful, no error was returned
             SUCCESS_NO_ERROR = 0, 
 
@@ -40,208 +29,396 @@ class managerOutputs{
             /// @brief Invalid hardware configuration
             INVALID_HARDWARE_CONFIGURATION = 10,
 
+            /// @brief  Inherited from PCA9685 library, generic error
+            GENERIC_ERROR = 0xFF,
+
+            /// @brief  Inherited from PCA9685 library, channel out of range
+            CHANNEL_OUT_OF_RANGE = 0xFE,
+
+            /// @brief  Inherited from PCA9685 library, invalid mode register chosen
+            INVALID_MODE_REGISTER = 0xFD,
+
+            /// @brief  Inherited from PCA9685 library, i2c communication error
+            GENERIC_I2C_ERROR = 0xFC,
+
             /// @brief Unknown/undocumented failure
             UNKNOWN_ERROR = 11
-        };
+        #endif
+    };
 
 
-    private:
+    /** Result of setting the port/pin's value */
+    enum set_result{
 
-        /** Enumeration of the output type, which is either binary or variable (PWM) */
-        enum outputType{
-            BINARY = 0,
-            VARIABLE = 1
-        };
+        /// @brief the set request was successful
+        SUCCESS = 0,
+
+        /// @brief the set request failed
+        FAILED = 1,
+
+        /// @brief request included an invalid output port number
+        INVALID_PORT = 10,
+
+        /// @brief the set request will not be fulfilled because the set value and the requested value were the same
+        EXCESSIVE = 20,
+
+        /// @brief the controller handling the request is not enabled and will not be fulfilled
+        CONTROLLER_NOT_ENABLED = 30
+    };
 
 
-        struct outputPin{
-            uint8_t state = 0; //The state of the output as a percentage from 0 to 100
-            outputType type = BINARY; //Default all outputs are binary for safety
-            uint8_t port = 0; /* Human-readable port number */
-        };
+    class outputController{
 
+        public:
 
-        struct outputController{
             uint8_t address = 0; /* I2C address. Default 0.*/
-            outputPin outputs[OUTPUT_CONTROLLER_COUNT_PINS];
             bool enabled = true; /* Indicates if the controller is enabled. Default true */
+            void (*failureCallback)(uint8_t, failureReason);
 
             #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
                 PCA9685 hardware = PCA9685(0); /* Reference to the hardware. */
             #endif
 
-        };
 
-        outputController outputControllers[OUTPUT_CONTROLLER_COUNT];
+            /** Marks a given output controller as failed and raises a callback event, if configured 
+             * @param reason Reason code for the failure
+            */
+            void fail(failureReason reason){
 
+                if(enabled == false){
+                    return;
+                }
 
-        bool _initialized = false; /* If the class has been initialized. */
+                if(reason == failureReason::SUCCESS_NO_ERROR){
+                    #if DEBUG
+                        Serial.println(F("[outputs] (failOutputController) Function is being called with no error present."));
+                    #endif
 
+                    return;
+                }
 
-        /** Reference to the callback function that will be called when an output controller has failed */
-        void (*ptrFailureCallback)(uint8_t, failureReason);
+                enabled = false;
 
-
-        /** Marks a given output controller as failed and raises a callback event, if configured 
-         * @param outputController The input controller being reported
-         * @param failureReason Reason code for the failure
-        */
-        void failOutputController(outputController *outputController, failureReason failureReason){
-
-            if(outputController->enabled == false){
-                return;
-            }
-
-            if(failureReason == failureReason::SUCCESS_NO_ERROR){
-                #if DEBUG
-                    Serial.println(F("[outputs] (failOutputController) Function is being called with no error present."));
-                #endif
-
-                return;
-            }
-
-            outputController->enabled = false;
-
-            if(this->ptrFailureCallback){
-                this->ptrFailureCallback(outputController->address, failureReason);
-            }
-        }
+                if(this->failureCallback){
+                    this->failureCallback(this->address, reason);
+                }
+            };
 
 
-        /** Enumerates the i2c bus failure codes to a failureReason 
-         * @param i2cError The value returned from the i2c wire endTransmission() function
-         * @returns A failureReason enumeration mapped to the error code passed in
-        */
-        failureReason i2cResponseToFailureReason(uint8_t i2cError){
+            /* Sets a failure using an i2c error response code */
+            void fail(uint8_t i2cError){
 
-            switch(i2cError){
+                switch(i2cError){
 
-                case 0:
-                    return failureReason::SUCCESS_NO_ERROR;
-                    break;
+                    case 0:
+                        this->fail(failureReason::SUCCESS_NO_ERROR);
+                        break;
 
-                case 1:
-                    return failureReason::DATA_TRANSMIT_BUFFER_ERROR;
-                    break;
+                    case 1:
+                        this->fail(failureReason::DATA_TRANSMIT_BUFFER_ERROR);
+                        break;
 
-                case 2:
-                    return failureReason::ADDRESS_OFFLINE;
-                    break;
+                    case 2:
+                        this->fail(failureReason::ADDRESS_OFFLINE);
+                        break;
 
-                case 3:
-                    return failureReason::TRANSMIT_NOT_ACKNOLWEDGED;
-                    break;
+                    case 3:
+                        this->fail(failureReason::TRANSMIT_NOT_ACKNOLWEDGED);
+                        break;
 
-                case 4:
-                    return failureReason::OTHER_ERROR;
-                    break;
+                    case 4:
+                        this->fail(failureReason::OTHER_ERROR);
+                        break;
 
-                case 5:
-                    return failureReason::TIMEOUT;
-                    break;
+                    case 5:
+                        this->fail(failureReason::TIMEOUT);
+                        break;
 
-                case 10:
-                    return failureReason::INVALID_HARDWARE_CONFIGURATION;
-                    break;
+                    case 10:
+                        this->fail(failureReason::INVALID_HARDWARE_CONFIGURATION);
+                        break;
 
-                default:
-                    return failureReason::UNKNOWN_ERROR;
-            }
-        }
+                    #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
+
+                        case 0xFF:
+                            this->fail(failureReason::GENERIC_ERROR);
+                            break;
+
+                        case 0xFE:
+                            this->fail(failureReason::CHANNEL_OUT_OF_RANGE);
+                            break;
+
+                        case 0xFD:
+                            this->fail(failureReason::INVALID_MODE_REGISTER);
+                            break;
+
+                        
+                        case 0xFC:
+                            this->fail(failureReason::GENERIC_I2C_ERROR);
+                            break;
+                    #endif
+
+                    default:
+                        this->fail(failureReason::UNKNOWN_ERROR);
+                }
+            };
+    };
 
 
-    public:
+    class outputPin{
 
-        struct healthResult{
-            uint8_t count = 0;
-            structHealth outputControllers[OUTPUT_CONTROLLER_COUNT];
-        };
+        public:
+
+            /** Enumeration of the output type, which is either binary or variable (PWM) */
+            enum outputType{
+                BINARY = 0,
+                VARIABLE = 1
+            };
+
+            outputType type = BINARY; //Default all outputs are binary for safety
+            uint8_t port = 0; /* Human-readable port number */
+            uint8_t pin = 0; /* Output controller pin which is attached to this output */
+            outputController* controller; /* Reference to the output controller */
+
+            #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
+                uint16_t value = 0; /* Expected PWM value for the pin */
+            #endif
 
 
-        /** Callback function that is called when an output controller failure occurs */
-        void setCallback_failure(void (*userDefinedCallback)(uint8_t, failureReason)) {
-            ptrFailureCallback = userDefinedCallback; }
+            /** Sets the value of the pin power output
+             * @param value as a percentage of brightness/duty cycle 0-100, inclusive.  For binary output types, any value greater than 0 will be replaced with 100%
+             * @returns status on request
+            */
+            set_result set(int16_t value){
 
+                uint16_t pwmValue = 0;
 
-        void begin(){
+                if(this->controller->enabled == false){
+                    return set_result::CONTROLLER_NOT_ENABLED;
+                }
 
-            if(this->_initialized == true){
-                return;
-            }
+                value = constrain(value, 0, 100);
 
-            const uint8_t addressesOutputController[] = OUTPUT_CONTROLLER_ADDRESSES;
+                if(value < 5){
+                    value = 0;
+                }
 
-            if(OUTPUT_CONTROLLER_COUNT != sizeof(addressesOutputController)/sizeof(uint8_t)){
+                if(value > 95){
+                    value = 100;
+                }
 
-                #if DEBUG
-                    Serial.println(F("[outputs] (begin) OUTPUT_CONTROLLER_ADDRESSES and the length of OUTPUT_CONTROLLER_ADDRESSES are mismatched in hardware.h; Disabling outputs."));
-                #endif
+                switch(type){
 
-                outputController invalid;
-                invalid.address = 0;
-
-                failOutputController(&invalid, failureReason::INVALID_HARDWARE_CONFIGURATION);
-
-                return;
-            }
-
-            uint8_t portPinMap[OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT] = OUTPUT_CONTROLLER_PORTS;
-
-            for(int i = 0; i < OUTPUT_CONTROLLER_COUNT; i++){
-                this->outputControllers[i].address = addressesOutputController[i];
+                    case BINARY:
+                        if(value != 0){
+                            pwmValue = OUTPUT_CONTROLLER_MAXIMUM_PWM;
+                        }else{
+                            pwmValue = 0;
+                        }
+                        break;
                 
-                for(int j = 0; j < OUTPUT_CONTROLLER_COUNT_PINS; j++){
+                    default:
+                        pwmValue = int(map(value, 0, 100, 0, OUTPUT_CONTROLLER_MAXIMUM_PWM));
+                        break;
+                }
 
-                    if(portPinMap[j] == 0){
-
-                         #if DEBUG
-                            Serial.println(F("[outputs] (begin) OUTPUT_CONTROLLER_COUNT_PINS and the length of OUTPUT_CONTROLLER_PORTS are mismatched in hardware.h; Disabling outputs."));
-                        #endif
-
-                        failOutputController(&this->outputControllers[i], failureReason::INVALID_HARDWARE_CONFIGURATION);
-
-                        return;
-                    }
-
-                    this->outputControllers[i].outputs[j].port = portPinMap[j];
+                if(pwmValue == this->value){
+                    return set_result::EXCESSIVE;
                 }
 
                 #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
-                    this->outputControllers[i].hardware = PCA9685(outputControllers[i].address);
+                    this->controller->hardware.setPWM(pin, pwmValue);
 
-                    if(this->outputControllers[i].hardware.begin() == false){
-                        failOutputController(&this->outputControllers[i], i2cResponseToFailureReason(outputControllers[i].hardware.lastError()));
-                    };
-
-                    this->outputControllers[i].hardware.setFrequency(OUTPUT_CONTROLLER_FREQUENCY_PWM);
-                    
-                    if(outputControllers[i].hardware.lastError() != 0){
-                        failOutputController(&this->outputControllers[i], i2cResponseToFailureReason(outputControllers[i].hardware.lastError()));
+                    if(this->controller->hardware.lastError() != 0){
+                        this->controller->fail(controller->hardware.lastError());
+                        return set_result::FAILED;
                     }
 
-
+                    this->value = pwmValue;
                 #endif
+
+                return set_result::SUCCESS;
             }
 
-            this->_initialized = true;
-        }
 
-        /** Returns the value of each output controller's bus status */
-        healthResult health(){
+            /** Gets the value of the pin power output
+             * @returns Percentage brightness/duty cycle for the given pin, 0-100 inclusive
+            */
+            uint8_t get(){
 
-            healthResult returnValue;
+                #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
+                    return int(map(this->value, 0, OUTPUT_CONTROLLER_MAXIMUM_PWM,  0, 100));
+                #endif
+            }
+    };
 
-            if(this->_initialized != true){
+
+    /** Output Manager
+     * 
+     * Configures outputs on the system using the LED output controllers.
+     * 
+     * ### Usage
+     *  Minimum usage includes `begin()`, which should be placed in the main `setup()` function, and `loop()`, which should be placed in the main `loop()` function.
+     * 
+     * 
+     * ### Callbacks
+     *  One callback function is supported:
+     * - `setCallback_failure` which will be called if there is an error during `begin()` or if one of the input controllers falls off the bus after being initialized
+     */
+    class managerOutputs{
+
+        private:
+
+            bool _initialized = false; /* If the class has been initialized */
+            outputController outputControllers[OUTPUT_CONTROLLER_COUNT]; /** Stores the output controller details */
+            outputPin outputs[OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT]; /** Stores the output pin details */
+
+            /** Reference to the callback function that will be called when an output controller has failed */
+            void (*ptrFailureCallback)(uint8_t, failureReason);
+
+
+        public:
+
+            struct healthResult{
+                const uint8_t count = OUTPUT_CONTROLLER_COUNT;
+                structHealth outputControllers[OUTPUT_CONTROLLER_COUNT];
+            };
+
+
+            /**
+             * Initializes the class and loads all the controller and output information
+            */
+            void begin(){
+
+                if(this->_initialized == true){
+                    return;
+                }
+
+                const uint8_t addressesOutputController[] = OUTPUT_CONTROLLER_ADDRESSES;
+
+                if(OUTPUT_CONTROLLER_COUNT != sizeof(addressesOutputController)/sizeof(uint8_t)){
+
+                    #if DEBUG
+                        Serial.println(F("[outputs] (begin) OUTPUT_CONTROLLER_ADDRESSES and the length of OUTPUT_CONTROLLER_ADDRESSES are mismatched in hardware.h; Disabling outputs."));
+                    #endif
+
+                    outputController invalid;
+                    invalid.address = 0;
+                    invalid.fail(failureReason::INVALID_HARDWARE_CONFIGURATION);
+
+                    return;
+                }
+
+                uint8_t portPinMap[OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT] = OUTPUT_CONTROLLER_PORTS;
+
+                for(int i = 0; i < OUTPUT_CONTROLLER_COUNT; i++){
+                    this->outputControllers[i].address = addressesOutputController[i];
+                    this->outputControllers[i].failureCallback = ptrFailureCallback;
+                    
+                    for(int j = 0; j < OUTPUT_CONTROLLER_COUNT_PINS; j++){
+
+                        if(portPinMap[j] == 0){
+
+                            #if DEBUG
+                                Serial.println(F("[outputs] (begin) OUTPUT_CONTROLLER_COUNT_PINS and the length of OUTPUT_CONTROLLER_PORTS are mismatched in hardware.h; Disabling outputs."));
+                            #endif
+
+                            this->outputControllers[i].fail(failureReason::INVALID_HARDWARE_CONFIGURATION);
+                            return;
+                        }
+
+                        outputs[(OUTPUT_CONTROLLER_COUNT_PINS * i) + j].controller = &this->outputControllers[i];
+                        outputs[(OUTPUT_CONTROLLER_COUNT_PINS * i) + j].pin = j;
+                        outputs[(OUTPUT_CONTROLLER_COUNT_PINS * i) + j].port = portPinMap[j];
+                    }
+
+                    #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
+                        this->outputControllers[i].hardware = PCA9685(outputControllers[i].address);
+
+                        if(this->outputControllers[i].hardware.begin() == false){
+                            this->outputControllers[i].fail(this->outputControllers[i].hardware.lastError());
+                        };
+
+                        this->outputControllers[i].hardware.allOFF();
+                        
+                        if(outputControllers[i].hardware.lastError() != 0){
+                            this->outputControllers[i].fail(this->outputControllers[i].hardware.lastError());
+                        }
+
+                        this->outputControllers[i].hardware.setFrequency(OUTPUT_CONTROLLER_FREQUENCY_PWM);
+                        
+                        if(outputControllers[i].hardware.lastError() != 0){
+                            this->outputControllers[i].fail(this->outputControllers[i].hardware.lastError());
+                        }
+
+                    #endif
+
+                }
+
+                this->_initialized = true;
+            }
+
+
+            /** Returns the value of each output controller's bus status */
+            healthResult health(){
+
+                healthResult returnValue;
+
+                if(this->_initialized != true){
+                    return returnValue;
+                }
+
+                for(int i = 0; i < OUTPUT_CONTROLLER_COUNT; i++){
+                    returnValue.outputControllers[i].address = this->outputControllers[i].address;
+                    returnValue.outputControllers[i].enabled = this->outputControllers[i].enabled;
+                }
+
                 return returnValue;
             }
 
-            for(int i = 0; i < OUTPUT_CONTROLLER_COUNT; i++){
-                returnValue.outputControllers[i].address = this->outputControllers[i].address;
-                returnValue.outputControllers[i].enabled = this->outputControllers[i].enabled;
+
+            /** Sets the callback function that is called when an output controller failure occurs */
+            void setCallback_failure(void (*userDefinedCallback)(uint8_t, failureReason)) {
+                ptrFailureCallback = userDefinedCallback; }
+
+            
+            /** Gets the port's value (power output/brightness/duty cycle) as a percentage, 0-100 inclusive
+             * @param port as the human-readable port number to get
+             * @returns Percentage power output/brightness/duty cycle for the given port.  If an invalid port number is provided, 0 will be returned
+            */
+            uint8_t getPortValue(uint8_t port){
+
+                for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
+                    if(this->outputs[i].port == port){
+                        return outputs[i].get();
+                    }
+                }
+                return 0;
             }
 
-            returnValue.count = OUTPUT_CONTROLLER_COUNT;
 
-            return returnValue;
-        }
+            /** Sets the power output/brightness/duty cycle for the given port and value 
+             * @param port as the human-readable port number to set
+             * @param value percentage power output/brightness/duty cycle for the given port.  If the port is set as binary output, anything >0 will be set to 100, all other numbers will be set to 0
+             * @returns enumerated result of the request
+            */
+            set_result setPortValue(uint8_t port, int8_t value){
+
+                for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
+                    if(outputs[i].port == port){
+                        return outputs[i].set(value);
+                    }
+                }
+                return set_result::INVALID_PORT;
+            }
+
+            void configurePort(uint8_t port, outputPin::outputType type){
+
+                for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
+                    if(this->outputs[i].port == port){
+                        this->outputs[i].type = type;
+                    }
+                }
+            }
+    };
 };
