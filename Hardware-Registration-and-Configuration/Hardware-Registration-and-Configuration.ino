@@ -10,8 +10,7 @@
 */
 
 #define DEBUG 10000
-#define VERSION "2023.09.001"
-
+#define VERSION "2024.02.001"
 
 #include "common/hardware.h"
 #include "common/externalEEPROM.h"
