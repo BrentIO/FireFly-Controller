@@ -146,6 +146,8 @@
         /* Ethernet */
         #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_W5500
         #define ETHERNET_PIN 25 /* Ethernet hardware control flow pin */
+        #define ETHERNET_PIN_RESET 26
+        #define ETHERNET_PIN_INTERRUPT 19
         #define ETH_SPI_HOST SPI2_HOST /* Tell W5000 async library to use SPI2 */
 
         /* SPI Configuration */
