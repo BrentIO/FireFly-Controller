@@ -116,7 +116,7 @@ Example File Contents:
     "buildPreferences": [
         [
             "build.extra_flags",
-            "-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=0x08062305 -DESP32 -DSSD1306_NO_SPLASH -I/Users/brent/GitHub/P5Software/FireFly-Controller"
+            "-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=0x08062305 -DESP32 -DSSD1306_NO_SPLASH -I~/GitHub/P5Software/FireFly-Controller"
         ]
     ],
     "port": "/dev/tty.SLAB_USBtoUART",
