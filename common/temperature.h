@@ -92,7 +92,7 @@ class managerTemperatureSensors{
             uint8_t address = 0; /* I2C address. Default 0.*/
 
             #if TEMPERATURE_SENSOR_MODEL == ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075
-                PCT2075 hardware = PCT2075(0); /* Reference to the hardware. */
+                PCT2075 hardware = PCT2075(address); /* Reference to the hardware. */
             #endif
 
             float previousRead = 0; /* Previous read temperature in degrees celsius. Default 0 */
