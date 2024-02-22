@@ -147,9 +147,6 @@
         #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_W5500
         #define ETHERNET_PIN 25 /* Ethernet hardware control flow pin */
 
-        /* WiFi */
-        #define WIFI_MODEL ENUM_WIFI_MODEL_ESP32
-
         /* SPI Configuration */
         #define SPI_SCK_PIN 14
         #define SPI_MISO_PIN 12
@@ -264,6 +261,8 @@
         #include <SPI.h>
         #include <Ethernet.h>
         #include <EthernetUdp.h>
+
+        #define WIFI_MODEL ENUM_WIFI_MODEL_NONE         /* Disable WiFi when Ethernet is present */
 
         #ifndef DEBUG
             #define _ETHERNET_WEBSERVER_LOGLEVEL_ 0 /* Prevents messages from async web server */
