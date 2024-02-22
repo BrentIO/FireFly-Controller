@@ -41,7 +41,7 @@ managerExternalEEPROM externalEEPROM;
 managerOled oled;
 managerFrontPanel frontPanel;
 managerInputs inputs;
-managerOutputs outputs;
+nsOutputs::managerOutputs outputs;
 managerTemperatureSensors temperatureSensors;
 
 
@@ -350,7 +350,7 @@ void http_handlePeripherals(AsyncWebServerRequest *request){
   JsonArray array = doc.to<JsonArray>();
 
   managerInputs::healthResult inputHealth = inputs.health();
-  managerOutputs::healthResult outputHealth = outputs.health();
+  nsOutputs::managerOutputs::healthResult outputHealth = outputs.health();
   managerTemperatureSensors::healthResult temperatureHealth = temperatureSensors.health();
   structHealth oledHealth = oled.health();
   structHealth externalEepromHealth = externalEEPROM.health();
