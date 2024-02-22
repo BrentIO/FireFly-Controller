@@ -21,9 +21,16 @@
 #include "common/outputs.h"
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
 #include <esp_chip_info.h> // https://github.com/espressif/arduino-esp32
-#include <WiFi.h>
-#include <AsyncTCP.h> // https://github.com/me-no-dev/AsyncTCP
-#include <ESPAsyncWebServer.h> // https://github.com/me-no-dev/ESPAsyncWebServer
+#include <AsyncTCP.h>
+
+#if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+  #include <AsyncWebServer_ESP32_W5500.h>
+#endif
+
+#if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+  #include <ESPAsyncWebServer.h> // https://github.com/me-no-dev/ESPAsyncWebServer
+#endif
+
 #include "AsyncJson.h"
 #include <LittleFS.h>
 #include <Regexp.h> // https://github.com/nickgammon/Regexp
@@ -53,24 +60,59 @@ void setup() {
   frontPanel.begin();
   frontPanel.setStatus(managerFrontPanel::status::NORMAL);
 
-  //Setup a soft AP with the SSID FireFly-######, where the last 6 characters are the last 6 of the Soft AP MAC address
-  uint8_t baseMac[6];
-  esp_read_mac(baseMac, ESP_MAC_WIFI_SOFTAP);
-  char apName[18] = {0};
-  sprintf(apName, "FireFly-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
+  #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
-  #if DEBUG > 1000
-    Serial.print(F("[main] (setup) Starting SoftAP..."));
+    //Setup a soft AP with the SSID FireFly-######, where the last 6 characters are the last 6 of the Soft AP MAC address
+    uint8_t baseMac[6];
+    esp_read_mac(baseMac, ESP_MAC_WIFI_SOFTAP);
+    char apName[18] = {0};
+    sprintf(apName, "FireFly-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
+
+    #if DEBUG > 1000
+      Serial.print(F("[main] (setup) Starting SoftAP..."));
+    #endif
+
+    WiFi.softAP(apName);
+
+    #if DEBUG > 1000
+      Serial.println(F("Done"));
+      Serial.println("[main] (setup) Started SoftAP " + WiFi.softAPSSID());
+    #endif
+  
+    oled.setWiFiInfo(&WiFi);
+
   #endif
 
-  WiFi.softAP(apName);
+  #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
 
-  #if DEBUG > 1000
-    Serial.println(F("Done"));
-    Serial.println("[main] (setup) Started SoftAP " + WiFi.softAPSSID());
+    ESP32_W5500_onEvent();
+    uint8_t wifiStaMac[6]; 
+    esp_read_mac(wifiStaMac, esp_mac_type_t::ESP_MAC_WIFI_STA); //Use the base MAC, not the Ethernet MAC.  Library will automatically adjust it, else future calls to get MAC addresses are skewed
+
+    #if DEBUG > 1000
+      Serial.print(F("[main] (setup) Setting up Ethernet on W5500..."));
+    #endif
+
+    unsigned long ethernet_start_time = millis();
+    ETH.begin(SPI_MISO_PIN, SPI_MOSI_PIN, SPI_SCK_PIN, ETHERNET_PIN, ETHERNET_PIN_INTERRUPT, SPI_CLOCK_MHZ, ETH_SPI_HOST, wifiStaMac);
+   
+    while(!ESP32_W5500_isConnected()){
+      Serial.print(".");
+      delay(100);
+
+      if(millis() > ethernet_start_time + ETHERNET_TIMEOUT){
+        Serial.println(F("Ethernet Timeout"));
+        break;
+      }
+    }
+
+    #if DEBUG > 1000
+      Serial.println(F("Done"));
+      Serial.print(F("[main] (setup) Ethernet IP: "));
+      Serial.println(ETH.localIP());
+    #endif
+
   #endif
- 
-  oled.setWiFiInfo(&WiFi);
 
   externalEEPROM.setCallback_failure(&failureHandler_eeprom);
   externalEEPROM.begin();
@@ -125,20 +167,33 @@ void setup() {
 
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 
-  if(WiFi.getMode() == wifi_mode_t::WIFI_MODE_NULL){
+  #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
-    #ifdef DEBUG
-     Serial.println(F("[main] (setup) HTTP server will not be started because WiFi it has not been initialized (WIFI_MODE_NULL)"));
-    #endif
+    if(WiFi.getMode() == wifi_mode_t::WIFI_MODE_NULL){
+
+      #ifdef DEBUG
+      Serial.println(F("[main] (setup) HTTP server will not be started because WiFi it has not been initialized (WIFI_MODE_NULL)"));
+      #endif
     
-  }else{
-    httpServer.begin();
+    }else{
+      httpServer.begin();
 
-    #if DEBUG > 1000
-      Serial.println(F("[main] (setup) HTTP server ready"));
-    #endif
-  }
-  
+      #if DEBUG > 1000
+        Serial.println(F("[main] (setup) HTTP server ready"));
+      #endif
+    }
+  #endif
+
+  #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+
+      httpServer.begin();
+
+      #if DEBUG > 1000
+        Serial.println(F("[main] (setup) HTTP server ready"));
+      #endif
+
+  #endif
+
   oled.logEvent("Ready to Configure", managerOled::LOG_LEVEL_INFO);
   oled.showPage(managerOled::PAGE_EVENT_LOG);
 
