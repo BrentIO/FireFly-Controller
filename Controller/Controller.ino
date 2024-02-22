@@ -414,16 +414,16 @@ void inputFailure(uint8_t address, managerInputs::failureReason failureReason){
  * @param address the hexidecimal address of the output controller that has failed
  * @param failureReason the reason for the failure
 */
-void outputFailure(uint8_t address, managerOutputs::failureReason failureReason){
+void outputFailure(uint8_t address, nsOutputs::failureReason reason){
 
   #ifdef DEBUG
     Serial.print("[main] (outputFailure) ");
     Serial.print("Output controller at address 0x");
     Serial.print(address, HEX);
-    Serial.println(" is being failed for reason " + String(failureReason));
+    Serial.println(" is being failed for reason " + String(reason));
   #endif
 
-  oled.showError(("Out Ctl 0x" + String(address, HEX) + " fail " + String(failureReason)).c_str());
+  oled.showError(("Out Ctl 0x" + String(address, HEX) + " fail " + String(reason)).c_str());
 
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 }
