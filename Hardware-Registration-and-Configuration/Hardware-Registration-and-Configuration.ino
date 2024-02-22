@@ -49,6 +49,7 @@ void setup() {
 
   #ifdef DEBUG
     Serial.begin(115200);
+    delay(2500);
   #endif
 
   Wire.begin();
