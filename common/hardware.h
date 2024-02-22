@@ -284,7 +284,7 @@
     #endif
 
     #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
-        #define ETHERNET_TIMEOUT 10000 //Number of milliseconds before WiFi will time out
+        #define ETHERNET_TIMEOUT 10000 //Number of milliseconds before Ethernet will time out
     #endif
 
 
