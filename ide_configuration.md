@@ -71,6 +71,7 @@ Download each library below as a zip file.
 | AsyncTCP | Master | https://github.com/me-no-dev/AsyncTCP |
 | Ethernet | 2.0.2 | https://github.com/arduino-libraries/Ethernet |
 | NTPClient | 3.2.1 | https://github.com/arduino-libraries/NTPClient |
+| PubSubClient | 2.8 | https://github.com/knolleary/pubsubclient |
 
 
 Install each library above using the following command:
