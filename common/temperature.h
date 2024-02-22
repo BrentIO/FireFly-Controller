@@ -219,8 +219,11 @@ class managerTemperatureSensors{
 
                 #if TEMPERATURE_SENSOR_MODEL == ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075
                     this->temperatureSensors[i].hardware = PCT2075(this->temperatureSensors[i].address);
-                    if(this->temperatureSensors[i].hardware.i2c_error() !=0){
 
+                    //Attempt to get the current temperature to ensure the device is on the bus
+                    temperatureSensors[i].hardware.getTempC();
+
+                    if(this->temperatureSensors[i].hardware.i2c_error() !=0){
                         failTemperatureSensor(&this->temperatureSensors[i], i2cResponseToFailureReason(this->temperatureSensors[i].hardware.i2c_error()));
                         continue;
                     }
