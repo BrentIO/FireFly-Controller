@@ -726,7 +726,7 @@ void failureHandler_eeprom(){
 /** 
  * Callback function which handles failures of any input 
 */
-void failureHandler_inputs(){
+void failureHandler_inputs(uint8_t address, managerInputs::failureReason failureReason){
 
   oled.logEvent("Input Failure", managerOled::LOG_LEVEL_ERROR);
  
@@ -736,7 +736,7 @@ void failureHandler_inputs(){
 /** 
  * Callback function which handles failures of any output 
 */
-void failureHandler_outputs(){
+void failureHandler_outputs(uint8_t address, nsOutputs::failureReason reason){
 
   oled.logEvent("Output Failure", managerOled::LOG_LEVEL_ERROR);
   
@@ -746,7 +746,7 @@ void failureHandler_outputs(){
 /** 
  * Callback function which handles failures of any temperature sensor 
 */
-void failureHandler_temperatureSensors(String message){
+void failureHandler_temperatureSensors(char* location, managerTemperatureSensors::failureReason failureReason){
 
   oled.logEvent("Temperature Failure", managerOled::LOG_LEVEL_ERROR);
   
