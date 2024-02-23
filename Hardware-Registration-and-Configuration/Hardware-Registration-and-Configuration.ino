@@ -4,9 +4,9 @@
  * Application allows for the reading of the external EEPROM, as well as programming of the external EEPROM data.  This is
  * separated from the main program to ensure the EEPROM can't be accidentally configured and lose the device information.
  * 
- * Application creates a soft AP to connect to, and exposes a set of API's that are described in the swagger.yaml file.
+ * Exposes a set of API's that are described in the swagger.yaml file.
  * 
- * (C) 2023, P5 Software, LLC
+ * (C) 2024, P5 Software, LLC
 */
 
 #define DEBUG 10000
