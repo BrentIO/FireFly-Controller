@@ -59,19 +59,21 @@ Download each library below as a zip file.
 
 | Library | Version | URL |
 |---------|---------|-----|
-| ArduinoJson | 6.20.1 | https://github.com/bblanchon/ArduinoJson |
-| I2C_EEPROM | 1.7.1 | https://github.com/RobTillaart/I2C_EEPROM |
-| PCA95x5 | 2023.10.2 | https://github.com/BrentIO/PCA95x5 |
-| PCA9685_RT | 0.4.1 | https://github.com/RobTillaart/PCA9685_RT |
-| Regexp | 0.1.1 | https://github.com/nickgammon/Regexp |
-| Adafruit_SSD1306 | 2.5.7 | https://github.com/adafruit/Adafruit_SSD1306 |
-| Adafruit-GFX-Library | 1.11.5 | https://github.com/adafruit/Adafruit-GFX-Library |
 | Adafruit_BusIO | 1.14.1 | https://github.com/adafruit/Adafruit_BusIO |
-| ESPAsyncWebServer | Master | https://github.com/me-no-dev/ESPAsyncWebServer |
-| AsyncTCP | Master | https://github.com/me-no-dev/AsyncTCP |
+| Adafruit-GFX-Library | 1.11.5 | https://github.com/adafruit/Adafruit-GFX-Library |
+| Adafruit_SSD1306 | 2.5.7 | https://github.com/adafruit/Adafruit_SSD1306 |
+| ArduinoJson | 6.20.1 | https://github.com/bblanchon/ArduinoJson |
+| AsyncWebServer_ESP32_W5500 | 1.6.4 | https://github.com/khoih-prog/AsyncWebServer_ESP32_W5500 |
+| BrentIO_AsyncTCP | 2024.2.1 | https://github.com/BrentIO/AsyncTCP |
+| BrentIO_ESP Async WebServer | 2024.2.1 | https://github.com/BrentIO/ESPAsyncWebServer |
+| BrentIO_PCA95x5 | 2023.10.2 | https://github.com/BrentIO/PCA95x5 |
+| BrentIO_PCT2075 | 2023.10.3 | https://github.com/BrentIO/PCT2075 |
 | Ethernet | 2.0.2 | https://github.com/arduino-libraries/Ethernet |
+| I2C_EEPROM | 1.7.1 | https://github.com/RobTillaart/I2C_EEPROM |
 | NTPClient | 3.2.1 | https://github.com/arduino-libraries/NTPClient |
+| PCA9685_RT | 0.4.1 | https://github.com/RobTillaart/PCA9685_RT |
 | PubSubClient | 2.8 | https://github.com/knolleary/pubsubclient |
+| Regexp | 0.1.1 | https://github.com/nickgammon/Regexp |
 
 
 Install each library above using the following command:
