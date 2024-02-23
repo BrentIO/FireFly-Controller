@@ -159,9 +159,7 @@
 
 
     #ifndef SUPPORTED_HARDWARE
-
         #error Build failed, Unknown PRODUCT_HEX. Ensure it was set in ./.vscode/arduino.json {"buildPreferences":[["build.extra_flags","-DPRODUCT_HEX=0x000000000"]]}
-
     #endif
 
 
