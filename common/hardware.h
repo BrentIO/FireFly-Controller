@@ -264,11 +264,26 @@
         #include <SPI.h>
         #include <Ethernet.h>
         #include <EthernetUdp.h>
+        #include <AsyncWebServer_ESP32_W5500.h>
+        #include <AsyncTCP.h>
 
-        #define WIFI_MODEL ENUM_WIFI_MODEL_NONE         /* Disable WiFi when Ethernet is present */
+        #define WIFI_MODEL ENUM_WIFI_MODEL_NONE     /* Disable WiFi when Ethernet is present */
+        #define _ETHERNET_WEBSERVER_LOGLEVEL_ 0     /* Prevents messages from async web server */
 
-        #ifndef DEBUG
-            #define _ETHERNET_WEBSERVER_LOGLEVEL_ 0 /* Prevents messages from async web server */
+        #if DEBUG > 2000
+            #define _ETHERNET_WEBSERVER_LOGLEVEL_ 1
+        #endif
+        
+        #if DEBUG > 3000
+            #define _ETHERNET_WEBSERVER_LOGLEVEL_ 2
+        #endif
+
+        #if DEBUG > 4000
+            #define _ETHERNET_WEBSERVER_LOGLEVEL_ 3
+        #endif
+
+        #if DEBUG > 5000
+            #define _ETHERNET_WEBSERVER_LOGLEVEL_ 4
         #endif
 
         #ifndef SPI_SCK_PIN
@@ -297,6 +312,11 @@
     #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
 
         #include <WiFi.h>
+
+        #if WIFI_MODEL = ENUM_WIFI_MODEL_ESP32
+            #include <ESPAsyncWebServer.h> // https://github.com/me-no-dev/ESPAsyncWebServer
+            #include <AsyncTCP.h>
+        #endif
 
         #ifndef WIFI_TIMEOUT
             #define WIFI_TIMEOUT 10000 //Number of milliseconds before WiFi will time out

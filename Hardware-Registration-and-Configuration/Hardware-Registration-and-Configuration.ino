@@ -20,17 +20,6 @@
 #include "common/temperature.h"
 #include "common/outputs.h"
 #include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
-#include <esp_chip_info.h> // https://github.com/espressif/arduino-esp32
-#include <AsyncTCP.h>
-
-#if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
-  #include <AsyncWebServer_ESP32_W5500.h>
-#endif
-
-#if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
-  #include <ESPAsyncWebServer.h> // https://github.com/me-no-dev/ESPAsyncWebServer
-#endif
-
 #include "AsyncJson.h"
 #include <LittleFS.h>
 #include <Regexp.h> // https://github.com/nickgammon/Regexp
