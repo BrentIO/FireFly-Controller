@@ -304,14 +304,16 @@
 
     #endif
 
+
     #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
         #define ETHERNET_TIMEOUT 10000 //Number of milliseconds before Ethernet will time out
     #endif
 
 
     #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
-
         #include <WiFi.h>
+
+        #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_NONE /* Disable Ethernet when WiFi is present */
 
         #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
             #include <ESPAsyncWebServer.h>
@@ -355,6 +357,10 @@
 
     #ifndef OLED_DISPLAY_MODEL
         #error OLED_DISPLAY_MODEL not set
+    #endif
+
+    #if WIFI_MODEL == ENUM_WIFI_MODEL_NONE && ETHERNET_MODEL == ENUM_ETHERNET_MODEL_NONE
+        #error WIFI_MODEL and ETHERNET_MODEL are both set to NONE
     #endif
 
 
