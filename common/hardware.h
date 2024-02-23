@@ -173,7 +173,7 @@
 
 
     #if IO_EXTENDER_MODEL == ENUM_IO_EXTENDER_MODEL_PCA9995
-        #include <PCA95x5.h> // https://github.com/BrentIO/PCA95x5
+        #include <PCA95x5.h>
 
         #ifndef IO_EXTENDER_COUNT_PINS
             #define IO_EXTENDER_COUNT_PINS 16 /* The number of pins on each IO extender */
@@ -195,7 +195,7 @@
 
 
     #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
-        #include <PCA9685.h> // https://github.com/RobTillaart/PCA9685_RT
+        #include <PCA9685.h>
 
         #ifndef OUTPUT_CONTROLLER_MAXIMUM_PWM
             #define OUTPUT_CONTROLLER_MAXIMUM_PWM 4095 /* Maximum value for PWM */
@@ -213,7 +213,7 @@
 
 
     #if EEPROM_EXTERNAL_MODEL == ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX
-        #include <I2C_eeprom.h> // https://github.com/RobTillaart/I2C_EEPROM
+        #include <I2C_eeprom.h>
 
         #ifndef EEPROM_EXTERNAL_SIZE
             #define EEPROM_EXTERNAL_SIZE 256 /* Six of the external EEPROM.  NOTE: Divide the device size in Kbits by 8. */
@@ -223,7 +223,7 @@
 
 
     #if TEMPERATURE_SENSOR_MODEL == ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075
-        #include <PCT2075.h> // https://github.com/BrentIO/PCT2075
+        #include <PCT2075.h>
 
         #ifndef TEMPERATURE_SENSOR_SLEEP_DURATION_MILLIS
             #define TEMPERATURE_SENSOR_SLEEP_DURATION_MILLIS 1000 /* Number of millis to wait between reading the temperatures. Default 1000. */
@@ -244,7 +244,7 @@
 
         #include <Wire.h>
         #include <Adafruit_GFX.h>
-        #include <Adafruit_SSD1306.h> //https://github.com/adafruit/Adafruit_SSD1306
+        #include <Adafruit_SSD1306.h>
 
         #define OLED_DISPLAY_WIDTH 128 /* Width, in number of pixels */
         #define OLED_DISPLAY_HEIGHT 32 /* Height, in numberof pixel s*/
@@ -314,7 +314,7 @@
         #include <WiFi.h>
 
         #if WIFI_MODEL = ENUM_WIFI_MODEL_ESP32
-            #include <ESPAsyncWebServer.h> // https://github.com/me-no-dev/ESPAsyncWebServer
+            #include <ESPAsyncWebServer.h>
             #include <AsyncTCP.h>
         #endif
 
