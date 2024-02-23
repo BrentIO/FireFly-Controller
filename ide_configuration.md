@@ -43,10 +43,12 @@ Verify the installation was successful, and optionally remove any other cores:
 `arduino-cli core list`
 
 Expect:
-```
-ID 				Installed 	Latest 	Name
-esp32:esp32 	2.0.11 		2.0.11 	esp32
-```
+
+
+| ID | Installed | Latest | Name |
+| --- | --- | --- | --- |
+| esp32:esp32 | 2.0.11 | 2.0.11 | esp32 |
+
 
 ## Updating
  Uninstall the current ESP core:
