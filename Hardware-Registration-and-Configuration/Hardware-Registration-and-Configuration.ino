@@ -19,10 +19,10 @@
 #include "common/inputs.h"
 #include "common/temperature.h"
 #include "common/outputs.h"
-#include <ArduinoJson.h> // https://github.com/bblanchon/ArduinoJson
+#include <ArduinoJson.h>
 #include "AsyncJson.h"
 #include <LittleFS.h>
-#include <Regexp.h> // https://github.com/nickgammon/Regexp
+#include <Regexp.h>
 
 
 AsyncWebServer httpServer(80);

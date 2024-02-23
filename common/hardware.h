@@ -326,7 +326,7 @@
 
 
     #ifdef ESP32
-        #include <esp_chip_info.h> // https://github.com/espressif/arduino-esp32
+        #include <esp_chip_info.h>
     #endif
 
 
