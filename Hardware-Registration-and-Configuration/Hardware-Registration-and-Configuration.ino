@@ -21,8 +21,6 @@
 #include "common/outputs.h"
 #include <ArduinoJson.h>
 #include "AsyncJson.h"
-#include <LittleFS.h>
-#include <Regexp.h>
 
 
 AsyncWebServer httpServer(80);

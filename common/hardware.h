@@ -264,6 +264,8 @@
         #include <EthernetUdp.h>
         #include <AsyncWebServer_ESP32_W5500.h>
         #include <AsyncTCP.h>
+        #include <LittleFS.h>
+        #include <Regexp.h>
 
         #define WIFI_MODEL ENUM_WIFI_MODEL_NONE     /* Disable WiFi when Ethernet is present */
         #define _ETHERNET_WEBSERVER_LOGLEVEL_ 0     /* Prevents messages from async web server */
@@ -311,9 +313,11 @@
 
         #include <WiFi.h>
 
-        #if WIFI_MODEL = ENUM_WIFI_MODEL_ESP32
+        #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
             #include <ESPAsyncWebServer.h>
             #include <AsyncTCP.h>
+            #include <LittleFS.h>
+            #include <Regexp.h>
         #endif
 
         #ifndef WIFI_TIMEOUT
