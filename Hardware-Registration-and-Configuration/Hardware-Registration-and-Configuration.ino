@@ -57,19 +57,20 @@ void setup() {
   frontPanel.begin();
   frontPanel.setStatus(managerFrontPanel::status::NORMAL);
 
-  #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
-
-    //Setup a soft AP with the SSID FireFly-######, where the last 6 characters are the last 6 of the Soft AP MAC address
+  #ifdef ESP32
     uint8_t baseMac[6];
-    esp_read_mac(baseMac, ESP_MAC_WIFI_SOFTAP);
-    char apName[18] = {0};
-    sprintf(apName, "FireFly-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
+    esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
+    char hostname[18] = {0};
+    sprintf(hostname, "FireFly-Controller-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
+  #endif
+
+  #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
     #if DEBUG > 1000
       Serial.print(F("[main] (setup) Starting SoftAP..."));
     #endif
 
-    WiFi.softAP(apName);
+    WiFi.softAP(hostname);
 
     #if DEBUG > 1000
       Serial.println(F("Done"));
@@ -80,19 +81,22 @@ void setup() {
 
   #endif
 
-  #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+  #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 && defined(ESP32)
 
     ESP32_W5500_onEvent();
-    uint8_t wifiStaMac[6]; 
-    esp_read_mac(wifiStaMac, esp_mac_type_t::ESP_MAC_WIFI_STA); //Use the base MAC, not the Ethernet MAC.  Library will automatically adjust it, else future calls to get MAC addresses are skewed
+    ESP32_W5500_setCallback_connected(&onEthernetConnect);
+    ESP32_W5500_setCallback_disconnected(&onEthernetDisconnect);
 
     #if DEBUG > 1000
       Serial.print(F("[main] (setup) Setting up Ethernet on W5500..."));
     #endif
 
+    ETH.setHostname(hostname);
+    esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
+
     unsigned long ethernet_start_time = millis();
-    ETH.begin(SPI_MISO_PIN, SPI_MOSI_PIN, SPI_SCK_PIN, ETHERNET_PIN, ETHERNET_PIN_INTERRUPT, SPI_CLOCK_MHZ, ETH_SPI_HOST, wifiStaMac);
-   
+    ETH.begin(SPI_MISO_PIN, SPI_MOSI_PIN, SPI_SCK_PIN, ETHERNET_PIN, ETHERNET_PIN_INTERRUPT, SPI_CLOCK_MHZ, ETH_SPI_HOST, baseMac); //Use the base MAC, not the Ethernet MAC.  Library will automatically adjust it, else future calls to get MAC addresses are skewed
+
     while(!ESP32_W5500_isConnected()){
       Serial.print(".");
       delay(100);
@@ -209,6 +213,21 @@ void loop() {
   frontPanel.loop();
   oled.loop();
 }
+
+
+#if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
+
+  void onEthernetConnect(){
+    oled.logEvent("Ethernet Connected", managerOled::LOG_LEVEL_INFO);
+    oled.clearError();
+  }
+
+  void onEthernetDisconnect(){
+    oled.showError("Ethernet Disconnected");
+    //oled.logEvent(, managerOled::LOG_LEVEL_ERROR);
+  }
+
+#endif
 
 
 /** Handles front panel button press events */
