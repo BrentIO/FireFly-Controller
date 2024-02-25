@@ -1,6 +1,14 @@
 #include "hardware.h"
-#include <WiFi.h>
 #include "Prototype9pt7b.h"
+#include <NTPClient.h>
+
+#if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+    #include <AsyncWebServer_ESP32_W5500.h>
+#endif
+
+#if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+    #include <WiFi.h>
+#endif
 
 #ifndef oled_h
     #define oled_h
@@ -45,6 +53,7 @@
             bool _initialized = false;
             char* _productId;
             char* _uuid;
+            NTPClient* _timeClient = NULL;
 
             #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
                 WiFiClass *_wifiInfo;
@@ -928,7 +937,17 @@
             }
 
 
+            void setTimeClient(NTPClient *timeClient){
+                this->_timeClient = timeClient;
+            }
+
+
             void logEvent(const char* text, logLevel type){
+
+                if(this->_timeClient != NULL){
+                    Serial.print(this->_timeClient->getEpochTime());
+                }
+
      
                 //Copy the elements down one element
                 for(int i = 2; i >= 0; i--){

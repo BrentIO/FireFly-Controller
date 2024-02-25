@@ -21,6 +21,8 @@
 #include "common/outputs.h"
 #include <ArduinoJson.h>
 #include "AsyncJson.h"
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 
 
 AsyncWebServer httpServer(80);
@@ -30,6 +32,13 @@ managerFrontPanel frontPanel;
 managerInputs inputs;
 nsOutputs::managerOutputs outputs;
 managerTemperatureSensors temperatureSensors;
+
+#if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+  WiFiUDP wifiNtpUdp;
+  NTPClient timeClient(wifiNtpUdp);
+#endif
+
+unsigned long bootTime = 0;
 
 
 void setup() {
@@ -94,6 +103,13 @@ void setup() {
       }
     }
 
+    if(ESP32_W5500_isConnected()){
+      timeClient.begin();
+      timeClient.update();
+      oled.setTimeClient(&timeClient);
+      bootTime = timeClient.getEpochTime();     
+    }
+    
     #if DEBUG > 1000
       Serial.println(F("Done"));
       Serial.print(F("[main] (setup) Ethernet IP: "));
@@ -189,6 +205,7 @@ void setup() {
 
 
 void loop() {
+  timeClient.update();
   frontPanel.loop();
   oled.loop();
 }
@@ -717,7 +734,7 @@ void failureHandler_eeprom(){
 void failureHandler_inputs(uint8_t address, managerInputs::failureReason failureReason){
 
   oled.logEvent("Input Failure", managerOled::LOG_LEVEL_ERROR);
- 
+
 }
 
 
