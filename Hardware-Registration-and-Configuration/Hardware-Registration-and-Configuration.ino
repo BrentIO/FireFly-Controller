@@ -120,6 +120,8 @@ void setup() {
       Serial.println(ETH.localIP());
     #endif
 
+    oled.setEthernetInfo(&ETH);
+
   #endif
 
   externalEEPROM.setCallback_failure(&failureHandler_eeprom);
