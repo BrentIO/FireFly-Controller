@@ -84,6 +84,7 @@ Download each library below as a zip file.
 | BrentIO_PCT2075 | 2023.10.3 | https://github.com/BrentIO/PCT2075 |
 | Ethernet | 2.0.2 | https://github.com/arduino-libraries/Ethernet |
 | I2C_EEPROM | 1.7.1 | https://github.com/RobTillaart/I2C_EEPROM |
+| LinkedList | 1.3.3 | https://github.com/ivanseidel/LinkedList |
 | NTPClient | 3.2.1 | https://github.com/arduino-libraries/NTPClient |
 | PCA9685_RT | 0.4.1 | https://github.com/RobTillaart/PCA9685_RT |
 | PubSubClient | 2.8 | https://github.com/knolleary/pubsubclient |
