@@ -77,7 +77,7 @@ Download each library below as a zip file.
 | Adafruit-GFX-Library | 1.11.5 | https://github.com/adafruit/Adafruit-GFX-Library |
 | Adafruit_SSD1306 | 2.5.7 | https://github.com/adafruit/Adafruit_SSD1306 |
 | ArduinoJson | 6.20.1 | https://github.com/bblanchon/ArduinoJson |
-| AsyncWebServer_ESP32_W5500 | 1.6.4 | https://github.com/khoih-prog/AsyncWebServer_ESP32_W5500 |
+| BrentIO_AsyncWebServer_ESP32_W5500 | 2024.2.2 | https://github.com/BrentIO/AsyncWebServer_ESP32_W5500 |
 | BrentIO_AsyncTCP | 2024.2.1 | https://github.com/BrentIO/AsyncTCP |
 | BrentIO_ESP Async WebServer | 2024.2.1 | https://github.com/BrentIO/ESPAsyncWebServer |
 | BrentIO_PCA95x5 | 2023.10.2 | https://github.com/BrentIO/PCA95x5 |
