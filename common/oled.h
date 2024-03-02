@@ -263,7 +263,13 @@
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
 
                     this->hardware.print(F("Ver: "));
-                    this->hardware.println(VERSION);                    
+
+                    #ifdef VERSION
+                        this->hardware.println(VERSION);
+                    #else
+                        this->hardware.println(F("UNKNOWN"));
+                    #endif
+
                 #endif
 
                 this->_drawScrollBar(PAGE_SOFTWARE);
