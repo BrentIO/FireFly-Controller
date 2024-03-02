@@ -103,8 +103,8 @@ void setup() {
   #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 && defined(ESP32)
 
     ESP32_W5500_onEvent();
-    ESP32_W5500_setCallback_connected(&onEthernetConnect);
-    ESP32_W5500_setCallback_disconnected(&onEthernetDisconnect);
+    ESP32_W5500_setCallback_connected(&eventHandler_ethernetConnect);
+    ESP32_W5500_setCallback_disconnected(&eventHandler_ethernetDisconnect);
 
     #if DEBUG > 1000
       Serial.print(F("[main] (setup) Setting up Ethernet on W5500..."));
