@@ -13,6 +13,8 @@ servers:
 tags:
   - name: EEPROM
     description: Operations for managing the external EEPROM data
+  - name: Event and Error Logs
+    description: Operations for the event and error logs
   - name: Network
     description: Operations for network communications
   - name: Partitions
@@ -23,6 +25,7 @@ tags:
     description: Operations for the main control unit
   - name: Version
     description: Operations for the hardware and firmware versions
+
 
 
 paths:
@@ -201,6 +204,44 @@ paths:
               schema:
                 $ref: '#/components/schemas/versionInfo'
 
+  /api/errors:
+    get:
+      tags:
+       - Event and Error Logs
+      summary: Error log information
+      description: Retrieve all of the active errors
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorLog'
+              examples:
+                Events in the log:
+                  $ref: '#/components/examples/errorLog'
+                No log entries:
+                  $ref: '#/components/examples/emptyArray'
+
+  /api/events:
+    get:
+      tags:
+       - Event and Error Logs
+      summary: Event log information
+      description: Retrieve all of the events still remaining in the event log
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/eventLog'
+              examples:
+                Events in the log:
+                  $ref: '#/components/examples/eventLog'
+                No log entries:
+                  $ref: '#/components/examples/emptyArray'
+
       
 components:
 
@@ -370,6 +411,44 @@ components:
           type: integer
           description: Size of the flash chip in bytes
           example: 16777216
+    eventLog:
+      type: array
+      items:
+        $ref: '#/components/schemas/eventLogEntry'
+
+    eventLogEntry:
+      type: object
+      properties:
+        time:
+          type: integer
+          description: Time the event occurred, in seconds.  If NTP time was available when the event was logged, Epoch time will be used.  Otherwise, time since boot will be used
+          example: 1709398094
+        level:
+          type: string
+          description: Severity level for the event
+          enum:
+            - info
+            - notify
+            - error
+            - unknown
+          example: info
+        text:
+          type: string
+          description: Descriptive text about the event
+          example: Event log started
+
+    errorLog:
+      type: array
+      items:
+        $ref: '#/components/schemas/errorLogEntry'
+
+    errorLogEntry:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Descriptive text about the event
+          example: EEPROM Failure
 
     applicationVersion:
       type: string
@@ -388,3 +467,26 @@ components:
           $ref: '#/components/schemas/applicationVersion'
         product_hex:
           $ref: '#/components/schemas/productHex'
+
+  examples:
+    emptyArray:
+      value: []
+
+
+    eventLog:
+      value:
+        - time: 1709398094
+          level: info
+          text: Event log started
+        - time: 1709398150
+          level: notify
+          text: MQTT connected
+        - time: 1709398228
+          level: error
+          text: MQTT disconnected
+
+
+    errorLog:
+      value:
+        - text: MQTT disconnected
+        - text: Ethernet disconnected

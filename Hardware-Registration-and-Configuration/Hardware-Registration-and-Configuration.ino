@@ -19,44 +19,60 @@
 #include "common/inputs.h"
 #include "common/temperature.h"
 #include "common/outputs.h"
+#include "common/eventLog.h"
 #include <ArduinoJson.h>
 #include "AsyncJson.h"
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
-
+unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
 AsyncWebServer httpServer(80);
-managerExternalEEPROM externalEEPROM;
-managerOled oled;
-managerFrontPanel frontPanel;
-managerInputs inputs;
-nsOutputs::managerOutputs outputs;
-managerTemperatureSensors temperatureSensors;
+managerExternalEEPROM externalEEPROM; /* External EEPROM instance */
+managerOled oled; /* OLED instance */
+managerFrontPanel frontPanel; /* Front panel instance */
+managerInputs inputs; /* Inputs collection */
+nsOutputs::managerOutputs outputs; /* Outputs collection */
+managerTemperatureSensors temperatureSensors; /* Temperature sensors */
 
 #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
   WiFiUDP wifiNtpUdp;
-  NTPClient timeClient(wifiNtpUdp);
+  NTPClient timeClient(wifiNtpUdp); /* WiFi NTP client for handling time requests */
 #endif
 
-unsigned long bootTime = 0;
+EventLog eventLog(&timeClient); /* Event Log instance */
 
-
+/**
+ * One-time setup
+*/
 void setup() {
+
+  eventLog.createEvent(F("Event log started"));
 
   #ifdef DEBUG
     Serial.begin(115200);
-    delay(2500);
+    while(!Serial);
   #endif
 
   Wire.begin();
 
+
+  /* Startup the OLED display */
   oled.setCallback_failure(&failureHandler_oled);
   oled.begin();
+  oled.setEventLog(&eventLog);
 
+  //Set event log callbacks to the OLED
+  eventLog.setCallback_notification(eventHandler_eventLogNotificationEvent);
+  eventLog.setCallback_error(&eventHandler_eventLogFailureEvent);
+  eventLog.setCallback_resolveError(&eventHandler_eventLogResolvedFailureEvent);
+
+  /* Startup the front panel */
   frontPanel.setCallback_publisher(&frontPanelButtonPress);
   frontPanel.begin();
   frontPanel.setStatus(managerFrontPanel::status::NORMAL);
 
+
+  /* Determine hostname */
   #ifdef ESP32
     uint8_t baseMac[6];
     esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
@@ -110,7 +126,6 @@ void setup() {
     if(ESP32_W5500_isConnected()){
       timeClient.begin();
       timeClient.update();
-      oled.setTimeClient(&timeClient);
       bootTime = timeClient.getEpochTime();     
     }
     
@@ -157,12 +172,14 @@ void setup() {
   httpServer.on("/api/partitions", http_handlePartitions);
   httpServer.on("/api/peripherals", http_handlePeripherals);
   httpServer.on("/api/version", http_handleVersion);
+  httpServer.on("/api/events", http_handleEventLog);
+  httpServer.on("/api/errors", http_handleErrorLog);
   httpServer.on("^\/api\/network\/([a-z_]+)$", http_handleNetworkInterface);
   httpServer.on("/api/network", http_handleAllNetworkInterfaces);
 
   if (!LittleFS.begin())
   {
-    oled.logEvent("LittleFS Mount Fail", managerOled::LOG_LEVEL_ERROR);
+    eventLog.createEvent(F("LittleFS mount fail"), EventLog::LOG_LEVEL_ERROR);
 
     #ifdef DEBUG
       Serial.println(F("[main] (setup) An Error has occurred while mounting LittleFS"));
@@ -187,6 +204,7 @@ void setup() {
     
     }else{
       httpServer.begin();
+      eventLog.createEvent(F("Web server started"));
 
       #if DEBUG > 1000
         Serial.println(F("[main] (setup) HTTP server ready"));
@@ -197,6 +215,7 @@ void setup() {
   #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
 
       httpServer.begin();
+      eventLog.createEvent(F("Web server started"));
 
       #if DEBUG > 1000
         Serial.println(F("[main] (setup) HTTP server ready"));
@@ -204,7 +223,6 @@ void setup() {
 
   #endif
 
-  oled.logEvent("Ready to Configure", managerOled::LOG_LEVEL_INFO);
   oled.showPage(managerOled::PAGE_EVENT_LOG);
 
 }
@@ -217,19 +235,6 @@ void loop() {
 }
 
 
-#if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
-
-  void onEthernetConnect(){
-    oled.logEvent("Ethernet Connected", managerOled::LOG_LEVEL_INFO);
-    oled.clearError();
-  }
-
-  void onEthernetDisconnect(){
-    oled.showError("Ethernet Disconnected");
-    //oled.logEvent(, managerOled::LOG_LEVEL_ERROR);
-  }
-
-#endif
 
 
 /** Handles front panel button press events */
@@ -240,7 +245,6 @@ void frontPanelButtonPress(){
   #endif
 
   oled.nextPage();
-
 }
 
 
@@ -609,7 +613,7 @@ void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
 
   request->send(204);
 
-  oled.logEvent("Deleted EEPROM", managerOled::LOG_LEVEL_NOTIFICATION);
+  eventLog.createEvent(F("Deleted EEPROM"), EventLog::LOG_LEVEL_NOTIFICATION);
 }
 
 
@@ -695,7 +699,86 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
   request->send(201);
 
-  oled.logEvent("Wrote EEPROM", managerOled::LOG_LEVEL_NOTIFICATION);
+  eventLog.createEvent(F("Wrote EEPROM"), EventLog::LOG_LEVEL_NOTIFICATION);
+}
+
+
+/** 
+ * Handle http requests for the event log
+*/
+void http_handleEventLog(AsyncWebServerRequest *request){
+
+  if(request->method() != HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  if(eventLog.getEvents()->size() == 0){
+    request->send(200, F("application/json"),"[]");
+    return;
+  }
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  StaticJsonDocument<EVENT_LOG_MAXIMUM_ENTRIES * 100> doc;
+
+  for(int i=0; i < eventLog.getEvents()->size(); i++){
+    JsonObject entry = doc.createNestedObject();
+    entry[F("time")] = eventLog.getEvents()->get(i).timestamp;
+
+    switch(eventLog.getEvents()->get(i).level){
+      case EventLog::LOG_LEVEL_ERROR:
+        entry[F("level")] = F("error");
+        break;
+
+      case EventLog::LOG_LEVEL_NOTIFICATION:
+        entry[F("level")] = F("notify");
+        break;
+
+      case EventLog::LOG_LEVEL_INFO:
+        entry[F("level")] = F("info");
+        break;
+
+      default:
+        entry[F("level")] = F("unknown");
+        break;
+    }
+
+    entry[F("text")] = eventLog.getEvents()->get(i).text;
+  }
+ 
+  serializeJson(doc, *response);
+  request->send(response);
+}
+
+
+/** 
+ * Handle http requests for the error log
+*/
+void http_handleErrorLog(AsyncWebServerRequest *request){
+
+  if(request->method() != HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  if(eventLog.getErrors()->size() == 0){
+    request->send(200, F("application/json"),"[]");
+    return;
+  }
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  StaticJsonDocument<128> doc;
+
+  for(int i=0; i < eventLog.getErrors()->size(); i++){
+    JsonObject entry = doc.createNestedObject();
+
+    entry[F("text")] = eventLog.getErrors()->get(i);
+  }
+
+
+ 
+  serializeJson(doc, *response);
+  request->send(response);
 }
 
 
@@ -743,9 +826,7 @@ void failureHandler_oled(managerOled::failureCode failureCode){
  * Callback function which handles failures of the external EERPOM 
 */
 void failureHandler_eeprom(){
-
-  oled.logEvent("EEPROM Failure", managerOled::LOG_LEVEL_ERROR);
-
+  eventLog.createEvent(F("EEPROM Failure"), EventLog::LOG_LEVEL_ERROR);
 }
 
 
@@ -753,9 +834,7 @@ void failureHandler_eeprom(){
  * Callback function which handles failures of any input 
 */
 void failureHandler_inputs(uint8_t address, managerInputs::failureReason failureReason){
-
-  oled.logEvent("Input Failure", managerOled::LOG_LEVEL_ERROR);
-
+  eventLog.createEvent(F("Input Failure"), EventLog::LOG_LEVEL_ERROR);
 }
 
 
@@ -763,9 +842,7 @@ void failureHandler_inputs(uint8_t address, managerInputs::failureReason failure
  * Callback function which handles failures of any output 
 */
 void failureHandler_outputs(uint8_t address, nsOutputs::failureReason reason){
-
-  oled.logEvent("Output Failure", managerOled::LOG_LEVEL_ERROR);
-  
+  eventLog.createEvent(F("Output Failure"), EventLog::LOG_LEVEL_ERROR);
 }
 
 
@@ -773,7 +850,46 @@ void failureHandler_outputs(uint8_t address, nsOutputs::failureReason reason){
  * Callback function which handles failures of any temperature sensor 
 */
 void failureHandler_temperatureSensors(char* location, managerTemperatureSensors::failureReason failureReason){
-
-  oled.logEvent("Temperature Failure", managerOled::LOG_LEVEL_ERROR);
-  
+  eventLog.createEvent(F("Temperature Failure"), EventLog::LOG_LEVEL_ERROR);
 }
+
+
+void eventHandler_eventLogNotificationEvent(){
+  oled.showPage(managerOled::PAGE_EVENT_LOG);
+}
+
+
+void eventHandler_eventLogFailureEvent(){
+  oled.showPage(managerOled::PAGE_ERROR);
+}
+
+
+void eventHandler_eventLogResolvedFailureEvent(){
+
+  if(eventLog.getErrors()->size() == 0){
+    oled.showPage(managerOled::PAGE_EVENT_LOG);
+  }else{
+      oled.showPage(managerOled::PAGE_ERROR);
+  }
+}
+
+
+#if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
+
+  /** 
+   * Handle Ethernet being connected
+  */
+  void eventHandler_ethernetConnect(){
+    eventLog.createEvent(F("Ethernet connected"));
+    eventLog.resolveError(F("Ethernet disconnected"));
+  }
+
+
+  /** 
+   * Handle Ethernet being disconnected
+  */
+  void eventHandler_ethernetDisconnect(){
+    eventLog.createEvent(F("Ethernet disconnected"), EventLog::LOG_LEVEL_ERROR);
+  }
+
+#endif

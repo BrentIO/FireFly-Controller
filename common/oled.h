@@ -1,6 +1,7 @@
 #include "hardware.h"
 #include "Prototype9pt7b.h"
 #include <NTPClient.h>
+#include "eventLog.h"
 
 #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
     #include <AsyncWebServer_ESP32_W5500.h>
@@ -40,12 +41,6 @@
                 PAGE_FACTORY_RESET = 1000
             };
 
-            enum logLevel{
-                LOG_LEVEL_INFO = 0,
-                LOG_LEVEL_NOTIFICATION = 1,
-                LOG_LEVEL_ERROR = 2
-            };
-
         private:
 
             void (*ptrFailureCallback)(failureCode);
@@ -53,7 +48,6 @@
             bool _initialized = false;
             char* _productId;
             char* _uuid;
-            NTPClient* _timeClient = NULL;
 
             #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
                 WiFiClass *_wifiInfo;
@@ -66,9 +60,8 @@
             pages _activePage = PAGE_EVENT_LOG;
             boolean _isSleeping = false;
             boolean _isDimmed = false;
-            char _errorText[OLED_CHARACTERS_PER_LINE * 2];
             int _factory_reset_value = 0;
-            char events[OLED_NUMBER_OF_LINES][OLED_CHARACTERS_PER_LINE + 1];
+            EventLog *_eventLog;
             unsigned long _timeLastAction = 0;
             unsigned long _timeIntroShown = 0;
 
@@ -112,8 +105,9 @@
                     return;
                 }
 
-                if(strlen(this->_errorText)>0){
+                if(this->_eventLog->getErrors()->size() > 0){
                     _extendWake();
+                    this->_showPage_Error();
                     return;
                 }
 
@@ -132,8 +126,9 @@
                     return;
                 }
 
-                if(strlen(this->_errorText)>0){
+                if(this->_eventLog->getErrors()->size() > 0){
                     _extendWake();
+                    this->_showPage_Error();
                     return;
                 }
 
@@ -202,7 +197,7 @@
 
                 byte total = COUNT_PAGES;
 
-                if(strlen(this->_errorText)>0){
+                if(this->_eventLog->getErrors()->size() > 0){
                     total = total +1;
                 }
 
@@ -789,8 +784,15 @@
 
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setCursor(0, 0);
-                    for(unsigned int i=0; i < 4; i++){
-                        this->hardware.println(events[i]);
+
+                    uint8_t iteratorOledStop = 0;                   
+
+                    if(this->_eventLog->getEvents()->size() > OLED_NUMBER_OF_LINES){
+                        iteratorOledStop = this->_eventLog->getEvents()->size()-OLED_NUMBER_OF_LINES;
+                    }
+
+                    for(int8_t i = this->_eventLog->getEvents()->size()-1; i >= iteratorOledStop; i--){
+                        this->hardware.println(this->_eventLog->getEvents()->get(i).text);
                     }
                 #endif
 
@@ -813,8 +815,11 @@
                     this->hardware.setCursor(0, 0);
                     this->hardware.println(F("        ERROR        "));
                     this->hardware.setTextColor(SSD1306_WHITE); //Draw white text
-                    this->hardware.setCursor(0, 9); 
-                    this->hardware.println(this->_errorText);
+                    this->hardware.setCursor(0, 9);
+
+                    for(int i=0; i < this->_eventLog->getErrors()->size(); i++){
+                        this->hardware.println(this->_eventLog->getErrors()->get(i));
+                    }
                 #endif
 
                 this->_drawScrollBar(PAGE_ERROR);
@@ -915,46 +920,8 @@
             }
 
 
-            void setTimeClient(NTPClient *timeClient){
-                this->_timeClient = timeClient;
-            }
-
-
-            void logEvent(const char* text, logLevel type){
-
-                if(this->_timeClient != NULL){
-                    Serial.print(this->_timeClient->getEpochTime());
-                }
-
-     
-                //Copy the elements down one element
-                for(int i = 2; i >= 0; i--){
-
-                    strncpy(this->events[i+1], this->events[i], OLED_CHARACTERS_PER_LINE);
-                    
-                }
-
-                //Write the requested chars to the first element in the array
-                strncpy(this->events[0], text, OLED_CHARACTERS_PER_LINE);
-                
-                //Turn on the display for notification
-                if(type == LOG_LEVEL_NOTIFICATION){
-
-                    this->_wake();
-                    showPage(PAGE_EVENT_LOG);
-                    return;
-
-                }
-
-                //Don't show the event log if we are sleeping because the event isn't important enough
-                if(_isSleeping == true){
-                    return;
-                }
-
-                //Update the page if we are already on the event log page
-                if(_activePage == PAGE_EVENT_LOG){
-                    showPage(PAGE_EVENT_LOG);
-                }
+            void setEventLog(EventLog *eventLog){
+                _eventLog = eventLog;
             }
 
             
@@ -1039,25 +1006,6 @@
                         break;
                 }
               
-            }
-
-            void showError(const char* text){
-
-                //Log the error text
-                logEvent(text, this->LOG_LEVEL_ERROR);
-
-                //Set the errorText
-                strncpy(this->_errorText, text, sizeof(_errorText));
-
-                //Show the error screen
-                showPage(PAGE_ERROR);
-
-            }
-
-
-            void clearError(){
-                strcpy(this->_errorText, "");
-                showPage(PAGE_EVENT_LOG);
             }
 
 
@@ -1192,7 +1140,7 @@
                     case PAGE_SOFTWARE_INTRO:
 
                         //Only show the error page if there is an error, otherwise show the event log
-                        if(strlen(this->_errorText)>0){
+                        if(this->_eventLog->getErrors()->size() > 0){
                             showPage(PAGE_ERROR_INTRO);
                             return;
                         }
