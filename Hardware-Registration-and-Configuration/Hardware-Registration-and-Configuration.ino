@@ -299,7 +299,7 @@ void http_error(AsyncWebServerRequest *request, String message){
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<256> doc;
-  doc["error"] = message;
+  doc[F("error")] = message;
 
   serializeJson(doc, *response);
   response->setCode(500);
@@ -314,7 +314,7 @@ void http_badRequest(AsyncWebServerRequest *request, String message){
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<256> doc;
-  doc["message"] = message;
+  doc[F("message")] = message;
 
   serializeJson(doc, *response);
   response->setCode(400);
@@ -356,11 +356,11 @@ void http_handlePartitions(AsyncWebServerRequest *request){
     const esp_partition_t* p = esp_partition_get(pi);
     JsonObject jsonPartition = array.createNestedObject();
     
-    jsonPartition["type"] = p->type;
-    jsonPartition["subtype"] = p->subtype;
-    jsonPartition["address"] = p->address;
-    jsonPartition["size"] = p->size;
-    jsonPartition["label"] = p->label;
+    jsonPartition[F("type")] = p->type;
+    jsonPartition[F("subtype")] = p->subtype;
+    jsonPartition[F("address")] = p->address;
+    jsonPartition[F("size")] = p->size;
+    jsonPartition[F("label")] = p->label;
 
   } while (pi = (esp_partition_next(pi)));
 
@@ -382,10 +382,10 @@ void http_handleVersion(AsyncWebServerRequest *request){
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<96> doc;
-  doc["application"] = VERSION;
+  doc[F("application")] = VERSION;
   char product_hex[16] = {0};
   sprintf(product_hex, "0x%08X", PRODUCT_HEX);
-  doc["product_hex"] = product_hex;
+  doc[F("product_hex")] = product_hex;
 
   serializeJson(doc, *response);
   request->send(response);
@@ -417,38 +417,38 @@ void http_handlePeripherals(AsyncWebServerRequest *request){
   for(int i=0; i < inputHealth.count; i++){
     JsonObject inputObj = array.createNestedObject();
     sprintf(address, "0x%02X", inputHealth.inputControllers[i].address);
-    inputObj["address"] = address;
-    inputObj["type"] = "INPUT";
-    inputObj["online"] = inputHealth.inputControllers[i].enabled;
+    inputObj[F("address")] = address;
+    inputObj[F("type")] = F("INPUT");
+    inputObj[F("online")] = inputHealth.inputControllers[i].enabled;
   }
 
   for(int i=0; i < outputHealth.count; i++){
     JsonObject outputObj = array.createNestedObject();
     sprintf(address, "0x%02X", outputHealth.outputControllers[i].address);
-    outputObj["address"] = address;
-    outputObj["type"] = "OUTPUT";
-    outputObj["online"] = outputHealth.outputControllers[i].enabled;
+    outputObj[F("address")] = address;
+    outputObj[F("type")] = F("OUTPUT");
+    outputObj[F("online")] = outputHealth.outputControllers[i].enabled;
   }
 
   for(int i=0; i < temperatureHealth.count; i++){
     JsonObject tempObj = array.createNestedObject();
     sprintf(address, "0x%02X", temperatureHealth.sensor[i].address);
-    tempObj["address"] = address;
-    tempObj["type"] = "TEMPERATURE";
-    tempObj["online"] = temperatureHealth.sensor[i].enabled;
+    tempObj[F("address")] = address;
+    tempObj[F("type")] = F("TEMPERATURE");
+    tempObj[F("online")] = temperatureHealth.sensor[i].enabled;
   }
 
   JsonObject oledObj = array.createNestedObject();
   sprintf(address, "0x%02X", oledHealth.address);
-  oledObj["address"] = address;
-  oledObj["type"] = "OLED";
-  oledObj["online"] = oledHealth.enabled;
+  oledObj[F("address")] = address;
+  oledObj[F("type")] = F("OLED");
+  oledObj[F("online")] = oledHealth.enabled;
 
   JsonObject externalEepromObj = array.createNestedObject();
   sprintf(address, "0x%02X", externalEepromHealth.address);
-  externalEepromObj["address"] = address;
-  externalEepromObj["type"] = "EEPROM";
-  externalEepromObj["online"] = externalEepromHealth.enabled;
+  externalEepromObj[F("address")] = address;
+  externalEepromObj[F("type")] = F("EEPROM");
+  externalEepromObj[F("online")] = externalEepromHealth.enabled;
 
   serializeJson(doc, *response);
   request->send(response);
@@ -467,9 +467,9 @@ void http_handleMCU(AsyncWebServerRequest *request){
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<128> doc;
-  doc["chip_model"] = ESP.getChipModel();
-  doc["revision"] = (String)ESP.getChipRevision();
-  doc["flash_chip_size"] = ESP.getFlashChipSize();
+  doc[F("chip_model")] = ESP.getChipModel();
+  doc[F("revision")] = (String)ESP.getChipRevision();
+  doc[F("flash_chip_size")] = ESP.getFlashChipSize();
 
   if(bootTime !=0){
       doc[F("boot_time")] = bootTime;
@@ -525,8 +525,8 @@ void http_handleNetworkInterface(AsyncWebServerRequest *request){
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<96> doc;
 
-  doc["interface"] = request->pathArg(0);
-  doc["mac_address"] = macAddress;
+  doc[F("interface")] = request->pathArg(0);
+  doc[F("mac_address")] = macAddress;
   
   serializeJson(doc, *response);
   request->send(response);
@@ -554,20 +554,20 @@ void http_handleAllNetworkInterfaces(AsyncWebServerRequest *request){
   char macAddress[18] = {0};
 
   getMacAddress(ESP_MAC_BT, macAddress);
-  objBT["mac_address"] = macAddress;
-  objBT["interface"] = F("bluetooth");
+  objBT[F("mac_address")] = macAddress;
+  objBT[F("interface")] = F("bluetooth");
   
   getMacAddress(ESP_MAC_ETH, macAddress);
-  objEth["mac_address"] = macAddress;
-  objEth["interface"] = F("ethernet");
+  objEth[F("mac_address")] = macAddress;
+  objEth[F("interface")] = F("ethernet");
   
   getMacAddress(ESP_MAC_WIFI_STA, macAddress);
-  objWifi["mac_address"] = macAddress;
-  objWifi["interface"] = F("wifi");
+  objWifi[F("mac_address")] = macAddress;
+  objWifi[F("interface")] = F("wifi");
 
   getMacAddress(ESP_MAC_WIFI_SOFTAP, macAddress);
-  objAP["mac_address"] = macAddress;
-  objAP["interface"] = F("wifi_ap");
+  objAP[F("mac_address")] = macAddress;
+  objAP[F("interface")] = F("wifi_ap");
   
   serializeJson(doc, *response);
   request->send(response);
@@ -617,9 +617,9 @@ void http_handleEEPROM_GET(AsyncWebServerRequest *request){
  
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<256> doc;
-  doc["uuid"] = externalEEPROM.data.uuid;
-  doc["product_id"] = externalEEPROM.data.product_id;
-  doc["key"] = externalEEPROM.data.key;
+  doc[F("uuid")] = externalEEPROM.data.uuid;
+  doc[F("product_id")] = externalEEPROM.data.product_id;
+  doc[F("key")] = externalEEPROM.data.key;
 
   serializeJson(doc, *response);
   request->send(response);
@@ -679,14 +679,14 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  if(strlen(doc["uuid"])!=(sizeof(externalEEPROM.data.uuid)-1)){
+  if(strlen(doc[F("uuid")])!=(sizeof(externalEEPROM.data.uuid)-1)){
     http_badRequest(request, F("Field uuid is not exactly 36 characters"));
     return;
   }
 
   managerExternalEEPROM::deviceType postedData;
 
-  strcpy(postedData.uuid, doc["uuid"]);
+  strcpy(postedData.uuid, doc[F("uuid")]);
 
   ms.Target(postedData.uuid);
 
@@ -700,24 +700,24 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  if(strlen(doc["product_id"])>(sizeof(postedData.product_id)-1)){
+  if(strlen(doc[F("product_id")])>(sizeof(postedData.product_id)-1)){
     http_badRequest(request, F("Field product_id is greater than 32 characters, see docs"));
     return;
   }
 
-  strcpy(postedData.product_id, doc["product_id"]);
+  strcpy(postedData.product_id, doc[F("product_id")]);
 
   if(!doc.containsKey("key")){
     http_badRequest(request, F("Field key is required"));
     return;
   }
 
-  if(strlen(doc["key"])!=(sizeof(postedData.key)-1)){
+  if(strlen(doc[F("key")])!=(sizeof(postedData.key)-1)){
     http_badRequest(request, F("Field key is not exactly 64 characters"));
     return;
   }
 
-  strcpy(postedData.key, doc["key"]);
+  strcpy(postedData.key, doc[F("key")]);
 
   ms.Target(postedData.key);
 
