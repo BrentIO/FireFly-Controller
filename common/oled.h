@@ -43,9 +43,9 @@
 
         private:
 
-            void (*ptrFailureCallback)(failureCode);
+            void (*ptrFailureCallback)(failureCode); //Function to call when there is a callback
 
-            bool _initialized = false;
+            bool _initialized = false; //Set when the device has been initialized
             char* _productId;
             char* _uuid;
 

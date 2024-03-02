@@ -80,6 +80,8 @@ void setup() {
     sprintf(hostname, "FireFly-Controller-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
   #endif
 
+
+  /* Start networking */
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
     #if DEBUG > 1000
@@ -90,7 +92,8 @@ void setup() {
 
     #if DEBUG > 1000
       Serial.println(F("Done"));
-      Serial.println("[main] (setup) Started SoftAP " + WiFi.softAPSSID());
+      Serial.print(F("[main] (setup) Started SoftAP "));
+      Serial.println(WiFi.softAPSSID());
     #endif
   
     oled.setWiFiInfo(&WiFi);
@@ -114,11 +117,16 @@ void setup() {
     ETH.begin(SPI_MISO_PIN, SPI_MOSI_PIN, SPI_SCK_PIN, ETHERNET_PIN, ETHERNET_PIN_INTERRUPT, SPI_CLOCK_MHZ, ETH_SPI_HOST, baseMac); //Use the base MAC, not the Ethernet MAC.  Library will automatically adjust it, else future calls to get MAC addresses are skewed
 
     while(!ESP32_W5500_isConnected()){
-      Serial.print(".");
+      #if DEBUG > 1000
+        Serial.print(F("."));
+      #endif
+
       delay(100);
 
       if(millis() > ethernet_start_time + ETHERNET_TIMEOUT){
-        Serial.println(F("Ethernet Timeout"));
+        #if DEBUG > 1000
+          Serial.println(F("Timeout"));
+        #endif
         break;
       }
     }
@@ -139,32 +147,45 @@ void setup() {
 
   #endif
 
+
+  /* Start external EEPROM */
   externalEEPROM.setCallback_failure(&failureHandler_eeprom);
   externalEEPROM.begin();
 
-  oled.setProductID(externalEEPROM.data.product_id);
-  oled.setUUID(externalEEPROM.data.uuid);
+  if(externalEEPROM.enabled == true){
 
-  #if DEBUG > 500
+    oled.setProductID(externalEEPROM.data.product_id);
+    oled.setUUID(externalEEPROM.data.uuid);
 
-   if(externalEEPROM.enabled == true){
-      Serial.println("uuid: " + String(externalEEPROM.data.uuid));
-      Serial.println("product_id: " + String(externalEEPROM.data.product_id));
-      Serial.println("key: " + String(externalEEPROM.data.key));
-    }
+    #if DEBUG > 500
+      Serial.print(F("uuid: "));
+      Serial.println(externalEEPROM.data.uuid);
+      Serial.print(F("product_id: "));
+      Serial.println(externalEEPROM.data.product_id);
+      Serial.print(F("key: "));
+      Serial.println(externalEEPROM.data.key);
+    #endif
+  }
 
-  #endif
 
+  /* Start inputs */
   inputs.setCallback_failure(&failureHandler_inputs);
   inputs.begin();
 
+
+  /* Start outputs */
   outputs.setCallback_failure(&failureHandler_outputs);
   outputs.begin();
 
+
+  /* Start temperature sensors */
   temperatureSensors.setCallback_failure(&failureHandler_temperatureSensors);
   temperatureSensors.begin();
 
-  // *** Sequence below matters -- specific to generic ***
+
+  /* Configure the web server.  
+    IMPORTANT: *** Sequence below matters, they are sorted specific to generic *** 
+  */
   AsyncCallbackJsonWebHandler* eepromTest = new AsyncCallbackJsonWebHandler("/api/eeprom", http_handleEEPROM_POST);
   httpServer.addHandler(eepromTest);
   httpServer.on("/api/eeprom", http_handleEEPROM);
@@ -177,6 +198,8 @@ void setup() {
   httpServer.on("^\/api\/network\/([a-z_]+)$", http_handleNetworkInterface);
   httpServer.on("/api/network", http_handleAllNetworkInterfaces);
 
+
+  /* Start LittleFS */
   if (!LittleFS.begin())
   {
     eventLog.createEvent(F("LittleFS mount fail"), EventLog::LOG_LEVEL_ERROR);
@@ -192,7 +215,7 @@ void setup() {
   httpServer.rewrite("/", "/index.html");
   httpServer.onNotFound(http_notFound);
 
-  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+  DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Origin"), F("*")); //Ignore CORS
 
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
@@ -227,7 +250,9 @@ void setup() {
 
 }
 
-
+/**
+ * Main loop
+*/
 void loop() {
   timeClient.update();
   frontPanel.loop();
@@ -235,9 +260,9 @@ void loop() {
 }
 
 
-
-
-/** Handles front panel button press events */
+/** 
+ * Handles front panel button press events 
+*/
 void frontPanelButtonPress(){
 
   #if DEBUG > 2000
