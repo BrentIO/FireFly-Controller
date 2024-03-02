@@ -11,14 +11,14 @@
 
 
     /* Define hardware enumeration constants */
-    #define ENUM_IO_EXTENDER_MODEL_PCA9995 0 /* PCA9555 */
-    #define ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685 0 /* PCA9685 */
-    #define ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX 0 /* 24LC024 + Family */
-    #define ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 0 /* PCT2075 */
-    #define ENUM_OLED_MODEL_SSD1306_128_32 0 /* SSD1306 128x32px */
-    #define ENUM_ETHERNET_MODEL_W5500 1 /* WIZnet W5500 */
+    #define ENUM_IO_EXTENDER_MODEL_PCA9995 0 /* NXP Semiconductors PCA9555 16-bit I2C-bus and SMBus I/O port with interrupt */
+    #define ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685 0 /* NXP Semiconductors PCA9685 16-channel, 12-bit PWM Fm+ I2C-bus LED controller */
+    #define ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX 0 /* Microchip Technology 24LCXXX Family I2C Serial EEPROM */
+    #define ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 0 /* NXP Semiconductors PCT2075 I2C-bus Fm+, 1 °C accuracy, digital temperature sensor and thermal watchdog */
+    #define ENUM_OLED_MODEL_SSD1306_128_32 0 /* Vishay SSD1306 128x32px Graphic OLED Display */
+    #define ENUM_ETHERNET_MODEL_W5500 1 /* WIZnet W5500 hardwired TCP/IP embedded Ethernet controller */
     #define ENUM_ETHERNET_MODEL_NONE 0 /* For hardware without Ethernet */
-    #define ENUM_WIFI_MODEL_ESP32 1 /* ESP32 Embedded WiFi */
+    #define ENUM_WIFI_MODEL_ESP32 1 /* Espressif Systems ESP32 Embedded WiFi */
     #define ENUM_WIFI_MODEL_NONE 0 /* For hardware without WiFi */
 
 
@@ -35,24 +35,24 @@
         #define IO_EXTENDER_INTERRUPT_PINS {35,25,26,27,4,5,18,19} /* Interrupt pins for the IO extenders, order must match the ADDRESSES_IO_EXTENDER */
         
         /* Output Controller */
-        #define OUTPUT_CONTROLLER_MODEL ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
+        #define OUTPUT_CONTROLLER_MODEL ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685 /* Output controller model */
         #define OUTPUT_CONTROLLER_COUNT 2 /* The number of output controllers */
         #define OUTPUT_CONTROLLER_ADDRESSES {0x40,0x42} /* DEFECT on this model I2C addresses for the output controllers */
         #define OUTPUT_CONTROLLER_PORTS {2,1,3,4,6,5,7,8,10,9,11,12,14,13,15,16} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
 
         /* External EEPROM */
-        #define EEPROM_EXTERNAL_MODEL ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX
+        #define EEPROM_EXTERNAL_MODEL ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX /* External EEPROM controller model */
         #define EEPROM_EXTERNAL_WRITE_PROTECT_PIN 23 /* EEPROM write protect pin.  When low, write protect is disabled */
         #define EEPROM_EXTERNAL_ADDRESS 0x50 /* I2C addresses of the external EEPROM */
 
         /* Temperature Sensor */
-        #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075
+        #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
         #define TEMPERATURE_SENSOR_COUNT 1 /* The number of temperature sensors */
         #define TEMPERATURE_SENSOR_ADDRESSES {0x48} /* I2C addresses of the on-board temperature sensors */
         #define TEMPERATURE_SENSOR_LOCATIONS {"CENTER"}
 
         /* OLED Display and Button */
-        #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32
+        #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32 /* OLED display model */
         #define OLED_BUTTON_PIN 32 /* Button for the front panel */
         #define OLED_LED_PIN 33 /* LED for the front panel button */
         
@@ -78,24 +78,24 @@
         #define IO_EXTENDER_INTERRUPT_PINS {35,25,26,27,4,5,18,19} /* Interrupt pins for the IO extenders, order must match the ADDRESSES_IO_EXTENDER */
         
         /* Output Controller */
-        #define OUTPUT_CONTROLLER_MODEL ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
+        #define OUTPUT_CONTROLLER_MODEL ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685 /* Output controller model */
         #define OUTPUT_CONTROLLER_COUNT 2 /* The number of output controllers */
         #define OUTPUT_CONTROLLER_ADDRESSES {0x40,0x41} /* I2C addresses for the output controllers */
         #define OUTPUT_CONTROLLER_PORTS {2,1,3,4,6,5,7,8,10,9,11,12,14,13,15,16} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
 
         /* External EEPROM */
-        #define EEPROM_EXTERNAL_MODEL ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX
+        #define EEPROM_EXTERNAL_MODEL ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX /* External EEPROM controller model */
         #define EEPROM_EXTERNAL_WRITE_PROTECT_PIN 23 /* EEPROM write protect pin.  When low, write protect is disabled */
         #define EEPROM_EXTERNAL_ADDRESS 0x50 /* I2C addresses of the external EEPROM */
 
         /* Temperature Sensor */
-        #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075
+        #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
         #define TEMPERATURE_SENSOR_COUNT 1 /* The number of temperature sensors */
         #define TEMPERATURE_SENSOR_ADDRESSES {0x48} /* I2C addresses of the on-board temperature sensors */
         #define TEMPERATURE_SENSOR_LOCATIONS {"CENTER"}
 
         /* OLED Display and Button */
-        #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32
+        #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32 /* OLED display model */
         #define OLED_BUTTON_PIN 32 /* Button for the front panel */
         #define OLED_LED_PIN 33 /* LED for the front panel button */
         
@@ -121,39 +121,40 @@
         #define IO_EXTENDER_INTERRUPT_PINS {34,35} /* Interrupt pins for the IO extenders, order must match the ADDRESSES_IO_EXTENDER */
         
         /* Output Controller */
-        #define OUTPUT_CONTROLLER_MODEL ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
+        #define OUTPUT_CONTROLLER_MODEL ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685 /* Output controller model */
         #define OUTPUT_CONTROLLER_COUNT 1 /* The number of output controllers */
         #define OUTPUT_CONTROLLER_COUNT_PINS 6 /* Special for this model */
         #define OUTPUT_CONTROLLER_ADDRESSES {0x40} /* I2C addresses for the output controllers */
         #define OUTPUT_CONTROLLER_PORTS {2,1,3,4,6,5} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
 
         /* External EEPROM */
-        #define EEPROM_EXTERNAL_MODEL ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX
+        #define EEPROM_EXTERNAL_MODEL ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX /* External EEPROM controller model */
         #define EEPROM_EXTERNAL_WRITE_PROTECT_PIN 23 /* EEPROM write protect pin.  When low, write protect is disabled */
         #define EEPROM_EXTERNAL_ADDRESS 0x50 /* I2C addresses of the external EEPROM */
 
         /* Temperature Sensor */
-        #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075
+        #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
         #define TEMPERATURE_SENSOR_COUNT 1 /* The number of temperature sensors */
         #define TEMPERATURE_SENSOR_ADDRESSES {0x48} /* I2C addresses of the on-board temperature sensors */
         #define TEMPERATURE_SENSOR_LOCATIONS {"CENTER"}
 
         /* OLED Display and Button */
-        #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32
+        #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32 /* OLED display model */
         #define OLED_BUTTON_PIN 32 /* Button for the front panel */
         #define OLED_LED_PIN 33 /* LED for the front panel button */
         
         /* Ethernet */
-        #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_W5500
+        #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_W5500 /* Ethernet controller model */
+        //#define WIFI_MODEL ENUM_WIFI_MODEL_ESP32                            //DO NOT COMMIT
         #define ETHERNET_PIN 25 /* Ethernet hardware control flow pin */
-        #define ETHERNET_PIN_RESET 26
-        #define ETHERNET_PIN_INTERRUPT 19
-        #define ETH_SPI_HOST SPI2_HOST /* Tell W5000 async library to use SPI2 */
+        #define ETHERNET_PIN_RESET 26 /* Ethernet hardware reset pin */
+        #define ETHERNET_PIN_INTERRUPT 19 /* Ethernet hardware interrupt pin */
+        #define ETH_SPI_HOST SPI2_HOST /* Set W5000 async library to use SPI2 */
 
         /* SPI Configuration */
-        #define SPI_SCK_PIN 14
-        #define SPI_MISO_PIN 12
-        #define SPI_MOSI_PIN 13
+        #define SPI_SCK_PIN 14 /* SPI clock interface pin */
+        #define SPI_MISO_PIN 12 /* SPI MISO pin */
+        #define SPI_MOSI_PIN 13 /* SPI MOSI pin */
 
     #endif
 
@@ -268,22 +269,22 @@
         #include <Regexp.h>
 
         #define WIFI_MODEL ENUM_WIFI_MODEL_NONE     /* Disable WiFi when Ethernet is present */
-        #define _ETHERNET_WEBSERVER_LOGLEVEL_ 0     /* Prevents messages from async web server */
+        #define _ETHERNET_WEBSERVER_LOGLEVEL_ 0     /* Quiet Async Web Server ESP32 W5500 logs by debug level */
 
         #if DEBUG > 2000
-            #define _ETHERNET_WEBSERVER_LOGLEVEL_ 1
+            #define _ETHERNET_WEBSERVER_LOGLEVEL_ /* Quiet Async Web Server ESP32 W5500 logs by debug level */
         #endif
         
         #if DEBUG > 3000
-            #define _ETHERNET_WEBSERVER_LOGLEVEL_ 2
+            #define _ETHERNET_WEBSERVER_LOGLEVEL_ 2 /* Quiet Async Web Server ESP32 W5500 logs by debug level */
         #endif
 
         #if DEBUG > 4000
-            #define _ETHERNET_WEBSERVER_LOGLEVEL_ 3
+            #define _ETHERNET_WEBSERVER_LOGLEVEL_ 3 /* Quiet Async Web Server ESP32 W5500 logs by debug level */
         #endif
 
         #if DEBUG > 5000
-            #define _ETHERNET_WEBSERVER_LOGLEVEL_ 4
+            #define _ETHERNET_WEBSERVER_LOGLEVEL_ 4 /* Quiet Async Web Server ESP32 W5500 logs by debug level */
         #endif
 
         #ifndef SPI_SCK_PIN
@@ -306,7 +307,7 @@
 
 
     #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
-        #define ETHERNET_TIMEOUT 10000 //Number of milliseconds before Ethernet will time out
+        #define ETHERNET_TIMEOUT 10000 /* Number of milliseconds before Ethernet will time out */
     #endif
 
 
@@ -323,7 +324,7 @@
         #endif
 
         #ifndef WIFI_TIMEOUT
-            #define WIFI_TIMEOUT 10000 //Number of milliseconds before WiFi will time out
+            #define WIFI_TIMEOUT 10000 /* Number of milliseconds before WiFi will time out */
         #endif
 
     #endif
