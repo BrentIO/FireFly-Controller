@@ -145,7 +145,6 @@
         
         /* Ethernet */
         #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_W5500 /* Ethernet controller model */
-        //#define WIFI_MODEL ENUM_WIFI_MODEL_ESP32                            //DO NOT COMMIT
         #define ETHERNET_PIN 25 /* Ethernet hardware control flow pin */
         #define ETHERNET_PIN_RESET 26 /* Ethernet hardware reset pin */
         #define ETHERNET_PIN_INTERRUPT 19 /* Ethernet hardware interrupt pin */
