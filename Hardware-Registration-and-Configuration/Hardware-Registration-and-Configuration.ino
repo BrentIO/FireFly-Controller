@@ -258,7 +258,11 @@ void setup() {
  * Main loop
 */
 void loop() {
-  timeClient.update();
+
+  #if WIFI_MODEL != ENUM_WIFI_MODEL_ESP32 //Ignore when in SoftAP mode
+    timeClient.update();
+  #endif
+
   frontPanel.loop();
   oled.loop();
 }
