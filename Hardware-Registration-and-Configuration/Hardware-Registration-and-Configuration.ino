@@ -132,9 +132,13 @@ void setup() {
     }
 
     if(ESP32_W5500_isConnected()){
+
       timeClient.begin();
       timeClient.update();
-      bootTime = timeClient.getEpochTime();     
+
+      if(timeClient.isTimeSet()){
+        bootTime = timeClient.getEpochTime();
+      }
     }
     
     #if DEBUG > 1000
@@ -466,6 +470,16 @@ void http_handleMCU(AsyncWebServerRequest *request){
   doc["chip_model"] = ESP.getChipModel();
   doc["revision"] = (String)ESP.getChipRevision();
   doc["flash_chip_size"] = ESP.getFlashChipSize();
+
+  if(bootTime !=0){
+      doc[F("boot_time")] = bootTime;
+  }else{
+    #ifdef ESP32
+      doc[F("boot_time")] = esp_timer_get_time()/1000000;
+    #else
+      doc[F("boot_time")] = millis()/1000;
+    #endif
+  }
 
   serializeJson(doc, *response);
   request->send(response);

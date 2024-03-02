@@ -411,6 +411,11 @@ components:
           type: integer
           description: Size of the flash chip in bytes
           example: 16777216
+        boot_time:
+          type: integer
+          description: Epoch time the device booted in seconds.  If unknown, number of seconds elapsed since boot will be returned
+          example: 1709398094
+
     eventLog:
       type: array
       items:

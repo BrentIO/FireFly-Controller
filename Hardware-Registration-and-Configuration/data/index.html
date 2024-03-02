@@ -200,6 +200,7 @@
                         errorHandler_get_inline("chip_model");
                         errorHandler_get_inline("chip_revision");
                         errorHandler_get_inline("flash_chip_size");
+                        errorHandler_get_inline("boot_time");
 
                     } else {
                         prependWarningLabel("mcu-tab");
@@ -208,6 +209,7 @@
                         errorHandler_get_inline("chip_model");
                         errorHandler_get_inline("chip_revision");
                         errorHandler_get_inline("flash_chip_size");
+                        errorHandler_get_inline("boot_time");
                     }
                 }                
             }
@@ -222,6 +224,7 @@
                 document.getElementById("chip_model").innerText = mcu['chip_model'];
                 document.getElementById("chip_revision").innerText = mcu['revision'];
                 document.getElementById("flash_chip_size").innerText = bytesToSize(mcu['flash_chip_size']);
+                document.getElementById("boot_time").innerText = new Date(mcu['boot_time']*1000).toUTCString();
             }
 
 
@@ -957,7 +960,8 @@
             <div class="tab-pane fade show active" id="mcu-tab-pane" role="tabpanel" aria-labelledby="mcu-tab" tabindex="0">                    
                 <strong>Chip Model:</strong> <span id="chip_model"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Loading...</span></div></span><br>
                 <strong>Revision:</strong> <span id="chip_revision"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Loading...</span></div></span><br>
-                <strong>Flash Chip Size:</strong> <span id="flash_chip_size"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Loading...</span></div></span>
+                <strong>Flash Chip Size:</strong> <span id="flash_chip_size"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Loading...</span></div></span><br>
+                <strong>Boot Time:</strong> <span id="boot_time"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Loading...</span></div></span>
             </div>
 
 
