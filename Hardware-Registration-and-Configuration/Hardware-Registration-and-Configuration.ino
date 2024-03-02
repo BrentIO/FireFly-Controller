@@ -77,7 +77,7 @@ void setup() {
     uint8_t baseMac[6];
     esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
     char hostname[18] = {0};
-    sprintf(hostname, "FireFly-Controller-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
+    sprintf(hostname, "FireFly-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
   #endif
 
 
