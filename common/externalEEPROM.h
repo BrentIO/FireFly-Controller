@@ -66,10 +66,6 @@ class managerExternalEEPROM{
                 //Ensure the hardware is online
                 if(this->hardware.isConnected() == false){
 
-                    #ifdef DEBUG
-                        Serial.println(F("[externalEEPROM] (begin) External EEPROM not connected"));
-                    #endif
-
                     this->enabled = false;
 
                     if(this->ptrFailureCallback){
@@ -140,14 +136,15 @@ class managerExternalEEPROM{
             }else{
 
                 #ifdef DEBUG
-                    Serial.println("[externalEEPROM] (write) EEPROM write failed.  writeResponse returned was " + String(writeResponse));
+                    Serial.print("[externalEEPROM] (write) EEPROM write failed.  writeResponse returned was ");
+                    Serial.println(writeResponse);
                 #endif
 
                 //Disable the hardware
                 this->enabled = false;
 
                 if(this->ptrFailureCallback){
-                    this->ptrFailureCallback();
+                    this->ptrFailureCallback(this->_address, i2cResponseToFailureReason(writeResponse));
                 }
 
                 return false;
@@ -198,7 +195,8 @@ class managerExternalEEPROM{
             }
 
             #ifdef DEBUG
-                Serial.println("EEPROM destroy failed.  writeResponse was " + String(writeResponse));
+                Serial.print("EEPROM destroy failed.  writeResponse was ");
+                Serial.println(writeResponse);
             #endif
 
             //Disable the hardware
