@@ -68,8 +68,8 @@ void setup() {
 
   //Set event log callbacks to the OLED
   eventLog.setCallback_notification(eventHandler_eventLogNotificationEvent);
-  eventLog.setCallback_error(&eventHandler_eventLogFailureEvent);
-  eventLog.setCallback_resolveError(&eventHandler_eventLogResolvedFailureEvent);
+  eventLog.setCallback_error(&eventHandler_eventLogErrorEvent);
+  eventLog.setCallback_resolveError(&eventHandler_eventLogResolvedErrorEvent);
 
   /* Startup the front panel */
   frontPanel.setCallback_publisher(&frontPanelButtonPress);
@@ -907,12 +907,12 @@ void eventHandler_eventLogNotificationEvent(){
 }
 
 
-void eventHandler_eventLogFailureEvent(){
+void eventHandler_eventLogErrorEvent(){
   oled.showPage(managerOled::PAGE_ERROR);
 }
 
 
-void eventHandler_eventLogResolvedFailureEvent(){
+void eventHandler_eventLogResolvedErrorEvent(){
 
   if(eventLog.getErrors()->size() == 0){
     oled.showPage(managerOled::PAGE_EVENT_LOG);
