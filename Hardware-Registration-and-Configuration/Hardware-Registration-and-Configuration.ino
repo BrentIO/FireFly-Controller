@@ -904,16 +904,25 @@ void failureHandler_temperatureSensors(char* location, managerTemperatureSensors
 }
 
 
+/** 
+ * Handles events where the event log type was notification
+*/
 void eventHandler_eventLogNotificationEvent(){
   oled.showPage(managerOled::PAGE_EVENT_LOG);
 }
 
 
+/**
+ * Handles events where the event log type was error
+*/
 void eventHandler_eventLogErrorEvent(){
   oled.showPage(managerOled::PAGE_ERROR);
 }
 
 
+/**
+ * Handles events where an error was resolved
+*/
 void eventHandler_eventLogResolvedErrorEvent(){
 
   if(eventLog.getErrors()->size() == 0){
