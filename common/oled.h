@@ -262,6 +262,10 @@
                     this->hardware.setCursor(0, 0);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
 
+                    #ifdef APPLICATION_NAME
+                        this->hardware.println(APPLICATION_NAME);
+                    #endif
+
                     this->hardware.print(F("Ver: "));
 
                     #ifdef VERSION
