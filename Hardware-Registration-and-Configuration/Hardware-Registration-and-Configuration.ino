@@ -596,6 +596,10 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
       http_options(request);
       break;
 
+    case ASYNC_HTTP_POST:
+      http_badRequest(request, F("Request requires a body")); //If there is no body in the request, it lands here
+      break;
+
     case ASYNC_HTTP_GET:
       http_handleEEPROM_GET(request);
       break;
