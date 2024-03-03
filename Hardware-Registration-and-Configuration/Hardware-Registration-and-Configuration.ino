@@ -41,6 +41,10 @@ managerTemperatureSensors temperatureSensors; /* Temperature sensors */
 #endif
 
 EventLog eventLog(&timeClient); /* Event Log instance */
+uint64_t ntpSleepUntil = 0;
+
+void updateNTPTime(bool force = false);
+
 
 /**
  * One-time setup
@@ -135,7 +139,7 @@ void setup() {
     if(ESP32_W5500_isConnected()){
 
       timeClient.begin();
-      timeClient.update();
+      updateNTPTime(true);
 
       if(timeClient.isTimeSet()){
         bootTime = timeClient.getEpochTime();
@@ -261,7 +265,7 @@ void setup() {
 void loop() {
 
   #if WIFI_MODEL != ENUM_WIFI_MODEL_ESP32 //Ignore when in SoftAP mode
-    timeClient.update();
+    updateNTPTime();
   #endif
 
   frontPanel.loop();
@@ -918,12 +922,35 @@ void eventHandler_eventLogResolvedFailureEvent(){
 }
 
 
+/**
+ * Updates the NTP time from the server with special handling
+*/
+void updateNTPTime(bool force){
+
+  if((esp_timer_get_time() > ntpSleepUntil) || force == true){
+      /*
+        Workaround until https://github.com/arduino-libraries/NTPClient/pull/163 is merged
+
+        If time client update is unsuccessful, stop trying for 5 minutes
+      */
+
+      if(timeClient.update()){
+        ntpSleepUntil = 0;
+      }else{
+        ntpSleepUntil = esp_timer_get_time() + 300000000;
+      }
+    }
+
+}
+
+
 #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
 
   /** 
    * Handle Ethernet being connected
   */
   void eventHandler_ethernetConnect(){
+    updateNTPTime(true);
     eventLog.createEvent(F("Ethernet connected"));
     eventLog.resolveError(F("Ethernet disconnected"));
   }
