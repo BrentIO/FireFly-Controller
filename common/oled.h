@@ -22,8 +22,8 @@
         public:
 
             enum failureReason{
-                ADDRESS_OFFLINE = 0, /* Indicates the device was not found on the bus */
-                UNABLE_TO_START = 1 /* Indicates the underlying hardware library returned a fault when attempting to begin communications */
+                ADDRESS_OFFLINE = 2, /* Indicates the device was not found on the bus */
+                UNABLE_TO_START = 12 /* Indicates the underlying hardware library returned a fault when attempting to begin communications */
             };
 
             enum pages{
