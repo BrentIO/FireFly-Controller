@@ -259,6 +259,7 @@ void setup() {
 
 }
 
+
 /**
  * Main loop
 */
@@ -292,6 +293,7 @@ void frontPanelButtonPress(){
 void http_notFound(AsyncWebServerRequest *request) {
     request->send(404);
 }
+
 
 /**
  * Sends a 405 response indicating the method specified is not allowed
