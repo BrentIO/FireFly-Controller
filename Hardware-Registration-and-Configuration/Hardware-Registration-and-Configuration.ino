@@ -851,24 +851,26 @@ void failureHandler_oled(managerOled::failureCode failureCode){
     case managerOled::failureCode::NOT_ON_BUS:
       #ifdef DEBUG
         Serial.println(F("[main] (failureHandler_oled) Error: OLED not found on bus"));
+        eventLog.createEvent(F("OLED not found on bus"), EventLog::LOG_LEVEL_ERROR);
       #endif
       break;
 
     case managerOled::failureCode::UNABLE_TO_START:
       #ifdef DEBUG
         Serial.println(F("[main] (failureHandler_oled) Error: Unable to start OLED"));
+        eventLog.createEvent(F("Unable to start OLED"), EventLog::LOG_LEVEL_ERROR);
       #endif
       break;
 
     default:
       #ifdef DEBUG
         Serial.println(F("[main] (failureHandler_oled) Error: Unknown OLED failure"));
+        eventLog.createEvent(F("Unknown OLED failure"), EventLog::LOG_LEVEL_ERROR);
       #endif
       break;
   }
 
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
-
 }
 
 
