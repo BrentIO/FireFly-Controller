@@ -762,7 +762,7 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
 */
 void http_handleEventLog(AsyncWebServerRequest *request){
 
-  if(request->method() != HTTP_GET){
+  if(request->method() != ASYNC_HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -810,7 +810,7 @@ void http_handleEventLog(AsyncWebServerRequest *request){
 */
 void http_handleErrorLog(AsyncWebServerRequest *request){
 
-  if(request->method() != HTTP_GET){
+  if(request->method() != ASYNC_HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
