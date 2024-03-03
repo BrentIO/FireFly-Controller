@@ -91,7 +91,7 @@ namespace nsOutputs{
 
                 if(reason == failureReason::SUCCESS_NO_ERROR){
                     #if DEBUG
-                        Serial.println(F("[outputs] (failOutputController) Function is being called with no error present."));
+                        Serial.println(F("[outputs] (fail) Function is being called with no error present"));
                     #endif
 
                     return;
