@@ -43,6 +43,10 @@
                     }
                 }
 
+                if(this->_errors.size() >= EVENT_LOG_MAXIMUM_ENTRIES){
+                    this->_errors.shift();
+                }
+
                 this->_errors.add(text);
             }
 
