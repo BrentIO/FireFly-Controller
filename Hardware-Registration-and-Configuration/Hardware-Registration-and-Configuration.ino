@@ -167,11 +167,11 @@ void setup() {
     oled.setUUID(externalEEPROM.data.uuid);
 
     #if DEBUG > 500
-      Serial.print(F("uuid: "));
+      Serial.print(F("[main] (setup) uuid: "));
       Serial.println(externalEEPROM.data.uuid);
-      Serial.print(F("product_id: "));
+      Serial.print(F("[main] (setup) product_id: "));
       Serial.println(externalEEPROM.data.product_id);
-      Serial.print(F("key: "));
+      Serial.print(F("[main] (setup) key: "));
       Serial.println(externalEEPROM.data.key);
     #endif
   }
