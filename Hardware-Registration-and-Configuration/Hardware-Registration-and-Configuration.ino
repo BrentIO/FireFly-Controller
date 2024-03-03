@@ -347,7 +347,7 @@ void http_options(AsyncWebServerRequest *request) {
 */
 void http_handlePartitions(AsyncWebServerRequest *request){
 
-  if(request->method() != HTTP_GET){
+  if(request->method() != ASYNC_HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -386,7 +386,7 @@ void http_handlePartitions(AsyncWebServerRequest *request){
 */
 void http_handleVersion(AsyncWebServerRequest *request){
 
-  if(request->method() != HTTP_GET){
+  if(request->method() != ASYNC_HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -408,7 +408,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
 */
 void http_handlePeripherals(AsyncWebServerRequest *request){
 
-  if(request->method() != HTTP_GET){
+  if(request->method() != ASYNC_HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -471,7 +471,7 @@ void http_handlePeripherals(AsyncWebServerRequest *request){
 */
 void http_handleMCU(AsyncWebServerRequest *request){
 
-  if(request->method() != HTTP_GET){
+  if(request->method() != ASYNC_HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -502,7 +502,7 @@ void http_handleMCU(AsyncWebServerRequest *request){
 */
 void http_handleNetworkInterface(AsyncWebServerRequest *request){
 
-  if(request->method() != HTTP_GET){
+  if(request->method() != ASYNC_HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -549,7 +549,7 @@ void http_handleNetworkInterface(AsyncWebServerRequest *request){
 */
 void http_handleAllNetworkInterfaces(AsyncWebServerRequest *request){
 
-  if(request->method() != HTTP_GET){
+  if(request->method() != ASYNC_HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -592,15 +592,15 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
 
   switch(request->method()){
 
-    case HTTP_OPTIONS:
+    case ASYNC_HTTP_OPTIONS:
       http_options(request);
       break;
 
-    case HTTP_GET:
+    case ASYNC_HTTP_GET:
       http_handleEEPROM_GET(request);
       break;
 
-    case HTTP_DELETE:
+    case ASYNC_HTTP_DELETE:
       http_handleEEPROM_DELETE(request);
       break;
 
