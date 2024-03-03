@@ -21,8 +21,8 @@
 
         public:
 
-            enum failureCode{
-                NOT_ON_BUS = 0, /* Indicates the device was not found on the bus */
+            enum failureReason{
+                ADDRESS_OFFLINE = 0, /* Indicates the device was not found on the bus */
                 UNABLE_TO_START = 1 /* Indicates the underlying hardware library returned a fault when attempting to begin communications */
             };
 
@@ -43,9 +43,10 @@
 
         private:
 
-            void (*ptrFailureCallback)(failureCode); //Function to call when there is a callback
+            void (*ptrFailureCallback)(uint8_t, failureReason); //Function to call when there is a callback
 
             bool _initialized = false; //Set when the device has been initialized
+            uint8_t _address = OLED_ADDRESS;
             char* _productId;
             char* _uuid;
 
@@ -838,7 +839,7 @@
 
         public:
 
-            void setCallback_failure(void (*userDefinedCallback)(failureCode)) {
+            void setCallback_failure(void (*userDefinedCallback)(uint8_t, failureReason)) {
                 this->ptrFailureCallback = userDefinedCallback; }
 
             void setProductID(char* value){
@@ -889,21 +890,21 @@
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     //Attempt to connect to the display on the bus
-                    Wire.beginTransmission(OLED_ADDRESS);
+                    Wire.beginTransmission(this->_address);
 
                     if(Wire.endTransmission()!=0){
 
                         if(this->ptrFailureCallback){
-                            this->ptrFailureCallback(failureCode::NOT_ON_BUS);
+                            this->ptrFailureCallback(this->_address, failureReason::ADDRESS_OFFLINE);
                         }
                         return;
                     }
 
                     this->hardware = Adafruit_SSD1306(128, 32, &Wire, -1);
 
-                    if(this->hardware.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS) == false){
+                    if(this->hardware.begin(SSD1306_SWITCHCAPVCC, this->_address) == false){
                         if(this->ptrFailureCallback){
-                            this->ptrFailureCallback(failureCode::UNABLE_TO_START);
+                            this->ptrFailureCallback(this->_address, failureReason::UNABLE_TO_START);
                         }
                         return;
                     }
@@ -923,7 +924,7 @@
 
                 structHealth returnValue;
 
-                returnValue.address = OLED_ADDRESS;
+                returnValue.address = this->_address;
                 returnValue.enabled = this->_initialized;
 
                 return returnValue;

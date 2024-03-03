@@ -113,7 +113,7 @@ class managerTemperatureSensors{
 
 
         /** Reference to the callback function that will be called when a temperature sensor has failed */
-        void (*ptrFailureCallback)(char*, failureReason);
+        void (*ptrFailureCallback)(uint8_t, failureReason);
 
 
         /** Marks a given temperature sensor as failed and raises a callback event, if configured 
@@ -137,7 +137,7 @@ class managerTemperatureSensors{
             temperatureSensor->enabled = false;
 
             if(this->ptrFailureCallback){
-                this->ptrFailureCallback(temperatureSensor->location, failureReason);
+                this->ptrFailureCallback(temperatureSensor->address, failureReason);
             }
         }
 
@@ -178,7 +178,7 @@ class managerTemperatureSensors{
 
 
         /** Callback function that is called when a temperature sensor failure occurs */
-        void setCallback_failure(void (*userDefinedCallback)(char*, failureReason)) {
+        void setCallback_failure(void (*userDefinedCallback)(uint8_t, failureReason)) {
                     ptrFailureCallback = userDefinedCallback; }
         
 

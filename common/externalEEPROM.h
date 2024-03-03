@@ -10,6 +10,33 @@ class managerExternalEEPROM{
             char key[65]; //Security key
         }data;
 
+        /** Failure reason codes, roughly based on i2c return messages */
+        enum failureReason{
+            /// @brief Request was successful, no error was returned
+            SUCCESS_NO_ERROR = 0, 
+
+            /// @brief Data too long to fit in transmit buffer
+            DATA_TRANSMIT_BUFFER_ERROR = 1,
+
+            /// @brief Received NACK on transmit of address
+            ADDRESS_OFFLINE = 2,
+
+            /// @brief Received NACK on transmit of data
+            TRANSMIT_NOT_ACKNOLWEDGED = 3,
+
+            /// @brief Other error
+            OTHER_ERROR = 4,
+
+            /// @brief Timeout
+            TIMEOUT = 5,
+
+            /// @brief Invalid hardware configuration
+            INVALID_HARDWARE_CONFIGURATION = 10,
+
+            /// @brief Unknown/undocumented failure
+            UNKNOWN_ERROR = 11
+        };
+
 
     private:
 
@@ -18,7 +45,8 @@ class managerExternalEEPROM{
         #endif
 
         bool _initialized = false; /* If the class has been initialized. */
-        void (*ptrFailureCallback)(void); //TODO: Define signature
+        uint8_t _address = EEPROM_EXTERNAL_ADDRESS;
+        void (*ptrFailureCallback)(uint8_t, failureReason);
 
         void read(){
 
@@ -43,10 +71,51 @@ class managerExternalEEPROM{
             }
         };
 
+        /** Enumerates the i2c bus failure codes to a failureReason 
+         * @param i2cError The value returned from the i2c wire endTransmission() function
+         * @returns A failureReason enumeration mapped to the error code passed in
+        */
+        failureReason i2cResponseToFailureReason(uint8_t i2cError){
+
+            switch(i2cError){
+
+                case 0:
+                    return failureReason::SUCCESS_NO_ERROR;
+                    break;
+
+                case 1:
+                    return failureReason::DATA_TRANSMIT_BUFFER_ERROR;
+                    break;
+
+                case 2:
+                    return failureReason::ADDRESS_OFFLINE;
+                    break;
+
+                case 3:
+                    return failureReason::TRANSMIT_NOT_ACKNOLWEDGED;
+                    break;
+
+                case 4:
+                    return failureReason::OTHER_ERROR;
+                    break;
+
+                case 5:
+                    return failureReason::TIMEOUT;
+                    break;
+
+                case 10:
+                    return failureReason::INVALID_HARDWARE_CONFIGURATION;
+                    break;
+
+                default:
+                    return failureReason::UNKNOWN_ERROR;
+            }
+        }
+
 
     public:
 
-        void setCallback_failure(void (*userDefinedCallback)(void)) {
+        void setCallback_failure(void (*userDefinedCallback)(uint8_t, failureReason)) {
             this->ptrFailureCallback = userDefinedCallback;
         }
 
@@ -60,7 +129,7 @@ class managerExternalEEPROM{
             }
 
             #if EEPROM_EXTERNAL_MODEL == ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX
-                this->hardware = I2C_eeprom(EEPROM_EXTERNAL_ADDRESS,EEPROM_EXTERNAL_SIZE);
+                this->hardware = I2C_eeprom(this->_address,EEPROM_EXTERNAL_SIZE);
                 this->hardware.begin();
 
                 //Ensure the hardware is online
@@ -69,7 +138,7 @@ class managerExternalEEPROM{
                     this->enabled = false;
 
                     if(this->ptrFailureCallback){
-                        this->ptrFailureCallback();
+                        this->ptrFailureCallback(this->_address,managerExternalEEPROM::failureReason::ADDRESS_OFFLINE);
                     }
 
                     return;
@@ -93,7 +162,7 @@ class managerExternalEEPROM{
 
             structHealth returnValue;
 
-            returnValue.address = EEPROM_EXTERNAL_ADDRESS;
+            returnValue.address = this->_address;
             returnValue.enabled = this->enabled;
 
             return returnValue;
@@ -203,7 +272,7 @@ class managerExternalEEPROM{
             this->enabled = false;
             
             if(this->ptrFailureCallback){
-                this->ptrFailureCallback();
+                this->ptrFailureCallback(this->_address, i2cResponseToFailureReason(writeResponse));
             }
             
             return false;

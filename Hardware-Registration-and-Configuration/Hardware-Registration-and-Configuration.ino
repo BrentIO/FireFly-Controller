@@ -817,7 +817,7 @@ void http_handleErrorLog(AsyncWebServerRequest *request){
   }
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
-  StaticJsonDocument<128> doc;
+  StaticJsonDocument<EVENT_LOG_MAXIMUM_ENTRIES * 64> doc;
 
   for(int i=0; i < eventLog.getErrors()->size(); i++){
     JsonObject entry = doc.createNestedObject();
@@ -825,8 +825,6 @@ void http_handleErrorLog(AsyncWebServerRequest *request){
     entry[F("text")] = eventLog.getErrors()->get(i);
   }
 
-
- 
   serializeJson(doc, *response);
   request->send(response);
 }
@@ -845,34 +843,17 @@ void getMacAddress(esp_mac_type_t type, char *buff) {
 /** 
  * Callback function which handles failures of the OLED 
 */
-void failureHandler_oled(managerOled::failureCode failureCode){
+void failureHandler_oled(uint8_t address, managerOled::failureReason failureReason){
 
-  switch(failureCode){
-    case managerOled::failureCode::NOT_ON_BUS:
-      #ifdef DEBUG
-        Serial.println(F("[main] (failureHandler_oled) Error: OLED not found on bus"));
-      #endif
+  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
 
-      eventLog.createEvent(F("OLED not found on bus"), EventLog::LOG_LEVEL_ERROR);
-      break;
-
-    case managerOled::failureCode::UNABLE_TO_START:
-      #ifdef DEBUG
-        Serial.println(F("[main] (failureHandler_oled) Error: Unable to start OLED"));
-      #endif
-
-      eventLog.createEvent(F("Unable to start OLED"), EventLog::LOG_LEVEL_ERROR);
-      break;
-
-    default:
-      #ifdef DEBUG
-        Serial.println(F("[main] (failureHandler_oled) Error: Unknown OLED failure"));
-      #endif
-
-      eventLog.createEvent(F("Unknown OLED failure"), EventLog::LOG_LEVEL_ERROR);
-      break;
+  if(failureReason == managerOled::failureReason::ADDRESS_OFFLINE){
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "OLED 0x%02X offline", address);
+  }else{
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "OLED 0x%02X fail %i", address, failureReason);
   }
-
+  
+  eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 }
 
@@ -880,17 +861,37 @@ void failureHandler_oled(managerOled::failureCode failureCode){
 /** 
  * Callback function which handles failures of the external EERPOM 
 */
-void failureHandler_eeprom(){
-  eventLog.createEvent(F("EEPROM Failure"), EventLog::LOG_LEVEL_ERROR);
+void failureHandler_eeprom(uint8_t address, managerExternalEEPROM::failureReason failureReason){
+
+  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+
+  if(failureReason == managerExternalEEPROM::failureReason::ADDRESS_OFFLINE){
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "ExEEPROM 0x%02X offline", address);
+  }else{
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "ExEEPROM 0x%02X fail %i", address, failureReason);
+  }
+  
+  eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
+
 }
+
 
 
 /** 
  * Callback function which handles failures of any input 
 */
 void failureHandler_inputs(uint8_t address, managerInputs::failureReason failureReason){
-  eventLog.createEvent(F("Input Failure"), EventLog::LOG_LEVEL_ERROR);
+	
+	char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+
+  if(failureReason == managerInputs::failureReason::ADDRESS_OFFLINE){
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Inpt ctl 0x%02X offline", address);
+  }else{
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Inpt ctl 0x%02X fail %i", address, failureReason);
+  }
+  
+  eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 }
 
@@ -898,8 +899,17 @@ void failureHandler_inputs(uint8_t address, managerInputs::failureReason failure
 /** 
  * Callback function which handles failures of any output 
 */
-void failureHandler_outputs(uint8_t address, nsOutputs::failureReason reason){
-  eventLog.createEvent(F("Output Failure"), EventLog::LOG_LEVEL_ERROR);
+void failureHandler_outputs(uint8_t address, nsOutputs::failureReason failureReason){
+
+  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+
+  if(failureReason == nsOutputs::failureReason::ADDRESS_OFFLINE){
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out ctl 0x%02X offline", address);
+  }else{
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out ctl 0x%02X fail %i", address, failureReason);
+  }
+  
+  eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 }
 
@@ -907,8 +917,17 @@ void failureHandler_outputs(uint8_t address, nsOutputs::failureReason reason){
 /** 
  * Callback function which handles failures of any temperature sensor 
 */
-void failureHandler_temperatureSensors(char* location, managerTemperatureSensors::failureReason failureReason){
-  eventLog.createEvent(F("Temperature Failure"), EventLog::LOG_LEVEL_ERROR);
+void failureHandler_temperatureSensors(uint8_t address, managerTemperatureSensors::failureReason failureReason){
+
+  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+
+  if(failureReason == managerTemperatureSensors::failureReason::ADDRESS_OFFLINE){
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Temp sen 0x%02X offline", address);
+  }else{
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Temp sen 0x%02X fail %i", address, failureReason);
+  }
+  
+  eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 }
 
