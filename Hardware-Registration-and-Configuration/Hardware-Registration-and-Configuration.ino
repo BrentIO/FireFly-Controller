@@ -877,6 +877,7 @@ void failureHandler_oled(managerOled::failureCode failureCode){
 */
 void failureHandler_eeprom(){
   eventLog.createEvent(F("EEPROM Failure"), EventLog::LOG_LEVEL_ERROR);
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 }
 
 
@@ -885,6 +886,7 @@ void failureHandler_eeprom(){
 */
 void failureHandler_inputs(uint8_t address, managerInputs::failureReason failureReason){
   eventLog.createEvent(F("Input Failure"), EventLog::LOG_LEVEL_ERROR);
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 }
 
 
@@ -893,6 +895,7 @@ void failureHandler_inputs(uint8_t address, managerInputs::failureReason failure
 */
 void failureHandler_outputs(uint8_t address, nsOutputs::failureReason reason){
   eventLog.createEvent(F("Output Failure"), EventLog::LOG_LEVEL_ERROR);
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 }
 
 
@@ -901,6 +904,7 @@ void failureHandler_outputs(uint8_t address, nsOutputs::failureReason reason){
 */
 void failureHandler_temperatureSensors(char* location, managerTemperatureSensors::failureReason failureReason){
   eventLog.createEvent(F("Temperature Failure"), EventLog::LOG_LEVEL_ERROR);
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 }
 
 
@@ -917,6 +921,7 @@ void eventHandler_eventLogNotificationEvent(){
 */
 void eventHandler_eventLogErrorEvent(){
   oled.showPage(managerOled::PAGE_ERROR);
+  frontPanel.setStatus(managerFrontPanel::status::TROUBLE);
 }
 
 
@@ -927,8 +932,10 @@ void eventHandler_eventLogResolvedErrorEvent(){
 
   if(eventLog.getErrors()->size() == 0){
     oled.showPage(managerOled::PAGE_EVENT_LOG);
+    frontPanel.setStatus(managerFrontPanel::status::NORMAL);
   }else{
       oled.showPage(managerOled::PAGE_ERROR);
+      frontPanel.setStatus(managerFrontPanel::status::TROUBLE);
   }
 }
 
