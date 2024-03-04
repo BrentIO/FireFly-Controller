@@ -224,7 +224,7 @@
                 document.getElementById("chip_model").innerText = mcu['chip_model'];
                 document.getElementById("chip_revision").innerText = mcu['revision'];
                 document.getElementById("flash_chip_size").innerText = bytesToSize(mcu['flash_chip_size']);
-                document.getElementById("boot_time").innerText = new Date(mcu['boot_time']*1000).toUTCString();
+                document.getElementById("boot_time").innerText = new Date(mcu['boot_time']*1000).toLocaleString();
             }
 
 
