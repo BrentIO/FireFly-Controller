@@ -17,17 +17,30 @@
             let auxillary_data = null;
             let partitions = [];
             let peripherals = [];
+            let eventLog = [];
+            let errorLog = [];
             let version = null;
 
             const api_timeout = 5000;
 
 
             window.onload = function(){
+
+                document.getElementById("eventLog-tab").addEventListener('shown.bs.tab', function (event) {
+                    getEventLog();
+                });
+
+                document.getElementById("errorLog-tab").addEventListener('shown.bs.tab', function (event) {
+                    getErrorLog();
+                });
+
                 getMCU();
                 getIdentification();
                 getNetwork();
                 getPartitions();
                 getPeripherals();
+                getEventLog();
+                getErrorLog();
             }
 
 
@@ -841,6 +854,168 @@
             }
 
 
+            async function getEventLog(){
+
+                eventLog = [];
+
+                document.getElementById('eventLog-tab-table').classList.add("d-none");
+                document.getElementById('eventLog-tab-wait-spinner').classList.remove("d-none");
+
+                try{
+                    let response = await fetch(root + "/events", { signal: AbortSignal.timeout(api_timeout) });
+
+                    if (response.ok) {
+                        eventLog = await response.json();
+                        drawEventLog()
+                    } else {
+                        throw new Error("Unable to get " + response.url + " (" + response.status + ")");
+                    }
+
+                }
+                catch(err){
+                    if (err.name === "AbortError") {
+                        prependWarningLabel("eventLog-tab");
+                        errorHandler_get_div("eventLog-tab-pane");
+                        createErrorToast("Unable to get Event Log", "Timeout");
+                    } else {
+                        prependWarningLabel("eventLog-tab");
+                        errorHandler_get_div("eventLog-tab-pane");
+                        createErrorToast("Unable to get Event Log", err);
+                    }
+                }
+            }
+
+
+            function drawEventLog(){
+
+                var table = document.getElementById('eventLog-tab-table-data');
+
+                table.innerHTML = "";
+
+                if(eventLog.length == 0){
+                    document.getElementById('eventLog-count').classList.add("d-none");
+                    document.getElementById('eventLog-tab-table').classList.add("d-none");
+                    document.getElementById('eventLog-tab-wait-spinner').classList.add("d-none");
+                    return;
+
+                }else{
+                    document.getElementById('eventLog-count').innerText = eventLog.length;
+                    document.getElementById('eventLog-count').classList.remove("d-none");
+                }
+
+                i = 0;
+
+                eventLog.forEach(function (element){
+
+                    var row = table.insertRow();
+                    var colNumber = row.insertCell();
+                    var colTime = row.insertCell();
+                    var colLevel = row.insertCell();
+                    var colText = row.insertCell();
+
+                    colNumber.innerText = i + 1;
+
+                    colTime.innerText = new Date(element.time*1000).toLocaleString();
+
+                    switch(element.level){
+                        case "info":
+                            colLevel.innerHTML = `<span class="badge bg-primary">Information</span>`;
+                            break;
+
+                        case "notify":
+                            colLevel.innerHTML = `<span class="badge bg-warning">Notification</span>`;
+                            break;
+
+                        case "error":
+                            colLevel.innerHTML = `<span class="badge bg-danger">Error</span>`;
+                            break;
+
+                        default:
+                            colLevel.innerHTML = `<span class="badge bg-dark">` + element.level + `</span>`;
+                            break;
+
+                    }
+
+                    colText.innerText = element.text;
+
+                    i++;
+                });
+
+                document.getElementById('eventLog-tab-table').classList.remove("d-none");
+                document.getElementById('eventLog-tab-wait-spinner').classList.add("d-none");
+            }
+
+
+            async function getErrorLog(){
+
+                errorLog = [];
+
+                document.getElementById('errorLog-tab-table').classList.add("d-none");
+                document.getElementById('errorLog-tab-wait-spinner').classList.remove("d-none");
+
+                try{
+                    let response = await fetch(root + "/errors", { signal: AbortSignal.timeout(api_timeout) });
+
+                    if (response.ok) {
+                        errorLog = await response.json();
+                        drawErrorLog()
+                    } else {
+                        throw new Error("Unable to get " + response.url + " (" + response.status + ")");
+                    }
+
+                }
+                catch(err){
+                    if (err.name === "AbortError") {
+                        prependWarningLabel("errorLog-tab");
+                        errorHandler_get_div("errorLog-tab-pane");
+                        createErrorToast("Unable to get Error Log", "Timeout");
+                    } else {
+                        prependWarningLabel("errorLog-tab");
+                        errorHandler_get_div("errorLog-tab-pane");
+                        createErrorToast("Unable to get Error Log", err);
+                    }
+                }
+            }
+
+
+            function drawErrorLog(){
+
+                var table = document.getElementById('errorLog-tab-table-data');
+
+                table.innerHTML = "";
+
+                document.getElementById('errorLog-count').innerText = errorLog.length;
+
+                if(errorLog.length == 0){
+                    document.getElementById('errorLog-tab-wait-spinner').classList.add("d-none");
+                    document.getElementById('errorLog-tab-table').classList.add("d-none");
+                    document.getElementById('errorLog-no-errors').classList.remove("d-none");
+                    document.getElementById('errorLog-count').classList.add("d-none");
+
+                    return;
+                }
+
+                i = 0;
+
+                errorLog.forEach(function (element){
+
+                    var row = table.insertRow();
+                    var colNumber = row.insertCell();
+                    var colText = row.insertCell();
+
+                    colNumber.innerText = i + 1;
+                    colText.innerText = element.text;
+
+                    i++;
+                });
+
+                document.getElementById('errorLog-count').classList.remove("d-none");
+                document.getElementById('errorLog-no-errors').classList.add("d-none");
+                document.getElementById('errorLog-tab-table').classList.remove("d-none");
+                document.getElementById('errorLog-tab-wait-spinner').classList.add("d-none");
+            }
+
+
             function drawVersion(){
 
                 if(version == {}){
@@ -942,6 +1117,12 @@
                         </li>
                         <li class="nav-item" role="presentation">
                             <a class="nav-link" aria-current="page" href="#" id="peripherals-tab" data-bs-toggle="tab" data-bs-target="#peripherals-tab-pane" type="button" role="tab" aria-controls="peripherals-tab-pane" aria-selected="false">Peripherals</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link text-nowrap" aria-current="page" href="#" id="eventLog-tab" data-bs-toggle="tab" data-bs-target="#eventLog-tab-pane" type="button" role="tab" aria-controls="eventLog-tab-pane" aria-selected="false">Event Log<span class="translate-middle badge rounded-pill text-dark bg-light d-none" style="float:right;margin-left:20px;" id="eventLog-count"></span></a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" aria-current="page" href="#" id="errorLog-tab" data-bs-toggle="tab" data-bs-target="#errorLog-tab-pane" type="button" role="tab" aria-controls="errorLog-tab-pane" aria-selected="false">Error Log<span class="translate-middle badge rounded-pill bg-danger d-none" style="float:right;margin-left:20px;" id="errorLog-count"></span></a>
                         </li>
                         <li class="nav-item" role="presentation">
                             <a class="nav-link" aria-current="page" href="#" id="about-tab" data-bs-toggle="tab" data-bs-target="#about-tab-pane" type="button" role="tab" aria-controls="about-tab-pane" aria-selected="false">About</a>
@@ -1122,6 +1303,58 @@
                         </tr>
                         </thead>
                         <tbody id="peripheral-tab-table-data"></tbody>
+                    </table>
+                </div>
+            </div>
+
+
+            <!-- Event Log -->
+            <div class="tab-pane fade" id="eventLog-tab-pane" role="tabpanel" aria-labelledby="eventLog-tab" tabindex="0">
+
+                <!--Wait Spinner-->
+                <div class="d-flex justify-content-center align-items-center mt-2" id="eventLog-tab-wait-spinner">
+                    <div class="rounded d-flex justify-content-center align-items-center" style="background-color: rgb(0,0,0,0.1); width: 50px; height: 50px;">
+                        <div class="spinner-border spinner-border align-middle text-secondary" role="status" ><span class="visually-hidden">Loading...</span></div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-striped d-none" id="eventLog-tab-table">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Time</th>
+                            <th scope="col">Level</th>
+                            <th scope="col">Text</th>
+                        </tr>
+                        </thead>
+                        <tbody id="eventLog-tab-table-data"></tbody>
+                    </table>
+                </div>
+            </div>
+
+
+            <!-- Error Log -->
+            <div class="tab-pane fade" id="errorLog-tab-pane" role="tabpanel" aria-labelledby="errorLog-tab" tabindex="0">
+
+                <!--Wait Spinner-->
+                <div class="d-flex justify-content-center align-items-center mt-2" id="errorLog-tab-wait-spinner">
+                    <div class="rounded d-flex justify-content-center align-items-center" style="background-color: rgb(0,0,0,0.1); width: 50px; height: 50px;">
+                        <div class="spinner-border spinner-border align-middle text-secondary" role="status" ><span class="visually-hidden">Loading...</span></div>
+                    </div>
+                </div>
+
+                <div id="errorLog-no-errors" class="d-none">No errors to display.</div>
+
+                <div class="table-responsive">
+                    <table class="table table-striped d-none" id="errorLog-tab-table">
+                        <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Text</th>
+                        </tr>
+                        </thead>
+                        <tbody id="errorLog-tab-table-data"></tbody>
                     </table>
                 </div>
             </div>
