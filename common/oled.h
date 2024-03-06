@@ -106,10 +106,12 @@
                     return;
                 }
 
-                if(this->_eventLog->getErrors()->size() > 0){
-                    _extendWake();
-                    this->_showPage_Error();
-                    return;
+                if(this->_eventLog){
+                    if(this->_eventLog->getErrors()->size() > 0){
+                        _extendWake();
+                        this->_showPage_Error();
+                        return;
+                    }
                 }
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
@@ -127,10 +129,12 @@
                     return;
                 }
 
-                if(this->_eventLog->getErrors()->size() > 0){
-                    _extendWake();
-                    this->_showPage_Error();
-                    return;
+                if(this->_eventLog){
+                    if(this->_eventLog->getErrors()->size() > 0){
+                        _extendWake();
+                        this->_showPage_Error();
+                        return;
+                    }
                 }
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
@@ -198,8 +202,10 @@
 
                 byte total = COUNT_PAGES;
 
-                if(this->_eventLog->getErrors()->size() > 0){
-                    total = total +1;
+                if(this->_eventLog){
+                    if(this->_eventLog->getErrors()->size() > 0){
+                        total = total +1;
+                    }
                 }
 
                 int val = map(page, 1, total, 1, OLED_DISPLAY_HEIGHT-OLED_SCROLL_BAR_HEIGHT-1);
@@ -804,14 +810,16 @@
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setCursor(0, 0);
 
-                    uint8_t iteratorOledStop = 0;                   
+                    uint8_t iteratorOledStop = 0;
 
-                    if(this->_eventLog->getEvents()->size() > OLED_NUMBER_OF_LINES){
-                        iteratorOledStop = this->_eventLog->getEvents()->size()-OLED_NUMBER_OF_LINES;
-                    }
+                    if(this->_eventLog){             
+                        if(this->_eventLog->getEvents()->size() > OLED_NUMBER_OF_LINES){
+                            iteratorOledStop = this->_eventLog->getEvents()->size()-OLED_NUMBER_OF_LINES;
+                        }
 
-                    for(int8_t i = this->_eventLog->getEvents()->size()-1; i >= iteratorOledStop; i--){
-                        this->hardware.println(this->_eventLog->getEvents()->get(i).text);
+                        for(int8_t i = this->_eventLog->getEvents()->size()-1; i >= iteratorOledStop; i--){
+                            this->hardware.println(this->_eventLog->getEvents()->get(i).text);
+                        }
                     }
                 #endif
 
@@ -836,8 +844,10 @@
                     this->hardware.setTextColor(SSD1306_WHITE); //Draw white text
                     this->hardware.setCursor(0, 9);
 
-                    for(int i=0; i < this->_eventLog->getErrors()->size(); i++){
-                        this->hardware.println(this->_eventLog->getErrors()->get(i));
+                    if(this->_eventLog){
+                        for(int i=0; i < this->_eventLog->getErrors()->size(); i++){
+                            this->hardware.println(this->_eventLog->getErrors()->get(i));
+                        }
                     }
                 #endif
 
@@ -1159,9 +1169,11 @@
                     case PAGE_SOFTWARE_INTRO:
 
                         //Only show the error page if there is an error, otherwise show the event log
-                        if(this->_eventLog->getErrors()->size() > 0){
-                            showPage(PAGE_ERROR_INTRO);
-                            return;
+                        if(this->_eventLog){
+                            if(this->_eventLog->getErrors()->size() > 0){
+                                showPage(PAGE_ERROR_INTRO);
+                                return;
+                            }
                         }
                         showPage(PAGE_EVENT_LOG_INTRO);
                         break;
