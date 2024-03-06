@@ -218,6 +218,9 @@
                     return;
                 }
 
+                this->_wake();
+                this->_clear();
+
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                     #define LOGO_WIDTH  20
                     #define LOGO_HEIGHT 10
@@ -235,8 +238,6 @@
                         0b11011001,0b00110110,0b00000000,
                     };
 
-                    this->_wake();
-                    this->_clear();
                     this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
                     this->hardware.setCursor(LOGO_WIDTH + 2, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
@@ -288,6 +289,9 @@
                     return;
                 }
 
+                this->_wake();
+                this->_clear();
+
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     #define LOGO_WIDTH  20
@@ -316,8 +320,6 @@
                         0b00000000,0b00000000,0b00000000,
                     };
 
-                    this->_wake();
-                    this->_clear();
                     this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
                     this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
@@ -339,6 +341,9 @@
                     return;
                 }
 
+                this->_wake();
+                this->_clear();
+
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     #define LOGO_WIDTH  20
@@ -367,8 +372,6 @@
                         0b00000000,0b00000000,0b00000000,
                     };
 
-                    this->_wake();
-                    this->_clear();
                     this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
                     this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
@@ -390,6 +393,9 @@
                     return;
                 }
 
+                this->_wake();
+                this->_clear();
+
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     #define LOGO_WIDTH  20
@@ -418,8 +424,6 @@
                         0b00000000,0b00000000,0b00000000,
                     };
 
-                    this->_wake();
-                    this->_clear();
                     this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
                     this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
@@ -441,6 +445,9 @@
                 if(this->_initialized != true){
                     return;
                 }
+
+                this->_wake();
+                this->_clear();
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
@@ -470,8 +477,6 @@
                         0b00000000,0b00000000,0b00000000,
                     };
 
-                    this->_wake();
-                    this->_clear();
                     this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
                     this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
@@ -493,6 +498,9 @@
                 if(this->_initialized != true){
                     return;
                 }
+
+                this->_wake();
+                this->_clear();
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
@@ -522,8 +530,6 @@
                         0b00000000,0b00000000,0b00000000,
                     };
 
-                    this->_wake();
-                    this->_clear();
                     this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
                     this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
@@ -538,16 +544,17 @@
                 this->_commit();   
             }
 
+
             void _showPage_Factory_Reset(){
 
                 if(this->_initialized != true){
                     return;
                 }
 
-                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
+                this->_wake();
+                this->_clear();
 
-                    this->_wake();
-                    this->_clear();
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     if (this->_factory_reset_value % 2 == 0){
                         this->hardware.invertDisplay(false);
@@ -609,6 +616,8 @@
                     return;
                 }
 
+                this->_clear();
+
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     #define LOGO_WIDTH  20
@@ -636,8 +645,6 @@
                         0b00000000,0b00000000,0b00000000,
                         0b00000000,0b00000000,0b00000000,
                     };
-
-                    this->_clear();
 
                     #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
@@ -712,6 +719,8 @@
                     return;
                 }
 
+                this->_clear();
+
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     #define LOGO_WIDTH  20
@@ -740,7 +749,6 @@
                         0b00000000,0b00000000,0b00000000,
                     };
 
-                    this->_clear();
                     this->hardware.drawBitmap(0,5, ethernet_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
                 #endif
 
