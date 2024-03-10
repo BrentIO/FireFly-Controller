@@ -41,7 +41,7 @@
                 PAGE_ERROR_INTRO = 60,
                 PAGE_AUTH_TOKEN = 7,
                 PAGE_AUTH_TOKEN_INTRO = 70,
-                PAGE_FACTORY_RESET = 1000
+                PAGE_FACTORY_RESET = 255
             };
 
         private:
