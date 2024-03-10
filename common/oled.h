@@ -1101,7 +1101,7 @@
                     case PAGE_EVENT_LOG_INTRO:
 
                         if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
-                            showPage(PAGE_EVENT_LOG);
+                            setPage(PAGE_EVENT_LOG);
                         } 
                         break;
 
@@ -1111,12 +1111,12 @@
                         if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
 
                             #if WIFI_MODEL != ENUM_WIFI_NONE
-                                showPage(PAGE_WIFI);
+                                setPage(PAGE_WIFI);
                                 break;
                             #endif
 
                             #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
-                                showPage(PAGE_ETHERNET);
+                                setPage(PAGE_ETHERNET);
                                 break;
                             #endif
 
@@ -1125,21 +1125,24 @@
                     case PAGE_HARDWARE_INTRO:
 
                         if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
-                            showPage(PAGE_HARDWARE);
+                            setPage(PAGE_HARDWARE);
                         } 
                         break;
 
                     case PAGE_SOFTWARE_INTRO:
 
                         if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
-                            showPage(PAGE_SOFTWARE);
+                            setPage(PAGE_SOFTWARE);
                         } 
                         break;
 
                     case PAGE_ERROR_INTRO:
                         
                         if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
-                            showPage(PAGE_ERROR);
+                            setPage(PAGE_ERROR);
+                        } 
+                        break;
+
                     case PAGE_AUTH_TOKEN_INTRO:
                         
                         if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
@@ -1151,7 +1154,7 @@
             }
 
 
-            void showPage(pages requestedPage){
+            void setPage(pages requestedPage){
 
                 if(this->_initialized != true){
                     return;
@@ -1254,7 +1257,7 @@
 
                 //If the display is asleep, simply turn it on
                 if(this->_isSleeping == true){
-                    showPage(PAGE_EVENT_LOG_INTRO);
+                    setPage(PAGE_EVENT_LOG_INTRO);
                     return;
                 }
 
@@ -1263,55 +1266,64 @@
                 //Proceed to the next screen
                 switch(this->_activePage){
 
-                    case PAGE_EVENT_LOG:
-
-                        showPage(PAGE_NETWORK_INTRO);
-
                     case PAGE_EVENT_LOG_INTRO:
-                        showPage(PAGE_NETWORK_INTRO);
+                        setPage(PAGE_NETWORK_INTRO);
+                        break;
+
+                    case PAGE_EVENT_LOG:
+                        setPage(PAGE_NETWORK_INTRO);
+                        break;
+
+                    case PAGE_NETWORK_INTRO:
+                        setPage(PAGE_HARDWARE_INTRO);
                         break;
                     
                     case PAGE_WIFI:
 
                         #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_NONE
-                            showPage(PAGE_HARDWARE_INTRO);
+                            setPage(PAGE_HARDWARE_INTRO);
                             break;
                         #else
-                            showPage(PAGE_ETHERNET);
+                            setPage(PAGE_ETHERNET);
                             break;
                         #endif
 
                     case PAGE_ETHERNET:
-                    case PAGE_NETWORK_INTRO:
-                        showPage(PAGE_HARDWARE_INTRO);
+                        setPage(PAGE_HARDWARE_INTRO);
                         break;
 
-                    case PAGE_HARDWARE:
                     case PAGE_HARDWARE_INTRO:
-                        showPage(PAGE_SOFTWARE_INTRO);
+                    case PAGE_HARDWARE:
+                        setPage(PAGE_SOFTWARE_INTRO);
                         break;
 
-                    case PAGE_SOFTWARE:
                     case PAGE_SOFTWARE_INTRO:
+                    case PAGE_SOFTWARE:
 
                         //Only show the error page if there is an error, otherwise show the event log
                         if(this->_eventLog){
                             if(this->_eventLog->getErrors()->size() > 0){
-                                showPage(PAGE_ERROR_INTRO);
-                                return;
+                                setPage(PAGE_ERROR_INTRO);
+                                break;
                             }
                         }
-                        showPage(PAGE_EVENT_LOG_INTRO);
+
                         if(this->_authorizationToken){
                             setPage(PAGE_AUTH_TOKEN_INTRO);
                             break;
                         }
 
+                        setPage(PAGE_EVENT_LOG_INTRO);
                         break;
 
-                    case PAGE_ERROR:
                     case PAGE_ERROR_INTRO:
-                        showPage(PAGE_EVENT_LOG_INTRO);
+                    case PAGE_ERROR:
+                        if(this->_authorizationToken){
+                            setPage(PAGE_AUTH_TOKEN_INTRO);
+                            break;
+                        }
+
+                        setPage(PAGE_EVENT_LOG_INTRO);
                         break;
 
                     case PAGE_AUTH_TOKEN_INTRO:

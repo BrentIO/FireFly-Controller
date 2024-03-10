@@ -261,7 +261,7 @@ void setup() {
 
   #endif
 
-  oled.showPage(managerOled::PAGE_EVENT_LOG);
+  oled.setPage(managerOled::PAGE_EVENT_LOG);
 
 }
 
@@ -947,7 +947,7 @@ void failureHandler_temperatureSensors(uint8_t address, managerTemperatureSensor
  * Handles events where the event log type was notification
 */
 void eventHandler_eventLogNotificationEvent(){
-  oled.showPage(managerOled::PAGE_EVENT_LOG);
+  oled.setPage(managerOled::PAGE_EVENT_LOG);
 }
 
 
@@ -955,7 +955,7 @@ void eventHandler_eventLogNotificationEvent(){
  * Handles events where the event log type was error
 */
 void eventHandler_eventLogErrorEvent(){
-  oled.showPage(managerOled::PAGE_ERROR);
+  oled.setPage(managerOled::PAGE_ERROR);
   frontPanel.setStatus(managerFrontPanel::status::TROUBLE);
 }
 
@@ -966,10 +966,10 @@ void eventHandler_eventLogErrorEvent(){
 void eventHandler_eventLogResolvedErrorEvent(){
 
   if(eventLog.getErrors()->size() == 0){
-    oled.showPage(managerOled::PAGE_EVENT_LOG);
+    oled.setPage(managerOled::PAGE_EVENT_LOG);
     frontPanel.setStatus(managerFrontPanel::status::NORMAL);
   }else{
-      oled.showPage(managerOled::PAGE_ERROR);
+      oled.setPage(managerOled::PAGE_ERROR);
       frontPanel.setStatus(managerFrontPanel::status::TROUBLE);
   }
 }
