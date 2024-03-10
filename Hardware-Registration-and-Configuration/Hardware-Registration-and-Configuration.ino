@@ -21,6 +21,7 @@
 #include "common/temperature.h"
 #include "common/outputs.h"
 #include "common/eventLog.h"
+#include "common/authorizationToken.h"
 #include <ArduinoJson.h>
 #include "AsyncJson.h"
 #include <NTPClient.h>
@@ -34,6 +35,7 @@ managerFrontPanel frontPanel; /* Front panel instance */
 managerInputs inputs; /* Inputs collection */
 nsOutputs::managerOutputs outputs; /* Outputs collection */
 managerTemperatureSensors temperatureSensors; /* Temperature sensors */
+authorizationToken authToken;
 
 #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
   WiFiUDP wifiNtpUdp;
@@ -60,11 +62,15 @@ void setup() {
 
   Wire.begin();
 
+  /* Start the auth token service */
+  authToken.begin();
 
   /* Startup the OLED display */
   oled.setCallback_failure(&failureHandler_oled);
   oled.begin();
   oled.setEventLog(&eventLog);
+  oled.setAuthorizationToken(&authToken);
+  authToken.setCallback_visualTokenChanged(&eventHandler_visualAuthChanged);
 
   //Set event log callbacks to the OLED
   eventLog.setCallback_notification(eventHandler_eventLogNotificationEvent);
@@ -269,6 +275,7 @@ void loop() {
     updateNTPTime();
   #endif
 
+  authToken.loop(); 
   frontPanel.loop();
   oled.loop();
 }
@@ -987,6 +994,16 @@ void updateNTPTime(bool force){
       }
     }
 
+}
+
+
+/**
+ * Replace the auth token page with the event log so that the OLED will sleep when the visual token changes
+*/
+void eventHandler_visualAuthChanged(){
+  if(oled.getPage() == managerOled::PAGE_AUTH_TOKEN){
+    oled.setPage(managerOled::PAGE_EVENT_LOG);
+  }
 }
 
 

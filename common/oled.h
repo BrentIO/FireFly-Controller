@@ -2,6 +2,7 @@
 #include "Prototype9pt7b.h"
 #include <NTPClient.h>
 #include "eventLog.h"
+#include "authorizationToken.h"
 
 #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
     #include <AsyncWebServer_ESP32_W5500.h>
@@ -14,7 +15,7 @@
 #ifndef oled_h
     #define oled_h
 
-    #define COUNT_PAGES 6 //The total number of pages without an error
+    #define COUNT_PAGES 6 //The total number of pages without an error and without an auth token
     #define INTRO_DWELL_MS 750 //Number of milliseconds that the intro page should be shown when switching screens
 
     class managerOled{
@@ -32,12 +33,14 @@
                 PAGE_WIFI = 2,
                 PAGE_ETHERNET = 3,
                 PAGE_NETWORK_INTRO = 20,
-                PAGE_HARDWARE = 5,
-                PAGE_HARDWARE_INTRO = 50,
-                PAGE_SOFTWARE = 6,
-                PAGE_SOFTWARE_INTRO = 60,
-                PAGE_ERROR = 7,
-                PAGE_ERROR_INTRO = 70,
+                PAGE_HARDWARE = 4,
+                PAGE_HARDWARE_INTRO = 40,
+                PAGE_SOFTWARE = 5,
+                PAGE_SOFTWARE_INTRO = 50,
+                PAGE_ERROR = 6,
+                PAGE_ERROR_INTRO = 60,
+                PAGE_AUTH_TOKEN = 7,
+                PAGE_AUTH_TOKEN_INTRO = 70,
                 PAGE_FACTORY_RESET = 1000
             };
 
@@ -63,6 +66,7 @@
             boolean _isDimmed = false;
             int _factory_reset_value = 0;
             EventLog *_eventLog;
+            authorizationToken *_authorizationToken;
             unsigned long _timeLastAction = 0;
             unsigned long _timeIntroShown = 0;
 
@@ -114,6 +118,11 @@
                     }
                 }
 
+                if(this->_activePage == PAGE_AUTH_TOKEN){
+                    _extendWake();
+                    return;
+                }
+
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                     this->hardware.dim(true);
                 #endif
@@ -135,6 +144,11 @@
                         this->_showPage_Error();
                         return;
                     }
+                }
+
+                if(this->_activePage == PAGE_AUTH_TOKEN){
+                    _extendWake();
+                    return;
                 }
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
@@ -206,6 +220,10 @@
                     if(this->_eventLog->getErrors()->size() > 0){
                         total = total +1;
                     }
+                }
+
+                if(this->_authorizationToken){
+                    total = total +1;
                 }
 
                 int val = map(page, 1, total, 1, OLED_DISPLAY_HEIGHT-OLED_SCROLL_BAR_HEIGHT-1);
@@ -786,13 +804,62 @@
                         this->hardware.println(F("Disconnected"));
 
                     }
+            void _showPage_Auth_Token_Intro(){
 
+                if(this->_initialized != true){
+                    return;
+                }
 
+                if(!this->_authorizationToken){
+                    return;
+                }
+
+                this->_activePage = PAGE_AUTH_TOKEN_INTRO;
+                this->_wake();
+                this->_clear();
+
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
+
+                    #define LOGO_WIDTH  20
+                    #define LOGO_HEIGHT 20
+
+                    const uint8_t PROGMEM logo[] = {
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00010000,0b01000001,0b00000000,
+                        0b00010000,0b01000001,0b00000000,
+                        0b01111101,0b11110111,0b11000000,
+                        0b00111000,0b11100011,0b10000000,
+                        0b00101000,0b10100010,0b10000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b01111111,0b11111111,0b11100000,
+                        0b01111111,0b11111111,0b11100000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                        0b00000000,0b00000000,0b00000000,
+                    };
+
+                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                    this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
+                    this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
+                    this->hardware.setFont(&Prototype9pt7b);
+                    this->hardware.println(F("Auth Token"));
+                    this->hardware.setFont();
+                    this->_drawScrollBar(PAGE_AUTH_TOKEN);
 
                 #endif
 
                 this->_drawScrollBar(PAGE_ETHERNET);
                 this->_commit();
+                _timeIntroShown = millis();
+                this->_commit(); 
 
             }
 
@@ -854,6 +921,39 @@
                 this->_drawScrollBar(PAGE_ERROR);
                 this->_commit();
             }
+
+        
+            void _showPage_Auth_Token(){
+
+                if(this->_initialized != true){
+                    return;
+                }
+
+                if(!this->_authorizationToken){
+                    return;
+                }
+
+                this->_activePage = PAGE_AUTH_TOKEN;
+                this->_clear();
+
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
+
+                    const uint8_t countdown_timer_height = 4;
+                    this->hardware.setCursor(12, 12);
+                    this->hardware.setFont(&Prototype9pt7b);
+                    this->hardware.println(this->_authorizationToken->getVisualToken().code);
+                    this->hardware.setFont();
+
+                    this->hardware.setTextColor(SSD1306_WHITE);
+                    this->hardware.drawRect(0, (OLED_DISPLAY_HEIGHT-countdown_timer_height), (OLED_DISPLAY_WIDTH - OLED_SCROLL_BAR_WIDTH - 1), countdown_timer_height, SSD1306_WHITE); //Bar outline
+                    this->hardware.fillRect(0, (OLED_DISPLAY_HEIGHT-countdown_timer_height), round((float)(OLED_DISPLAY_WIDTH - OLED_SCROLL_BAR_WIDTH - 1) * this->_authorizationToken->getVisualToken().percentRemaining()), countdown_timer_height, SSD1306_WHITE); //Filled amount
+
+                #endif
+                
+                this->_drawScrollBar(PAGE_AUTH_TOKEN);
+                this->_commit();
+            }
+
 
         public:
 
@@ -953,6 +1053,11 @@
                 _eventLog = eventLog;
             }
 
+
+            void setAuthorizationToken(authorizationToken *token){
+                _authorizationToken = token;
+            }
+
             
             void loop(){
 
@@ -988,6 +1093,10 @@
                 }
 
                 switch(this->_activePage){
+
+                    case PAGE_AUTH_TOKEN:
+                        setPage(PAGE_AUTH_TOKEN); //Redraw the page to update the time slider
+                        break;
 
                     case PAGE_EVENT_LOG_INTRO:
 
@@ -1031,6 +1140,10 @@
                         
                         if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
                             showPage(PAGE_ERROR);
+                    case PAGE_AUTH_TOKEN_INTRO:
+                        
+                        if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
+                            setPage(PAGE_AUTH_TOKEN);
                         } 
                         break;
                 }
@@ -1109,6 +1222,12 @@
                     case PAGE_ERROR_INTRO:
                         this->_activePage = PAGE_ERROR_INTRO;
                         _showPage_Error_Intro();
+                    case PAGE_AUTH_TOKEN_INTRO:
+                        _showPage_Auth_Token_Intro();
+                        break;
+
+                    case PAGE_AUTH_TOKEN:
+                        _showPage_Auth_Token();
                         break;
 
                     case PAGE_FACTORY_RESET:
@@ -1117,6 +1236,13 @@
                         break;
                 }
                 
+            }
+
+            /**
+             * Returns the current page being displayed on the OLED
+            */
+            pages getPage(){
+                return _activePage;
             }
 
 
@@ -1176,6 +1302,11 @@
                             }
                         }
                         showPage(PAGE_EVENT_LOG_INTRO);
+                        if(this->_authorizationToken){
+                            setPage(PAGE_AUTH_TOKEN_INTRO);
+                            break;
+                        }
+
                         break;
 
                     case PAGE_ERROR:
@@ -1183,6 +1314,13 @@
                         showPage(PAGE_EVENT_LOG_INTRO);
                         break;
 
+                    case PAGE_AUTH_TOKEN_INTRO:
+                        setPage(PAGE_EVENT_LOG_INTRO);
+                        break;
+
+                    default:
+                        setPage(PAGE_EVENT_LOG_INTRO);
+                        break;
                 }
             }
     };
