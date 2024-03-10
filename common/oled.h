@@ -282,6 +282,7 @@
                     return;
                 }
 
+                this->_activePage = PAGE_SOFTWARE;
                 this->_clear();
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
@@ -312,6 +313,8 @@
                 if(this->_initialized != true){
                     return;
                 }
+
+                this->_activePage = PAGE_EVENT_LOG_INTRO;
 
                 this->_wake();
                 this->_clear();
@@ -365,6 +368,7 @@
                     return;
                 }
 
+                this->_activePage = PAGE_NETWORK_INTRO;
                 this->_wake();
                 this->_clear();
 
@@ -417,6 +421,7 @@
                     return;
                 }
 
+                this->_activePage = PAGE_HARDWARE_INTRO;
                 this->_wake();
                 this->_clear();
 
@@ -470,6 +475,7 @@
                     return;
                 }
 
+                this->_activePage = PAGE_SOFTWARE_INTRO;
                 this->_wake();
                 this->_clear();
 
@@ -523,6 +529,7 @@
                     return;
                 }
 
+                this->_activePage = PAGE_ERROR_INTRO;
                 this->_wake();
                 this->_clear();
 
@@ -575,6 +582,7 @@
                     return;
                 }
 
+                this->_activePage = PAGE_FACTORY_RESET;
                 this->_wake();
                 this->_clear();
 
@@ -607,6 +615,7 @@
                     return;
                 }
 
+                this->_activePage = PAGE_HARDWARE;
                 this->_clear();
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
@@ -640,6 +649,7 @@
                     return;
                 }
 
+                this->_activePage = PAGE_WIFI;
                 this->_clear();
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
@@ -743,6 +753,7 @@
                     return;
                 }
 
+                this->_activePage = PAGE_ETHERNET;
                 this->_clear();
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
@@ -870,6 +881,7 @@
                     return;
                 }
 
+                this->_activePage = PAGE_EVENT_LOG;
                 this->_clear();
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
@@ -902,6 +914,7 @@
                     return;
                 }
 
+                this->_activePage = PAGE_ERROR;
                 this->_clear();
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
@@ -1165,25 +1178,29 @@
                 switch(requestedPage){
 
                     case PAGE_EVENT_LOG:
-                        this->_activePage = PAGE_EVENT_LOG;
                         _showPage_EventLog();
                         break;
 
                     case PAGE_EVENT_LOG_INTRO:
-                        this->_activePage = PAGE_EVENT_LOG_INTRO;
                         _showPage_EventLog_Intro();
                         break;
 
+                    #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE || ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
+
+                        case PAGE_NETWORK_INTRO:
+                            _showPage_Network_Intro();
+                            break;
+
+                    #endif
+
                     #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
                         case PAGE_WIFI:
-                            this->_activePage = PAGE_WIFI;
                             _showPage_WiFi();
                             break;
                     #endif
 
                     #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
                         case PAGE_ETHERNET:
-                            this->_activePage = PAGE_ETHERNET;
                             _showPage_Ethernet();
                             break;
                     #endif
@@ -1191,39 +1208,32 @@
                     #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE || ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
 
                         case PAGE_NETWORK_INTRO:
-                            this->_activePage = PAGE_NETWORK_INTRO;
                             _showPage_Network_Intro();
                             break;
 
                     #endif
 
                     case PAGE_HARDWARE:
-                        this->_activePage = PAGE_HARDWARE;
                         _showPage_Hardware();
                         break;
 
                     case PAGE_HARDWARE_INTRO:
-                        this->_activePage = PAGE_HARDWARE_INTRO;
                         _showPage_Hardware_Intro();
                         break;
 
                     case PAGE_SOFTWARE:
-                        this->_activePage = PAGE_SOFTWARE;
                         _showPage_Software();
                         break;
 
                     case PAGE_SOFTWARE_INTRO:
-                        this->_activePage = PAGE_SOFTWARE_INTRO;
                         _showPage_Software_Intro();
                         break;
 
                     case PAGE_ERROR:
-                        this->_activePage = PAGE_ERROR;
                         _showPage_Error();
                         break;
 
                     case PAGE_ERROR_INTRO:
-                        this->_activePage = PAGE_ERROR_INTRO;
                         _showPage_Error_Intro();
                     case PAGE_AUTH_TOKEN_INTRO:
                         _showPage_Auth_Token_Intro();
@@ -1234,7 +1244,6 @@
                         break;
 
                     case PAGE_FACTORY_RESET:
-                        this->_activePage = PAGE_FACTORY_RESET;
                         _showPage_Factory_Reset();
                         break;
                 }
