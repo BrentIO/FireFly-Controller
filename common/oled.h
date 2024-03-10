@@ -166,7 +166,7 @@
                     return;
                 }
 
-                #if DEBUG > 4000
+                #if DEBUG > 40000
                     Serial.println(F("[oled] (_wake) Woke up"));
                 #endif
 
@@ -200,7 +200,7 @@
                     return;
                 }
 
-                #if DEBUG > 4000
+                #if DEBUG > 40000
                     Serial.println(F("[oled] (_extendWake) Extending Wake"));
                 #endif
 
