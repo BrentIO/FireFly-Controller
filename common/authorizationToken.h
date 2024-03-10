@@ -33,12 +33,15 @@
 
 
         private:
-            const char* letters = "AaBbCcDdEeFfGgHhiJjKkLMmnPpQqRrSsTtUuVvWwXxYyZz123456789!@#$%&+=*";
-            LinkedList<token> _authorizations;
-            token _visualToken;
+            const char* letters = "AaBbCcDdEeFfGgHhiJjKkLMmnPpQqRrSsTtUuVvWwXxYyZz123456789!@#$%&+=*"; //List of letters that can be used when generating visual tokens
+            LinkedList<token> _authorizations; //List of authorizations used for long-time use
+            token _visualToken; //The current visual token
             void (*_ptrVisualTokenChanged)(); //Function to call when the visual token changes
             bool _initialized = false; //Set when the device has been initialized
 
+            /**
+             * Creates a new visual token that can be displayed on the display.  If configured, raises a callback event
+            */
             void _newVisualToken(){
 
                 for(uint8_t i=0; i < sizeof(this->_visualToken.code) - 1; i++){
@@ -60,8 +63,7 @@
 
 
             /**
-             * Adds the current visual token to the list of authorized tokens
-             * 
+             * Adds the current visual token to the list of authorized tokens.  If the visual token already exists, it will not be re-added or updated
             */
             void _createAuthorization(){
 
@@ -70,19 +72,28 @@
 
         public:
 
+            /**
+             * Retrives the current visual token that is displayed
+            */
             token getVisualToken(){
                 return _visualToken;
             }
 
+
             /**
-             * Validates if the given code is authorized
+             * Validates if the given code is authenticated
              * 
-             * If the given code has already been authorized and is not expired, TRUE will be returned.
-             * If the given code is the current visual code, the authorization will be added to the list and TRUE will be returned.
+             * Returns TRUE if:
+             *  - The code is the current visual code
+             *  - The code has already been authenticated for long-term use and is not expired
+             * 
+             * @param code The code being attempted for authentication
+             * @param retain Optional, default false, if the authentication should be retained for long-term use
             */
             boolean authorize(char code){
                 return false;
             }
+
 
             /**
              * Registers a callback function that will be called when the visual token changes
@@ -91,14 +102,20 @@
                 this->_ptrVisualTokenChanged = userDefinedCallback; }
 
 
+            /** 
+             * Starts the authentication token service and creates a new visual token and should be placed in setup()
+            */
             void begin(){
 
                 _newVisualToken();
-
                 this->_initialized = true;
 
             }
 
+
+            /**
+             * Manages the authentication token service and should be placed in loop()
+            */
             void loop(){
                 if(this->_initialized == false){
                     return;

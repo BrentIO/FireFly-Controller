@@ -3,12 +3,15 @@ info:
   title: FireFly Hardware Registration and Configuration
   description: Retrieve and set data required for hardware registration
   version: 2023.6.0
+
+
 servers:
   - url: 'http://{domain}'
     variables:
       domain:
         default: 192.168.4.1
         description: IP address of the device's WiFi interface
+
 
 tags:
   - name: EEPROM
@@ -27,8 +30,8 @@ tags:
     description: Operations for the hardware and firmware versions
 
 
-
 paths:
+
   /api/network:
     get:
       tags:
@@ -473,10 +476,10 @@ components:
         product_hex:
           $ref: '#/components/schemas/productHex'
 
+
   examples:
     emptyArray:
       value: []
-
 
     eventLog:
       value:
@@ -489,7 +492,6 @@ components:
         - time: 1709398228
           level: error
           text: MQTT disconnected
-
 
     errorLog:
       value:
