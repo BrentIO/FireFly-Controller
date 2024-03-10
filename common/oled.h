@@ -208,13 +208,13 @@
             }
 
 
-            void _drawScrollBar(byte page){
+            void _drawScrollBar(pages page){
 
                 if(this->_initialized != true){
                     return;
                 }
 
-                byte total = COUNT_PAGES;
+                uint8_t total = COUNT_PAGES;
 
                 if(this->_eventLog){
                     if(this->_eventLog->getErrors()->size() > 0){
