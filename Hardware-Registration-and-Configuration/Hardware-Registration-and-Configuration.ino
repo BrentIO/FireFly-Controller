@@ -275,9 +275,9 @@ void loop() {
     updateNTPTime();
   #endif
 
+  oled.loop();
   authToken.loop(); 
   frontPanel.loop();
-  oled.loop();
 }
 
 
@@ -307,6 +307,14 @@ void http_notFound(AsyncWebServerRequest *request) {
 */
 void http_methodNotAllowed(AsyncWebServerRequest *request) {
     request->send(405);
+}
+
+
+/**
+ * Sends a 401 response indicating the authentication is missing or invalid
+*/
+void http_unauthorized(AsyncWebServerRequest *request) {
+    request->send(401);
 }
 
 
@@ -604,6 +612,17 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
       break;
 
     case ASYNC_HTTP_POST:
+
+      if(!request->hasHeader("x-visual-token")){
+        http_unauthorized(request);
+        return;
+      }
+
+      if(!authToken.authenticate(request->header("x-visual-token").c_str())){
+        http_unauthorized(request);
+        return;
+      }
+
       http_badRequest(request, F("Request requires a body")); //If there is no body in the request, it lands here
       break;
 
@@ -612,6 +631,17 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
       break;
 
     case ASYNC_HTTP_DELETE:
+
+      if(!request->hasHeader("x-visual-token")){
+        http_unauthorized(request);
+        return;
+      }
+
+      if(!authToken.authenticate(request->header("x-visual-token").c_str())){
+        http_unauthorized(request);
+        return;
+      }
+
       http_handleEEPROM_DELETE(request);
       break;
 
@@ -683,6 +713,16 @@ void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
  * The response is synchronous to the operation completing
 */
 void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
+
+    if(!request->hasHeader("x-visual-token")){
+      http_unauthorized(request);
+      return;
+    }
+
+    if(!authToken.authenticate(request->header("x-visual-token").c_str(), true)){
+      http_unauthorized(request);
+      return;
+    }
 
   if (externalEEPROM.enabled == false){
     http_error(request, F("Cannot connect to external EEPROM"));

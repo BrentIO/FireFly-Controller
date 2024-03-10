@@ -75,6 +75,8 @@ paths:
        - EEPROM
       summary: Store the configuration
       description: Store the EEPROM configuration with the payload specified.  The response is synchronous to the operation completing
+      security:
+        - visualToken: []
       requestBody:
         required: true
         content:
@@ -92,6 +94,8 @@ paths:
                 $ref: '#/components/schemas/bad_request_message'
               example:
                 message: EEPROM already configured
+        401:
+          description: Unauthorized
         500:
           description: Internal Server Error
           content:
@@ -129,9 +133,13 @@ paths:
         - EEPROM
       summary: Format the EEPROM
       description: Format the EEPROM so it has no data.  The response is synchronous to the operation completing
+      security:
+        - visualToken: []
       responses:
         204:
           description: Deleted EEPROM successfully
+        401:
+          description: Unauthorized
         404:
           description: No EEPROM coniguration exists
         500:
@@ -247,6 +255,13 @@ paths:
 
       
 components:
+
+  securitySchemes:
+    visualToken:
+      type: apiKey
+      in: header
+      name: x-visual-token
+      description: A security token visually displayed on the device which changes on a regular basis
 
   schemas:
     error_message:

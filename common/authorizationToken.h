@@ -67,6 +67,24 @@
             */
             void _createAuthorization(){
 
+                for(uint8_t i=0; i < this->_authorizations.size(); i++){
+                    if(strncmp(this->_visualToken.code, this->_authorizations.get(i).code, strlen(this->_visualToken.code)) == 0){
+                        return;
+                    }
+                }
+
+                token newAuthorization;
+
+                strcpy(newAuthorization.code, _visualToken.code);
+                newAuthorization.issuedAt = _visualToken.issuedAt;
+
+                #ifdef ESP32
+                    newAuthorization.expiresAt = esp_timer_get_time() + (AUTH_TOKEN_TTL * 1000);
+                #else
+                    newAuthorization.expiresAt = millis() + AUTH_TOKEN_TTL;
+                #endif
+
+                this->_authorizations.add(newAuthorization);
             }
 
 
@@ -90,7 +108,21 @@
              * @param code The code being attempted for authentication
              * @param retain Optional, default false, if the authentication should be retained for long-term use
             */
-            boolean authorize(char code){
+            boolean authenticate(const char* code, boolean retain = false){
+
+                if(strncmp(this->_visualToken.code, code, strlen(this->_visualToken.code)) == 0){
+                    if(retain){
+                        _createAuthorization();
+                    }
+                    return true;
+                }
+
+                for(uint8_t i=0; i < this->_authorizations.size(); i++){
+                    if(strncmp(code, this->_authorizations.get(i).code, strlen(this->_visualToken.code)) == 0){
+                        return true;
+                    }
+                }
+                
                 return false;
             }
 

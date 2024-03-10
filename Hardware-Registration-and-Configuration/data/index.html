@@ -372,6 +372,12 @@
 
                 try{
 
+                    let visualTokenPrompt = prompt("Enter the visual auth token");
+
+                    if(visualTokenPrompt == null){
+                        return;
+                    }
+
                     var spinner = document.getElementById("identification-delete-button-spinner");
                     var icon = document.getElementById("identification-delete-button-icon");
                     spinner.classList.remove("d-none");
@@ -380,7 +386,13 @@
                     disable_identification_save_button(true);
                     disable_identification_delete_button(true);
 
-                    let response = await fetch(root + "/eeprom", { signal: AbortSignal.timeout(api_timeout), method: 'DELETE'});
+                    let response = await fetch(root + "/eeprom", {
+                        signal: AbortSignal.timeout(api_timeout), 
+                        method: 'DELETE',
+                        headers: {
+                            "x-visual-token":visualTokenPrompt
+                        }
+                    });
                     
                     switch(response.status){
                         case 204:
@@ -388,14 +400,22 @@
                             getIdentification();
                             break;
 
+                        case 401:
+                            createErrorToast("Unable to delete identification", "Authentication failed");
+                            disable_identification_delete_button(false);
+                            break;
+
                         default:
-                            throw new Error("Unable to delete " + response.url + " (" + response.status + ")");
+                            disable_identification_delete_button(false);
+                            throw new Error("Unable to delete identification " + response.url + " (" + response.status + ")");
                     }
                 }
                 catch(err){
                     if (err.name === "AbortError") {
+                        disable_identification_delete_button(false);
                         createErrorToast("Unable to delete identification", "Timeout");
                     } else {
+                        disable_identification_delete_button(false);
                         createErrorToast("Unable to delete identification", err);
                     }
                 }
@@ -408,6 +428,12 @@
             async function postIdentification(){
 
                 try{
+
+                    let visualTokenPrompt = prompt("Enter the visual auth token");
+
+                    if(visualTokenPrompt == null){
+                        return;
+                    }
 
                     var spinner = document.getElementById("identification-save-button-spinner");
                     var icon = document.getElementById("identification-save-button-icon");
@@ -422,14 +448,17 @@
 
 
                     if(document.getElementById("uuid").value.length != 36){
+                        disable_identification_save_button(false);
                         throw new Error("Device UUID must be exactly 36 characters.");
                     }
 
                     if(document.getElementById("product_id").value == ""){
+                        disable_identification_save_button(false);
                         throw new Error("No Product ID was selected.");
                     }
 
                     if(document.getElementById("key").value.length != 64){
+                        disable_identification_save_button(false);
                         throw new Error("Key must be exactly 64 characters.");
                     }
 
@@ -444,7 +473,8 @@
                         { signal: AbortSignal.timeout(api_timeout), 
                           method: 'POST',
                           headers: {
-                            "content-type":"application/json"
+                            "content-type":"application/json",
+                            "x-visual-token":visualTokenPrompt
                           },
                           body:JSON.stringify(payload)
                         });
@@ -455,14 +485,22 @@
                             getIdentification();
                             break;
 
+                        case 401:
+                            createErrorToast("Unable to save identification", "Authentication failed");
+                            disable_identification_save_button(false);
+                            break;
+
                         default:
+                            disable_identification_save_button(false);
                             throw new Error("Unable to save " + response.url + " (" + response.status + ")");
                     }
                 }
                 catch(err){
                     if (err.name === "AbortError") {
+                        disable_identification_save_button(false);
                         createErrorToast("Unable to save identification", "Timeout");
                     } else {
+                        disable_identification_save_button(false);
                         createErrorToast("Unable to save identification", err);
                     }
                 }
