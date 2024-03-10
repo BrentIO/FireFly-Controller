@@ -785,36 +785,44 @@
                     };
 
                     this->hardware.drawBitmap(0,5, ethernet_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+               
+                    #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+                        this->hardware.setCursor(LOGO_WIDTH + 3, 16);
+                        uint8_t ethMac[6];
+                        esp_read_mac(ethMac, ESP_MAC_ETH);
+                        char macAddress[18] = {0};
+                        sprintf(macAddress, "%02X:%02X:%02X:%02X:%02X:%02X", ethMac[0], ethMac[1], ethMac[2], ethMac[3], ethMac[4], ethMac[5]);
+                        this->hardware.println(macAddress);
+
+                        if(ESP32_W5500_isConnected()){
+                            this->hardware.setCursor(LOGO_WIDTH + 3, 0);
+                            this->hardware.println(F("Connected"));
+                            this->hardware.setCursor(LOGO_WIDTH + 3, 8);
+                            this->hardware.println(this->_ethernetInfo->localIP());
+                            this->hardware.setCursor(LOGO_WIDTH + 3, 24);
+                            this->hardware.print(ETH.linkSpeed());
+                            this->hardware.print("MB ");
+                            if(ETH.fullDuplex()){
+                                this->hardware.println("FDX");
+                            }else{
+                                this->hardware.println("HDX");
+                            }
+                            
+
+                        }else{
+                            this->hardware.setCursor(LOGO_WIDTH + 3, 0);
+                            this->hardware.println(F("Disconnected"));
+                        }
+
+                    #endif
+
                 #endif
 
-                #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
-                    this->hardware.setCursor(LOGO_WIDTH + 3, 16);
-                    uint8_t ethMac[6];
-                    esp_read_mac(ethMac, ESP_MAC_ETH);
-                    char macAddress[18] = {0};
-                    sprintf(macAddress, "%02X:%02X:%02X:%02X:%02X:%02X", ethMac[0], ethMac[1], ethMac[2], ethMac[3], ethMac[4], ethMac[5]);
-                    this->hardware.println(macAddress);
+                this->_drawScrollBar(PAGE_ETHERNET);
+                this->_commit();
+            }
 
-                    if(ESP32_W5500_isConnected()){
-                        this->hardware.setCursor(LOGO_WIDTH + 3, 0);
-                        this->hardware.println(F("Connected"));
-                        this->hardware.setCursor(LOGO_WIDTH + 3, 8);
-                        this->hardware.println(this->_ethernetInfo->localIP());
-                        this->hardware.setCursor(LOGO_WIDTH + 3, 24);
-                        this->hardware.print(ETH.linkSpeed());
-                        this->hardware.print("MB ");
-                        if(ETH.fullDuplex()){
-                            this->hardware.println("FDX");
-                        }else{
-                            this->hardware.println("HDX");
-                        }
-                        
 
-                    }else{
-                        this->hardware.setCursor(LOGO_WIDTH + 3, 0);
-                        this->hardware.println(F("Disconnected"));
-
-                    }
             void _showPage_Auth_Token_Intro(){
 
                 if(this->_initialized != true){
@@ -867,8 +875,6 @@
 
                 #endif
 
-                this->_drawScrollBar(PAGE_ETHERNET);
-                this->_commit();
                 _timeIntroShown = millis();
                 this->_commit(); 
 
@@ -1205,36 +1211,30 @@
                             break;
                     #endif
 
-                    #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE || ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
-
-                        case PAGE_NETWORK_INTRO:
-                            _showPage_Network_Intro();
-                            break;
-
-                    #endif
-
-                    case PAGE_HARDWARE:
-                        _showPage_Hardware();
-                        break;
-
                     case PAGE_HARDWARE_INTRO:
                         _showPage_Hardware_Intro();
                         break;
 
-                    case PAGE_SOFTWARE:
-                        _showPage_Software();
+                    case PAGE_HARDWARE:
+                        _showPage_Hardware();
                         break;
 
                     case PAGE_SOFTWARE_INTRO:
                         _showPage_Software_Intro();
                         break;
 
-                    case PAGE_ERROR:
-                        _showPage_Error();
+                    case PAGE_SOFTWARE:
+                        _showPage_Software();
                         break;
 
                     case PAGE_ERROR_INTRO:
                         _showPage_Error_Intro();
+                        break;
+
+                    case PAGE_ERROR:
+                        _showPage_Error();
+                        break;
+
                     case PAGE_AUTH_TOKEN_INTRO:
                         _showPage_Auth_Token_Intro();
                         break;
