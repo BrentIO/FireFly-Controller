@@ -1093,7 +1093,7 @@
                 if(this->_isDimmed == true){
                     if((unsigned long)(millis() - this->_timeLastAction) > SLEEP_AFTER_MS){
 
-                        #if DEBUG > 4000
+                        #if DEBUG > 40000
                             Serial.println(F("[oled] (loop) Sleeping OLED"));
                         #endif
 
@@ -1104,7 +1104,7 @@
 
                 if((unsigned long)(millis() - this->_timeLastAction) > DIM_AFTER_MS){
 
-                    #if DEBUG > 4000
+                    #if DEBUG > 40000
                         Serial.println(F("[oled] (loop) Dimming OLED"));
                     #endif
 
