@@ -390,6 +390,8 @@ void http_handlePartitions(AsyncWebServerRequest *request){
 
   } while (pi = (esp_partition_next(pi)));
 
+  esp_partition_iterator_release(pi);
+
   serializeJson(doc, *response);
   request->send(response);
     
