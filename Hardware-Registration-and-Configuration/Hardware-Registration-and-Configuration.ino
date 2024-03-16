@@ -10,7 +10,7 @@
 */
 
 #define DEBUG 10000
-#define VERSION "2024.03.002"
+#define VERSION "2024.3.4"
 #define APPLICATION_NAME "HW Reg and Config"
 
 #include "common/hardware.h"
