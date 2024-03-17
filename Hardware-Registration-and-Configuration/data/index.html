@@ -34,6 +34,7 @@
                     getErrorLog();
                 });
 
+                setCopyright();
                 getMCU();
                 getIdentification();
                 getNetwork();
@@ -41,6 +42,13 @@
                 getPeripherals();
                 getEventLog();
                 getErrorLog();
+                getUIVersion();
+            }
+
+
+            function setCopyright(){
+                const d = new Date();
+                document.getElementById("copyright").innerText = "2019-" + d.getFullYear();
             }
 
 
@@ -1432,7 +1440,7 @@
                     <strong>UI Version:</strong> <span id="about-ui-version"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Loading...</span></div></span><br>
                     <strong>Hardware Product Hex:</strong> <span id="about-hardware-product-hex"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Loading...</span></div></span><br>
                     <strong>Application Version:</strong> <span id="about-application-version"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Loading...</span></div></span><br>
-                    <small>&copy; 2024, P5 Software, LLC</small>
+                    <small>&copy; <span id="copyright"></span>, P5 Software, LLC</small>
                 <div class="mt-4">
                     <h4>Included Third Party Libraries</h4>
                     This application uses third party libraries.  See <a href="https://github.com/BrentIO/FireFly-Controller" target="_blank">GitHub</a> for the complete list.
