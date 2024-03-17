@@ -225,6 +225,7 @@ void setup() {
   }
   else{
     httpServer.serveStatic("/", LittleFS, "/");
+    httpServer.rewrite("/ui/version", "/version.json");
   }
 
   httpServer.rewrite("/", "/index.html");

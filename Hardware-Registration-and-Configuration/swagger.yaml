@@ -213,7 +213,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/versionInfo'
+                $ref: '#/components/schemas/applicationVersionInfo'
+
+
+  /ui/version:
+    get:
+      tags:
+        - Version
+      summary: User interface version information
+      description: Retrieves the user interface version information
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/uiVersionInfo'
+        404:
+          description: Filesystem failure
 
   /api/errors:
     get:
@@ -475,21 +492,27 @@ components:
 
     applicationVersion:
       type: string
-      description: Version of the firmware
-      example: "2023.01.0001"
+      description: Software version
+      example: "2024.2.1"
 
     productHex:
       type: string
       description: Hardware product hexadecimal, indicating the version of the firmware
       example: "0x8062305"
 
-    versionInfo:
+    applicationVersionInfo:
       type: object
       properties:
         application:
           $ref: '#/components/schemas/applicationVersion'
         product_hex:
           $ref: '#/components/schemas/productHex'
+
+    uiVersionInfo:
+      type: object
+      properties:
+        ui:
+          $ref: '#/components/schemas/applicationVersion'
 
 
   examples:

@@ -8,9 +8,8 @@
         <script src="./bootstrap.min.js"></script>
         <script>
 
-            let ui_version = "2024.03.02";
-
-            let root = "./api";
+            let api_root = "./api";
+            let ui_root = "./ui"
             let mcu = {};
             let network = [];
             let identification = null;
@@ -19,7 +18,8 @@
             let peripherals = [];
             let eventLog = [];
             let errorLog = [];
-            let version = null;
+            let application_version = null;
+            let ui_version = null;
 
             const api_timeout = 5000;
 
@@ -196,7 +196,7 @@
             async function getMCU(){
 
                 try{
-                    let response = await fetch(root + "/mcu", { signal: AbortSignal.timeout(api_timeout) });
+                    let response = await fetch(api_root + "/mcu", { signal: AbortSignal.timeout(api_timeout) });
 
                     if (response.ok) {
                         mcu = await response.json();
@@ -244,7 +244,7 @@
             async function getNetwork(){
 
                 try{
-                    let response = await fetch(root + "/network", { signal: AbortSignal.timeout(api_timeout) })
+                    let response = await fetch(api_root + "/network", { signal: AbortSignal.timeout(api_timeout) })
 
                     if (response.ok) {
                         network = await response.json();
@@ -302,7 +302,7 @@
             async function getIdentification(){
 
                 try{
-                    let response = await fetch(root + "/eeprom", { signal: AbortSignal.timeout(api_timeout) });
+                    let response = await fetch(api_root + "/eeprom", { signal: AbortSignal.timeout(api_timeout) });
                     
                     switch(response.status){
                         case 200:
@@ -386,7 +386,7 @@
                     disable_identification_save_button(true);
                     disable_identification_delete_button(true);
 
-                    let response = await fetch(root + "/eeprom", {
+                    let response = await fetch(api_root + "/eeprom", {
                         signal: AbortSignal.timeout(api_timeout), 
                         method: 'DELETE',
                         headers: {
@@ -469,7 +469,7 @@
                     payload['key'] = document.getElementById("key").value;
                  
                     let response = await fetch(
-                        root + "/eeprom", 
+                        api_root + "/eeprom", 
                         { signal: AbortSignal.timeout(api_timeout), 
                           method: 'POST',
                           headers: {
@@ -597,7 +597,7 @@
 
 
                 for(let i=0; i < document.getElementById("product_id").options.length; i++){
-                    if(document.getElementById("product_id").options[i].getAttribute("product_hex") == version['product_hex']){
+                    if(document.getElementById("product_id").options[i].getAttribute("product_hex") == application_version['product_hex']){
                         document.getElementById("product_id").options[i].selected = true;
                         product_id_toggle();
                         product_id_icon("unlocked");
@@ -609,29 +609,27 @@
             async function getPartitions(){
 
                 try{
-                    let version_response = await fetch(root + "/version", { signal: AbortSignal.timeout(api_timeout) });
+                    let application_version_response = await fetch(api_root + "/version", { signal: AbortSignal.timeout(api_timeout) });
 
-                    if (version_response.ok) {
-                        version = await version_response.json();
-                        drawVersion()
+                    if (application_version_response.ok) {
+                        application_version = await application_version_response.json();
+                        drawApplicationVersion()
                     } else {
-                        throw new Error("Unable to get " + version_response.url + " (" + version_response.status + ")");
+                        throw new Error("Unable to get " + application_version_response.url + " (" + application_version_response.status + ")");
                     }
 
                 }
                 catch(err){
                     if (err.name === "AbortError") {
                         prependWarningLabel("about-tab");
-                        errorHandler_get_inline("about-ui-version");
                         errorHandler_get_inline("about-hardware-product-hex");
                         errorHandler_get_inline("about-application-version");
-                        createErrorToast("Unable to get Version", "Timeout");
+                        createErrorToast("Unable to get application version", "Timeout");
                     } else {
                         prependWarningLabel("about-tab");
-                        errorHandler_get_inline("about-ui-version");
                         errorHandler_get_inline("about-hardware-product-hex");
                         errorHandler_get_inline("about-application-version");
-                        createErrorToast("Unable to get Version", err);
+                        createErrorToast("Unable to get application version", err);
                     }
                 }
 
@@ -656,7 +654,7 @@
 
                 try{
 
-                    let partitions_response = await fetch(root + "/partitions", { signal: AbortSignal.timeout(api_timeout) });
+                    let partitions_response = await fetch(api_root + "/partitions", { signal: AbortSignal.timeout(api_timeout) });
 
                     if (partitions_response.ok) {
                         partitions = await partitions_response.json();
@@ -762,8 +760,8 @@
                     return;
                 }
 
-                if(version === null){
-                    throw new Error("Version information is missing.");
+                if(application_version === null){
+                    throw new Error("Application version information is missing.");
                     return;
                 }
 
@@ -771,7 +769,7 @@
 
                 partition_scheme = auxillary_data.filter(function(element){
 
-                    if(element.product_hex == version['product_hex']){
+                    if(element.product_hex == application_version['product_hex']){
                         return element;
                     }
 
@@ -828,7 +826,7 @@
             async function getPeripherals(){
 
                 try{
-                    let response = await fetch(root + "/peripherals", { signal: AbortSignal.timeout(api_timeout) });
+                    let response = await fetch(api_root + "/peripherals", { signal: AbortSignal.timeout(api_timeout) });
 
                     if (response.ok) {
                         peripherals = await response.json();
@@ -900,7 +898,7 @@
                 document.getElementById('eventLog-tab-wait-spinner').classList.remove("d-none");
 
                 try{
-                    let response = await fetch(root + "/events", { signal: AbortSignal.timeout(api_timeout) });
+                    let response = await fetch(api_root + "/events", { signal: AbortSignal.timeout(api_timeout) });
 
                     if (response.ok) {
                         eventLog = await response.json();
@@ -992,7 +990,7 @@
                 document.getElementById('errorLog-tab-wait-spinner').classList.remove("d-none");
 
                 try{
-                    let response = await fetch(root + "/errors", { signal: AbortSignal.timeout(api_timeout) });
+                    let response = await fetch(api_root + "/errors", { signal: AbortSignal.timeout(api_timeout) });
 
                     if (response.ok) {
                         errorLog = await response.json();
@@ -1054,15 +1052,46 @@
             }
 
 
-            function drawVersion(){
+            function drawApplicationVersion(){
 
-                if(version == {}){
+                if(application_version == {}){
                     return;
                 }
 
-                document.getElementById("about-ui-version").innerText = ui_version;
-                document.getElementById("about-hardware-product-hex").innerText = version['product_hex'];
-                document.getElementById("about-application-version").innerText = version['application'];
+                document.getElementById("about-hardware-product-hex").innerText = application_version['product_hex'];
+                document.getElementById("about-application-version").innerText = application_version['application'];
+            }
+
+
+            async function getUIVersion(){
+
+                try{
+                    let response = await fetch(ui_root + "/version", { signal: AbortSignal.timeout(api_timeout) });
+
+                    if (response.ok) {
+                        ui_version = await response.json();
+                        drawUIVersion();
+                    } else {
+                        throw new Error("Unable to get " + response.url + " (" + response.status + ")");
+                    }
+
+                }
+                catch(err){
+                    if (err.name === "AbortError") {
+                        prependWarningLabel("about-tab");
+                        errorHandler_get_inline("about-ui-version");
+                        createErrorToast("Unable to get UI version", "Timeout");
+                    } else {
+                        prependWarningLabel("about-tab");
+                        errorHandler_get_inline("about-ui-version");
+                        createErrorToast("Unable to get UI version", err);
+                    }
+                }             
+            }
+
+
+            function drawUIVersion(){
+                document.getElementById("about-ui-version").innerText = ui_version['ui'];
             }
 
 
