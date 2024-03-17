@@ -151,10 +151,7 @@ class managerInputs{
             }
 
             if(failureReason == failureReason::SUCCESS_NO_ERROR){
-                #if DEBUG
-                    Serial.println(F("[inputs] (failInputController) Function is being called with no error present."));
-                #endif
-
+                log_e("Function is being called with no error present");
                 return;
             }
 
@@ -394,10 +391,7 @@ class managerInputs{
 
             if(IO_EXTENDER_COUNT != sizeof(pinsInterruptIoExtender)/sizeof(uint8_t)){
 
-                #if DEBUG
-                    Serial.println(F("[inputs] (begin) COUNT_IO_EXTENDER and the length of PINS_INTERRUPT_IO_EXTENDER are mismatched in hardware.h; Disabling inputs."));
-                #endif
-
+                log_e("COUNT_IO_EXTENDER and the length of PINS_INTERRUPT_IO_EXTENDER are mismatched in hardware.h; Disabling inputs");
                 ioExtender invalid;
                 invalid.address = 0;
 
@@ -408,10 +402,7 @@ class managerInputs{
 
             if(IO_EXTENDER_COUNT != sizeof(addressesIoExtender)/sizeof(uint8_t)){
 
-                #if DEBUG
-                    Serial.println(F("[inputs] (begin) COUNT_IO_EXTENDER and the length of ADDRESSES_IO_EXTENDER are mismatched in hardware.h; Disabling inputs."));
-                #endif
-
+                log_e("COUNT_IO_EXTENDER and the length of ADDRESSES_IO_EXTENDER are mismatched in hardware.h; Disabling inputs");
                 ioExtender invalid;
                 invalid.address = 0;
 

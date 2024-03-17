@@ -9,7 +9,6 @@
  * (C) 2024, P5 Software, LLC
 */
 
-#define DEBUG 10000
 #define VERSION "2024.3.4"
 #define APPLICATION_NAME "HW Reg and Config"
 
@@ -55,15 +54,13 @@ void setup() {
 
   eventLog.createEvent(F("Event log started"));
 
-  #ifdef DEBUG
-    Serial.begin(115200);
-    while(!Serial);
-  #endif
 
   Wire.begin();
 
+
   /* Start the auth token service */
   authToken.begin();
+
 
   /* Startup the OLED display */
   oled.setCallback_failure(&failureHandler_oled);
@@ -72,10 +69,12 @@ void setup() {
   oled.setAuthorizationToken(&authToken);
   authToken.setCallback_visualTokenChanged(&eventHandler_visualAuthChanged);
 
-  //Set event log callbacks to the OLED
+
+  /* Set event log callbacks to the OLED */
   eventLog.setCallback_notification(eventHandler_eventLogNotificationEvent);
   eventLog.setCallback_error(&eventHandler_eventLogErrorEvent);
   eventLog.setCallback_resolveError(&eventHandler_eventLogResolvedErrorEvent);
+
 
   /* Startup the front panel */
   frontPanel.setCallback_publisher(&frontPanelButtonPress);
@@ -95,17 +94,8 @@ void setup() {
   /* Start networking */
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
-    #if DEBUG > 1000
-      Serial.print(F("[main] (setup) Starting SoftAP..."));
-    #endif
-
     WiFi.softAP(hostname);
-
-    #if DEBUG > 1000
-      Serial.println(F("Done"));
-      Serial.print(F("[main] (setup) Started SoftAP "));
-      Serial.println(WiFi.softAPSSID());
-    #endif
+    log_i("Started SoftAP %s", WiFi.softAPSSID());
   
     oled.setWiFiInfo(&WiFi);
 
@@ -117,9 +107,7 @@ void setup() {
     ESP32_W5500_setCallback_connected(&eventHandler_ethernetConnect);
     ESP32_W5500_setCallback_disconnected(&eventHandler_ethernetDisconnect);
 
-    #if DEBUG > 1000
-      Serial.print(F("[main] (setup) Setting up Ethernet on W5500..."));
-    #endif
+    log_i("Setting up Ethernet on W5500");
 
     ETH.setHostname(hostname);
     esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
@@ -128,16 +116,11 @@ void setup() {
     ETH.begin(SPI_MISO_PIN, SPI_MOSI_PIN, SPI_SCK_PIN, ETHERNET_PIN, ETHERNET_PIN_INTERRUPT, SPI_CLOCK_MHZ, ETH_SPI_HOST, baseMac); //Use the base MAC, not the Ethernet MAC.  Library will automatically adjust it, else future calls to get MAC addresses are skewed
 
     while(!ESP32_W5500_isConnected()){
-      #if DEBUG > 1000
-        Serial.print(F("."));
-      #endif
 
       delay(100);
 
       if(millis() > ethernet_start_time + ETHERNET_TIMEOUT){
-        #if DEBUG > 1000
-          Serial.println(F("Timeout"));
-        #endif
+          log_w("Ethernet connection timeout");
         break;
       }
     }
@@ -151,13 +134,8 @@ void setup() {
         bootTime = timeClient.getEpochTime();
       }
     }
-    
-    #if DEBUG > 1000
-      Serial.println(F("Done"));
-      Serial.print(F("[main] (setup) Ethernet IP: "));
-      Serial.println(ETH.localIP());
-    #endif
 
+    log_i("Ethernet IP: %s", ETH.localIP().toString().c_str());
     oled.setEthernetInfo(&ETH);
 
   #endif
@@ -172,14 +150,9 @@ void setup() {
     oled.setProductID(externalEEPROM.data.product_id);
     oled.setUUID(externalEEPROM.data.uuid);
 
-    #if DEBUG > 500
-      Serial.print(F("[main] (setup) uuid: "));
-      Serial.println(externalEEPROM.data.uuid);
-      Serial.print(F("[main] (setup) product_id: "));
-      Serial.println(externalEEPROM.data.product_id);
-      Serial.print(F("[main] (setup) key: "));
-      Serial.println(externalEEPROM.data.key);
-    #endif
+    log_i("EEPROM UUID: %s", externalEEPROM.data.uuid);
+    log_i("EEPROM Product ID: %s", externalEEPROM.data.product_id);
+    log_i("EEPROM Key: %s", externalEEPROM.data.key);
   }
 
 
@@ -218,10 +191,7 @@ void setup() {
   if (!LittleFS.begin())
   {
     eventLog.createEvent(F("LittleFS mount fail"), EventLog::LOG_LEVEL_ERROR);
-
-    #ifdef DEBUG
-      Serial.println(F("[main] (setup) An Error has occurred while mounting LittleFS"));
-    #endif
+    log_e("An Error has occurred while mounting LittleFS");
   }
   else{
     httpServer.serveStatic("/", LittleFS, "/");
@@ -237,17 +207,13 @@ void setup() {
 
     if(WiFi.getMode() == wifi_mode_t::WIFI_MODE_NULL){
 
-      #ifdef DEBUG
-      Serial.println(F("[main] (setup) HTTP server will not be started because WiFi it has not been initialized (WIFI_MODE_NULL)"));
-      #endif
+      log_w("HTTP server will not be started because WiFi it has not been initialized (WIFI_MODE_NULL)");
     
     }else{
       httpServer.begin();
       eventLog.createEvent(F("Web server started"));
 
-      #if DEBUG > 1000
-        Serial.println(F("[main] (setup) HTTP server ready"));
-      #endif
+      log_i("HTTP server ready");
     }
   #endif
 
@@ -255,14 +221,21 @@ void setup() {
 
       httpServer.begin();
       eventLog.createEvent(F("Web server started"));
-
-      #if DEBUG > 1000
-        Serial.println(F("[main] (setup) HTTP server ready"));
-      #endif
+      log_i("HTTP server ready");
 
   #endif
 
+
   oled.setPage(managerOled::PAGE_EVENT_LOG);
+
+  otaFirmware.setManifestURL("http://192.168.10.101:8080/firmware.json");
+  otaFirmware.setCertFileSystem(nullptr);
+  otaFirmware.setSPIFFsPartitionLabel("spiffs");
+
+  if(strcmp(externalEEPROM.data.uuid, "") != 0){
+    otaFirmware.setExtraHTTPHeader(F("uuid"), externalEEPROM.data.uuid);
+    otaFirmware.setExtraHTTPHeader(F("product_id"), externalEEPROM.data.product_id);
+  }
 
 }
 
@@ -287,9 +260,7 @@ void loop() {
 */
 void frontPanelButtonPress(){
 
-  #if DEBUG > 2000
-    Serial.println(F("[main] (frontPanelButtonPress) Front Panel button was pressed"));
-  #endif
+  log_v("Front Panel button was pressed");
 
   oled.nextPage();
 }

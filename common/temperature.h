@@ -127,10 +127,7 @@ class managerTemperatureSensors{
             }
 
             if(failureReason == failureReason::SUCCESS_NO_ERROR){
-                #if DEBUG
-                    Serial.println(F("[temperature] (failTemperatureSensor) Function is being called with no error present."));
-                #endif
-
+                log_e("Function is being called with no error present");
                 return;
             }
 
@@ -197,9 +194,7 @@ class managerTemperatureSensors{
 
             if(TEMPERATURE_SENSOR_COUNT != sizeof(addressesTemperatureSensor)/sizeof(uint8_t)){
 
-                #if DEBUG
-                    Serial.println(F("[temperature] (begin) TEMPERATURE_SENSOR_COUNT and the length of TEMPERATURE_SENSOR_ADDRESSES are mismatched in hardware.h; Disabling temperature sensors."));
-                #endif
+                log_e("TEMPERATURE_SENSOR_COUNT and the length of TEMPERATURE_SENSOR_ADDRESSES are mismatched in hardware.h; Disabling temperature sensors.");
 
                 temperatureSensor invalid;
                 strcpy(invalid.location, "INVALID");

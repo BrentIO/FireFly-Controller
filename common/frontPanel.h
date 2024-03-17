@@ -111,13 +111,8 @@ class managerFrontPanel{
 
             //Values are different; Check if we are within the debounce delay and that the status isn't its normal state
             if((millis() - timePreviousChange < DEBOUNCE_DELAY) && currentState != type){
-                           
-                #ifdef DEBUG
-                    #if DEBUG > 200
-                        Serial.println("[frontPanel] (loop) Front Panel Button: DEBOUNCE_DELAY (" + String(DEBOUNCE_DELAY) + ") not satisfied. Time Previous Change: " + String(timePreviousChange) + " Current Time: " + String(millis()) + " Difference: " + String(millis() - timePreviousChange) +  " Current State: " + String(currentState) + " State: " + String(state));
-                    #endif
-                #endif
 
+                log_v("Front Panel Button: DEBOUNCE_DELAY (%i) not satisfied. Time Previous Change: %i Current Time: %i Difference: %i Current State: %s State: %s", DEBOUNCE_DELAY, timePreviousChange, millis(), (millis() - timePreviousChange), String(currentState), String(state));
                 return;
             }
 
@@ -126,11 +121,7 @@ class managerFrontPanel{
             //Check if input is in an abnormal state
             if(currentState == inputState::STATE_CLOSED){
 
-                #ifdef DEBUG
-                    #if DEBUG > 500
-                        Serial.println("[frontPanel] (loop) Front Panel Button Type: " + String(type) + " New State: " + String(currentState) + " (Abnormal)");
-                    #endif
-                #endif
+                log_v("Front Panel Button Type: %s New State: %s (Abnormal)", String(type), String(currentState));
 
                 if(ptrPublisherCallback){
                     ptrPublisherCallback();
@@ -146,13 +137,9 @@ class managerFrontPanel{
 
             //Check if input is in normal state
             if(currentState == inputState::STATE_OPEN){
-        
-                #ifdef DEBUG
-                    #if DEBUG > 500
-                        Serial.println("[frontPanel] (loop)  Front Panel Button Type: " + String(type) + " New State: " + String(currentState) + " (Normal)");
-                    #endif
-                #endif
 
+                log_v("Front Panel Button Type: %s New State: %s (Normal)", String(type), String(currentState));
+        
                 //Turn on the LED when the button is released
                 if(_ledStatus == managerFrontPanel::status::NORMAL){
 

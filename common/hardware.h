@@ -268,24 +268,8 @@
         #include <Regexp.h>
 
         #define WIFI_MODEL ENUM_WIFI_MODEL_NONE     /* Disable WiFi when Ethernet is present */
-        #define _ETHERNET_WEBSERVER_LOGLEVEL_ 0     /* Quiet Async Web Server ESP32 W5500 logs by debug level */
-
-        #if DEBUG > 2000
-            #define _ETHERNET_WEBSERVER_LOGLEVEL_ /* Quiet Async Web Server ESP32 W5500 logs by debug level */
-        #endif
-        
-        #if DEBUG > 3000
-            #define _ETHERNET_WEBSERVER_LOGLEVEL_ 2 /* Quiet Async Web Server ESP32 W5500 logs by debug level */
-        #endif
-
-        #if DEBUG > 4000
-            #define _ETHERNET_WEBSERVER_LOGLEVEL_ 3 /* Quiet Async Web Server ESP32 W5500 logs by debug level */
-        #endif
-
-        #if DEBUG > 5000
-            #define _ETHERNET_WEBSERVER_LOGLEVEL_ 4 /* Quiet Async Web Server ESP32 W5500 logs by debug level */
-        #endif
-
+        #define _ETHERNET_WEBSERVER_LOGLEVEL_ CORE_DEBUG_LEVEL /* Match the Ethernet debug level to the core debug level */
+       
         #ifndef SPI_SCK_PIN
             #error SPI_SCK_PIN not set
         #endif

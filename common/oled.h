@@ -166,9 +166,7 @@
                     return;
                 }
 
-                #if DEBUG > 40000
-                    Serial.println(F("[oled] (_wake) Woke up"));
-                #endif
+                log_v("Woke up OLED");
 
                 if(this->_isDimmed == true){
 
@@ -200,9 +198,7 @@
                     return;
                 }
 
-                #if DEBUG > 40000
-                    Serial.println(F("[oled] (_extendWake) Extending Wake"));
-                #endif
+                log_v("Extending OLED wake");
 
                 _timeLastAction = millis();
             }
@@ -1002,9 +998,7 @@
                     this->_wifiInfo = value;
 
                     if(this->_wifiInfo->getMode() == wifi_mode_t::WIFI_MODE_NULL){
-                        #ifdef DEBUG
-                            Serial.println(F("[oled] (setWiFiInfo) Attempted to set WiFi it has not been initialized (WIFI_MODE_NULL)"));
-                        #endif
+                        log_e("Attempted to set WiFi it has not been initialized (WIFI_MODE_NULL)");
                         return;
                     }
 
@@ -1093,10 +1087,7 @@
                 if(this->_isDimmed == true){
                     if((unsigned long)(millis() - this->_timeLastAction) > SLEEP_AFTER_MS){
 
-                        #if DEBUG > 40000
-                            Serial.println(F("[oled] (loop) Sleeping OLED"));
-                        #endif
-
+                        log_v("Sleeping OLED");
                         this->_sleep();
                     }
                     return;
@@ -1104,10 +1095,7 @@
 
                 if((unsigned long)(millis() - this->_timeLastAction) > DIM_AFTER_MS){
 
-                    #if DEBUG > 40000
-                        Serial.println(F("[oled] (loop) Dimming OLED"));
-                    #endif
-
+                    log_v("Dimming OLED");
                     this->_dim();
                 }
 

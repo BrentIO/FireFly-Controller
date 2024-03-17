@@ -159,7 +159,7 @@ Example File Contents:
 	"buildPreferences": [
 		[
 			"build.extra_flags",
-			"-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=0x08062305 -DESP32 -DSSD1306_NO_SPLASH -I~/GitHub/P5Software/FireFly-Controller"
+			"-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=0x08062305 -DESP32 -DSSD1306_NO_SPLASH -DCORE_DEBUG_LEVEL=3 -I~/GitHub/P5Software/FireFly-Controller"
 		]
 	],
 	"port": "/dev/tty.SLAB_USBtoUART",
@@ -181,6 +181,17 @@ Defines the custom board configured in the Custom Boards section, above:
 **`ESP32`** The hardware type must also be set for the Adafruit libraries to be configured correctly. Use `-DESP32` flag to set the hardware to ESP32. Without it, you can expect to receive errors such as ```fatal error: util/delay.h: No such file or directory```
 
 **`SSD1306_NO_SPLASH`** To prohibit the adafruit logo from being displayed, use `-DSSD1306_NO_SPLASH` to disable it from compiling.
+
+**`CORE_DEBUG_LEVEL`** To show or quiet the debug outputs.  Additional libraries are slaved to these values in hardware.h:
+- `0` = None
+- `1` = Error
+- `2` = Warn
+- `3` = Info
+- `4` = Debug
+- `5` = Verbose
+
+> [!IMPORTANT]  
+> `CORE_DEBUG_LEVEL` should be set to `0` for production builds.
 
 You must also include the parent directory of FireFly-Controller using the `-I/my/path/to/project/FireFly-Controller` parameter. The folder structure should look like this:
 

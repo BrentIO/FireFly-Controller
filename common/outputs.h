@@ -90,10 +90,7 @@ namespace nsOutputs{
                 }
 
                 if(reason == failureReason::SUCCESS_NO_ERROR){
-                    #if DEBUG
-                        Serial.println(F("[outputs] (fail) Function is being called with no error present"));
-                    #endif
-
+                    log_e("Function is being called with no error present");
                     return;
                 }
 
@@ -298,10 +295,7 @@ namespace nsOutputs{
 
                 if(OUTPUT_CONTROLLER_COUNT != sizeof(addressesOutputController)/sizeof(uint8_t)){
 
-                    #if DEBUG
-                        Serial.println(F("[outputs] (begin) OUTPUT_CONTROLLER_ADDRESSES and the length of OUTPUT_CONTROLLER_ADDRESSES are mismatched in hardware.h; Disabling outputs."));
-                    #endif
-
+                    log_e("OUTPUT_CONTROLLER_ADDRESSES and the length of OUTPUT_CONTROLLER_ADDRESSES are mismatched in hardware.h; Disabling outputs");
                     outputController invalid;
                     invalid.address = 0;
                     invalid.fail(failureReason::INVALID_HARDWARE_CONFIGURATION);
@@ -318,11 +312,7 @@ namespace nsOutputs{
                     for(int j = 0; j < OUTPUT_CONTROLLER_COUNT_PINS; j++){
 
                         if(portPinMap[j] == 0){
-
-                            #if DEBUG
-                                Serial.println(F("[outputs] (begin) OUTPUT_CONTROLLER_COUNT_PINS and the length of OUTPUT_CONTROLLER_PORTS are mismatched in hardware.h; Disabling outputs."));
-                            #endif
-
+                            log_e("OUTPUT_CONTROLLER_COUNT_PINS and the length of OUTPUT_CONTROLLER_PORTS are mismatched in hardware.h; Disabling outputs");
                             this->outputControllers[i].fail(failureReason::INVALID_HARDWARE_CONFIGURATION);
                             return;
                         }

@@ -52,10 +52,8 @@ class managerExternalEEPROM{
 
             //Ensure the hardware is enabled
             if(this->enabled == false){
-                #ifdef DEBUG
-                    Serial.println(F("[externalEEPROM] (read_eeprom) External EEPROM not enabled; read_eeprom() failed."));
-                #endif
 
+                log_e("External EEPROM not enabled; read_eeprom() failed");
                 return;
             }
 
@@ -173,19 +171,15 @@ class managerExternalEEPROM{
         bool write(){
 
             if(this->_initialized != true){
-                #ifdef DEBUG
-                    Serial.println(F("[externalEEPROM] (write) External EEPROM class not initialized"));
-                #endif
 
+                log_e("External EEPROM class not initialized");
                 return false;
             }
 
             //Ensure the hardware is enabled
             if(this->enabled == false){
-                #ifdef DEBUG
-                    Serial.println(F("[externalEEPROM] (write) External EEPROM not enabled; write() failed"));
-                #endif
 
+                log_e("External EEPROM not enabled; write() failed");
                 return false;
             }
             
@@ -204,10 +198,7 @@ class managerExternalEEPROM{
 
             }else{
 
-                #ifdef DEBUG
-                    Serial.print("[externalEEPROM] (write) EEPROM write failed.  writeResponse returned was ");
-                    Serial.println(writeResponse);
-                #endif
+                log_e("EEPROM write failed.  writeResponse returned was %i", writeResponse);
 
                 //Disable the hardware
                 this->enabled = false;
@@ -225,19 +216,15 @@ class managerExternalEEPROM{
         bool destroy(){
 
             if(this->_initialized != true){
-                #ifdef DEBUG
-                    Serial.println(F("[externalEEPROM] (destroy) External EEPROM class not initialized"));
-                #endif
 
+                log_e("External EEPROM class not initialized");
                 return false;
             }
 
             //Ensure the hardware is enabled
             if(this->enabled == false){
-                #ifdef DEBUG
-                    Serial.println(F("[externalEEPROM] (destroy) External EEPROM not enabled; destroy() failed"));
-                #endif
 
+                log_e("External EEPROM not enabled; destroy() failed");
                 return false;
             }
 
@@ -263,10 +250,7 @@ class managerExternalEEPROM{
                 return true;
             }
 
-            #ifdef DEBUG
-                Serial.print("EEPROM destroy failed.  writeResponse was ");
-                Serial.println(writeResponse);
-            #endif
+            log_e("EEPROM destroy failed.  writeResponse was %i", writeResponse);
 
             //Disable the hardware
             this->enabled = false;
