@@ -187,8 +187,8 @@ void setup() {
   httpServer.on("/api/network", http_handleAllNetworkInterfaces);
 
 
-  /* Start LittleFS */
-  if (!LittleFS.begin())
+  /* Start LittleFS for webui */
+  if (!LittleFS.begin(false, "/littlefs", (uint8_t)10U, "webui"))
   {
     eventLog.createEvent(F("LittleFS mount fail"), EventLog::LOG_LEVEL_ERROR);
     log_e("An Error has occurred while mounting LittleFS");
@@ -230,7 +230,7 @@ void setup() {
 
   otaFirmware.setManifestURL("http://192.168.10.101:8080/firmware.json");
   otaFirmware.setCertFileSystem(nullptr);
-  otaFirmware.setSPIFFsPartitionLabel("spiffs");
+  otaFirmware.setSPIFFsPartitionLabel("webui");
 
   if(strcmp(externalEEPROM.data.uuid, "") != 0){
     otaFirmware.setExtraHTTPHeader(F("uuid"), externalEEPROM.data.uuid);
