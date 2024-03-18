@@ -94,21 +94,6 @@ Install each library above using the following command:
 `arduino-cli lib install --zip-path /my/downloads/directory/library_name.zip`
 
 
-# Flash Partition
-FireFly Controller uses a custom board, typically using the ESP32 WROVER-E Module featuring 16MB flash storage (ESP32-WROVER-E-N16R8).  It uses a standard partition image included with the ESP32 core, and its use is defined in the custom boards.txt.  The partition image used is `Default (6.25MB APP/OTA/3.43MB SPIFFS)`, which is defined in `~/Library/Arduino15/packages/esp32/hardware/esp32/2.0.11/tools/partitions/default_16MB.csv`.  The file should **not** be modified.
-
-The partition table will be defined by ESP Core as:
-
-| Name | Type | SubType | Offset | Size | Flags |
-|--|--|--|--|--|--|
-| nvs | data | nvs | 0x9000 | 0x5000 |
-| otadata | data | ota | 0xe000 | 0x2000 |
-| app0 | app | ota_0 | 0x10000 | 0x640000 |
-| app1 | app | ota_1 | 0x650000 | 0x640000 |
-| spiffs | data | spiffs | 0xc90000 | 0x360000 |
-| coredump | data | coredump | 0xFF0000 | 0x10000 |
-
-
 # Add Custom Board to boards.txt
 
 The board must be added to the boards.txt file, found in the Espressif ESP Core version-specific folder. The stub for the custom board is included in the Hardware-Registration-and-Configuration project.
@@ -221,33 +206,38 @@ You must also include the parent directory of FireFly-Controller using the `-I/m
 
 If the upload function does not work, but the application compiles correctly, re-select the port on the bottom right side of the screen.
 
-  
-  
 
-# LittleFS
-This uses the SPIFFS partition type, which can be found in the partition table included with ESP core. The size of the image depends on the size of the partition. The image must be flashed to the correct starting point from the partition table, see Flash Partition section.
+# Partitions
+FireFly Controller uses a custom board, typically using the ESP32 WROVER-E Module featuring 16MB flash storage (ESP32-WROVER-E-N16R8).  It uses a custom partition, `partitions.csv`, adjacent to the .ino file.
 
-## 16MB Chip
+The custom partition table will is defined as:
 
-Size = `0x360000`
+| Name | Type | SubType | Offset | Size | Flags |
+|--|--|--|--|--|--|
+| nvs | data | nvs | 0x9000 | 0x5000 |
+| otadata | data | ota | 0xe000 | 0x2000 |
+| app0 | app | ota_0 | 0x10000 | 0x640000 |
+| app1 | app | ota_1 | 0x650000 | 0x640000 |
+| config | data | spiffs | 0xC90000 | 0x80000 |
+| webui | data | spiffs | 0xD10000 | 0x2E0000 |
+| coredump | data | coredump | 0xFF0000 | 0x10000 |
 
- Create the image:
-`~/Library/Arduino15/packages/esp32/tools/mklittlefs/3.0.0-gnu12-dc7f933/mklittlefs -s 0x360000 -c ~/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/data ~/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/littlefs-16mb.bin`
+## `config` partition
+Data stored within this partition contains configuration data for the controller itself, such as its identity and I/O configuration.  It should never be flashed and should only be formatted by the Hardware Registration and Configuration application.  It is ineligible to receive OTA updates.  The partition size is 512KB.
 
-Location = `0xC90000`
+## `webui` partition
+Files stored on this partition are used for web user interface or other blobs of data.  It _is_ eligible for OTA updates, and therefore data stored on this partition will be lost during an OTA update of the partition.  The partition size is 2.875MB.
 
-Flash the image:
-`~/Library/Arduino15/packages/esp32/tools/esptool_py/4.5.1/esptool --chip esp32 --port "/dev/tty.SLAB_USBtoUART" --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 16MB 0xC90000 ~/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/littlefs-16mb.bin`
+
+### Flashing `webui` partition with 16MB Chip
+
+Size (see table above) = `0x2E0000`.  To create the image:
+
+`~/Library/Arduino15/packages/esp32/tools/mklittlefs/3.0.0-gnu12-dc7f933/mklittlefs -s 0x2E0000 -c ~/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/data ~/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/littlefs-16mb.bin`
+
+
+Location (see table above) = `0xD10000`.  To flash the image:
+
+`~/Library/Arduino15/packages/esp32/tools/esptool_py/4.5.1/esptool --chip esp32 --port "/dev/tty.SLAB_USBtoUART" --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 16MB 0xD10000 ~/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/littlefs-16mb.bin`
 
  
-## 4MB Chip
-
-Size = `0x160000`
-
-Create the image:
-`~/Library/Arduino15/packages/esp32/tools/mklittlefs/3.0.0-gnu12-dc7f933/mklittlefs -s 0x160000 -c ~/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/data ~/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/littlefs-4mb.bin`
-
-Location = `0x290000`
-
-Flash the image:
-`~/Library/Arduino15/packages/esp32/tools/esptool_py/4.5.1/esptool --chip esp32 --port "/dev/tty.SLAB_USBtoUART" --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 4MB 0x290000 ~/GitHub/P5Software/FireFly-Controller/Hardware-Registration-and-Configuration/littlefs-4mb.bin`

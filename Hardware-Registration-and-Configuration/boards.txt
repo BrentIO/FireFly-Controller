@@ -36,8 +36,8 @@ firefly_controller.menu.FlashFreq.80.build.flash_freq=80m
 firefly_controller.menu.FlashFreq.40=40MHz
 firefly_controller.menu.FlashFreq.40.build.flash_freq=40m
 
-firefly_controller.menu.PartitionScheme.default=Default (6.25MB APP/OTA/3.43MB SPIFFS)
-firefly_controller.menu.PartitionScheme.default.build.partitions=default_16MB
+firefly_controller.menu.PartitionScheme.default=16MB Flash (6.25MB APP/OTA [ota_0/ota_1], 512KB SPIFFS [config], 2.875MB SPIFFS [spiffs])
+firefly_controller.menu.PartitionScheme.default.build.partitions=default
 firefly_controller.menu.PartitionScheme.default.upload.maximum_size=6553600
 
 firefly_controller.menu.UploadSpeed.921600=921600
