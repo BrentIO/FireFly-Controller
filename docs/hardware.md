@@ -8,7 +8,7 @@ Hardware configurations are abstracted from the main application to allow for co
 # Hardware Versions
 | PID | Hex Code | Status |
 | --- | -------- | ------ |
-| [FFC3232-2211](ffc3232-2211) | 0x32322211 | Internal/Unreleased |
+| [FFC3232-2211](FFC3232-2211) | 0x32322211 | Internal/Unreleased |
 | [FFC0806-2305](FFC0806-2305) | 0x08063205 | Internal/Unreleased |
 | [FFC3232-WIP](FFC3232-2211) | 0x3232TBD | Work in Progress |
 | [FFC0806-WIP](FFC0806-2305) | 0x0806TBD | Work in Progress |
