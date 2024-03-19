@@ -1,0 +1,3 @@
+[Home](../)
+
+[Hardware](hardware)
