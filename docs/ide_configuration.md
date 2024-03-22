@@ -80,6 +80,7 @@ Download each library below as a zip file.
 | BrentIO_AsyncTCP | 2024.2.1 | https://github.com/BrentIO/AsyncTCP |
 | BrentIO_AsyncWebServer_ESP32_W5500 | 2024.3.1 | https://github.com/BrentIO/AsyncWebServer_ESP32_W5500 |
 | BrentIO_ESP Async WebServer | 2024.3.2 | https://github.com/BrentIO/ESPAsyncWebServer |
+| BrentIO_esp32FOTA | 2024.3.1 | https://github.com/BrentIO/esp32FOTA |
 | BrentIO_PCA95x5 | 2023.10.2 | https://github.com/BrentIO/PCA95x5 |
 | BrentIO_PCT2075 | 2023.10.3 | https://github.com/BrentIO/PCT2075 |
 | Ethernet | 2.0.2 | https://github.com/arduino-libraries/Ethernet |
@@ -219,17 +220,17 @@ The custom partition table will is defined as:
 | app0 | app | ota_0 | 0x10000 | 0x640000 |
 | app1 | app | ota_1 | 0x650000 | 0x640000 |
 | config | data | spiffs | 0xC90000 | 0x80000 |
-| webui | data | spiffs | 0xD10000 | 0x2E0000 |
+| www | data | spiffs | 0xD10000 | 0x2E0000 |
 | coredump | data | coredump | 0xFF0000 | 0x10000 |
 
 ## `config` partition
 Data stored within this partition contains configuration data for the controller itself, such as its identity and I/O configuration.  It should never be flashed and should only be formatted by the Hardware Registration and Configuration application.  It is ineligible to receive OTA updates.  The partition size is 512KB.
 
-## `webui` partition
+## `www` partition
 Files stored on this partition are used for web user interface or other blobs of data.  It _is_ eligible for OTA updates, and therefore data stored on this partition will be lost during an OTA update of the partition.  The partition size is 2.875MB.
 
 
-### Flashing `webui` partition with 16MB Chip
+### Flashing `www` partition with 16MB Chip
 
 Size (see table above) = `0x2E0000`.  To create the image:
 
