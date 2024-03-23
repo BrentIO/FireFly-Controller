@@ -1,1 +1,1 @@
-Documentation available at [https://brentio.github.io/FireFly-Controller/](https://brentio.github.io/FireFly-Controller/){:target="_blank"}
+Documentation available at [https://brentio.github.io/FireFly-Controller/](https://brentio.github.io/FireFly-Controller/)
