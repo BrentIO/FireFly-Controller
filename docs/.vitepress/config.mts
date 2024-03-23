@@ -13,9 +13,15 @@ export default defineConfig({
 
     sidebar: [
       {
+        text: 'Getting Started', link: '/getting_started#features'
+      },
+      {
         text: 'Hardware', link: '/hardware',
         items: [
-          { text: 'Reference Designs (TODO)' }
+          { text: 'Reference Designs (TODO)' },
+          { text: '3D Printed Cases (TODO)'},
+          { text: 'High Voltage Relays', link: 'relays'},
+
         ]
       },
       {
