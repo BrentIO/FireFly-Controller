@@ -14,7 +14,7 @@ No for-profit company should ever decide they can "stop supporting" or "end of l
 HTTP and MQTT work right out of the box, so you can integrate lighting controls to almost any other system imaginable.  What's more is that state of health and configuration are all on-board -- no apps to install.
 
 **We ❤️ Home Assistant**
-We love Home Assistant and other open home automation systems.  FireFly was designed from the ground-up to work with them natively.  From self discovery <Badge type="warning" text="TODO" /> to daily operation via MQTT <Badge type="warning" text="TODO" />, you can make your lighting controls work 100% locally.
+FireFly was designed from the ground-up to work with Home Assistant and can be easily integrated into other home automation systems.  From self discovery <Badge type="warning" text="TODO" /> to daily operation via MQTT <Badge type="warning" text="TODO" />, you can make your lighting controls work 100% locally.
 
 ## FireFly Controller
 FireFly Controller is the heart of the system.  It is the central hub for accepting inputs -- from a human touching a button to an automation signaling a change is necessary -- and processing outputs to the [high voltage relays](/hardware/relays) that make our lives more enjoyable.
