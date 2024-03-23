@@ -17,7 +17,7 @@ HTTP and MQTT work right out of the box, so you can integrate lighting controls 
 We love Home Assistant and other open home automation systems.  FireFly was designed from the ground-up to work with them natively.  From self discovery <Badge type="warning" text="TODO" /> to daily operation via MQTT <Badge type="warning" text="TODO" />, you can make your lighting controls work 100% locally.
 
 ## FireFly Controller
-FireFly Controller is the heart of the system.  It is the central hub for accepting inputs -- from a human touching a button to an automation signaling a change is necessary -- and processing outputs to the [high voltage relays](relays) that make our lives more enjoyable.
+FireFly Controller is the heart of the system.  It is the central hub for accepting inputs -- from a human touching a button to an automation signaling a change is necessary -- and processing outputs to the [high voltage relays](/hardware/relays) that make our lives more enjoyable.
 
 The hardware consists of a custom PCB with RJ45 inputs that connect to FireFly clients, an Ethernet controller, OLED display, front panel selection button, and outputs.  An ESP32 is the core computing module.  In a typical home, one FireFly Controller should be able used per floor; in a small home a single controller may suffice.
 

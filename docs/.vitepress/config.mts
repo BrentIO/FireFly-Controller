@@ -13,14 +13,15 @@ export default defineConfig({
 
     sidebar: [
       {
-        text: 'Getting Started', link: '/getting_started#features'
+        text: 'Getting Started', link: 'getting_started'
       },
       {
-        text: 'Hardware', link: '/hardware',
+        text: 'Hardware',
         items: [
+          { text: 'Versions', link: '/hardware/' },
           { text: 'Reference Designs (TODO)' },
           { text: '3D Printed Cases (TODO)'},
-          { text: 'High Voltage Relays', link: 'relays'},
+          { text: 'High Voltage Relays', link: '/hardware/relays'},
 
         ]
       },
@@ -34,7 +35,8 @@ export default defineConfig({
       {
         text: 'Documentation and Support',
         items: [
-          { text: 'Abbreviations' },
+          { text: 'Troubleshooting' },
+          { text: 'Abbreviations and Failure Reasons', link: '/support/abbreviations_and_failure_reasons' },
           { text: 'OLED Screens' }
         ]
       },
