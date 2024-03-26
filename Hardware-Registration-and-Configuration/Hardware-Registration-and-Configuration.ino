@@ -46,6 +46,9 @@ uint64_t ntpSleepUntil = 0;
 
 void updateNTPTime(bool force = false);
 
+fs::LittleFSFS wwwFS;
+fs::LittleFSFS configFS;
+
 
 /**
  * One-time setup
@@ -188,13 +191,13 @@ void setup() {
 
 
   /* Start LittleFS for www */
-  if (!LittleFS.begin(false, "/littlefs", (uint8_t)10U, "www"))
+  if (!wwwFS.begin(false, "/wwwFS", (uint8_t)10U, "www"))
   {
     eventLog.createEvent(F("www mount fail"), EventLog::LOG_LEVEL_ERROR);
     log_e("An Error has occurred while mounting www");
   }
   else{
-    httpServer.serveStatic("/", LittleFS, "/");
+    httpServer.serveStatic("/", wwwFS, "/");
     httpServer.rewrite("/ui/version", "/version.json");
   }
 
