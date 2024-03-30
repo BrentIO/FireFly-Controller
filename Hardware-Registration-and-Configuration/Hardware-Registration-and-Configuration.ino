@@ -222,7 +222,7 @@ void setup() {
 
   if(configFS_isMounted){
     httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
-    httpServer.on("/certs", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
+    httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
   }
 
   httpServer.onNotFound(http_notFound);
