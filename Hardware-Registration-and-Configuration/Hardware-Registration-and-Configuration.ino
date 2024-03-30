@@ -213,6 +213,7 @@ void setup() {
   httpServer.on("/api/errors", http_handleErrorLog);
   httpServer.on("^\/api\/network\/([a-z_]+)$", http_handleNetworkInterface);
   httpServer.on("/api/network", http_handleAllNetworkInterfaces);
+  httpServer.on("/auth", http_handleAuth);
 
   if(wwwFS_isMounted){
     httpServer.serveStatic("/", wwwFS, "/");
