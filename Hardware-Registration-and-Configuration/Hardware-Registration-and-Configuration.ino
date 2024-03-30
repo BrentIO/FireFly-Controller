@@ -358,8 +358,7 @@ void http_ForbiddenRequest(AsyncWebServerRequest *request, String message){
  * Sends a 200 response for any OPTIONS requests
 */
 void http_options(AsyncWebServerRequest *request) {
-  AsyncWebServerResponse *response = request->beginResponse(200);
-  request->send(response);
+  request->send(200);
 };
 
 
