@@ -412,7 +412,7 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
   }
 
   if(request->method()!= ASYNC_HTTP_POST){
-    http_badRequest(request, F("HTTP method was not POST"));
+    http_methodNotAllowed(request);
     return;
   }
 
