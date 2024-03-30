@@ -14,6 +14,8 @@ servers:
 
 
 tags:
+  - name: Certificates
+    description: Operations for the storage, retrieval, and management of certificates
   - name: EEPROM
     description: Operations for managing the external EEPROM data
   - name: Event and Error Logs
@@ -270,6 +272,106 @@ paths:
                 No log entries:
                   $ref: '#/components/examples/emptyArray'
 
+  /certs:
+    get:
+      tags:
+        - Certificates
+      summary: Get certificate list
+      description: Retrives the list of certificates in flash storage
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/certificateList'
+
+    post:
+      tags:
+        - Certificates
+      summary: Create a new certificate
+      description: Creates a new certificate with the content in the payload
+      security:
+        - visualToken: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+     
+      responses:
+        201:
+          description: Created
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+              example:
+                message: Certificate already exists
+
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+
+
+  /certs/{file}:
+    get:
+      tags:
+        - Certificates
+      summary: Get a certificate
+      description: Retrieves the content of a certificate
+      security:
+        - visualToken: []
+      parameters:
+        - in: path
+          name: file
+          schema:
+            type: string
+            example: github.cer
+          required: true
+          description: Certificate filename to retrieve
+      responses:
+        200:
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/certificateContent'
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+
+    delete:
+      tags:
+        - Certificates
+      summary: Delete a certificate
+      description: Deletes the requested certificate from flash storage
+      security:
+        - visualToken: []
+      parameters:
+        - in: path
+          name: file
+          schema:
+            type: string
+            example: github.cer
+          required: true
+          description: Certificate filename to delete
+      responses:
+        204:
+          description: Deleted certificate successfully
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+
       
 components:
 
@@ -513,6 +615,55 @@ components:
       properties:
         ui:
           $ref: '#/components/schemas/applicationVersion'
+
+
+    certificateListItem:
+      type: object
+      properties:
+        file:
+          type: string
+          description: Certificate's filename
+          example: github.cer
+        size:
+          type: integer
+          description: Certificate's size in bytes
+          example: 1410
+
+
+    certificateList:
+      type: array
+      items:
+        $ref: '#/components/schemas/certificateListItem'
+
+
+    certificateContent:
+      type: string
+      example: 
+        -----BEGIN CERTIFICATE-----
+        MIID0zCCArugAwIBAgIQVmcdBOpPmUxvEIFHWdJ1lDANBgkqhkiG9w0BAQwFADB7
+        MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVyMRAwDgYD
+        VQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEhMB8GA1UE
+        AwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTE5MDMxMjAwMDAwMFoXDTI4
+        MTIzMTIzNTk1OVowgYgxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpOZXcgSmVyc2V5
+        MRQwEgYDVQQHEwtKZXJzZXkgQ2l0eTEeMBwGA1UEChMVVGhlIFVTRVJUUlVTVCBO
+        ZXR3b3JrMS4wLAYDVQQDEyVVU0VSVHJ1c3QgRUNDIENlcnRpZmljYXRpb24gQXV0
+        aG9yaXR5MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEGqxUWqn5aCPnetUkb1PGWthL
+        q8bVttHmc3Gu3ZzWDGH926CJA7gFFOxXzu5dP+Ihs8731Ip54KODfi2X0GHE8Znc
+        JZFjq38wo7Rw4sehM5zzvy5cU7Ffs30yf4o043l5o4HyMIHvMB8GA1UdIwQYMBaA
+        FKARCiM+lvEH7OKvKe+CpX/QMKS0MB0GA1UdDgQWBBQ64QmG1M8ZwpZ2dEl23OA1
+        xmNjmjAOBgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zARBgNVHSAECjAI
+        MAYGBFUdIAAwQwYDVR0fBDwwOjA4oDagNIYyaHR0cDovL2NybC5jb21vZG9jYS5j
+        b20vQUFBQ2VydGlmaWNhdGVTZXJ2aWNlcy5jcmwwNAYIKwYBBQUHAQEEKDAmMCQG
+        CCsGAQUFBzABhhhodHRwOi8vb2NzcC5jb21vZG9jYS5jb20wDQYJKoZIhvcNAQEM
+        BQADggEBABns652JLCALBIAdGN5CmXKZFjK9Dpx1WywV4ilAbe7/ctvbq5AfjJXy
+        ij0IckKJUAfiORVsAYfZFhr1wHUrxeZWEQff2Ji8fJ8ZOd+LygBkc7xGEJuTI42+
+        FsMuCIKchjN0djsoTI0DQoWz4rIjQtUfenVqGtF8qmchxDM6OW1TyaLtYiKou+JV
+        bJlsQ2uRl9EMC5MCHdK8aXdJ5htN978UeAOwproLtOGFfy/cQjutdAFI3tZs4RmY
+        CV4Ks2dH/hzg1cEo70qLRDEmBDeNiXQ2Lu+lIg+DdEmSx/cQwgwp+7e9un/jX9Wf
+        8qn0dNW44bOwgeThpWOjzOoEeJBuv/c=
+        -----END CERTIFICATE-----
+
+
 
 
   examples:
