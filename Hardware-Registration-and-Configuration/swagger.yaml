@@ -14,6 +14,8 @@ servers:
 
 
 tags:
+  - name: Authorization
+    description: Mangage long-term http authorizations
   - name: Certificates
     description: Operations for the storage, retrieval, and management of certificates
   - name: EEPROM
@@ -371,6 +373,21 @@ paths:
           description: Unauthorized
         404:
           description: Not Found
+
+  /auth:
+    post:
+      tags:
+        - Authorization
+      summary: Authorize the visual token
+      description: Creates a long-term authorization for a visual token (typically 60 minutes)
+      security:
+        - visualToken: []
+      responses:
+        204:
+          description: Authorized
+        401:
+          description: Unauthorized
+
 
       
 components:

@@ -1068,6 +1068,29 @@ void http_handleCerts_GET(AsyncWebServerRequest *request){
 
 
 /**
+ * Creates a long-term authorization with the given visual token
+*/
+void http_handleAuth(AsyncWebServerRequest *request){
+  if(request->method() != ASYNC_HTTP_POST){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  if(!request->hasHeader("x-visual-token")){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(!authToken.authenticate(request->header("x-visual-token").c_str(), true)){
+    http_unauthorized(request);
+    return;
+  }
+
+  request->send(204);
+}
+
+
+/**
  * Retrieves the requested interface MAC address
 */
 void getMacAddress(esp_mac_type_t type, char *buff) {
