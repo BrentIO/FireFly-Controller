@@ -56,6 +56,7 @@ fs::LittleFSFS configFS;
  * One-time setup
 */
 void setup() {
+  bool wwwFS_isMounted = false;
   bool configFS_isMounted = false;
 
 
@@ -178,6 +179,17 @@ void setup() {
   temperatureSensors.begin();
 
 
+  /* Start LittleFS for www */
+  if (wwwFS.begin(false, "/wwwFS", (uint8_t)10U, "www"))
+  {
+    wwwFS_isMounted = true;
+  }
+  else{
+    eventLog.createEvent(F("wwwFS mount fail"), EventLog::LOG_LEVEL_ERROR);
+    log_e("An Error has occurred while mounting www");
+  }
+
+
     /* Start LittleFS for config */
   if (configFS.begin(false, "/configFS", (uint8_t)10U, "config"))
   {
@@ -202,22 +214,17 @@ void setup() {
   httpServer.on("^\/api\/network\/([a-z_]+)$", http_handleNetworkInterface);
   httpServer.on("/api/network", http_handleAllNetworkInterfaces);
 
-
-  /* Start LittleFS for www */
-  if (!wwwFS.begin(false, "/wwwFS", (uint8_t)10U, "www"))
-  {
-    eventLog.createEvent(F("www mount fail"), EventLog::LOG_LEVEL_ERROR);
-    log_e("An Error has occurred while mounting www");
-  }
-  else{
+  if(wwwFS_isMounted){
     httpServer.serveStatic("/", wwwFS, "/");
     httpServer.rewrite("/ui/version", "/version.json");
+    httpServer.rewrite("/", "/index.html");
+  }
+
   if(configFS_isMounted){
     httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("/certs", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
   }
 
-  httpServer.rewrite("/", "/index.html");
   httpServer.onNotFound(http_notFound);
 
   DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Origin"), F("*")); //Ignore CORS
