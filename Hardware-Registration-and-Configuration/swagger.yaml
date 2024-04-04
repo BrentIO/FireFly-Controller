@@ -18,6 +18,8 @@ tags:
     description: Mangage long-term http authorizations
   - name: Certificates
     description: Operations for the storage, retrieval, and management of certificates
+  - name: Configuration
+    description: Operations for configuring various services
   - name: EEPROM
     description: Operations for managing the external EEPROM data
   - name: Event and Error Logs
@@ -273,6 +275,63 @@ paths:
                   $ref: '#/components/examples/eventLog'
                 No log entries:
                   $ref: '#/components/examples/emptyArray'
+
+
+  /api/ota:
+
+    post:
+      tags:
+        - Configuration
+      summary: OTA firmware configuration
+      description: Stores the over-the-air (OTA) firmware configuration
+      security:
+        - visualToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/otaConfiguration'
+      responses:
+        201:
+          description: Created
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+              example:
+                message: Configuration already exists
+
+    get:
+      tags:
+        - Configuration
+      summary: OTA firmware configuration
+      description: Retrieve the over-the-air (OTA) firmware configuration
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/otaConfiguration'
+
+    delete:
+      tags:
+        - Configuration
+      summary: OTA firmware configuration
+      description: Delete the over-the-air (OTA) firmware configuration
+      responses:
+        204:
+          description: Deleted configuration successfully
+        401:
+          description: Unauthorized
+        404:
+          description: No configuration exists
+
 
   /certs:
     get:
@@ -681,6 +740,18 @@ components:
         -----END CERTIFICATE-----
 
 
+    otaConfiguration:
+      type: object
+      properties:
+        url:
+          type: string
+          format: url
+          description: URL for the firmware update server
+          example: https://www.somewhere.com/firmware.json
+        certificate:
+          type: string
+          description: Path where the certificate can be found that should be used when https is specified
+          example: "/certs/mycert.pem"
 
 
   examples:
