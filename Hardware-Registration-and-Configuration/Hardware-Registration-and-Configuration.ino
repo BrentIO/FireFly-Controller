@@ -59,16 +59,12 @@ void setup() {
   bool wwwFS_isMounted = false;
   bool configFS_isMounted = false;
 
-
   eventLog.createEvent(F("Event log started"));
-
 
   Wire.begin();
 
-
   /* Start the auth token service */
   authToken.begin();
-
 
   /* Startup the OLED display */
   oled.setCallback_failure(&failureHandler_oled);
@@ -77,18 +73,15 @@ void setup() {
   oled.setAuthorizationToken(&authToken);
   authToken.setCallback_visualTokenChanged(&eventHandler_visualAuthChanged);
 
-
   /* Set event log callbacks to the OLED */
   eventLog.setCallback_notification(eventHandler_eventLogNotificationEvent);
   eventLog.setCallback_error(&eventHandler_eventLogErrorEvent);
   eventLog.setCallback_resolveError(&eventHandler_eventLogResolvedErrorEvent);
 
-
   /* Startup the front panel */
   frontPanel.setCallback_publisher(&frontPanelButtonPress);
   frontPanel.begin();
   frontPanel.setStatus(managerFrontPanel::status::NORMAL);
-
 
   /* Determine hostname */
   #ifdef ESP32
@@ -97,7 +90,6 @@ void setup() {
     char hostname[18] = {0};
     sprintf(hostname, "FireFly-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
   #endif
-
 
   /* Start networking */
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
