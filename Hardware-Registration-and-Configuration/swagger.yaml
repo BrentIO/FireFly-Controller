@@ -404,6 +404,7 @@ paths:
       security:
         - visualToken: []
       requestBody:
+        required: true
         content:
           multipart/form-data:
             schema:
