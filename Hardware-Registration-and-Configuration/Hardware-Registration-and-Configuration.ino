@@ -194,8 +194,7 @@ void setup() {
   /* Configure the web server.  
     IMPORTANT: *** Sequence below matters, they are sorted specific to generic *** 
   */
-  AsyncCallbackJsonWebHandler* eepromPost = new AsyncCallbackJsonWebHandler("/api/eeprom", http_handleEEPROM_POST);
-  httpServer.addHandler(eepromPost);
+  httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/eeprom", http_handleEEPROM_POST));
   httpServer.on("/api/eeprom", http_handleEEPROM);
   httpServer.on("/api/mcu", http_handleMCU);
   httpServer.on("/api/partitions", http_handlePartitions);
