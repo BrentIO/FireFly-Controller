@@ -336,6 +336,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/otaConfiguration'
+        404:
+          description: No configuration exists
         500:
           description: Internal Server Error
           content:
