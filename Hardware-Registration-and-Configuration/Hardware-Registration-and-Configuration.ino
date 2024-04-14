@@ -203,7 +203,7 @@ void setup() {
   httpServer.on("/api/events", http_handleEventLog);
   httpServer.on("/api/errors", http_handleErrorLog);
   httpServer.on("^\/api\/network\/([a-z_]+)$", http_handleNetworkInterface);
-  httpServer.on("/api/network", http_handleAllNetworkInterfaces);
+  httpServer.on("/api/network", http_handleNetworkInterfaceAll);
   httpServer.on("/auth", http_handleAuth);
 
   if(wwwFS_isMounted){
@@ -713,7 +713,7 @@ void http_handleNetworkInterface(AsyncWebServerRequest *request){
 /**
  * Handles network interface requests for all network interfaces
 */
-void http_handleAllNetworkInterfaces(AsyncWebServerRequest *request){
+void http_handleNetworkInterfaceAll(AsyncWebServerRequest *request){
 
   if(request->method() != ASYNC_HTTP_GET){
     http_methodNotAllowed(request);
