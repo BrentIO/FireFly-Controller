@@ -378,7 +378,7 @@ paths:
                 message: Certificate already exists
 
 
-  /certs/{file}:
+  /certs/{filename}:
     get:
       tags:
         - Certificates
@@ -388,7 +388,7 @@ paths:
         - visualToken: []
       parameters:
         - in: path
-          name: file
+          name: filename
           schema:
             type: string
             example: github.cer
