@@ -748,6 +748,8 @@ components:
           type: string
           description: Path where the certificate can be found that should be used when https is specified
           example: "/certs/mycert.pem"
+      required:
+        - url
 
 
   examples:
