@@ -316,7 +316,7 @@ void http_error(AsyncWebServerRequest *request, String message){
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<256> doc;
-  doc[F("error")] = message;
+  doc["error"] = message;
 
   serializeJson(doc, *response);
   response->setCode(500);
@@ -331,7 +331,7 @@ void http_badRequest(AsyncWebServerRequest *request, String message){
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<256> doc;
-  doc[F("message")] = message;
+  doc["message"] = message;
 
   serializeJson(doc, *response);
   response->setCode(400);
@@ -346,7 +346,7 @@ void http_ForbiddenRequest(AsyncWebServerRequest *request, String message){
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<256> doc;
-  doc[F("message")] = message;
+  doc["message"] = message;
 
   serializeJson(doc, *response);
   response->setCode(403);
@@ -560,10 +560,10 @@ void http_handleVersion(AsyncWebServerRequest *request){
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<96> doc;
-  doc[F("application")] = VERSION;
+  doc["application"] = VERSION;
   char product_hex[16] = {0};
   sprintf(product_hex, "0x%08X", PRODUCT_HEX);
-  doc[F("product_hex")] = product_hex;
+  doc["product_hex"] = product_hex;
 
   serializeJson(doc, *response);
   request->send(response);
@@ -645,17 +645,17 @@ void http_handleMCU(AsyncWebServerRequest *request){
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<128> doc;
-  doc[F("chip_model")] = ESP.getChipModel();
-  doc[F("revision")] = (String)ESP.getChipRevision();
-  doc[F("flash_chip_size")] = ESP.getFlashChipSize();
+  doc["chip_model"] = ESP.getChipModel();
+  doc["revision"] = (String)ESP.getChipRevision();
+  doc["flash_chip_size"] = ESP.getFlashChipSize();
 
   if(bootTime !=0){
-      doc[F("boot_time")] = bootTime;
+      doc["boot_time"] = bootTime;
   }else{
     #ifdef ESP32
-      doc[F("boot_time")] = esp_timer_get_time()/1000000;
+      doc["boot_time"] = esp_timer_get_time()/1000000;
     #else
-      doc[F("boot_time")] = millis()/1000;
+      doc["boot_time"] = millis()/1000;
     #endif
   }
 
@@ -703,8 +703,8 @@ void http_handleNetworkInterface(AsyncWebServerRequest *request){
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<96> doc;
 
-  doc[F("interface")] = request->pathArg(0);
-  doc[F("mac_address")] = macAddress;
+  doc["interface"] = request->pathArg(0);
+  doc["mac_address"] = macAddress;
   
   serializeJson(doc, *response);
   request->send(response);
@@ -821,9 +821,9 @@ void http_handleEEPROM_GET(AsyncWebServerRequest *request){
  
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<256> doc;
-  doc[F("uuid")] = externalEEPROM.data.uuid;
-  doc[F("product_id")] = externalEEPROM.data.product_id;
-  doc[F("key")] = externalEEPROM.data.key;
+  doc["uuid"] = externalEEPROM.data.uuid;
+  doc["product_id"] = externalEEPROM.data.product_id;
+  doc["key"] = externalEEPROM.data.key;
 
   serializeJson(doc, *response);
   request->send(response);
@@ -888,19 +888,19 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
   MatchState ms;
 
-  if(!doc.containsKey("uuid")){
+  if(!doc.containsKey(F("uuid"))){
     http_badRequest(request, F("Field uuid is required"));
     return;
   }
 
-  if(strlen(doc[F("uuid")])!=(sizeof(externalEEPROM.data.uuid)-1)){
+  if(strlen(doc["uuid"])!=(sizeof(externalEEPROM.data.uuid)-1)){
     http_badRequest(request, F("Field uuid is not exactly 36 characters"));
     return;
   }
 
   managerExternalEEPROM::deviceType postedData;
 
-  strcpy(postedData.uuid, doc[F("uuid")]);
+  strcpy(postedData.uuid, doc["uuid"]);
 
   ms.Target(postedData.uuid);
 
@@ -914,24 +914,24 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  if(strlen(doc[F("product_id")])>(sizeof(postedData.product_id)-1)){
+  if(strlen(doc["product_id"])>(sizeof(postedData.product_id)-1)){
     http_badRequest(request, F("Field product_id is greater than 32 characters, see docs"));
     return;
   }
 
-  strcpy(postedData.product_id, doc[F("product_id")]);
+  strcpy(postedData.product_id, doc["product_id"]);
 
-  if(!doc.containsKey("key")){
+  if(!doc.containsKey(F("key"))){
     http_badRequest(request, F("Field key is required"));
     return;
   }
 
-  if(strlen(doc[F("key")])!=(sizeof(postedData.key)-1)){
+  if(strlen(doc["key"])!=(sizeof(postedData.key)-1)){
     http_badRequest(request, F("Field key is not exactly 64 characters"));
     return;
   }
 
-  strcpy(postedData.key, doc[F("key")]);
+  strcpy(postedData.key, doc["key"]);
 
   ms.Target(postedData.key);
 
