@@ -327,6 +327,8 @@ paths:
         - Configuration
       summary: OTA firmware configuration
       description: Retrieve the over-the-air (OTA) firmware configuration
+      security:
+        - visualToken: []
       responses:
         200:
           description: OK
@@ -348,6 +350,8 @@ paths:
         - Configuration
       summary: OTA firmware configuration
       description: Delete the over-the-air (OTA) firmware configuration
+      security:
+        - visualToken: []
       responses:
         204:
           description: Deleted configuration successfully
@@ -371,6 +375,8 @@ paths:
         - Certificates
       summary: Get certificate list
       description: Retrives the list of certificates in flash storage
+      security:
+        - visualToken: []
       responses:
         200:
           description: OK
