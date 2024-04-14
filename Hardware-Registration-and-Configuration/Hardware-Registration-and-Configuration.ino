@@ -341,7 +341,7 @@ void http_badRequest(AsyncWebServerRequest *request, String message){
 /**
  * Sends a 403 response indicating an invalid request from the caller
 */
-void http_ForbiddenRequest(AsyncWebServerRequest *request, String message){
+void http_forbiddenRequest(AsyncWebServerRequest *request, String message){
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<256> doc;
@@ -411,7 +411,7 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
   if(!index){
 
     if(configFS.exists(CONFIGFS_PATH_CERTS + filename)){
-      http_ForbiddenRequest(request, F("Certificate already exists"));
+      http_forbiddenRequest(request, F("Certificate already exists"));
       return;
     }
 
