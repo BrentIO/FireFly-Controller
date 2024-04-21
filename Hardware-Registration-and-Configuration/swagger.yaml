@@ -729,8 +729,8 @@ components:
           example: https://www.somewhere.com/firmware.json
         certificate:
           type: string
-          description: Path where the certificate can be found that should be used when https is specified
-          example: "/certs/mycert.pem"
+          description: Path where the certificate can be found that should be used when https is specified.  The existence of the certificate will not be checked until the OTA config is reloaded (typically on reboot)
+          example: /certs/mycert.pem
       required:
         - url
   examples:
