@@ -19,6 +19,7 @@
             let errorLog = [];
             let application_version = null;
             let ui_version = null;
+            let certificates = [];
             let visual_token = "";
 
             const api_timeout = 5000;
@@ -43,6 +44,7 @@
                 getEventLog();
                 getErrorLog();
                 getUIVersion();
+                getCertificates();
             }
 
 
@@ -1103,6 +1105,265 @@
             }
 
 
+            async function getCertificates(){
+
+                try{
+                    let response = await fetch("/certs", { signal: AbortSignal.timeout(api_timeout) });
+
+                    if (response.ok) {
+                        certificates = await response.json();
+                        drawCertificates();
+                    } else {
+                        throw new Error("Unable to get " + response.url + " (" + response.status + ")");
+                    }
+
+                }
+                catch(err){
+                    if (err.name === "AbortError") {
+                        prependWarningLabel("certificates-tab");
+                        createErrorToast("Unable to get certificates", "Timeout");
+                    } else {
+                        prependWarningLabel("certificates-tab");
+                        createErrorToast("Unable to get certificates", err);
+                    }
+                }             
+            }
+
+
+            function drawCertificates(){
+
+                var table = document.getElementById('certificates-tab-table-data');
+                table.innerHTML = "";
+
+                if(certificates == []){
+                    return;
+                }
+
+                certificates.forEach(function (element){
+                    var row = table.insertRow();
+
+                    var colFile = row.insertCell();
+                    var colSize = row.insertCell();
+                    var colOperation = row.insertCell();
+
+                    colFile.innerHTML = "<a href=\"#\" onClick=\"showCertificateContents('" + element.file + "');\">" + element.file + "</a>";
+                    colSize.innerHTML = bytesToSize(element.size);
+
+
+                    colOperation.innerHTML = "<button type=\"button\" class=\"btn btn-outline-danger d-inline-flex p-2\" id=\"certificate-delete-button-" + element.file.replace("/", "_").replace(".", "_") + "\" title=\"Delete\" onclick=\"deleteCertificate('" + element.file + "');\">\
+                                <span class=\"spinner-border spinner-border-sm d-none\" role=\"status\" aria-hidden=\"true\" id=\"certificate-delete-button-spinner-" + element.file.replace("/", "_").replace(".", "_") + "\"></span> \
+                                <span><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"currentColor\" class=\"bi bi-arrow-repeat\" viewBox=\"0 0 16 16\" id=\"certificate-delete-button-icon-" + element.file.replace("/", "_").replace(".", "_") + "\">\
+                                    <path d=\"M11.46.146A.5.5 0 0 0 11.107 0H4.893a.5.5 0 0 0-.353.146L.146 4.54A.5.5 0 0 0 0 4.893v6.214a.5.5 0 0 0 .146.353l4.394 4.394a.5.5 0 0 0 .353.146h6.214a.5.5 0 0 0 .353-.146l4.394-4.394a.5.5 0 0 0 .146-.353V4.893a.5.5 0 0 0-.146-.353L11.46.146zm-6.106 4.5L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 1 1 .708-.708z\"/>\
+                                </svg> Delete</span></button>"
+                });
+
+                document.getElementById('certificates-tab-content').classList.remove("d-none");
+                document.getElementById('certificates-tab-wait-spinner').classList.add("d-none");
+            }
+
+
+            async function deleteCertificate(file){
+
+                try{
+
+                    if(!confirm("Are you sure you wish to delete " + file + "?")){
+                        return;
+                    }
+
+                    let authenticated = await authenticate();
+
+                    if(!authenticated){
+                        return;
+                    }
+
+                    var button = document.getElementById("certificate-delete-button-" + file.replace("/", "_").replace(".", "_"));
+                    var spinner = document.getElementById("certificate-delete-button-spinner-" + file.replace("/", "_").replace(".", "_"));
+                    var icon = document.getElementById("certificate-delete-button-icon-" + file.replace("/", "_").replace(".", "_"));
+
+                    button.disabled = true;
+                    spinner.classList.remove("d-none");
+                    icon.classList.add("d-none");
+
+                    let response = await fetch("/certs/" + file, {
+                        signal: AbortSignal.timeout(api_timeout), 
+                        method: 'DELETE',
+                        headers: {
+                            "x-visual-token":visual_token
+                        }
+                    });
+
+                    switch(response.status){
+                        case 204:
+                            createSuccessToast("Success", "Certificate has been deleted.");
+                            getCertificates();
+                            break;
+
+                        case 401:
+                            createErrorToast("Unable to delete certificate", "Authentication failed");
+                            button.disabled = false;
+                            break;
+
+                        default:
+                            throw new Error("Unable to delete certificate " + response.url + " (" + response.status + ")");
+                    }
+                }
+                catch(err){
+                    getCertificates();                   
+                    if (err.name === "AbortError") {
+                        createErrorToast("Unable to delete certificate", "Timeout");
+                    } else {
+                        createErrorToast("Unable to delete certificate", err);
+                    }
+                }
+            }
+
+
+            function certificateUploadButtonToggle(){
+
+                var fileSelector = document.getElementById("certificate-upload-file-selector");
+                var button = document.getElementById("certificate-upload-button");
+
+                if(fileSelector.files.length == 1){
+                    button.disabled = false;
+                }else{
+                    button.disabled = true;
+                }
+            }
+
+
+            function certificateFileSelectorClear(){
+
+                var fileSelector = document.getElementById("certificate-upload-file-selector");
+                fileSelector.value = null;
+
+                certificateUploadButtonToggle();
+            }
+
+
+            async function uploadCertificate(){
+
+                try{
+
+                    var fileSelector = document.getElementById("certificate-upload-file-selector");
+
+                    if(fileSelector.files.length != 1){
+                        createErrorToast("Choose a File", "No file was selected to be uploaded.");
+                        certificateUploadButtonToggle();
+                        return;
+                    }
+
+                    let authenticated = await authenticate();
+
+                    if(!authenticated){
+                        return;
+                    }
+
+                    var button = document.getElementById("certificate-upload-button");
+                    var spinner = document.getElementById("certificate-upload-button-spinner");
+                    var icon = document.getElementById("certificate-upload-button-icon");
+
+                    button.disabled = true;
+                    fileSelector.disabled = true;
+                    spinner.classList.remove("d-none");
+                    icon.classList.add("d-none");
+
+                    const formData = new FormData();
+
+                    formData.append("file", fileSelector.files[0])
+
+                    let response = await fetch("/certs", {
+                        signal: AbortSignal.timeout(api_timeout),
+                        method: "POST",
+                        body: formData,                     
+                        headers: {
+                            "x-visual-token":visual_token
+                        }
+                    });
+
+                    switch(response.status){
+                        case 201:
+                            createSuccessToast("Success", "Certificate has been uploaded.");
+                            getCertificates();
+                            break;
+
+                        case 401:
+                            visual_token = "";
+                            createErrorToast("Unable to upload certificate", "Authentication failed");
+                            button.disabled = false;
+                            break;
+
+                        default:
+                            throw new Error("Unable to upload certificate " + response.url + " (" + response.status + ")");
+                    }
+                }
+                catch(err){
+                    getCertificates();                   
+                    if (err.name === "AbortError") {
+                        createErrorToast("Unable to upload certificate", "Timeout");
+                    } else {
+                        createErrorToast("Unable to upload certificate", err);
+                    }
+                }
+
+                button.disabled = false;
+                fileSelector.disabled = false;
+                spinner.classList.add("d-none");
+                icon.classList.remove("d-none");
+                certificateFileSelectorClear();
+            }
+            
+
+            async function authenticate(){
+
+                if(visual_token){
+                    return true;
+                }
+
+                try{
+                    let visualTokenPrompt = prompt("Enter the visual token");
+
+                    if(visualTokenPrompt == null){
+                        throw new Error("Authentication cancelled.");
+                    }
+
+                    let response = await fetch("/auth", {
+                        signal: AbortSignal.timeout(api_timeout), 
+                        method: 'POST',
+                        headers: {
+                            "x-visual-token":visualTokenPrompt
+                        }
+                    });
+
+                    switch(response.status){
+                        case 204:
+                            visual_token = visualTokenPrompt;
+                            return true;
+                            break;
+
+                        case 401:
+                            createErrorToast("Authentication failed", "Verify the visual token.");
+                            visual_token = "";
+                            break;
+
+                        default:
+                            visual_token = "";
+                            throw new Error("Unable to authenticate " + response.url + " (" + response.status + ")");
+                    }
+
+                    return false;
+                }
+                catch(err){                  
+                    if (err.name === "AbortError") {
+                        createErrorToast("Unable to authenticate", "Timeout");
+                    } else {
+                        createErrorToast("Unable to authenticate", err);
+                    }
+
+                    return false;
+                }
+            }
+
+            
             function createErrorToast(title, message){
 
                 var template = document.getElementById('toast-element-error');
@@ -1134,6 +1395,62 @@
             }
 
 
+            async function showCertificateContents(filename){
+
+                var certificateModal = new bootstrap.Modal(document.getElementById('certificate-modal'));
+               
+                var title = document.getElementById('certificate-modal-title');
+                var body = document.getElementById('certificate-modal-code');
+
+                document.getElementById('certificate-modal-wait-spinner').classList.remove("d-none");
+                document.getElementById('certificate-modal-code-fail').classList.add("d-none");
+                document.getElementById('certificate-modal-code').classList.add("d-none");
+
+                title.innerText = "Certificate contents for " + filename;
+
+                certificateModal.show();
+
+                try{
+
+                    let authenticated = await authenticate();
+
+                    if(!authenticated){
+                        return;
+                    }
+
+                    let response = await fetch("/certs/" + filename, { 
+                        signal: AbortSignal.timeout(api_timeout),
+                        method: 'GET',
+                        headers: {
+                            "x-visual-token":visual_token
+                        }
+                    });
+                    
+                    switch(response.status){
+                        case 200:
+                            body.innerText = await response.text();
+                            document.getElementById('certificate-modal-wait-spinner').classList.add("d-none");
+                            document.getElementById('certificate-modal-code').classList.remove("d-none");
+                            break;
+
+                        default:
+                            throw new Error("Unable to get " + response.url + " (" + response.status + ")");
+                    }
+                }
+                catch(err){
+
+                    document.getElementById('certificate-modal-code-fail').classList.remove("d-none");
+                    document.getElementById('certificate-modal-wait-spinner').classList.add("d-none"); 
+
+                    if (err.name === "AbortError") {
+                        createErrorToast("Unable to get certificate contents", "Timeout");
+                    } else {
+                        createErrorToast("Unable to get certificate contents", err);
+                    }
+                }         
+            }
+
+
             function generateRandomString(length) {
                 const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
                 let result = '';
@@ -1149,6 +1466,7 @@
     </head>
     <body>
 
+        <!-- Toast Messages -->
         <div class="toast-container end-0 top-0 p-3">
             <div class="toast align-items-center border-0" id="toast-element-error" role="alert">
                 
@@ -1168,6 +1486,36 @@
                 </div>
             </div>
         </div>
+
+
+        <!-- Modals -->
+        <div class="modal" tabindex="-1" id="certificate-modal">
+            <div class="modal-dialog modal-dialog-scrollable modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="certificate-modal-title"></h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="certificate-modal-body">
+                    <div class="d-flex justify-content-center align-items-center mt-2" id="certificate-modal-wait-spinner">
+                        <div class="rounded d-flex justify-content-center align-items-center" style="background-color: rgb(0,0,0,0.1); width: 50px; height: 50px;">
+                            <div class="spinner-border spinner-border align-middle text-secondary" role="status" ><span class="visually-hidden">Loading...</span></div>
+                        </div>
+                    </div>
+
+                    <div id="certificate-modal-code-fail" class="d-none"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-exclamation-triangle-fill text-danger" width="20" height="20" viewBox="0 0 16 16">
+                        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                        </svg> Unable to retrieve certificate contents.</div>
+
+                    <code id="certificate-modal-code" class="d-none"></code>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
 
         <!-- Naviation Menu -->
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -1198,6 +1546,9 @@
                         </li>
                         <li class="nav-item" role="presentation">
                             <a class="nav-link" aria-current="page" href="#" id="errorLog-tab" data-bs-toggle="tab" data-bs-target="#errorLog-tab-pane" type="button" role="tab" aria-controls="errorLog-tab-pane" aria-selected="false">Error Log<span class="translate-middle badge rounded-pill bg-danger d-none" style="float:right;margin-left:20px;" id="errorLog-count"></span></a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" aria-current="page" href="#" id="certificates-tab" data-bs-toggle="tab" data-bs-target="#certificates-tab-pane" type="button" role="tab" aria-controls="certificates-tab-pane" aria-selected="false">Certificates</a>
                         </li>
                         <li class="nav-item" role="presentation">
                             <a class="nav-link" aria-current="page" href="#" id="about-tab" data-bs-toggle="tab" data-bs-target="#about-tab-pane" type="button" role="tab" aria-controls="about-tab-pane" aria-selected="false">About</a>
@@ -1405,6 +1756,45 @@
                         </thead>
                         <tbody id="eventLog-tab-table-data"></tbody>
                     </table>
+                </div>
+            </div>
+
+
+            <!-- Certificates -->
+            <div class="tab-pane fade" id="certificates-tab-pane" role="tabpanel" aria-labelledby="certificates-tab" tabindex="0">
+
+
+                <!--Wait Spinner-->
+                <div class="d-flex justify-content-center align-items-center mt-2" id="certificates-tab-wait-spinner">
+                    <div class="rounded d-flex justify-content-center align-items-center" style="background-color: rgb(0,0,0,0.1); width: 50px; height: 50px;">
+                        <div class="spinner-border spinner-border align-middle text-secondary" role="status" ><span class="visually-hidden">Loading...</span></div>
+                    </div>
+                </div>
+
+                <!--Content-->
+                <div id="certificates-tab-content" class="d-none">
+                    <br>
+                        <div class="input-group" id="certificates-upload">
+                            <input type="file" class="form-control" aria-label="Upload" name="file" id="certificate-upload-file-selector" onchange="certificateUploadButtonToggle();">
+                            <button class="btn btn-primary" type="button" disabled="true" id="certificate-upload-button" onclick="uploadCertificate();">
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" id="certificate-upload-button-spinner"></span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16" id="certificate-upload-button-icon">
+                                    <path fill-rule="evenodd" d="M8 10a.5.5 0 0 0 .5-.5V3.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 3.707V9.5a.5.5 0 0 0 .5.5zm-7 2.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13a.5.5 0 0 1-.5-.5z"/></svg> Upload</button>
+                        </div>
+                    <!--</form>-->
+                    <hr>                  
+                    <div class="table-responsive" id="certificates-tab-table">
+                        <table class="table table-striped">
+                            <thead>
+                            <tr>
+                                <th scope="col">Filename</th>
+                                <th scope="col">Size</th>
+                                <th scope="col">Operation</th>
+                            </tr>
+                            </thead>
+                            <tbody id="certificates-tab-table-data"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
