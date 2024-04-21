@@ -4,7 +4,6 @@
         <title>Hardware Configuration</title>
         <link href="./bootstrap.min.css" rel="stylesheet">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-  
         <script src="./bootstrap.min.js"></script>
         <script>
 
@@ -20,6 +19,7 @@
             let errorLog = [];
             let application_version = null;
             let ui_version = null;
+            let visual_token = "";
 
             const api_timeout = 5000;
 
@@ -380,9 +380,9 @@
 
                 try{
 
-                    let visualTokenPrompt = prompt("Enter the visual auth token");
+                    let authenticated = await authenticate();
 
-                    if(visualTokenPrompt == null){
+                    if(!authenticated){
                         return;
                     }
 
@@ -398,7 +398,7 @@
                         signal: AbortSignal.timeout(api_timeout), 
                         method: 'DELETE',
                         headers: {
-                            "x-visual-token":visualTokenPrompt
+                            "x-visual-token":visual_token
                         }
                     });
                     
@@ -437,9 +437,9 @@
 
                 try{
 
-                    let visualTokenPrompt = prompt("Enter the visual auth token");
+                    let authenticated = await authenticate();
 
-                    if(visualTokenPrompt == null){
+                    if(!authenticated){
                         return;
                     }
 
@@ -482,7 +482,7 @@
                           method: 'POST',
                           headers: {
                             "content-type":"application/json",
-                            "x-visual-token":visualTokenPrompt
+                            "x-visual-token":visual_token
                           },
                           body:JSON.stringify(payload)
                         });
