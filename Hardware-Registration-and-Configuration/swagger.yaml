@@ -360,6 +360,62 @@ paths:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: File system not mounted
+  /api/ota/app:
+    post:
+      tags:
+        - Configuration
+      summary: Force application OTA update
+      description: Forces an over-the-air (OTA) application firmware retrieval with the URL provided
+      security:
+        - visualToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/forceOTAConfiguration'
+            example:
+              url: http://www.somewhere.com/firmware.bin
+      responses:
+        '202':
+          description: Request accepted
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+        '401':
+          description: Unauthorized
+
+  /api/ota/spiffs:
+    post:
+      tags:
+        - Configuration
+      summary: Force SPIFFs OTA update
+      description: Forces an over-the-air (OTA) SPIFFs retrieval with the URL provided
+      security:
+        - visualToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/forceOTAConfiguration'
+            example:
+              url: http://www.somewhere.com/spiffs.bin
+      responses:
+        '202':
+          description: Request accepted
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+        '401':
+          description: Unauthorized
+  
   /certs:
     get:
       tags:
@@ -744,6 +800,13 @@ components:
           example: mycert.pem
       required:
         - url
+    forceOTAConfiguration:
+      type: object
+      properties:
+        url:
+          type: string
+          format: url
+          description: URL for the binary file to flash
   examples:
     emptyArray:
       value: []

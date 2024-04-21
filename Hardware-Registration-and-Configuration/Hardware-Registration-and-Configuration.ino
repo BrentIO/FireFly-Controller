@@ -217,8 +217,10 @@ void setup() {
   if(configFS_isMounted){
     httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota", http_handleOTA_POST));
-    httpServer.on("/api/ota", http_handleOTA);
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/ota$", http_handleOTA_POST));
+    httpServer.on("^\/api/ota$", http_handleOTA);
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/ota/app$", http_handleOTA_application));
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/ota/spiffs$", http_handleOTA_spiffs));
     setup_OtaFirmware();
   }else{
     httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_configFSNotMunted);
@@ -649,7 +651,7 @@ void http_handleOTA_POST(AsyncWebServerRequest *request, JsonVariant doc){
   if(!request->hasHeader("x-visual-token")){
       http_unauthorized(request);
       return;
-    }
+  }
 
   if(!authToken.authenticate(request->header("x-visual-token").c_str(), true)){
     http_unauthorized(request);
@@ -752,6 +754,60 @@ void http_handleOTA_DELETE(AsyncWebServerRequest *request){
       request->send(204);
       break;
   }
+}
+
+
+/**
+ * Handles force OTA update requests for application OTA updates using the payload provided
+*/
+void http_handleOTA_application(AsyncWebServerRequest *request, JsonVariant doc){
+
+  if(!request->hasHeader("x-visual-token")){
+      http_unauthorized(request);
+      return;
+  }
+
+  if(!authToken.authenticate(request->header("x-visual-token").c_str(), true)){
+    http_unauthorized(request);
+    return;
+  }
+
+   if(!doc.containsKey(F("url"))){
+    http_badRequest(request, F("Field url is required"));
+    return;
+  }
+
+  eventLog.createEvent(F("OTA app forced"));
+  request->send(202);
+
+  otaFirmware.forceUpdate(doc["url"], false);
+}
+
+
+/**
+ * Handles force OTA update requests for spiffs using the payload provided
+*/
+void http_handleOTA_spiffs(AsyncWebServerRequest *request, JsonVariant doc){
+
+  if(!request->hasHeader("x-visual-token")){
+      http_unauthorized(request);
+      return;
+  }
+
+  if(!authToken.authenticate(request->header("x-visual-token").c_str(), true)){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(!doc.containsKey(F("url"))){
+    http_badRequest(request, F("Field url is required"));
+    return;
+  }
+
+  eventLog.createEvent(F("OTA SPIFFs forced"));
+  request->send(202);
+
+  otaFirmware.forceUpdateSPIFFS(doc["url"], false);
 }
 
 
