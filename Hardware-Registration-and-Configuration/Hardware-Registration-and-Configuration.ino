@@ -666,6 +666,11 @@ void http_handleOTA_POST(AsyncWebServerRequest *request, JsonVariant doc){
   otaConfig.url = (const char*)doc["url"];
   otaConfig.certificate = (const char*)doc["certificate"];
 
+  if(otaConfig.url.startsWith("https") == true && otaConfig.certificate == ""){
+    http_badRequest(request, F("https requires certificate"));
+    return;
+  }
+
   switch(otaConfig.create()){
 
     case otaConfig::SUCCESS_NO_ERROR:
