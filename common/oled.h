@@ -959,10 +959,6 @@
                     this->hardware.println(this->_authorizationToken->getVisualToken().code);
                     this->hardware.setFont();
 
-                    this->hardware.setTextColor(SSD1306_WHITE);
-                    this->hardware.drawRect(0, (OLED_DISPLAY_HEIGHT-countdown_timer_height), (OLED_DISPLAY_WIDTH - OLED_SCROLL_BAR_WIDTH - 1), countdown_timer_height, SSD1306_WHITE); //Bar outline
-                    this->hardware.fillRect(0, (OLED_DISPLAY_HEIGHT-countdown_timer_height), round((float)(OLED_DISPLAY_WIDTH - OLED_SCROLL_BAR_WIDTH - 1) * this->_authorizationToken->getVisualToken().percentRemaining()), countdown_timer_height, SSD1306_WHITE); //Filled amount
-
                 #endif
                 
                 this->_drawScrollBar(PAGE_AUTH_TOKEN);
@@ -1102,7 +1098,7 @@
                 switch(this->_activePage){
 
                     case PAGE_AUTH_TOKEN:
-                        setPage(PAGE_AUTH_TOKEN); //Redraw the page to update the time slider
+                        this->setProgressBar(this->_authorizationToken->getVisualToken().percentRemaining());
                         break;
 
                     case PAGE_EVENT_LOG_INTRO:
@@ -1331,6 +1327,34 @@
                         setPage(PAGE_EVENT_LOG_INTRO);
                         break;
                 }
+            }
+    
+
+            /**
+             * Sets the progress bar value for pages supporting a progress bar
+             * @param percentage the percentage complete, where value <= 1.0
+            */
+            void setProgressBar(float percentage){
+
+                if(_activePage != PAGE_AUTH_TOKEN && _activePage != PAGE_OTA_IN_PROGRESS ){
+                    return;
+                }
+
+                this->_wake();
+
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
+
+                    const uint8_t PROGRESS_BAR_HEIGHT = 6;
+                    const uint8_t PROGRESS_BAR_BORDER = 1;
+                    const uint8_t MARGIN_FROM_SCROLLBAR = 3;
+                    
+                    this->hardware.drawRect(0, (OLED_DISPLAY_HEIGHT-PROGRESS_BAR_HEIGHT), (OLED_DISPLAY_WIDTH - OLED_SCROLL_BAR_WIDTH - MARGIN_FROM_SCROLLBAR), PROGRESS_BAR_HEIGHT, SSD1306_WHITE); //Draw a white border
+                    this->hardware.fillRect(PROGRESS_BAR_BORDER, (OLED_DISPLAY_HEIGHT - PROGRESS_BAR_HEIGHT + PROGRESS_BAR_BORDER), (OLED_DISPLAY_WIDTH - OLED_SCROLL_BAR_WIDTH - (PROGRESS_BAR_BORDER * 2) - MARGIN_FROM_SCROLLBAR), PROGRESS_BAR_HEIGHT - (PROGRESS_BAR_BORDER * 2), SSD1306_BLACK); //Draw progress bar at 0%
+                    this->hardware.fillRect(PROGRESS_BAR_BORDER, (OLED_DISPLAY_HEIGHT - PROGRESS_BAR_HEIGHT + PROGRESS_BAR_BORDER), round((float)(OLED_DISPLAY_WIDTH - OLED_SCROLL_BAR_WIDTH - PROGRESS_BAR_BORDER - MARGIN_FROM_SCROLLBAR) * percentage),  PROGRESS_BAR_HEIGHT - (PROGRESS_BAR_BORDER * 2), SSD1306_WHITE); //Fill progress bar with correct percentage
+
+                #endif
+
+                this->_commit();
             }
     };
 
