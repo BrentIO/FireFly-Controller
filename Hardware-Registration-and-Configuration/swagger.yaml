@@ -570,10 +570,9 @@ components:
     peripheralAddress:
       type: string
       maxLength: 5
-      pattern: "^[A-Fa-f0-9]+$"
+      pattern: ^[A-Fa-f0-9]+$
       description: Hexadecimal address of the peripheral
-      example: "0x20"
-
+      example: '0x20'
     peripheralType:
       type: string
       description: Type of peripheral
@@ -611,7 +610,7 @@ components:
         product_id:
           type: string
           description: Device product ID, which includes the board revision code
-          example: "FFC3232-2211"
+          example: FFC3232-2211
           maxLength: 32
         key:
           type: string
@@ -619,7 +618,7 @@ components:
           minLength: 64
           maxLength: 64
           example: bCsCaNv1LIf0UriPsKWTOTbz2biycaNOL57fcuBjqkxrnSONcqjHt1416iJfg8QJ
-          pattern: '^[0-9A-Za-z]{64}$'
+          pattern: ^[0-9A-Za-z]{64}$
       required:
         - uuid
         - product_id
@@ -678,17 +677,14 @@ components:
           type: string
           description: Descriptive text about the event
           example: EEPROM Failure
-
     applicationVersion:
       type: string
       description: Software version
-      example: "2024.2.1"
-
+      example: '2024.2.1'
     productHex:
       type: string
       description: Hardware product hexadecimal, indicating the version of the firmware
-      example: "0x8062305"
-
+      example: '0x8062305'
     applicationVersionInfo:
       type: object
       properties:
