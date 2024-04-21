@@ -327,7 +327,7 @@ void setup_OtaFirmware(){
       return;
     }
 
-    CryptoFileAsset *rootCA = new CryptoFileAsset(otaConfig.certificate.c_str(), &configFS);
+    CryptoFileAsset *rootCA = new CryptoFileAsset((CONFIGFS_PATH_CERTS + otaConfig.certificate).c_str(), &configFS);
     otaFirmware.setRootCA(rootCA);
   }
 
