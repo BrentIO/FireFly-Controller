@@ -273,8 +273,6 @@ paths:
       responses:
         '201':
           description: Created
-        401:
-          description: Unauthorized
         '400':
           description: Bad Request
           content:
@@ -283,7 +281,9 @@ paths:
                 $ref: '#/components/schemas/bad_request_message'
               example:
                 message: Request requires body
-        403:
+        '401':
+          description: Unauthorized
+        '403':
           description: Forbidden
           content:
             application/json:
