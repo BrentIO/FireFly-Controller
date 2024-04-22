@@ -891,17 +891,19 @@
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setCursor(0, 0);
 
-                    uint8_t iteratorOledStop = 0;
+                    if(this->_eventLog){
 
-                    if(this->_eventLog){             
-                        if(this->_eventLog->getEvents()->size() > OLED_NUMBER_OF_LINES){
-                            iteratorOledStop = this->_eventLog->getEvents()->size()-OLED_NUMBER_OF_LINES;
+                        int8_t iteratorOledStart = 0;
+
+                        if(this->_eventLog->getEvents()->size() > OLED_NUMBER_OF_LINES){ 
+                            iteratorOledStart = this->_eventLog->getEvents()->size()-OLED_NUMBER_OF_LINES;
                         }
 
-                        for(int8_t i = this->_eventLog->getEvents()->size()-1; i >= iteratorOledStop; i--){
+                        for(int8_t i = iteratorOledStart; i < this->_eventLog->getEvents()->size(); i++){
                             this->hardware.println(this->_eventLog->getEvents()->get(i).text);
                         }
                     }
+
                 #endif
 
                 this->_drawScrollBar(PAGE_EVENT_LOG);
