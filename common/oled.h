@@ -929,7 +929,14 @@
                     this->hardware.setCursor(0, 9);
 
                     if(this->_eventLog){
-                        for(int i=0; i < this->_eventLog->getErrors()->size(); i++){
+
+                        int8_t iteratorOledStart = 0;
+
+                        if(this->_eventLog->getErrors()->size() > OLED_NUMBER_OF_LINES - 1){ 
+                            iteratorOledStart = this->_eventLog->getErrors()->size() - (OLED_NUMBER_OF_LINES - 1);
+                        }
+
+                        for(int8_t i = iteratorOledStart; i < this->_eventLog->getErrors()->size(); i++){
                             this->hardware.println(this->_eventLog->getErrors()->get(i));
                         }
                     }
