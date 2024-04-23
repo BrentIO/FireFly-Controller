@@ -490,7 +490,7 @@ paths:
           name: filename
           schema:
             type: string
-            example: github.cer
+            example: mycert.pem
           required: true
           description: Certificate filename to retrieve
       responses:
@@ -524,7 +524,7 @@ paths:
           name: file
           schema:
             type: string
-            example: github.cer
+            example: mycert.pem
           required: true
           description: Certificate filename to delete
       responses:
@@ -774,7 +774,7 @@ components:
         file:
           type: string
           description: Certificate's filename
-          example: github.cer
+          example: mycert.pem
         size:
           type: integer
           description: Certificate's size in bytes
