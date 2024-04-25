@@ -50,8 +50,9 @@ void updateNTPTime(bool force = false);
 
 esp32FOTA otaFirmware(APPLICATION_NAME, VERSION, false); /* OTA firmware update class */
 #define FIRMWARE_CHECK_SECONDS 86400 /* Number of seconds between OTA firmware checks */
-uint64_t firmwareLastChecked_time = 0; /* The time (millis() or equivalent) when the firmware was last checked against the remote system */
-bool otaFirmwareUpdate_enabled = false; /* Determines if the OTA firmware automation should be run */
+uint64_t otaFirmware_lastCheckedTime = 0; /* The time (millis() or equivalent) when the firmware was last checked against the remote system */
+bool otaFirmware_enabled = false; /* Determines if the OTA firmware automation should be run */
+LinkedList<forcedOtaUpdateConfig> otaFirmware_pending;
 
 fs::LittleFSFS wwwFS;
 fs::LittleFSFS configFS;
@@ -218,10 +219,10 @@ void setup() {
   if(configFS_isMounted){
     httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/ota$", http_handleOTA_POST));
-    httpServer.on("^\/api/ota$", http_handleOTA);
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/ota/app$", http_handleOTA_application));
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/ota/spiffs$", http_handleOTA_spiffs));
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced));
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api\/ota$", http_handleOTA_POST));
+    httpServer.on("^\/api\/ota$", http_handleOTA);
     setup_OtaFirmware();
   }else{
     httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_configFSNotMunted);
@@ -273,18 +274,20 @@ void loop() {
   #if WIFI_MODEL != ENUM_WIFI_MODEL_ESP32 //Ignore when in SoftAP mode
     updateNTPTime();
 
-    if(otaFirmwareUpdate_enabled){
+    if(otaFirmware_enabled){
 
-      if((esp_timer_get_time() - firmwareLastChecked_time) / 1000000 > FIRMWARE_CHECK_SECONDS || firmwareLastChecked_time == 0){
+      if((esp_timer_get_time() - otaFirmware_lastCheckedTime) / 1000000 > FIRMWARE_CHECK_SECONDS || otaFirmware_lastCheckedTime == 0){
         if(otaFirmware.execHTTPcheck() == true){
               otaFirmware.execOTA();
         }
 
-        firmwareLastChecked_time = esp_timer_get_time();
+        otaFirmware_lastCheckedTime = esp_timer_get_time();
       }
     }
 
   #endif
+
+  otaFirmware_checkPending();
 
   oled.loop();
   authToken.loop(); 
@@ -309,6 +312,7 @@ void frontPanelButtonPress(){
 void setup_OtaFirmware(){
 
   otaFirmware.setSPIFFsPartitionLabel("www");
+  otaFirmware.setCertFileSystem(nullptr);
 
   if(strcmp(externalEEPROM.data.uuid, "") != 0){
     otaFirmware.setExtraHTTPHeader(F("uuid"), externalEEPROM.data.uuid);
@@ -325,7 +329,7 @@ void setup_OtaFirmware(){
 
   if(otaConfig.url.startsWith(F("https"))){
 
-    if(!configFS.exists(otaConfig.certificate)){
+    if(!configFS.exists(CONFIGFS_PATH_CERTS + otaConfig.certificate)){
       eventLog.createEvent(F("OTA cert missing"), EventLog::LOG_LEVEL_ERROR);
       return;
     }
@@ -334,8 +338,109 @@ void setup_OtaFirmware(){
     otaFirmware.setRootCA(rootCA);
   }
 
-  otaFirmwareUpdate_enabled = true;
+  otaFirmware.setProgressCb(otaFirmware_progress);
+  otaFirmware.setUpdateBeginFailCb(otaFirmware_failed);
+  otaFirmware.setUpdateFinishedCb(otaFirmware_finished);
+
+  otaFirmware_enabled = true;
   eventLog.createEvent(F("OTA update enabled"));
+}
+
+
+/**
+ * Checks if there are any pending OTA firmware updates in the queue.  This is necessary to allow the async web server to raise requests to the main loop.
+*/
+void otaFirmware_checkPending(){
+
+  if(otaFirmware_pending.size() == 0){
+    return;
+  }
+
+  if(otaFirmware_enabled == false){
+    return;
+  }
+
+  for(int i=0; i < otaFirmware_pending.size(); i++){
+
+    bool updateSuccess = false;
+
+    if(otaFirmware_pending[i].certificate != ""){
+      otaFirmware.setRootCA(new CryptoFileAsset((CONFIGFS_PATH_CERTS + otaFirmware_pending[i].certificate).c_str(), &configFS));
+    }
+
+    switch(otaFirmware_pending[i].type){
+
+      case OTA_UPDATE_APP:
+        eventLog.createEvent(F("OTA app forced"));
+        updateSuccess = otaFirmware.forceUpdate(otaFirmware_pending[i].url.c_str(), false);
+        break;
+
+
+      case OTA_UPDATE_SPIFFS:
+        eventLog.createEvent(F("OTA SPIFFS forced"));
+        updateSuccess = otaFirmware.forceUpdateSPIFFS(otaFirmware_pending[i].url.c_str(), false);
+        break;
+    }
+
+    if(!updateSuccess){
+      eventLog.createEvent(F("OTA update failed"), EventLog::LOG_LEVEL_NOTIFICATION);
+    }
+
+    otaFirmware_pending.remove(i);
+  }
+
+  otaConfig otaConfig(configFS);
+
+  if(otaConfig.get() != otaConfig::SUCCESS_NO_ERROR){
+    eventLog.createEvent(F("OTA cert not restored"), EventLog::LOG_LEVEL_ERROR);
+    otaFirmware_enabled = false;
+    eventLog.createEvent(F("OTA update disabled"));
+    return;
+  }
+
+  otaFirmware.setRootCA(new CryptoFileAsset((CONFIGFS_PATH_CERTS + otaConfig.certificate).c_str(), &configFS));
+}
+
+
+/**
+ * A callback function to report firmware upgrade progress, which draws a status on the OLED
+ * @param progress The number of bytes that have been processed so far
+ * @param size The total size of the update in bytes 
+*/
+void otaFirmware_progress(size_t progress, size_t size){
+
+  if(progress == 0){
+    eventLog.createEvent("OTA firmware started", EventLog::LOG_LEVEL_NOTIFICATION);
+    oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
+  }
+
+  oled.setProgressBar(((float)progress/(float)size));
+}
+
+
+/**
+ * Callback function to report that the update has failed
+ * @param partition inherited from esp32FOTA library
+*/
+void otaFirmware_failed(int partition){
+  log_i("Failed partition: [%i]", partition);
+  eventLog.createEvent("OTA firmware failed", EventLog::LOG_LEVEL_NOTIFICATION);
+}
+
+
+/**
+ * A callback function for when the firmware update has finished
+*/
+void otaFirmware_finished(int partition, bool needs_restart){
+
+  log_i("Finished Partition: [%i] needs restart: [%s]", partition, needs_restart ? "true":"false");
+
+  eventLog.createEvent(F("OTA update finished"));
+
+  if(needs_restart){
+      eventLog.createEvent(F("Rebooting..."), EventLog::LOG_LEVEL_NOTIFICATION);
+      delay(50000);
+  }
 }
 
 
@@ -759,9 +864,9 @@ void http_handleOTA_DELETE(AsyncWebServerRequest *request){
 
 
 /**
- * Handles force OTA update requests for application OTA updates using the payload provided
+ * Handles force OTA force update requests using the payload provided
 */
-void http_handleOTA_application(AsyncWebServerRequest *request, JsonVariant doc){
+void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
 
   if(!request->hasHeader("x-visual-token")){
       http_unauthorized(request);
@@ -778,37 +883,47 @@ void http_handleOTA_application(AsyncWebServerRequest *request, JsonVariant doc)
     return;
   }
 
-  eventLog.createEvent(F("OTA app forced"));
-  request->send(202);
+  forcedOtaUpdateConfig newFirmwareRequest;
+  newFirmwareRequest.url = doc["url"].as<String>();
+  newFirmwareRequest.certificate = doc["certificate"].as<String>();
 
-  otaFirmware.forceUpdate(doc["url"], false);
-}
+  if(!newFirmwareRequest.url.startsWith("http")){
+    http_badRequest(request, F("Bad url; http or https required"));
+    return;
+  }
 
-
-/**
- * Handles force OTA update requests for spiffs using the payload provided
-*/
-void http_handleOTA_spiffs(AsyncWebServerRequest *request, JsonVariant doc){
-
-  if(!request->hasHeader("x-visual-token")){
-      http_unauthorized(request);
+  if(newFirmwareRequest.url.startsWith("https")){
+    if(!doc.containsKey(F("certificate"))){
+      http_badRequest(request, F("https requires certificate"));
       return;
+    }
+
+    if(newFirmwareRequest.certificate == ""){
+      http_badRequest(request, F("Certificate cannot be empty"));
+      return;
+    }
+
+    if(otaFirmware_enabled == false){
+      http_forbiddenRequest(request, F("OTA firmware disabled"));
+      return;
+    }
+
+    if(!configFS.exists(CONFIGFS_PATH_CERTS + newFirmwareRequest.certificate)){
+      http_badRequest(request, F("Certificate does not exist"));
+      return;
+    }
   }
 
-  if(!authToken.authenticate(request->header("x-visual-token").c_str(), true)){
-    http_unauthorized(request);
-    return;
+  if(request->url().endsWith("app")){
+      newFirmwareRequest.type = OTA_UPDATE_APP;
+
+  }else{
+    newFirmwareRequest.type = OTA_UPDATE_SPIFFS;
   }
 
-  if(!doc.containsKey(F("url"))){
-    http_badRequest(request, F("Field url is required"));
-    return;
-  }
+  otaFirmware_pending.add(newFirmwareRequest);
 
-  eventLog.createEvent(F("OTA SPIFFs forced"));
   request->send(202);
-
-  otaFirmware.forceUpdateSPIFFS(doc["url"], false);
 }
 
 

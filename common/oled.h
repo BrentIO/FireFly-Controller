@@ -41,6 +41,7 @@
                 PAGE_ERROR_INTRO = 60,
                 PAGE_AUTH_TOKEN = 7,
                 PAGE_AUTH_TOKEN_INTRO = 70,
+                PAGE_OTA_IN_PROGRESS = 254,
                 PAGE_FACTORY_RESET = 255
             };
 
@@ -975,6 +976,28 @@
             }
 
 
+            void _showPage_OTA_In_Progress(){
+
+                if(this->_initialized != true){
+                    return;
+                }
+
+                this->_activePage = PAGE_OTA_IN_PROGRESS;
+                this->_clear();
+
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
+
+                    
+                    this->hardware.setCursor(0, 0);
+                    this->hardware.println(F("      OTA update    "));
+                    this->hardware.println(F("    in progress...  "));
+
+                #endif
+                
+                this->_commit();
+            }
+
+
         public:
 
             void setCallback_failure(void (*userDefinedCallback)(uint8_t, failureReason)) {
@@ -1236,12 +1259,18 @@
                         _showPage_Auth_Token();
                         break;
 
+
+                    case PAGE_OTA_IN_PROGRESS:
+                        _showPage_OTA_In_Progress();
+                        break;
+
                     case PAGE_FACTORY_RESET:
                         _showPage_Factory_Reset();
                         break;
                 }
                 
             }
+
 
             /**
              * Returns the current page being displayed on the OLED

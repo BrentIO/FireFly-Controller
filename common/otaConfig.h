@@ -8,6 +8,19 @@
     #define OTA_FILE_NAME F("/ota.json")
 
 
+    enum otaUpdateType{
+        OTA_UPDATE_APP = 2,
+        OTA_UPDATE_SPIFFS = 1
+    };
+    
+    
+    struct forcedOtaUpdateConfig{
+        String url;
+        String certificate;
+        otaUpdateType type;
+    };
+
+
     class otaConfig{
         private:
             fs::LittleFSFS &_filesystem;
