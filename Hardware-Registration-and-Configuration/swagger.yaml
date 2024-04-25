@@ -158,6 +158,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/mcuInfo'
+  /api/mcu/reboot:
+    post:
+      tags:
+        - MCU
+      summary: Reboot the main control unit
+      description: Performs a reboot on the main control unit
+      security:
+        - visualToken: []
+      responses:
+        '204':
+          description: Accepted
+        '401':
+          description: Unauthorized  
   /api/partitions:
     get:
       tags:

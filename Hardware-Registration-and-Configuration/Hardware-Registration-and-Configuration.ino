@@ -204,7 +204,8 @@ void setup() {
   */
   httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/eeprom", http_handleEEPROM_POST));
   httpServer.on("/api/eeprom", http_handleEEPROM);
-  httpServer.on("/api/mcu", http_handleMCU);
+  httpServer.on("^\/api\/mcu$", http_handleMCU);
+  httpServer.on("^\/api\/mcu\/reboot$", http_handleReboot);
   httpServer.on("/api/partitions", http_handlePartitions);
   httpServer.on("/api/peripherals", http_handlePeripherals);
   httpServer.on("/api/version", http_handleVersion);
@@ -965,6 +966,33 @@ void http_handleMCU(AsyncWebServerRequest *request){
 
   serializeJson(doc, *response);
   request->send(response);
+}
+
+
+/**
+ * Handles requests for the MCU to be rebooted remotely
+*/
+void http_handleReboot(AsyncWebServerRequest *request){
+
+  if(!request->hasHeader("x-visual-token")){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header("x-visual-token").c_str())){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(request->method()!= ASYNC_HTTP_POST){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  request->send(204);
+
+  ESP.restart();
+
 }
 
 
