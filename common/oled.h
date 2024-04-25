@@ -1361,8 +1361,12 @@
                         setPage(PAGE_EVENT_LOG_INTRO);
                         break;
 
-                    default:
+                    case PAGE_AUTH_TOKEN:
                         setPage(PAGE_EVENT_LOG_INTRO);
+                        break;
+
+                    default:
+                        //Do nothing -- could be an OTA update running or other event that we don't want the screen interrupted
                         break;
                 }
             }
