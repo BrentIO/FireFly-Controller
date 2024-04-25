@@ -387,8 +387,14 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/forceOTAConfiguration'
-            example:
-              url: http://www.somewhere.com/firmware.bin
+            examples:
+              http:
+                value:
+                  url: http://www.somewhere.com/firmware.bin
+              https:
+                value:
+                  url: https://www.somewhere.com/firmware.bin
+                  certificate: mycert.pem
       responses:
         '202':
           description: Request accepted
@@ -415,8 +421,14 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/forceOTAConfiguration'
-            example:
-              url: http://www.somewhere.com/spiffs.bin
+            examples:
+              http:
+                value:
+                  url: http://www.somewhere.com/spiffs.bin
+              https:
+                value:
+                  url: https://www.somewhere.com/spiffs.bin
+                  certificate: mycert.pem
       responses:
         '202':
           description: Request accepted
@@ -820,6 +832,12 @@ components:
           type: string
           format: url
           description: URL for the binary file to flash
+        certificate:
+          type: string
+          description: File name for the certificate that should be used when https is specified
+          example: mycert.pem
+      required:
+        - url
   examples:
     emptyArray:
       value: []
