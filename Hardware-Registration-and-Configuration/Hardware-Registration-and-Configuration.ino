@@ -338,9 +338,9 @@ void setup_OtaFirmware(){
     otaFirmware.setRootCA(rootCA);
   }
 
-  otaFirmware.setProgressCb(otaFirmware_progress);
-  otaFirmware.setUpdateBeginFailCb(otaFirmware_failed);
-  otaFirmware.setUpdateFinishedCb(otaFirmware_finished);
+  otaFirmware.setProgressCb(eventHandler_otaFirmwareProgress);
+  otaFirmware.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
+  otaFirmware.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
 
   otaFirmware_enabled = true;
   eventLog.createEvent(F("OTA update enabled"));
@@ -407,7 +407,7 @@ void otaFirmware_checkPending(){
  * @param progress The number of bytes that have been processed so far
  * @param size The total size of the update in bytes 
 */
-void otaFirmware_progress(size_t progress, size_t size){
+void eventHandler_otaFirmwareProgress(size_t progress, size_t size){
 
   if(progress == 0){
     eventLog.createEvent("OTA firmware started", EventLog::LOG_LEVEL_NOTIFICATION);
@@ -422,7 +422,7 @@ void otaFirmware_progress(size_t progress, size_t size){
  * Callback function to report that the update has failed
  * @param partition inherited from esp32FOTA library
 */
-void otaFirmware_failed(int partition){
+void eventHandler_otaFirmwareFailed(int partition){
   log_i("Failed partition: [%i]", partition);
   eventLog.createEvent("OTA firmware failed", EventLog::LOG_LEVEL_NOTIFICATION);
 }
@@ -431,7 +431,7 @@ void otaFirmware_failed(int partition){
 /**
  * A callback function for when the firmware update has finished
 */
-void otaFirmware_finished(int partition, bool needs_restart){
+void eventHandler_otaFirmwareFinished(int partition, bool needs_restart){
 
   log_i("Finished Partition: [%i] needs restart: [%s]", partition, needs_restart ? "true":"false");
 
@@ -1575,7 +1575,6 @@ void failureHandler_eeprom(uint8_t address, managerExternalEEPROM::failureReason
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 
 }
-
 
 
 /** 
