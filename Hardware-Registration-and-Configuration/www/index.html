@@ -1203,7 +1203,6 @@
                 var updateServiceCertificateNoneOption = document.createElement("option");
                 updateServiceCertificateNoneOption.value = "";
                 updateServiceCertificateNoneOption.text = "(None)";
-                updateServiceCertificateNoneOption.selected = true;
                 document.getElementById('ota-update-service-certificate').add(updateServiceCertificateNoneOption);
 
 
@@ -1214,7 +1213,6 @@
                 var forceCertificateNoneOption = document.createElement("option");
                 forceCertificateNoneOption.value = "";
                 forceCertificateNoneOption.text = "(None)";
-                forceCertificateNoneOption.selected = true;
                 document.getElementById('ota-update-force-certificate').add(forceCertificateNoneOption);
 
                 certificates.forEach(function (element){
@@ -1243,6 +1241,9 @@
                     document.getElementById('ota-update-service-certificate').add(updateServiceOption);
                     document.getElementById('ota-update-force-certificate').add(forceServiceOption);
                 });
+
+                updateServiceCertificateNoneOption.selected = true;
+                forceCertificateNoneOption.selected = true;
 
                 document.getElementById('certificates-tab-content').classList.remove("d-none");
                 document.getElementById('certificates-tab-wait-spinner').classList.add("d-none");
