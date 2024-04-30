@@ -35,6 +35,10 @@
                     getErrorLog();
                 });
 
+                loadData();
+            }
+
+            async function loadData(){
                 setCopyright();
                 getMCU();
                 getIdentification();
@@ -44,7 +48,9 @@
                 getEventLog();
                 getErrorLog();
                 getUIVersion();
-                getCertificates();
+                await getCertificates();
+                getOtaUpdate();
+            }
             }
 
 
