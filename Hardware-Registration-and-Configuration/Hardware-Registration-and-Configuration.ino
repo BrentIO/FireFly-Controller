@@ -714,16 +714,6 @@ void http_handleOTA(AsyncWebServerRequest *request){
 
     case ASYNC_HTTP_GET:
 
-      if(!request->hasHeader("x-visual-token")){
-          http_unauthorized(request);
-          return;
-        }
-
-      if(!authToken.authenticate(request->header("x-visual-token").c_str(), true)){
-        http_unauthorized(request);
-        return;
-      }
-
       http_handleOTA_GET(request);
       break;
 

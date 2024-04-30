@@ -275,8 +275,6 @@ paths:
         - Configuration
       summary: OTA firmware configuration
       description: Stores the over-the-air (OTA) firmware configuration
-      security:
-        - visualToken: []
       requestBody:
         required: true
         content:
