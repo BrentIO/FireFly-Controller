@@ -64,7 +64,7 @@
                     let visualTokenPrompt = prompt("Enter the visual token");
 
                     if(visualTokenPrompt == null){
-                        throw new Error("Authentication cancelled.");
+                        throw new Error("Authentication cancelled");
                     }
 
                     let response = await fetch("/auth", {
@@ -82,7 +82,7 @@
                             break;
 
                         case 401:
-                            createErrorToast("Authentication failed", "Verify the visual token.");
+                            createErrorToast("Authentication failed", "Verify the visual token");
                             visual_token = "";
                             break;
 
@@ -464,7 +464,7 @@
                     
                     switch(response.status){
                         case 204:
-                            createSuccessToast("Success", "Identification has been deleted.");
+                            createSuccessToast("Success", "Identification has been deleted");
                             getIdentification();
                             break;
 
@@ -517,17 +517,17 @@
 
                     if(document.getElementById("uuid").value.length != 36){
                         disable_identification_save_button(false);
-                        throw new Error("Device UUID must be exactly 36 characters.");
+                        throw new Error("Device UUID must be exactly 36 characters");
                     }
 
                     if(document.getElementById("product_id").value == ""){
                         disable_identification_save_button(false);
-                        throw new Error("No Product ID was selected.");
+                        throw new Error("No Product ID was selected");
                     }
 
                     if(document.getElementById("key").value.length != 64){
                         disable_identification_save_button(false);
-                        throw new Error("Key must be exactly 64 characters.");
+                        throw new Error("Key must be exactly 64 characters");
                     }
 
                     payload = {}
@@ -549,7 +549,7 @@
                     
                     switch(response.status){
                         case 201:
-                            createSuccessToast("Success", "Identification has been created.");
+                            createSuccessToast("Success", "Identification has been created");
                             getIdentification();
                             break;
 
@@ -630,7 +630,7 @@
             function drawProduct_Ids(){
 
                 if(auxillary_data === null){
-                    throw new Error("No auxillary data found.");
+                    throw new Error("No auxillary data found");
                     return;
                 }
 
@@ -763,7 +763,7 @@
                 var countOfIssues = 0;
 
                 if(partitions == []){
-                    errorHandler_get_div("No partitions found.");
+                    errorHandler_get_div("No partitions found");
                     return;
                 }
 
@@ -807,7 +807,7 @@
 
                 if(countOfIssues > 0){
                     prependWarningLabel("partition-table-tab");
-                    createErrorToast("Partition Table", "One or more partitions have errors.");
+                    createErrorToast("Partition Table", "One or more partitions have errors");
                 }
 
                 document.getElementById('partition-tab-table').classList.remove("d-none");
@@ -818,17 +818,17 @@
             function checkPartitionScheme(){
 
                 if(partitions.length == 0){
-                    throw new Error("No partitions returned by API.");
+                    throw new Error("No partitions returned by API");
                     return;
                 }
 
                 if(auxillary_data.length == 0){
-                    throw new Error("No partition schemes found in auxillary data.");
+                    throw new Error("No partition schemes found in auxillary data");
                     return;
                 }
 
                 if(application_version === null){
-                    throw new Error("Application version information is missing.");
+                    throw new Error("Application version information is missing");
                     return;
                 }
 
@@ -843,13 +843,13 @@
                 });
 
                 if(partition_scheme.length == 0 ){
-                    throw new Error("No match between product hex and auxillary data.  Either the product hex is wrong, or the auxillary data needs to be updated for the hardware type.");
+                    throw new Error("No match between product hex and auxillary data.  Either the product hex is wrong, or the auxillary data needs to be updated for the hardware type");
                     return;
                 }
 
 
                 if(partition_scheme.length != 1 ){
-                    throw new Error("Partition scheme length of " + partition_scheme.length + ", expected exactly 1.");
+                    throw new Error("Partition scheme length of " + partition_scheme.length + ", expected exactly 1");
                     return;
                 }
 
@@ -857,7 +857,7 @@
 
 
                 if(partition_scheme.length != partitions.length){
-                    throw new Error("The number of partitions in auxillary data for this product hex and the actual number of partitions reported by the hardware do not match.");
+                    throw new Error("The number of partitions in auxillary data for this product hex and the actual number of partitions reported by the hardware do not match");
                     return;
                 }
 
@@ -948,7 +948,7 @@
 
                 if(countOffline > 0){
                     prependWarningLabel("peripherals-tab");
-                    createErrorToast("Peripherals Offline", "One or more peripherals are offline.");
+                    createErrorToast("Peripherals Offline", "One or more peripherals are offline");
                 }
 
                 document.getElementById('peripheral-tab-table').classList.remove("d-none");
@@ -1281,7 +1281,7 @@
 
                     switch(response.status){
                         case 204:
-                            createSuccessToast("Success", "Certificate has been deleted.");
+                            createSuccessToast("Success", "Certificate has been deleted");
                             getCertificates();
                             break;
 
@@ -1334,7 +1334,7 @@
                     var fileSelector = document.getElementById("certificate-upload-file-selector");
 
                     if(fileSelector.files.length != 1){
-                        createErrorToast("Choose a File", "No file was selected to be uploaded.");
+                        createErrorToast("Choose a File", "No file was selected to be uploaded");
                         certificateUploadButtonToggle();
                         return;
                     }
@@ -1369,7 +1369,7 @@
 
                     switch(response.status){
                         case 201:
-                            createSuccessToast("Success", "Certificate has been uploaded.");
+                            createSuccessToast("Success", "Certificate has been uploaded");
                             getCertificates();
                             break;
 
@@ -1578,7 +1578,7 @@
 
                     switch(response.status){
                         case 201:
-                            createSuccessToast("Success", "OTA update service configured.");
+                            createSuccessToast("Success", "OTA update service configured");
                             document.getElementById("ota-update-service-delete-button").disabled = false;
                             break;
 
@@ -1637,7 +1637,7 @@
                             otaConfig = {};
                             await getCertificates();
                             drawOtaConfig();
-                            createSuccessToast("Success", "OTA update service configuration has been deleted.");
+                            createSuccessToast("Success", "OTA update service configuration has been deleted");
                             document.getElementById("ota-update-service-delete-button-spinner").classList.add("d-none");
                             document.getElementById("ota-update-service-delete-button-icon").classList.remove("d-none");
                             document.getElementById("ota-update-service-save-button").disabled = false;
