@@ -327,16 +327,16 @@ void setup_OtaFirmware(){
   }
 
   otaFirmware.setManifestURL(otaConfig.url.c_str());
+  otaConfig.certificate = CONFIGFS_PATH_CERTS + otaConfig.certificate;
 
   if(otaConfig.url.startsWith(F("https"))){
-
-    if(!configFS.exists(CONFIGFS_PATH_CERTS + otaConfig.certificate)){
+    if(!configFS.exists(otaConfig.certificate)){
       eventLog.createEvent(F("OTA cert missing"), EventLog::LOG_LEVEL_ERROR);
       return;
     }
 
-    CryptoFileAsset *rootCA = new CryptoFileAsset((CONFIGFS_PATH_CERTS + otaConfig.certificate).c_str(), &configFS);
-    otaFirmware.setRootCA(rootCA);
+    otaFirmware.setRootCA(new CryptoFileAsset(otaConfig.certificate.c_str(), &configFS));
+
   }
 
   otaFirmware.setProgressCb(eventHandler_otaFirmwareProgress);
