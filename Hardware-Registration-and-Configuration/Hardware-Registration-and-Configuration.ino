@@ -365,8 +365,9 @@ void otaFirmware_checkPending(){
 
     bool updateSuccess = false;
 
-    if(otaFirmware_pending[i].certificate != ""){
-      otaFirmware.setRootCA(new CryptoFileAsset((CONFIGFS_PATH_CERTS + otaFirmware_pending[i].certificate).c_str(), &configFS));
+    if(otaFirmware_pending[i].url.startsWith("https")){
+      otaFirmware_pending[i].certificate = CONFIGFS_PATH_CERTS + otaFirmware_pending[i].certificate;
+      otaFirmware.setRootCA(new CryptoFileAsset(otaFirmware_pending[i].certificate.c_str(), &configFS));
     }
 
     switch(otaFirmware_pending[i].type){
