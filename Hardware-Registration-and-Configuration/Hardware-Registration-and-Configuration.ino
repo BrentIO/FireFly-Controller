@@ -221,7 +221,7 @@ void setup() {
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced));
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api\/ota$", http_handleOTA_POST));
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota", http_handleOTA_POST));
     httpServer.on("^\/api\/ota$", http_handleOTA);
     setup_OtaFirmware();
   }else{
