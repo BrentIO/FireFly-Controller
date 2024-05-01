@@ -225,6 +225,7 @@ void setup() {
     httpServer.on("^\/api\/ota$", http_handleOTA);
     setup_OtaFirmware();
   }else{
+    log_e("configFS is not mounted");
     httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_configFSNotMunted);
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_configFSNotMunted);
     httpServer.on("/api/ota", http_configFSNotMunted);
