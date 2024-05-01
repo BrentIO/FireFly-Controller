@@ -399,6 +399,8 @@ void otaFirmware_checkPending(){
     return;
   }
 
+  otaConfig.certificate = CONFIGFS_PATH_CERTS + otaConfig.certificate;
+
   if(otaConfig.url.startsWith("https")){
       otaFirmware.setRootCA(new CryptoFileAsset(otaConfig.certificate.c_str(), &configFS));
   }
