@@ -441,7 +441,7 @@ void eventHandler_otaFirmwareFinished(int partition, bool needs_restart){
 
   log_i("Finished Partition: [%i] needs restart: [%s]", partition, needs_restart ? "true":"false");
 
-  eventLog.createEvent(F("OTA update finished"));
+  eventLog.createEvent(F("OTA update finished"), EventLog::LOG_LEVEL_NOTIFICATION);
 
   if(needs_restart){
       eventLog.createEvent(F("Rebooting..."), EventLog::LOG_LEVEL_NOTIFICATION);
