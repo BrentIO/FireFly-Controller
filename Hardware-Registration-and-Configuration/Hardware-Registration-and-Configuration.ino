@@ -443,7 +443,7 @@ void eventHandler_otaFirmwareFinished(int partition, bool needs_restart){
 
   if(needs_restart){
       eventLog.createEvent(F("Rebooting..."), EventLog::LOG_LEVEL_NOTIFICATION);
-      delay(50000);
+      delay(5000);
   }
 }
 
