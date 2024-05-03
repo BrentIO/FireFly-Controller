@@ -533,12 +533,12 @@ void http_options(AsyncWebServerRequest *request) {
 */
 void http_configFSNotMunted(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader("x-visual-token")){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header("x-visual-token").c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -580,12 +580,12 @@ void http_handleCerts(AsyncWebServerRequest *request){
 */
 void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
 
-  if(!request->hasHeader("x-visual-token")){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header("x-visual-token").c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -626,12 +626,12 @@ void http_handleCert(AsyncWebServerRequest *request){
 
     case ASYNC_HTTP_GET:
 
-        if(!request->hasHeader("x-visual-token")){
+        if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
       }
 
-      if(!authToken.authenticate(request->header("x-visual-token").c_str())){
+      if(!authToken.authenticate(request->header("visual-token").c_str())){
         http_unauthorized(request);
         return;
       }
@@ -641,12 +641,12 @@ void http_handleCert(AsyncWebServerRequest *request){
 
     case ASYNC_HTTP_DELETE:
 
-      if(!request->hasHeader("x-visual-token")){
+      if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
       }
 
-      if(!authToken.authenticate(request->header("x-visual-token").c_str())){
+      if(!authToken.authenticate(request->header("visual-token").c_str())){
         http_unauthorized(request);
         return;
       }
@@ -706,12 +706,12 @@ void http_handleOTA(AsyncWebServerRequest *request){
 
     case ASYNC_HTTP_POST:
 
-      if(!request->hasHeader("x-visual-token")){
+      if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
       }
 
-      if(!authToken.authenticate(request->header("x-visual-token").c_str())){
+      if(!authToken.authenticate(request->header("visual-token").c_str())){
         http_unauthorized(request);
         return;
       }
@@ -726,12 +726,12 @@ void http_handleOTA(AsyncWebServerRequest *request){
 
     case ASYNC_HTTP_DELETE:
 
-      if(!request->hasHeader("x-visual-token")){
+      if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
       }
 
-      if(!authToken.authenticate(request->header("x-visual-token").c_str())){
+      if(!authToken.authenticate(request->header("visual-token").c_str())){
         http_unauthorized(request);
         return;
       }
@@ -751,12 +751,12 @@ void http_handleOTA(AsyncWebServerRequest *request){
 */
 void http_handleOTA_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
-  if(!request->hasHeader("x-visual-token")){
+  if(!request->hasHeader("visual-token")){
       http_unauthorized(request);
       return;
   }
 
-  if(!authToken.authenticate(request->header("x-visual-token").c_str(), true)){
+  if(!authToken.authenticate(request->header("visual-token").c_str(), true)){
     http_unauthorized(request);
     return;
   }
@@ -865,12 +865,12 @@ void http_handleOTA_DELETE(AsyncWebServerRequest *request){
 */
 void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
 
-  if(!request->hasHeader("x-visual-token")){
+  if(!request->hasHeader("visual-token")){
       http_unauthorized(request);
       return;
   }
 
-  if(!authToken.authenticate(request->header("x-visual-token").c_str(), true)){
+  if(!authToken.authenticate(request->header("visual-token").c_str(), true)){
     http_unauthorized(request);
     return;
   }
@@ -1086,12 +1086,12 @@ void http_handleMCU(AsyncWebServerRequest *request){
 */
 void http_handleReboot(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader("x-visual-token")){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header("x-visual-token").c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -1209,12 +1209,12 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
 
     case ASYNC_HTTP_POST:
 
-      if(!request->hasHeader("x-visual-token")){
+      if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
       }
 
-      if(!authToken.authenticate(request->header("x-visual-token").c_str())){
+      if(!authToken.authenticate(request->header("visual-token").c_str())){
         http_unauthorized(request);
         return;
       }
@@ -1228,12 +1228,12 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
 
     case ASYNC_HTTP_DELETE:
 
-      if(!request->hasHeader("x-visual-token")){
+      if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
       }
 
-      if(!authToken.authenticate(request->header("x-visual-token").c_str())){
+      if(!authToken.authenticate(request->header("visual-token").c_str())){
         http_unauthorized(request);
         return;
       }
@@ -1310,12 +1310,12 @@ void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
 */
 void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
-    if(!request->hasHeader("x-visual-token")){
+    if(!request->hasHeader("visual-token")){
       http_unauthorized(request);
       return;
     }
 
-    if(!authToken.authenticate(request->header("x-visual-token").c_str(), true)){
+    if(!authToken.authenticate(request->header("visual-token").c_str(), true)){
       http_unauthorized(request);
       return;
     }
@@ -1513,12 +1513,12 @@ void http_handleAuth(AsyncWebServerRequest *request){
     return;
   }
 
-  if(!request->hasHeader("x-visual-token")){
+  if(!request->hasHeader("visual-token")){
     http_unauthorized(request);
     return;
   }
 
-  if(!authToken.authenticate(request->header("x-visual-token").c_str(), true)){
+  if(!authToken.authenticate(request->header("visual-token").c_str(), true)){
     http_unauthorized(request);
     return;
   }

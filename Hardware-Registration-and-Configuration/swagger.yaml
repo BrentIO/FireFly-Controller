@@ -583,7 +583,7 @@ components:
     visualToken:
       type: apiKey
       in: header
-      name: x-visual-token
+      name: visual-token
       description: A security token visually displayed on the device which changes on a regular basis
   schemas:
     error_message:
