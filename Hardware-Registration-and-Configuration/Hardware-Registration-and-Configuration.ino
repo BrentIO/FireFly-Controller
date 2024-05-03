@@ -597,6 +597,11 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
 
   if(!index){
 
+    if(filename.length() > 31){
+      http_badRequest(request, F("Filename must be 31 characters or less"));
+      return;
+    }
+
     if(configFS.exists(CONFIGFS_PATH_CERTS + filename)){
       http_forbiddenRequest(request, F("Certificate already exists"));
       return;
@@ -667,6 +672,10 @@ void http_handleCert(AsyncWebServerRequest *request){
 */
 void http_handleCert_GET(AsyncWebServerRequest *request){
 
+  if(request->pathArg(0).length() > 31){
+    http_badRequest(request, F("Filename must be 31 characters or less"));
+  }
+
   if(configFS.exists(CONFIGFS_PATH_CERTS + request->pathArg(0))){
 
     AsyncWebServerResponse *response = request->beginResponse(configFS, CONFIGFS_PATH_CERTS + request->pathArg(0), "text/plain");
@@ -683,6 +692,10 @@ void http_handleCert_GET(AsyncWebServerRequest *request){
  * Handles deleting a specific certificate
 */
 void http_handleCert_DELETE(AsyncWebServerRequest *request){
+
+  if(request->pathArg(0).length() > 31){
+    http_badRequest(request, F("Filename must be 31 characters or less"));
+  }
 
   if(configFS.exists(CONFIGFS_PATH_CERTS + request->pathArg(0))){
     configFS.remove(CONFIGFS_PATH_CERTS + request->pathArg(0));

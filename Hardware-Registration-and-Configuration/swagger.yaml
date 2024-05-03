@@ -482,6 +482,14 @@ paths:
       responses:
         '201':
           description: Created
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+              example:
+                message: Filename must be 31 characters or less
         '401':
           description: Unauthorized
         '403':
@@ -514,6 +522,7 @@ paths:
           schema:
             type: string
             example: mycert.pem
+            maxLength: 31
           required: true
           description: Certificate filename to retrieve
       responses:
@@ -523,6 +532,14 @@ paths:
             text/plain:
               schema:
                 $ref: '#/components/schemas/certificateContent'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+              example:
+                message: Filename must be 31 characters or less
         '401':
           description: Unauthorized
         '404':
@@ -548,11 +565,20 @@ paths:
           schema:
             type: string
             example: mycert.pem
+            maxLength: 31
           required: true
           description: Certificate filename to delete
       responses:
         '204':
           description: Deleted certificate successfully
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+              example:
+                message: Filename must be 31 characters or less
         '401':
           description: Unauthorized
         '404':
