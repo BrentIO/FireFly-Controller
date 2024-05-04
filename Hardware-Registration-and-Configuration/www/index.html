@@ -1357,7 +1357,7 @@
 
                     const formData = new FormData();
 
-                    formData.append("file", fileSelector.files[0])
+                    formData.append("file", fileSelector.files[0]);
 
                     let response = await fetch("/certs", {
                         signal: AbortSignal.timeout(api_timeout),
