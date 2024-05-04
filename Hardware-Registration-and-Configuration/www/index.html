@@ -1340,6 +1340,11 @@
                         return;
                     }
 
+                    if(fileSelector.files[0].name.length > 31){
+                        createErrorToast("Filename too long", "Certificate filename must be 31 characters or less");
+                        return;
+                    }
+
                     let authenticated = await authenticate();
 
                     if(!authenticated){
