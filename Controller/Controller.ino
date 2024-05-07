@@ -3,19 +3,22 @@
 
 #define VERSION "2024.01.0001"
 
-#include <ArduinoJson.h>
 #include "common/hardware.h"
-#include "common/outputs.h"
-#include "common/inputs.h"
-#include "common/temperature.h"
-#include "common/frontPanel.h"
 #include "common/externalEEPROM.h"
 #include "common/oled.h"
-#include <NTPClient.h>
-
-#include <AsyncTCP.h>
-#include <ESPAsyncWebServer.h> 
+#include "common/frontPanel.h"
+#include "common/inputs.h"
+#include "common/temperature.h"
+#include "common/outputs.h"
+#include "common/eventLog.h"
+#include "common/authorizationToken.h"
+#include "common/otaConfig.h"
+#include <ArduinoJson.h>
 #include "AsyncJson.h"
+#include <NTPClient.h>
+#include <WiFiUdp.h>
+#include <esp32FOTA.hpp>
+
 
 
 nsOutputs::managerOutputs outputs;
