@@ -60,309 +60,194 @@ fs::LittleFSFS configFS;
 #define CONFIGFS_PATH_CERTS "/certs/"
 
 
+/**
+ * One-time setup
+*/
 void setup() {
+    bool wwwFS_isMounted = false;
+    bool configFS_isMounted = false;
 
-    #ifdef DEBUG
-      Serial.begin(115200);
-    #endif
+
+    eventLog.createEvent(F("Event log started"));
+
 
     Wire.begin();
 
-    //Configure the peripherals
-    oled.setCallback_failure(&oledFailure);
-    oled.begin();
 
-    frontPanel.setCallback_publisher(&frontPanelButtonPress);
-    frontPanel.setCallback_state_closed_at_begin(&frontPanelButtonClosedAtBegin);
+    /* Start the auth token service */
+    authToken.begin();
+
+
+    //Configure the peripherals
+    oled.setCallback_failure(&failureHandler_oled);
+    oled.begin();
+    oled.setEventLog(&eventLog);
+    oled.setAuthorizationToken(&authToken);
+    authToken.setCallback_visualTokenChanged(&eventHandler_visualAuthChanged);
+
+
+    /* Set event log callbacks to the OLED */
+    eventLog.setCallback_notification(eventHandler_eventLogNotificationEvent);
+    eventLog.setCallback_error(&eventHandler_eventLogErrorEvent);
+    eventLog.setCallback_resolveError(&eventHandler_eventLogResolvedErrorEvent);
+
+
+    /* Startup the front panel */
+    frontPanel.setCallback_publisher(&eventHandler_frontPanelButtonPress);
+    frontPanel.setCallback_state_closed_at_begin(&eventHandler_frontPanelButtonClosedAtBegin);
     frontPanel.begin();
 
-    outputs.setCallback_failure(&outputFailure);
-    outputs.begin();
 
-    inputs.setCallback_failure(&inputFailure);
-    inputs.setCallback_publisher(&inputPublisher);
-    inputs.begin();
+    /* Determine hostname */
+    #ifdef ESP32
+      uint8_t baseMac[6];
+      esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
+      char hostname[18] = {0};
+      sprintf(hostname, "FireFly-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
+    #endif
 
-    temperatureSensors.setCallback_publisher(&temperaturePublisher);
-    temperatureSensors.setCallback_failure(&temperatureFailure);
-    temperatureSensors.begin();
 
-    externalEEPROM.setCallback_failure(&eepromFailure);
-    externalEEPROM.begin();
+    /* Start networking */
+    #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+
+      WiFi.softAP(hostname);
+      log_i("Started SoftAP %s", WiFi.softAPSSID());
     
+      oled.setWiFiInfo(&WiFi);
 
-    #ifdef DEBUG
-      Serial.println("[main] (setup) Version: " + String(VERSION));
-      Serial.println("[main] (setup) Product ID: " + String(externalEEPROM.data.product_id));
-      Serial.println("[main] (setup) UUID: " + String(externalEEPROM.data.uuid));
-      Serial.println("[main] (setup) Key: " + String(externalEEPROM.data.key));
     #endif
 
-    oled.setProductID(externalEEPROM.data.product_id);
-    oled.setUUID(externalEEPROM.data.uuid);
 
-    #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
-      SPI.begin(SPI_SCK_PIN,SPI_MISO_PIN,SPI_MOSI_PIN,ETHERNET_PIN);
-    #endif
+    #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 && defined(ESP32)
 
-    if(connectEthernet() == false){
-      connectWiFi();
-    }
+      ESP32_W5500_onEvent();
+      ESP32_W5500_setCallback_connected(&eventHandler_ethernetConnect);
+      ESP32_W5500_setCallback_disconnected(&eventHandler_ethernetDisconnect);
 
+      log_i("Setting up Ethernet on W5500");
 
-    frontPanel.setStatus(managerFrontPanel::status::NORMAL);
+      ETH.setHostname(hostname);
+      esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
 
-    oled.showPage(managerOled::PAGE_EVENT_LOG);
-    
-}
+      unsigned long ethernet_start_time = millis();
+      ETH.begin(SPI_MISO_PIN, SPI_MOSI_PIN, SPI_SCK_PIN, ETHERNET_PIN, ETHERNET_PIN_INTERRUPT, SPI_CLOCK_MHZ, ETH_SPI_HOST, baseMac); //Use the base MAC, not the Ethernet MAC.  Library will automatically adjust it, else future calls to get MAC addresses are skewed
 
+      while(!ESP32_W5500_isConnected()){
 
-void connectWiFi(){
+        delay(100);
 
-  #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
-
-    WiFi.begin(ssid, password);
-
-    #ifdef DEBUG
-      Serial.println("[main] (connectWiFi) Connecting to WiFi");
-    #endif
-
-    const unsigned long time_now = millis();
-    boolean attemptingToConnectShown = false;
-
-    while(WiFi.status() != WL_CONNECTED){
-
-      if((unsigned long)(millis() - time_now) >= WIFI_TIMEOUT){
-
-        #ifdef DEBUG
-          Serial.println("[main] (connectWiFi) WiFi Timeout");
-          oled.logEvent("WiFi Timeout",managerOled::LOG_LEVEL_INFO);
+        if(millis() > ethernet_start_time + ETHERNET_TIMEOUT){
+            log_w("Ethernet connection timeout");
           break;
-
-        #endif
+        }
       }
 
-      #ifdef DEBUG
-        Serial.print(".");
-      #endif
+      if(ESP32_W5500_isConnected()){
 
-      if((unsigned long)(millis() - time_now) >= (int)(WIFI_TIMEOUT/2) && attemptingToConnectShown == false){
-
-        #ifdef DEBUG
-          Serial.println("[main] (connectWiFi) Attempting to Connect to WiFi");
-        #endif
-
-        oled.logEvent("Attempting WiFi",managerOled::LOG_LEVEL_INFO);
-
-        attemptingToConnectShown = true;
-      }
-
-      delay(100);
-    }
-
-    if(WiFi.status() == WL_CONNECTED){
-
-      #ifdef DEBUG
-        Serial.println("[main] (connectWiFi) WiFi Connected");
-      #endif
-
-      oled.logEvent("WiFi Connected",managerOled::LOG_LEVEL_INFO);
-    }
-
-    oled.setWiFiInfo(&WiFi);
-
-  #endif
-
-}
-
-
-
-boolean connectEthernet(){
         timeClient.begin();
         updateNTPTime(true);
 
-  boolean returnValue = false;
-
-  #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
-
-    if((millis() - ethernetLastConnectAttempt < 60000) && (ethernetLastConnectAttempt != 0)){
-      return returnValue;
-    }
         if(timeClient.isTimeSet()){
           bootTime = timeClient.getEpochTime();
         }
-
-    uint8_t macAddress[6];
-
-    #ifdef ESP32
-      esp_read_mac(macAddress, ESP_MAC_ETH);
-    #endif
-
-    #ifndef ESP32
-      #pragma message "MAC Address using DE:AD:BE:EF because we can't source the MAC Address from an ESP32"
-      macAddress[0] = 0xDE;
-      macAddress[1] = 0xAD;
-      macAddress[2] = 0xBE;
-      macAddress[3] = 0xEF;
-      macAddress[4] = 0xFE;
-      macAddress[5] = 0xED;
-    #endif
-
-    //Set Ethernet pins for output
-    pinMode(ETHERNET_PIN, OUTPUT);
-
-    //Disable Ethernet
-    digitalWrite(ETHERNET_PIN, LOW);
-
-    Ethernet.init(ETHERNET_PIN);
-
-    if(Ethernet.linkStatus() != EthernetLinkStatus::LinkON){
-
-      Ethernet.begin(macAddress, 0);
-
-      #ifdef DEBUG
-        Serial.println("[main] (connectEthernet) Ethernet Link Failure");
-      #endif
-
-      oled.logEvent("Ethernet Link Failure",managerOled::LOG_LEVEL_INFO);
-
-      ethernetConnected = false;
-      ethernetLastConnectAttempt = millis();
-
-    }else{
-
-      switch(Ethernet.begin(macAddress, ETHERNET_TIMEOUT)){
-
-        case 1:
-
-          #ifdef DEBUG
-            Serial.println("[main] (connectEthernet) Ethernet Connected");
-          #endif
-
-          oled.logEvent("Ethernet Connected",managerOled::LOG_LEVEL_INFO);
-
-          returnValue = true;
-          ethernetConnected = true;
-          ethernetLastConnectAttempt = 0;
-
-        break;
-
-        default:
-          #ifdef DEBUG
-            Serial.println("[main] (connectEthernet) Ethernet DHCP Timeout");
-          #endif
-
-          ethernetConnected = true;
-          ethernetLastConnectAttempt = 0;
-          oled.logEvent("DHCP Timeout (E)",managerOled::LOG_LEVEL_INFO);
-        break;
       }
-      
+
+      log_i("Ethernet IP: %s", ETH.localIP().toString().c_str());
+      oled.setEthernetInfo(&ETH);
+
+    #endif
+
+
+    /* Start external EEPROM */
+    externalEEPROM.setCallback_failure(&failureHandler_eeprom);
+    externalEEPROM.begin();
+
+    if(externalEEPROM.enabled == true){
+
+      oled.setProductID(externalEEPROM.data.product_id);
+      oled.setUUID(externalEEPROM.data.uuid);
+
+      log_i("EEPROM UUID: %s", externalEEPROM.data.uuid);
+      log_i("EEPROM Product ID: %s", externalEEPROM.data.product_id);
+      log_i("EEPROM Key: %s", externalEEPROM.data.key);
     }
 
-    oled.setEthernetInfo(&Ethernet);
 
-  #endif
+    /* Start inputs */
+    inputs.setCallback_failure(&failureHandler_inputs);
+    inputs.setCallback_publisher(&eventHandler_inputs);
+    inputs.begin();
 
-  return returnValue;
-}
+
+    /* Start outputs */
+    outputs.setCallback_failure(&failureHandler_outputs);
+    outputs.begin();
 
 
-void setBootTime(){
+    /* Start temperature sensors */
+    temperatureSensors.setCallback_publisher(&eventHandler_temperature);
+    temperatureSensors.setCallback_failure(&failureHandler_temperatureSensors);
+    temperatureSensors.begin();
 
-  if(bootTime != 0){
-    return;
-  }
 
-  #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
-
-    EthernetUDP ethernetNtpUdp;
-    NTPClient ethernetTimeClient(ethernetNtpUdp);
-
-    if(Ethernet.linkStatus() == EthernetLinkStatus::LinkON){
-      ethernetTimeClient.begin();
-      ethernetTimeClient.update();
-
-      if(ethernetTimeClient.getEpochTime() > 10000){
-        bootTime = ethernetTimeClient.getEpochTime() - (millis()/1000);
-      }
+    /* Start LittleFS for www */
+    if (wwwFS.begin(false, "/wwwFS", (uint8_t)10U, "www"))
+    {
+      wwwFS_isMounted = true;
+    }
+    else{
+      eventLog.createEvent(F("wwwFS mount fail"), EventLog::LOG_LEVEL_ERROR);
+      log_e("An Error has occurred while mounting www");
     }
 
-  #endif
 
-  if(bootTime != 0){
-
-    oled.logEvent("Boot time set (E)", managerOled::logLevel::LOG_LEVEL_INFO);
-
-    #ifdef DEBUG > 1000
-      Serial.println("[main] (setBootTime) Ethernet set boot time to " + String(bootTime));
-    #endif
-
-    return;
-  }
-
-  #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
-
-    WiFiUDP wifiNtpUdp;
-    NTPClient wifiTimeClient(wifiNtpUdp);
-  
-    if(WiFi.isConnected()){
-      wifiTimeClient.begin(); 
-      wifiTimeClient.update();
-
-      if(wifiTimeClient.getEpochTime() > 10000){
-        bootTime = wifiTimeClient.getEpochTime() - (millis()/1000);
-      }
+    /* Start LittleFS for config */
+    if (configFS.begin(false, "/configFS", (uint8_t)10U, "config"))
+    {
+      configFS_isMounted = true;
+    }
+    else{
+      eventLog.createEvent(F("configFS mount fail"), EventLog::LOG_LEVEL_ERROR);
+      log_e("An Error has occurred while mounting configFS");
     }
 
-  #endif
 
-  if(bootTime != 0){
+    /**
+     * OTHER HTTP SETUP GOES HERE
+    */
 
-    #ifdef DEBUG > 1000
-      Serial.println("[main] (setBootTime) WiFi set boot time to " + String(bootTime));
-    #endif
 
-    oled.logEvent("Boot time set (W)", managerOled::logLevel::LOG_LEVEL_INFO);
-    return;
-  }
+    /**
+      * CONFIG READING STUFF GOES HERE
+    */
 
-  if(bootTime == 0){
-    oled.logEvent("Unknown boot time", managerOled::logLevel::LOG_LEVEL_INFO);
 
-      #ifdef DEBUG
-        Serial.println("[main] (setBootTime) Failed to set boot time, defaulting to 0.");
-      #endif
-  }
+    /** 
+     * I/O SETUP GOES HERE
+    */
+    
+
+    oled.setPage(managerOled::PAGE_EVENT_LOG);
 
 }
 
 
+/**
+ * Main loop
+*/
 void loop() {
 
-  inputs.loop();
-  frontPanel.loop();
-  temperatureSensors.loop();
+  /** CHECK NTP HERE */
+
+  /** CHECK FIRMWARE UPDATES HERE */
+
   oled.loop();
+  authToken.loop();
+  frontPanel.loop();
+  inputs.loop();
+  temperatureSensors.loop();
 
-  outputs.configurePort(2, nsOutputs::outputPin::VARIABLE); //FOR DEBUG ONLY
-
-  #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
-
-    if(Ethernet.linkStatus() == EthernetLinkStatus::LinkON){
-
-      if(ethernetConnected == false){
-        if(connectEthernet() == true){
-          setBootTime();
-        }
-      }
-
-      if(Ethernet.maintain() == 1){
-        oled.logEvent("DHCP Failure (E)", managerOled::logLevel::LOG_LEVEL_ERROR);
-      }
-    }
-
-  #endif
+  outputs.configurePort(2, nsOutputs::outputPin::VARIABLE);                                                 //FOR DEBUG ONLY
 
 }
 
@@ -370,50 +255,44 @@ void loop() {
  * @param location the location where the change was observed
  * @param value the new temperature in degrees celsius
 */
-void temperaturePublisher(char* location, float value){
+void eventHandler_temperature(char* location, float value){
 
-  #ifdef DEBUG
-    Serial.println("[main] (temperaturePublisher) New Temperature: " + String(value) + " at " + String(location));
-  #endif
-
-  oled.logEvent(("Temp: " + String(value) + char(0xF8) + "C").c_str(),managerOled::LOG_LEVEL_INFO);
+  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+  snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Temp: %d%c C", value, char(0xF8));
+  eventLog.createEvent(text);
 
   //TODO: Add MQTT and stuff
 
 };
 
 
-/** Handles failures of temperature sensors 
- * @param location the location of the sensor that has failed
- * @param failureReason the reason for the failure
+/** 
+ * Callback function which handles failures of any temperature sensor 
 */
-void temperatureFailure(char* location, managerTemperatureSensors::failureReason failureReason){
+void failureHandler_temperatureSensors(uint8_t address, managerTemperatureSensors::failureReason failureReason){
 
-  #ifdef DEBUG
-    Serial.print("[main] (temperatureFailure) ");
-    Serial.print("Temperature sensor at ");
-    Serial.print(location);
-    Serial.println(" is being failed for reason " + String(failureReason));
-  #endif
+  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
 
-  oled.showError(("Temp sens at " + String(location) + " fail " + String(failureReason)).c_str());
-
+  if(failureReason == managerTemperatureSensors::failureReason::ADDRESS_OFFLINE){
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Temp sen 0x%02X offline", address);
+  }else{
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Temp sen 0x%02X fail %i", address, failureReason);
+  }
+  
+  eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
-
-  //TODO: Add MQTT and stuff
-
-};
+}
 
 
 /** Handles changes in observed inputs 
  * @param portChannel the port and channel where the change was observed
  * @param longChange when true, the change observed was a long in duration
 */
-void inputPublisher(managerInputs::portChannel portChannel, boolean longChange){
+void eventHandler_inputs(managerInputs::portChannel portChannel, boolean longChange){
 
   #ifdef DEBUG
     if(longChange == false){
-      Serial.println("[main] (inputPublisher) A short input was made on port " + String(portChannel.port) + " channel " + String(portChannel.channel));
+      Serial.println("[main] (eventHandler_inputs) A short input was made on port " + String(portChannel.port) + " channel " + String(portChannel.channel));
 
       uint8_t output_port = 2;
       uint8_t value = outputs.getPortValue(output_port);
@@ -483,7 +362,7 @@ void inputPublisher(managerInputs::portChannel portChannel, boolean longChange){
 
 
     }else{
-      Serial.println("[main] (inputPublisher) A long input was made on port " + String(portChannel.port) + " channel " + String(portChannel.channel));
+      Serial.println("[main] (eventHandler_inputs) A long input was made on port " + String(portChannel.port) + " channel " + String(portChannel.channel));
     }
   #endif
 
@@ -492,64 +371,11 @@ void inputPublisher(managerInputs::portChannel portChannel, boolean longChange){
 }
 
 
-/** Handles failures of input controllers 
- * @param address the hexidecimal address of the input controller that has failed
- * @param failureReason the reason for the failure
-*/
-void inputFailure(uint8_t address, managerInputs::failureReason failureReason){
+
+void eventHandler_frontPanelButtonPress(){
 
   #ifdef DEBUG
-    Serial.print("[main] (inputFailure) ");
-    Serial.print("Input controller at address 0x");
-    Serial.print(address, HEX);
-    Serial.println(" is being failed for reason " + String(failureReason));
-  #endif
-
-  oled.showError(("Inpt Ctl 0x" + String(address, HEX) + " fail " + String(failureReason)).c_str());
-
-  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
-
-  //TODO: Add MQTT and stuff
-
-}
-
-
-/** Handles failures of output controllers 
- * @param address the hexidecimal address of the output controller that has failed
- * @param failureReason the reason for the failure
-*/
-void outputFailure(uint8_t address, nsOutputs::failureReason reason){
-
-  #ifdef DEBUG
-    Serial.print("[main] (outputFailure) ");
-    Serial.print("Output controller at address 0x");
-    Serial.print(address, HEX);
-    Serial.println(" is being failed for reason " + String(reason));
-  #endif
-
-  oled.showError(("Out Ctl 0x" + String(address, HEX) + " fail " + String(reason)).c_str());
-
-  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
-}
-
-
-/** Handles failures of output controllers */
-void eepromFailure(){
-
-  #ifdef DEBUG
-    Serial.println("[main] (eepromFailure) EEPROM failure was called");
-  #endif
-
-  //TODO: Add MQTT and stuff
-  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
-
-}
-
-
-void frontPanelButtonPress(){
-
-  #ifdef DEBUG
-    Serial.println("[main] (frontPanelButtonPress) Front Panel button was pressed");
+    Serial.println("[main] (eventHandler_frontPanelButtonPress) Front Panel button was pressed");
   #endif
 
   oled.nextPage();
@@ -559,22 +385,22 @@ void frontPanelButtonPress(){
 }
 
 
-void frontPanelButtonClosedAtBegin(){
+void eventHandler_frontPanelButtonClosedAtBegin(){
 
   #ifdef DEBUG
-    Serial.println("[main] (frontPanelButtonClosedAtBeginning) Front Panel button was closed on begin()");
+    Serial.println("[main] (eventHandler_frontPanelButtonClosedAtBeginning) Front Panel button was closed on begin()");
   #endif
 
   int i = 10;
 
   while(i>0){
     oled.setFactoryResetValue(i);
-    oled.showPage(managerOled::PAGE_FACTORY_RESET);
+    oled.setPage(managerOled::PAGE_FACTORY_RESET);
 
     if(frontPanel.getButtonState() == managerFrontPanel::inputState::STATE_OPEN){
 
       #ifdef DEBUG
-        Serial.println("[main] (frontPanelButtonClosedAtBeginning) Front Panel button was released before confirmation timeout.");
+        Serial.println("[main] (eventHandler_frontPanelButtonClosedAtBeginning) Front Panel button was released before confirmation timeout.");
       #endif
 
       return;
@@ -586,7 +412,7 @@ void frontPanelButtonClosedAtBegin(){
   }
 
   #ifdef DEBUG
-    Serial.println("[main] (frontPanelButtonClosedAtBeginning) Front Panel button was held to completion; EEPROM will be deleted.");
+    Serial.println("[main] (eventHandler_frontPanelButtonClosedAtBeginning) Front Panel button was held to completion; EEPROM will be deleted.");
   #endif
 
 
@@ -597,29 +423,137 @@ void frontPanelButtonClosedAtBegin(){
 
 
 /** Handles failures of the OLED display */
-void oledFailure(managerOled::failureCode failureCode){
+void failureHandler_oled(uint8_t address, managerOled::failureReason failureReason){
 
-  switch(failureCode){
-    case managerOled::failureCode::NOT_ON_BUS:
-      #ifdef DEBUG
-        Serial.println("[main] (oledFailure) Error: OLED not found on bus");
-      #endif
-      break;
+  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
 
-    case managerOled::failureCode::UNABLE_TO_START:
-      #ifdef DEBUG
-        Serial.println("[main] (oledFailure) Error: Unable to start OLED");
-      #endif
-      break;
+  if(failureReason == managerOled::failureReason::ADDRESS_OFFLINE){
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "OLED 0x%02X offline", address);
+  }else{
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "OLED 0x%02X fail %i", address, failureReason);
+  }
+  
+  eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 
-    default:
-      #ifdef DEBUG
-        Serial.println("[main] (oledFailure) Error: Unknown OLED failure");
-      #endif
-      break;
+}
+
+
+/**
+ * Replace the auth token page with the event log so that the OLED will sleep when the visual token changes
+*/
+void eventHandler_visualAuthChanged(){
+  if(oled.getPage() == managerOled::PAGE_AUTH_TOKEN){
+    oled.setPage(managerOled::PAGE_EVENT_LOG);
+  }
+}
+
+
+/** 
+ * Handles events where the event log type was notification
+*/
+void eventHandler_eventLogNotificationEvent(){
+  oled.setPage(managerOled::PAGE_EVENT_LOG);
+}
+
+
+/**
+ * Handles events where the event log type was error
+*/
+void eventHandler_eventLogErrorEvent(){
+  oled.setPage(managerOled::PAGE_ERROR);
+  frontPanel.setStatus(managerFrontPanel::status::TROUBLE);
+}
+
+
+/**
+ * Handles events where an error was resolved
+*/
+void eventHandler_eventLogResolvedErrorEvent(){
+
+  if(eventLog.getErrors()->size() == 0){
+    oled.setPage(managerOled::PAGE_EVENT_LOG);
+    frontPanel.setStatus(managerFrontPanel::status::NORMAL);
+  }else{
+      oled.setPage(managerOled::PAGE_ERROR);
+      frontPanel.setStatus(managerFrontPanel::status::TROUBLE);
+  }
+}
+
+
+#if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
+
+  /** 
+   * Handle Ethernet being connected
+  */
+  void eventHandler_ethernetConnect(){
+    updateNTPTime(true);
+    eventLog.createEvent(F("Ethernet connected"));
+    eventLog.resolveError(F("Ethernet disconnected"));
   }
 
-  //TODO: Add MQTT and stuff
+
+  /** 
+   * Handle Ethernet being disconnected
+  */
+  void eventHandler_ethernetDisconnect(){
+    eventLog.createEvent(F("Ethernet disconnected"), EventLog::LOG_LEVEL_ERROR);
+  }
+
+#endif
+
+
+/** 
+ * Callback function which handles failures of the external EERPOM 
+*/
+void failureHandler_eeprom(uint8_t address, managerExternalEEPROM::failureReason failureReason){
+
+  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+
+  if(failureReason == managerExternalEEPROM::failureReason::ADDRESS_OFFLINE){
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "ExEEPROM 0x%02X offline", address);
+  }else{
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "ExEEPROM 0x%02X fail %i", address, failureReason);
+  }
+  
+  eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
+
+}
+
+
+/** 
+ * Callback function which handles failures of any input 
+*/
+void failureHandler_inputs(uint8_t address, managerInputs::failureReason failureReason){
+	
+	char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+
+  if(failureReason == managerInputs::failureReason::ADDRESS_OFFLINE){
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Inpt ctl 0x%02X offline", address);
+  }else{
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Inpt ctl 0x%02X fail %i", address, failureReason);
+  }
+  
+  eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
+  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
+}
+
+
+/** 
+ * Callback function which handles failures of any output 
+*/
+void failureHandler_outputs(uint8_t address, nsOutputs::failureReason failureReason){
+
+  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+
+  if(failureReason == nsOutputs::failureReason::ADDRESS_OFFLINE){
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out ctl 0x%02X offline", address);
+  }else{
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out ctl 0x%02X fail %i", address, failureReason);
+  }
+  
+  eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 }
 
