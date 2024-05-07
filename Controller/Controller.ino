@@ -29,6 +29,13 @@
 #include <esp32FOTA.hpp>
 
 
+#if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+  WiFiUDP wifiNtpUdp;
+  NTPClient timeClient(wifiNtpUdp); /* WiFi NTP client for handling time requests */
+#endif
+uint64_t ntpSleepUntil = 0;
+
+void updateNTPTime(bool force = false);
 
 nsOutputs::managerOutputs outputs;
 managerInputs inputs;
@@ -38,6 +45,7 @@ managerExternalEEPROM externalEEPROM;
 managerOled oled;
 unsigned long bootTime = 0;
 bool increasing = true;                                                                     ///FOR DEBUG ONLY
+uint64_t ntpSleepUntil = 0;
 
 boolean ethernetConnected = false;
 unsigned long ethernetLastConnectAttempt = 0;
@@ -94,7 +102,6 @@ void setup() {
       connectWiFi();
     }
 
-    setBootTime();
 
     frontPanel.setStatus(managerFrontPanel::status::NORMAL);
 
@@ -164,6 +171,8 @@ void connectWiFi(){
 
 
 boolean connectEthernet(){
+        timeClient.begin();
+        updateNTPTime(true);
 
   boolean returnValue = false;
 
@@ -172,6 +181,9 @@ boolean connectEthernet(){
     if((millis() - ethernetLastConnectAttempt < 60000) && (ethernetLastConnectAttempt != 0)){
       return returnValue;
     }
+        if(timeClient.isTimeSet()){
+          bootTime = timeClient.getEpochTime();
+        }
 
     uint8_t macAddress[6];
 
@@ -602,5 +614,26 @@ void oledFailure(managerOled::failureCode failureCode){
 
   //TODO: Add MQTT and stuff
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
+}
+
+
+/**
+ * Updates the NTP time from the server with special handling
+*/
+void updateNTPTime(bool force){
+
+  if((esp_timer_get_time() > ntpSleepUntil) || force == true){
+      /*
+        Workaround until https://github.com/arduino-libraries/NTPClient/pull/163 is merged
+
+        If time client update is unsuccessful, stop trying for 5 minutes
+      */
+
+      if(timeClient.update()){
+        ntpSleepUntil = 0;
+      }else{
+        ntpSleepUntil = esp_timer_get_time() + 300000000;
+      }
+    }
 
 }
