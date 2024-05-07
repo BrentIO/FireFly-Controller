@@ -1,4 +1,12 @@
 #define DEBUG 501
+/*
+* Controller.ino
+*
+* Create software-defined lighting.
+*
+* (C) 2019-2024, P5 Software, LLC
+*
+*/
 
 
 #define VERSION "2024.01.0001"
