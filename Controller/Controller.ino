@@ -10,6 +10,7 @@
 
 
 #define VERSION "2024.01.0001"
+#define APPLICATION_NAME "FireFly Controller"
 
 #include "common/hardware.h"
 #include "common/externalEEPROM.h"
