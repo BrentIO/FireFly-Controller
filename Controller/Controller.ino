@@ -28,29 +28,36 @@
 #include <WiFiUdp.h>
 #include <esp32FOTA.hpp>
 
+unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
+AsyncWebServer httpServer(80);
+managerExternalEEPROM externalEEPROM; /* External EEPROM instance */
+managerOled oled; /* OLED instance */
+managerFrontPanel frontPanel; /* Front panel instance */
+managerInputs inputs; /* Inputs collection */
+nsOutputs::managerOutputs outputs; /* Outputs collection */
+managerTemperatureSensors temperatureSensors; /* Temperature sensors */
+authorizationToken authToken;
 
 #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
   WiFiUDP wifiNtpUdp;
   NTPClient timeClient(wifiNtpUdp); /* WiFi NTP client for handling time requests */
 #endif
+
+EventLog eventLog(&timeClient); /* Event Log instance */
 uint64_t ntpSleepUntil = 0;
 
 void updateNTPTime(bool force = false);
 
-nsOutputs::managerOutputs outputs;
-managerInputs inputs;
-managerTemperatureSensors temperatureSensors;
-managerFrontPanel frontPanel;
-managerExternalEEPROM externalEEPROM;
-managerOled oled;
-unsigned long bootTime = 0;
-bool increasing = true;                                                                     ///FOR DEBUG ONLY
-uint64_t ntpSleepUntil = 0;
+esp32FOTA otaFirmware(APPLICATION_NAME, VERSION, false); /* OTA firmware update class */
+#define FIRMWARE_CHECK_SECONDS 86400 /* Number of seconds between OTA firmware checks */
+uint64_t otaFirmware_lastCheckedTime = 0; /* The time (millis() or equivalent) when the firmware was last checked against the remote system */
+bool otaFirmware_enabled = false; /* Determines if the OTA firmware automation should be run */
+LinkedList<forcedOtaUpdateConfig> otaFirmware_pending;
 
-boolean ethernetConnected = false;
-unsigned long ethernetLastConnectAttempt = 0;
-boolean wifiConnected = true;
+fs::LittleFSFS wwwFS;
+fs::LittleFSFS configFS;
 
+#define CONFIGFS_PATH_CERTS "/certs/"
 
 
 void setup() {
