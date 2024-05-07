@@ -1,8 +1,7 @@
-#define VERSION "2024.01.0001"
-
 #define DEBUG 501
 
 
+#define VERSION "2024.01.0001"
 
 #include <ArduinoJson.h>
 #include "common/hardware.h"
