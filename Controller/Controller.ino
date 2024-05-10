@@ -255,7 +255,7 @@ void loop() {
 void eventHandler_temperature(char* location, float value){
 
   char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-  snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Temp: %d%c C", value, char(0xF8));
+  snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Temp: %.2f%cC", value, 0xF8);
   eventLog.createEvent(text);
 
   //TODO: Add MQTT and stuff
