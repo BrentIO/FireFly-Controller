@@ -83,6 +83,7 @@ void setup() {
 
   /* Set event log callbacks to the OLED */
   eventLog.setCallback_notification(eventHandler_eventLogNotificationEvent);
+  eventLog.setCallback_info(&eventHandler_eventLogInfoEvent);
   eventLog.setCallback_error(&eventHandler_eventLogErrorEvent);
   eventLog.setCallback_resolveError(&eventHandler_eventLogResolvedErrorEvent);
 
@@ -1638,6 +1639,21 @@ void failureHandler_temperatureSensors(uint8_t address, managerTemperatureSensor
   
   eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
+}
+
+
+/** 
+ * Handles events where the event log type was info
+*/
+void eventHandler_eventLogInfoEvent(){
+
+  if(oled.isSleeping()){
+    return;
+  }
+
+  if(oled.getPage() == managerOled::PAGE_EVENT_LOG){
+    oled.setPage(managerOled::PAGE_EVENT_LOG);
+  }
 }
 
 
