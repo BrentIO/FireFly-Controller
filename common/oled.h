@@ -1398,6 +1398,14 @@
 
                 this->_commit();
             }
+
+
+            /*
+            * Retrieves the status if the OLED is sleeping
+            */
+            boolean isSleeping(){
+                return this->_isSleeping;
+            }
     };
 
 #endif
