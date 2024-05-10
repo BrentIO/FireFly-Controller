@@ -82,8 +82,8 @@ void setup() {
   authToken.setCallback_visualTokenChanged(&eventHandler_visualAuthChanged);
 
   /* Set event log callbacks to the OLED */
-  eventLog.setCallback_notification(eventHandler_eventLogNotificationEvent);
   eventLog.setCallback_info(&eventHandler_eventLogInfoEvent);
+  eventLog.setCallback_notification(&eventHandler_eventLogNotificationEvent);
   eventLog.setCallback_error(&eventHandler_eventLogErrorEvent);
   eventLog.setCallback_resolveError(&eventHandler_eventLogResolvedErrorEvent);
 
