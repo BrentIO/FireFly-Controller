@@ -66,12 +66,9 @@ void setup() {
     bool wwwFS_isMounted = false;
     bool configFS_isMounted = false;
 
-
     eventLog.createEvent(F("Event log started"));
-
-
+    
     Wire.begin();
-
 
     /* Start the auth token service */
     authToken.begin();
