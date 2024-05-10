@@ -1,4 +1,3 @@
-#define DEBUG 501
 /*
 * Controller.ino
 *
@@ -290,6 +289,8 @@ void failureHandler_temperatureSensors(uint8_t address, managerTemperatureSensor
 */
 void eventHandler_inputs(managerInputs::portChannel portChannel, boolean longChange){
 
+  log_d(" A %s input was made on port %i channel %i", longChange ? "long":"short", portChannel.port, portChannel.channel);
+
   #ifdef DEBUG
     if(longChange == false){
       Serial.println("[main] (eventHandler_inputs) A short input was made on port " + String(portChannel.port) + " channel " + String(portChannel.channel));
@@ -361,8 +362,7 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, boolean longCha
       }*/
 
 
-    }else{
-      Serial.println("[main] (eventHandler_inputs) A long input was made on port " + String(portChannel.port) + " channel " + String(portChannel.channel));
+
     }
   #endif
 
@@ -374,22 +374,15 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, boolean longCha
 
 void eventHandler_frontPanelButtonPress(){
 
-  #ifdef DEBUG
-    Serial.println("[main] (eventHandler_frontPanelButtonPress) Front Panel button was pressed");
-  #endif
-
+  log_v("Front Panel button was pressed");
   oled.nextPage();
-
-  //TODO: Add MQTT and stuff
 
 }
 
 
 void eventHandler_frontPanelButtonClosedAtBegin(){
 
-  #ifdef DEBUG
-    Serial.println("[main] (eventHandler_frontPanelButtonClosedAtBeginning) Front Panel button was closed on begin()");
-  #endif
+  log_v("Front Panel button was closed on begin()");
 
   int i = 10;
 
@@ -399,10 +392,7 @@ void eventHandler_frontPanelButtonClosedAtBegin(){
 
     if(frontPanel.getButtonState() == managerFrontPanel::inputState::STATE_OPEN){
 
-      #ifdef DEBUG
-        Serial.println("[main] (eventHandler_frontPanelButtonClosedAtBeginning) Front Panel button was released before confirmation timeout.");
-      #endif
-
+      log_i("Front Panel button was released before confirmation timeout");
       return;
     }
 
@@ -411,11 +401,7 @@ void eventHandler_frontPanelButtonClosedAtBegin(){
     delay(1000);
   }
 
-  #ifdef DEBUG
-    Serial.println("[main] (eventHandler_frontPanelButtonClosedAtBeginning) Front Panel button was held to completion; EEPROM will be deleted.");
-  #endif
-
-
+  log_i("Front Panel button was held to completion.  Config will be deleted.");
 
   //TODO: Add MQTT and stuff
 
