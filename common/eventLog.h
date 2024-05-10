@@ -27,6 +27,7 @@
             LinkedList<char*> _errors;
             NTPClient* _timeClient;
 
+            void (*_ptrInfoCallback)(); //Function to call when there is an info logged
             void (*_ptrNotificationCallback)(); //Function to call when there is a notification logged
             void (*_ptrErrorCallback)(); //Function to call when there is an error logged
             void (*_ptrResolvedErrorCallback)(); //Function to call when the error is resolved
@@ -60,6 +61,12 @@
             EventLog(NTPClient *timeClient){
                 _timeClient = timeClient;
             };
+
+            /**
+             * Sets a callback function when a new info event is entered into the event log
+            */
+            void setCallback_info(void (*userDefinedCallback)()) {
+                this->_ptrInfoCallback = userDefinedCallback; }
 
           
             /**
@@ -107,17 +114,29 @@
 
                 this->_eventLog.add(newEvent);
 
-                if(newEvent.level == LOG_LEVEL_NOTIFICATION){
-                    if(this->_ptrNotificationCallback){
-                        this->_ptrNotificationCallback();
-                    }
-                }
+                switch(newEvent.level){
 
-                if(newEvent.level == LOG_LEVEL_ERROR){
-                    this->_logError(text);
-                    if(this->_ptrErrorCallback){
-                        this->_ptrErrorCallback();
-                    }
+                    case LOG_LEVEL_INFO:
+                        if(this->_ptrInfoCallback){
+                            this->_ptrInfoCallback();
+                        }
+                        break;
+
+                    case LOG_LEVEL_NOTIFICATION:
+                        if(this->_ptrNotificationCallback){
+                            this->_ptrNotificationCallback();
+                        }
+                        break;
+
+                    case LOG_LEVEL_ERROR:
+                        this->_logError(text);
+                        if(this->_ptrErrorCallback){
+                            this->_ptrErrorCallback();
+                        }
+                        break;
+
+                    default:
+                        break;
                 }
             }
 
