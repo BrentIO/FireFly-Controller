@@ -1337,18 +1337,19 @@ components:
     controller:
       type: object
       properties:
-        id:
-          type: integer
-          readOnly: true
-          description: Unqiue ID assigned by the controller
-          example: 9
+        uuid:
+          type: string
+          description: Unique identifier for the device
+          format: uuid
+          minLength: 36
+          maxLength: 36
         name:
           type: string
           description: Human-friendly name of the controller
           example: First floor
           maxLength: 32
       required:
-        - name
+        - uuid
     breaker:
       type: object
       properties:
