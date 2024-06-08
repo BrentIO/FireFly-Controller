@@ -14,8 +14,6 @@ tags:
     description: Mangage long-term http authorizations
   - name: Event and Error Logs
     description: Operations for the event and error logs
-  - name: Network
-    description: Operations for network communications
   - name: Version
     description: Operations for the hardware and firmware versions
   - name: Certificates
