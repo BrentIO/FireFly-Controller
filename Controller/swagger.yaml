@@ -27,8 +27,18 @@ tags:
   - name: Clients
     description: Mangage Clients
 
+##########################################################
+## NOTE: This may not render except in the next-gen     ##
+## Swagger UI renderer https://editor-next.swagger.io/  ##
+##########################################################
 
 paths:
+
+
+##########################################################
+## Version                                              ##
+##########################################################
+  
   /api/version:
     get:
       tags:
@@ -57,6 +67,12 @@ paths:
                 $ref: '#/components/schemas/uiVersionInfo'
         '404':
           description: File system failure
+
+
+##########################################################
+## Events and Errors                                    ##
+##########################################################
+  
   /api/errors:
     get:
       tags:
@@ -93,6 +109,12 @@ paths:
                   $ref: '#/components/examples/eventLog'
                 No log entries:
                   $ref: '#/components/examples/emptyArray'
+
+
+##########################################################
+## OTA Firmware                                         ##
+##########################################################
+  
   /api/ota:
     post:
       tags:
@@ -195,6 +217,7 @@ paths:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: File system not mounted
+
   /api/ota/app:
     post:
       tags:
@@ -262,7 +285,12 @@ paths:
                 $ref: '#/components/schemas/bad_request_message'
         '401':
           description: Unauthorized
-  
+
+
+##########################################################
+## Certificates                                         ##
+##########################################################
+
   /certs:
     get:
       tags:
@@ -332,6 +360,7 @@ paths:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: File system not mounted
+
   /certs/{filename}:
     get:
       tags:
@@ -494,6 +523,10 @@ paths:
                 message: File system not mounted
 
   /api/breakers/{id}:
+##########################################################
+## Provisioning                                         ##
+##########################################################
+
     get:
       tags:
         - High Voltage
@@ -668,6 +701,11 @@ paths:
                 message: File system not mounted
 
   /api/relays/{id}:
+
+##########################################################
+## High Voltage                                         ##
+##########################################################
+
     get:
       tags:
         - High Voltage
@@ -1012,6 +1050,9 @@ paths:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: File system not mounted
+##########################################################
+## Controllers                                          ##
+##########################################################
 
   /api/controllers/{id}/inputs/{port}/channels:
     get:
@@ -1208,16 +1249,33 @@ paths:
               example:
                 message: File system not mounted
 
+  
+##########################################################
+##########################################################
+## Components                                           ##
+##########################################################
+##########################################################
 
 components:
+
+##########################################################
+## Security                                             ##
+##########################################################
+
   securitySchemes:
     visualToken:
       type: apiKey
       in: header
       name: visual-token
       description: A security token visually displayed on the device which changes on a regular basis
-  
+
+ 
   schemas:
+
+    ##########################################################
+    ## Standard API Responses                               ##
+    ##########################################################
+
     error_message:
       type: object
       properties:
@@ -1239,10 +1297,17 @@ components:
         - ethernet
         - wifi
         - wifi_ap
+
+
+    ##########################################################
+    ## Errors and Event Log                                 ##
+    ##########################################################
+
     eventLog:
       type: array
       items:
         $ref: '#/components/schemas/eventLogEntry'
+
     eventLogEntry:
       type: object
       properties:
@@ -1263,6 +1328,7 @@ components:
           type: string
           description: Descriptive text about the event
           example: Event log started
+
     errorLog:
       type: array
       items:
@@ -1274,14 +1340,22 @@ components:
           type: string
           description: Descriptive text about the event
           example: EEPROM Failure
+
+
+    ##########################################################
+    ## Versions                                             ##
+    ##########################################################
+
     applicationVersion:
       type: string
       description: Software version
       example: '2024.2.1'
+
     productHex:
       type: string
       description: Hardware product hexadecimal, indicating the version of the firmware
       example: '0x8062305'
+
     applicationVersionInfo:
       type: object
       properties:
@@ -1289,11 +1363,18 @@ components:
           $ref: '#/components/schemas/applicationVersion'
         product_hex:
           $ref: '#/components/schemas/productHex'
+
     uiVersionInfo:
       type: object
       properties:
         ui:
           $ref: '#/components/schemas/applicationVersion'
+
+
+    ##########################################################
+    ## Certificates                                         ##
+    ##########################################################
+
     certificateListItem:
       type: object
       properties:
@@ -1312,6 +1393,12 @@ components:
     certificateContent:
       type: string
       example: '-----BEGIN CERTIFICATE----- MIID0zCCArugAwIBAgIQVmcdBOpPmUxvEIFHWdJ1lDANBgkqhkiG9w0BAQwFADB7 MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVyMRAwDgYD VQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEhMB8GA1UE AwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTE5MDMxMjAwMDAwMFoXDTI4 MTIzMTIzNTk1OVowgYgxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpOZXcgSmVyc2V5 MRQwEgYDVQQHEwtKZXJzZXkgQ2l0eTEeMBwGA1UEChMVVGhlIFVTRVJUUlVTVCBO ZXR3b3JrMS4wLAYDVQQDEyVVU0VSVHJ1c3QgRUNDIENlcnRpZmljYXRpb24gQXV0 aG9yaXR5MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEGqxUWqn5aCPnetUkb1PGWthL q8bVttHmc3Gu3ZzWDGH926CJA7gFFOxXzu5dP+Ihs8731Ip54KODfi2X0GHE8Znc JZFjq38wo7Rw4sehM5zzvy5cU7Ffs30yf4o043l5o4HyMIHvMB8GA1UdIwQYMBaA FKARCiM+lvEH7OKvKe+CpX/QMKS0MB0GA1UdDgQWBBQ64QmG1M8ZwpZ2dEl23OA1 xmNjmjAOBgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zARBgNVHSAECjAI MAYGBFUdIAAwQwYDVR0fBDwwOjA4oDagNIYyaHR0cDovL2NybC5jb21vZG9jYS5j b20vQUFBQ2VydGlmaWNhdGVTZXJ2aWNlcy5jcmwwNAYIKwYBBQUHAQEEKDAmMCQG CCsGAQUFBzABhhhodHRwOi8vb2NzcC5jb21vZG9jYS5jb20wDQYJKoZIhvcNAQEM BQADggEBABns652JLCALBIAdGN5CmXKZFjK9Dpx1WywV4ilAbe7/ctvbq5AfjJXy ij0IckKJUAfiORVsAYfZFhr1wHUrxeZWEQff2Ji8fJ8ZOd+LygBkc7xGEJuTI42+ FsMuCIKchjN0djsoTI0DQoWz4rIjQtUfenVqGtF8qmchxDM6OW1TyaLtYiKou+JV bJlsQ2uRl9EMC5MCHdK8aXdJ5htN978UeAOwproLtOGFfy/cQjutdAFI3tZs4RmY CV4Ks2dH/hzg1cEo70qLRDEmBDeNiXQ2Lu+lIg+DdEmSx/cQwgwp+7e9un/jX9Wf 8qn0dNW44bOwgeThpWOjzOoEeJBuv/c= -----END CERTIFICATE-----'
+    
+    
+    ##########################################################
+    ## OTA Firmware                                         ##
+    ##########################################################
+    
     otaConfiguration:
       type: object
       properties:
@@ -1326,6 +1413,7 @@ components:
           example: mycert.pem
       required:
         - url
+
     forceOTAConfiguration:
       type: object
       properties:
@@ -1339,6 +1427,13 @@ components:
           example: mycert.pem
       required:
         - url
+
+
+    ##########################################################
+    ## Controller                                           ##
+    ##########################################################
+
+      
     channel:
       type: object
       properties:
@@ -1402,6 +1497,7 @@ components:
           type: boolean
           description: Indicates if the output is enabled
           default: true
+        
         state:
           type: string
           description: Current state of the output as a percentage.  If the `type` is `BINARY`, the value will be either 0 (off) or 100 (on)
@@ -1433,6 +1529,13 @@ components:
       required:
         - uuid
         - id
+
+
+
+    ##########################################################
+    ## High Voltage                                         ##
+    ##########################################################
+
     breaker:
       type: object
       properties:
@@ -1449,6 +1552,7 @@ components:
           maxLength: 20
         amperage:
           $ref: '#/components/schemas/amperage_breaker'
+    
     amperage_breaker:
       type: number
       format: double
@@ -1456,6 +1560,7 @@ components:
       minimum: 0
       default: 0
       example: 20
+    
     amperage_fixture:
       type: number
       format: double
@@ -1463,18 +1568,21 @@ components:
       minimum: 0
       default: 0
       example: 3.5
+    
     relay_name:
       type: string
       description: Human-friendly name of the relay
       example: Circuit 12
       minLength: 1
       maxLength: 20
+    
     relay_type:
       type: string
       description: Defines if the relay output to the fixture is binary or variable
       enum:
         - BINARY
         - VARIABLE
+    
     relay_model:
       type: string
       description: Identifies the manufacturer and model of the relay
@@ -1519,10 +1627,18 @@ components:
           type: array
           items: 
             $ref: '#/components/schemas/breaker'
+       
+
+##########################################################
+##########################################################
+## Examples                                             ##
+##########################################################
+##########################################################
 
   examples:
     emptyArray:
       value: []
+
     eventLog:
       value:
         - time: 1709398094
@@ -1534,13 +1650,16 @@ components:
         - time: 1709398228
           level: error
           text: MQTT disconnected
+    
     errorLog:
       value:
         - text: MQTT disconnected
         - text: Ethernet disconnected
+   
     ota_http:
       value:
         url: http://www.somewhere.com/firmware.json
+    
     ota_https:
       value:
         url: https://www.somewhere.com/firmware.json
