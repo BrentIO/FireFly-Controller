@@ -374,7 +374,8 @@ paths:
           name: filename
           schema:
             type: string
-            example: mycert.pem
+            examples: 
+              - mycert.pem
             maxLength: 31
           required: true
           description: Certificate filename to retrieve
@@ -417,7 +418,8 @@ paths:
           name: file
           schema:
             type: string
-            example: mycert.pem
+            examples: 
+              - mycert.pem
             maxLength: 31
           required: true
           description: Certificate filename to delete
@@ -1282,7 +1284,9 @@ components:
         error:
           type: string
           description: Message describing the error condition
-          example: Unexpected Error
+          examples: 
+            - Unexpected Error
+
     bad_request_message:
       type: object
       properties:
@@ -1297,6 +1301,8 @@ components:
         - ethernet
         - wifi
         - wifi_ap
+          examples: 
+            - Missing parameter in request
 
 
     ##########################################################
@@ -1314,7 +1320,8 @@ components:
         time:
           type: integer
           description: Time the event occurred, in seconds.  If NTP time was available when the event was logged, Epoch time will be used.  Otherwise, time since boot will be used
-          example: 1709398094
+          examples: 
+            - 1709398094
         level:
           type: string
           description: Severity level for the event
@@ -1323,23 +1330,27 @@ components:
             - notify
             - error
             - unknown
-          example: info
+          examples: 
+            - info
         text:
           type: string
           description: Descriptive text about the event
-          example: Event log started
+          examples: 
+            - Event log started
 
     errorLog:
       type: array
       items:
         $ref: '#/components/schemas/errorLogEntry'
+
     errorLogEntry:
       type: object
       properties:
         text:
           type: string
           description: Descriptive text about the event
-          example: EEPROM Failure
+          examples: 
+            - EEPROM Failure
 
 
     ##########################################################
@@ -1349,12 +1360,14 @@ components:
     applicationVersion:
       type: string
       description: Software version
-      example: '2024.2.1'
+      examples: 
+        - '2024.2.1'
 
     productHex:
       type: string
       description: Hardware product hexadecimal, indicating the version of the firmware
-      example: '0x8062305'
+      examples: 
+        - '0x8062305'
 
     applicationVersionInfo:
       type: object
@@ -1381,18 +1394,23 @@ components:
         file:
           type: string
           description: Certificate's filename
-          example: mycert.pem
+          examples: 
+             - mycert.pem
         size:
           type: integer
           description: Certificate's size in bytes
-          example: 1410
+          examples: 
+            - 1410
+    
     certificateList:
       type: array
       items:
         $ref: '#/components/schemas/certificateListItem'
+    
     certificateContent:
       type: string
-      example: '-----BEGIN CERTIFICATE----- MIID0zCCArugAwIBAgIQVmcdBOpPmUxvEIFHWdJ1lDANBgkqhkiG9w0BAQwFADB7 MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVyMRAwDgYD VQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEhMB8GA1UE AwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTE5MDMxMjAwMDAwMFoXDTI4 MTIzMTIzNTk1OVowgYgxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpOZXcgSmVyc2V5 MRQwEgYDVQQHEwtKZXJzZXkgQ2l0eTEeMBwGA1UEChMVVGhlIFVTRVJUUlVTVCBO ZXR3b3JrMS4wLAYDVQQDEyVVU0VSVHJ1c3QgRUNDIENlcnRpZmljYXRpb24gQXV0 aG9yaXR5MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEGqxUWqn5aCPnetUkb1PGWthL q8bVttHmc3Gu3ZzWDGH926CJA7gFFOxXzu5dP+Ihs8731Ip54KODfi2X0GHE8Znc JZFjq38wo7Rw4sehM5zzvy5cU7Ffs30yf4o043l5o4HyMIHvMB8GA1UdIwQYMBaA FKARCiM+lvEH7OKvKe+CpX/QMKS0MB0GA1UdDgQWBBQ64QmG1M8ZwpZ2dEl23OA1 xmNjmjAOBgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zARBgNVHSAECjAI MAYGBFUdIAAwQwYDVR0fBDwwOjA4oDagNIYyaHR0cDovL2NybC5jb21vZG9jYS5j b20vQUFBQ2VydGlmaWNhdGVTZXJ2aWNlcy5jcmwwNAYIKwYBBQUHAQEEKDAmMCQG CCsGAQUFBzABhhhodHRwOi8vb2NzcC5jb21vZG9jYS5jb20wDQYJKoZIhvcNAQEM BQADggEBABns652JLCALBIAdGN5CmXKZFjK9Dpx1WywV4ilAbe7/ctvbq5AfjJXy ij0IckKJUAfiORVsAYfZFhr1wHUrxeZWEQff2Ji8fJ8ZOd+LygBkc7xGEJuTI42+ FsMuCIKchjN0djsoTI0DQoWz4rIjQtUfenVqGtF8qmchxDM6OW1TyaLtYiKou+JV bJlsQ2uRl9EMC5MCHdK8aXdJ5htN978UeAOwproLtOGFfy/cQjutdAFI3tZs4RmY CV4Ks2dH/hzg1cEo70qLRDEmBDeNiXQ2Lu+lIg+DdEmSx/cQwgwp+7e9un/jX9Wf 8qn0dNW44bOwgeThpWOjzOoEeJBuv/c= -----END CERTIFICATE-----'
+      examples: 
+        - '-----BEGIN CERTIFICATE----- MIID0zCCArugAwIBAgIQVmcdBOpPmUxvEIFHWdJ1lDANBgkqhkiG9w0BAQwFADB7 MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVyMRAwDgYD VQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEhMB8GA1UE AwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTE5MDMxMjAwMDAwMFoXDTI4 MTIzMTIzNTk1OVowgYgxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpOZXcgSmVyc2V5 MRQwEgYDVQQHEwtKZXJzZXkgQ2l0eTEeMBwGA1UEChMVVGhlIFVTRVJUUlVTVCBO ZXR3b3JrMS4wLAYDVQQDEyVVU0VSVHJ1c3QgRUNDIENlcnRpZmljYXRpb24gQXV0 aG9yaXR5MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEGqxUWqn5aCPnetUkb1PGWthL q8bVttHmc3Gu3ZzWDGH926CJA7gFFOxXzu5dP+Ihs8731Ip54KODfi2X0GHE8Znc JZFjq38wo7Rw4sehM5zzvy5cU7Ffs30yf4o043l5o4HyMIHvMB8GA1UdIwQYMBaA FKARCiM+lvEH7OKvKe+CpX/QMKS0MB0GA1UdDgQWBBQ64QmG1M8ZwpZ2dEl23OA1 xmNjmjAOBgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zARBgNVHSAECjAI MAYGBFUdIAAwQwYDVR0fBDwwOjA4oDagNIYyaHR0cDovL2NybC5jb21vZG9jYS5j b20vQUFBQ2VydGlmaWNhdGVTZXJ2aWNlcy5jcmwwNAYIKwYBBQUHAQEEKDAmMCQG CCsGAQUFBzABhhhodHRwOi8vb2NzcC5jb21vZG9jYS5jb20wDQYJKoZIhvcNAQEM BQADggEBABns652JLCALBIAdGN5CmXKZFjK9Dpx1WywV4ilAbe7/ctvbq5AfjJXy ij0IckKJUAfiORVsAYfZFhr1wHUrxeZWEQff2Ji8fJ8ZOd+LygBkc7xGEJuTI42+ FsMuCIKchjN0djsoTI0DQoWz4rIjQtUfenVqGtF8qmchxDM6OW1TyaLtYiKou+JV bJlsQ2uRl9EMC5MCHdK8aXdJ5htN978UeAOwproLtOGFfy/cQjutdAFI3tZs4RmY CV4Ks2dH/hzg1cEo70qLRDEmBDeNiXQ2Lu+lIg+DdEmSx/cQwgwp+7e9un/jX9Wf 8qn0dNW44bOwgeThpWOjzOoEeJBuv/c= -----END CERTIFICATE-----'
     
     
     ##########################################################
@@ -1406,11 +1424,13 @@ components:
           type: string
           format: url
           description: URL for the firmware update server
-          example: http://www.somewhere.com/firmware.json
+          examples: 
+            - http://www.somewhere.com/firmware.json
         certificate:
           type: string
           description: File name for the certificate that should be used when https is specified.  The existence of the certificate will not be checked until the OTA config is reloaded (typically on reboot)
-          example: mycert.pem
+          examples: 
+            - mycert.pem
       required:
         - url
 
@@ -1424,7 +1444,8 @@ components:
         certificate:
           type: string
           description: File name for the certificate that should be used when https is specified
-          example: mycert.pem
+          examples: 
+            - mycert.pem
       required:
         - url
 
@@ -1481,7 +1502,8 @@ components:
         name:
           type: string
           description: Human-friendly name of the output
-          example: Chandelier
+          examples: 
+            - Chandelier
           maxLength: 20
         port: 
           type: integer
@@ -1547,7 +1569,8 @@ components:
         name:
           type: string
           description: Human-friendly name of the breaker
-          example: Panel A Breaker 2
+          examples: 
+            - Panel A Breaker 2
           minLength: 1
           maxLength: 20
         amperage:
@@ -1559,7 +1582,8 @@ components:
       description: Maximum amperage rating for the breaker
       minimum: 0
       default: 0
-      example: 20
+      examples: 
+        - 20
     
     amperage_fixture:
       type: number
@@ -1567,12 +1591,14 @@ components:
       description: Maximum amperage draw of fixture(s) when powered on to the maximum potential
       minimum: 0
       default: 0
-      example: 3.5
+      examples: 
+        - 3.5
     
     relay_name:
       type: string
       description: Human-friendly name of the relay
-      example: Circuit 12
+      examples: 
+        - Circuit 12
       minLength: 1
       maxLength: 20
     
@@ -1586,7 +1612,8 @@ components:
     relay_model:
       type: string
       description: Identifies the manufacturer and model of the relay
-      example: DR2220D20U
+      examples: 
+        - DR2220D20U
       maxLength: 20
 
     relay:
