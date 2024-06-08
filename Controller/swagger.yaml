@@ -415,7 +415,7 @@ paths:
         - visualToken: []
       parameters:
         - in: path
-          name: file
+          name: filename
           schema:
             type: string
             examples: 
