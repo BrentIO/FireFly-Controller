@@ -460,12 +460,102 @@ paths:
         '401':
           description: Unauthorized
 
+
+##########################################################
+## Provisioning                                         ##
+##########################################################
+
+  /api/provisioning:
+    get:
+      tags:
+        - Configuration
+      summary: Retrieve the status of provisioning mode on this controller
+      description: Retrieve the status of provisioning mode on this controller
+      security:
+        - visualToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+                    description: Indicates if provisioning mode is enabled on the device
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+    put:
+      tags:
+        - Configuration
+      summary: Enable provisioning mode on this controller
+      description: Enable provisioning mode on this controller
+      security:
+        - visualToken: []
+      responses:
+        '204':
+          description: Success
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+              example:
+                message: Another controller is already in provisioning mode
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+    delete:
+      tags:
+        - Configuration
+      summary: Disable provisioning mode on this controller
+      description: Disable provisioning mode on this controller
+      security:
+        - visualToken: []
+      responses:
+        '204':
+          description: Success
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+              example:
+                message: Controller is not in provisioning mode
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+
+
+##########################################################
+## High Voltage                                         ##
+##########################################################
+
   /api/breakers:
     get:
       tags:
         - High Voltage
-      summary: Retrieve a list of breakers defined
-      description: Retrieves a list of all breakers defined
+      summary: Retrieve the list of breakers
+      description: Retrieves the list of all breakers
       security:
         - visualToken: []
       responses:
@@ -487,106 +577,24 @@ paths:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: File system not mounted
-    post:
-      tags:
-        - High Voltage
-      summary: Create a new breaker
-      description: Create a new high-voltage breaker
-      security:
-        - visualToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/breaker'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                  $ref: '#/components/schemas/uniqueId'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/bad_request_message'
-        '401':
-          description: Unauthorized
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
-
-  /api/breakers/{id}:
-##########################################################
-## Provisioning                                         ##
-##########################################################
-
-    get:
-      tags:
-        - High Voltage
-      summary: Retrieve a breaker by ID
-      description: Retrieve a specific breaker by assigned ID
-      security:
-        - visualToken: []
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-            example: 9
-          required: true
-          description: Breaker ID to retrieve
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                  $ref: '#/components/schemas/breaker'
-        '401':
-          description: Unauthorized
-        '404':
-          description: Not Found
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
     put:
       tags:
         - High Voltage
-      summary: Update a breaker
-      description: Updates the existing breaker
+      summary: Create or update the list of breakers
+      description: Create or update the list of breakers. Note that contents are not validated and are immediately stored to the file system.
       security:
         - visualToken: []
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-            example: 9
-          required: true
-          description: Breaker ID to update
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/breaker'
+              type: array
+              items:
+                $ref: '#/components/schemas/breaker'
       responses:
-        '204':
-          description: Success
+        '201':
+          description: Created
         '400':
           description: Bad Request
           content:
@@ -595,8 +603,6 @@ paths:
                 $ref: '#/components/schemas/bad_request_message'
         '401':
           description: Unauthorized
-        '404':
-          description: Not Found
         '500':
           description: Internal Server Error
           content:
@@ -608,21 +614,13 @@ paths:
     delete:
       tags:
         - High Voltage
-      summary: Create a new breaker
-      description: Create a new high-voltage breaker
+      summary: Delete the list of breakers
+      description: Delete the list of breakers
       security:
         - visualToken: []
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-            example: 9
-          required: true
-          description: Breaker ID to delete
       responses:
         '204':
-          description: Success
+          description: File Deleted Successfully
         '401':
           description: Unauthorized
         '404':
@@ -635,13 +633,13 @@ paths:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: File system not mounted
-  
+
   /api/relays:
     get:
       tags:
         - High Voltage
-      summary: Retrieve a list of relays defined
-      description: Retrieves a list of all relays defined
+      summary: Retrieve the list of relays
+      description: Retrieve the list of relays
       security:
         - visualToken: []
       responses:
@@ -663,109 +661,24 @@ paths:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: File system not mounted
-    post:
-      tags:
-        - High Voltage
-      summary: Create a new relay
-      description: Create a new high-voltage relay
-      security:
-        - visualToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/relay'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/uniqueId'
-              example:
-                id: 4
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/bad_request_message'
-        '401':
-          description: Unauthorized
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
-
-  /api/relays/{id}:
-
-##########################################################
-## High Voltage                                         ##
-##########################################################
-
-    get:
-      tags:
-        - High Voltage
-      summary: Retrieve a relay by ID
-      description: Retrieve a specific relay by assigned ID
-      security:
-        - visualToken: []
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-            example: 4
-          required: true
-          description: Relay ID to retrieve
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/relay'
-        '401':
-          description: Unauthorized
-        '404':
-          description: Not Found
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
     put:
       tags:
         - High Voltage
-      summary: Update a relay
-      description: Updates the existing relay
+      summary: Create or update the list of relays
+      description: Create or update the list of relays. Note that contents are not validated and are immediately stored to the file system.
       security:
         - visualToken: []
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-            example: 4
-          required: true
-          description: Relay ID to update
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/relay'
+              type: array
+              items:
+                $ref: '#/components/schemas/relay'
       responses:
-        '204':
-          description: Success
+        '201':
+          description: Created
         '400':
           description: Bad Request
           content:
@@ -774,8 +687,6 @@ paths:
                 $ref: '#/components/schemas/bad_request_message'
         '401':
           description: Unauthorized
-        '404':
-          description: Not Found
         '500':
           description: Internal Server Error
           content:
@@ -787,21 +698,13 @@ paths:
     delete:
       tags:
         - High Voltage
-      summary: Create a new relay
-      description: Create a new high-voltage relay
+      summary: Delete the list of relays
+      description: Delete the list of relays
       security:
         - visualToken: []
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-            example: 4
-          required: true
-          description: Relay ID to delete
       responses:
         '204':
-          description: Success
+          description: File Deleted Successfully
         '401':
           description: Unauthorized
         '404':
@@ -814,13 +717,18 @@ paths:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: File system not mounted
+
+
+##########################################################
+## Controllers                                          ##
+##########################################################
 
   /api/controllers:
     get:
       tags:
         - Controllers
-      summary: Retrieve a list of controllers defined
-      description: Retrieves a list of all controllers defined
+      summary: Retrieve the list of defined controller UUIDs
+      description: Retrieve the list of defined controller UUIDs
       security:
         - visualToken: []
       responses:
@@ -831,43 +739,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/controller'
-        '401':
-          description: Unauthorized
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
-    post:
-      tags:
-        - Controllers
-      summary: Create a new controller
-      description: Create a new controller
-      security:
-        - visualToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/controller'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                  $ref: '#/components/schemas/uniqueId'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/bad_request_message'
+                  $ref: '#/components/schemas/uuid'
         '401':
           description: Unauthorized
         '500':
@@ -879,118 +751,28 @@ paths:
               example:
                 message: File system not mounted
 
-  /api/controllers/{id}:
-    patch:
-      tags:
-        - Controllers
-      summary: Update an existing controller
-      description: Updates an existing controller
-      security:
-        - visualToken: []
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-            example: 9
-          required: true
-          description: Controller ID
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/controller'
-      responses:
-        '204':
-          description: Success
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/bad_request_message'
-        '401':
-          description: Unauthorized
-        '404':
-          description: Not Found
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
-
-  /api/controllers/{id}/inputs:
+  /api/controllers/{uuid}:
     get:
       tags:
         - Controllers
-      summary: Retrieve list of controller inputs
-      description: Retrieve list of all of the inputs for the requested controller
+      summary: Retrieve a controller
+      description: Retrieve a controller
       security:
         - visualToken: []
       parameters:
         - in: path
-          name: id
+          name: uuid
           schema:
-            type: integer
-            example: 9
+            $ref: '#/components/schemas/uuid'
           required: true
-          description: Controller ID to retrieve
+          description: Controller UUID
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/inputPort'
-        '401':
-          description: Unauthorized
-        '404':
-          description: Not Found
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
-
-  /api/controllers/{id}/inputs/{port}:
-    get:
-      tags:
-        - Controllers
-      summary: Retrieve input port
-      description: Retrieve the requested input port information for the requested controller
-      security:
-        - visualToken: []
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-            example: 9
-          required: true
-          description: Controller ID to retrieve
-        - in: path
-          name: port
-          schema:
-            type: integer
-            example: 12
-          required: true
-          description: Port number to retrieve
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/inputPort'
+                $ref: '#/components/schemas/controller'
         '401':
           description: Unauthorized
         '404':
@@ -1006,189 +788,26 @@ paths:
     put:
       tags:
         - Controllers
-      summary: Update a port
-      description: Update a port
+      summary: Create or update a controller
+      description: Create or update a controller.  Note that contents are not validated and are immediately stored to the file system.
       security:
         - visualToken: []
       parameters:
         - in: path
-          name: id
+          name: uuid
           schema:
-            type: integer
-            example: 9
+            $ref: '#/components/schemas/uuid'
           required: true
-          description: Controller ID to update
-        - in: path
-          name: port
-          schema:
-            type: integer
-            example: 12
-          required: true
-          description: Port number to update
+          description: Controller UUID
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/inputPort'
+              $ref: '#/components/schemas/controller'
       responses:
-        '204':
-          description: Success
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/bad_request_message'
-        '401':
-          description: Unauthorized
-        '404':
-          description: Not Found
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
-##########################################################
-## Controllers                                          ##
-##########################################################
-
-  /api/controllers/{id}/inputs/{port}/channels:
-    get:
-      tags:
-        - Controllers
-      summary: Retrieve input port channel
-      description: Retrieve the requested input port channel information for the requested controller
-      security:
-        - visualToken: []
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-            example: 9
-          required: true
-          description: Controller ID to retrieve
-        - in: path
-          name: port
-          schema:
-            type: integer
-            example: 12
-          required: true
-          description: Port number to retrieve
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/channel'
-        '401':
-          description: Unauthorized
-        '404':
-          description: Not Found
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
-
-
-  /api/controllers/{id}/inputs/{port}/channels/{channel}:
-    get:
-      tags:
-        - Controllers
-      summary: Retrieve input port channel
-      description: Retrieve the requested input port channel information for the requested controller
-      security:
-        - visualToken: []
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-            example: 9
-          required: true
-          description: Controller ID to retrieve
-        - in: path
-          name: port
-          schema:
-            type: integer
-            example: 12
-          required: true
-          description: Port number to retrieve
-        - in: path
-          name: channel
-          schema:
-            type: integer
-            example: 2
-          required: true
-          description: Channel number to retrieve
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/channel'
-        '401':
-          description: Unauthorized
-        '404':
-          description: Not Found
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
-    post:
-      tags:
-        - Controllers
-      summary: Create a channel configuration override
-      description: Creates a port's channel configuration override
-      security:
-        - visualToken: []
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-            example: 9
-          required: true
-          description: Controller ID
-        - in: path
-          name: port
-          schema:
-            type: integer
-            example: 12
-          required: true
-          description: Port number
-        - in: path
-          name: channel
-          schema:
-            type: integer
-            example: 2
-          required: true
-          description: Channel number to create the override
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/channel'
-      responses:
-        '204':
-          description: Success
+        '201':
+          description: Created
         '400':
           description: Bad Request
           content:
@@ -1205,39 +824,23 @@ paths:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: File system not mounted
-
     delete:
       tags:
         - Controllers
-      summary: Delete a channel configuration override
-      description: Deletes the port's channel configuration and returns it to the default configuration
+      summary: Delete a controller
+      description: Delete a controller
       security:
         - visualToken: []
       parameters:
         - in: path
-          name: id
+          name: uuid
           schema:
-            type: integer
-            example: 9
+            $ref: '#/components/schemas/uuid'
           required: true
-          description: Controller ID
-        - in: path
-          name: port
-          schema:
-            type: integer
-            example: 12
-          required: true
-          description: Port number
-        - in: path
-          name: channel
-          schema:
-            type: integer
-            example: 2
-          required: true
-          description: Channel number to delete the override
+          description: Controller UUID
       responses:
         '204':
-          description: Deleted channel configuration successfully
+          description: File Deleted Successfully
         '401':
           description: Unauthorized
         '404':
@@ -1293,14 +896,6 @@ components:
         message:
           type: string
           description: Message describing the issue with the request body
-          example: Missing parameter in request
-    networkInterfaceTypes:
-      type: string
-      enum:
-        - bluetooth
-        - ethernet
-        - wifi
-        - wifi_ap
           examples: 
             - Missing parameter in request
 
@@ -1454,48 +1049,80 @@ components:
     ## Controller                                           ##
     ##########################################################
 
+    controller:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Human-friendly name of the controller
+          examples: 
+            - First floor
+          maxLength: 20
+        ports:
+          $ref: '#/components/schemas/inputPort'
+        outputs:
+          type: object
+        actions:
+          type: array
+          items:
+            type: string #TO DO
+      required:
+        - name
+
+    inputPort:
+      type: object
+      additionalProperties:
+        type: object
+        pattern: ^[1-9][0-9]*$
+        properties:
+          name:
+            type: string
+            description: Human-friendly name
+            maxLength: 20
+          unique_id:
+            type: string
+            description: Human-friendly name
+            maxLength: 8
+          channels:
+            type: object
+            propertyNames: 
+              pattern: ^[1-3,6]$
+            additionalProperties:
+              $ref: '#/components/schemas/channel'
+        required:
+          - unique_id
+      examples:
+        - 1:
+           unique_id: S22
+          3:
+            name: Kitchen Entryway
+            unique_id: S7
+            channels:
+              2:
+                type: NORMALLY_CLOSED
+                enabled: false
+              6:
+                long_change: true
       
     channel:
       type: object
       properties:
-        channel:
-          type: integer
-          description: Physical channel within a port
-          pattern: ^[1-3,6]$
-          example: 2
-          readOnly: true
         type:
           type: string
           description: Defines if the channel is normally open or normally closed
+          default: NORMALLY_OPEN
           enum:
             - NORMALLY_OPEN
             - NORMALLY_CLOSED
         long_change:
           type: boolean
           description: Indicates if long changes are enabled for this input
-          default: true
+          default: false
         enabled:
           type: boolean
           description: Indicates if the channel is enabled
           default: true
-      required:
-        - type
-    inputPort:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Human-friendly name of the input
-          example: Kitchen Entryway
-          maxLength: 20
-        port: 
-          type: integer
-          description: Port number; Maximum is defined by the hardware capabilities
-          minimum: 12
-          readOnly: true
 
-      required:
-        - port
     outputPort:
       type: object
       properties:
@@ -1509,16 +1136,6 @@ components:
           type: integer
           description: Port number; Maximum is defined by the hardware capabilities
           minimum: 1
-        type:
-          type: string
-          description: Defines if the output is binary or variable
-          enum:
-            - BINARY
-            - VARIABLE
-        enabled:
-          type: boolean
-          description: Indicates if the output is enabled
-          default: true
         
         state:
           type: string
@@ -1529,29 +1146,13 @@ components:
       required:
         - port
         - type
-    controller:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-          description: Unqiue ID assigned by the controller
-          example: 9
-        uuid:
-          type: string
-          description: Unique identifier for the device
-          format: uuid
-          minLength: 36
-          maxLength: 36
-        name:
-          type: string
-          description: Human-friendly name of the controller
-          example: First floor
-          maxLength: 20
-      required:
-        - uuid
-        - id
 
+    uuid:
+      type: string
+      description: Unique identifier
+      format: uuid
+      minLength: 36
+      maxLength: 36
 
 
     ##########################################################
@@ -1561,11 +1162,8 @@ components:
     breaker:
       type: object
       properties:
-        id:
-          type: integer
-          readOnly: true
-          description: Unqiue ID assigned by the controller
-          example: 9
+        uuid:
+          $ref: '#/components/schemas/uuid'
         name:
           type: string
           description: Human-friendly name of the breaker
@@ -1575,6 +1173,9 @@ components:
           maxLength: 20
         amperage:
           $ref: '#/components/schemas/amperage_breaker'
+      required:
+        - uuid
+        - name
     
     amperage_breaker:
       type: number
@@ -1588,7 +1189,7 @@ components:
     amperage_fixture:
       type: number
       format: double
-      description: Maximum amperage draw of fixture(s) when powered on to the maximum potential
+      description: Maximum amperage draw of fixture(s) when powered on to maximum potential
       minimum: 0
       default: 0
       examples: 
@@ -1608,6 +1209,7 @@ components:
       enum:
         - BINARY
         - VARIABLE
+      default: BINARY
     
     relay_model:
       type: string
@@ -1619,11 +1221,8 @@ components:
     relay:
       type: object
       properties:
-        id:
-          type: integer
-          readOnly: true
-          description: Unqiue ID assigned by the controller
-          example: 4
+        uuid:
+          $ref: '#/components/schemas/uuid'
         name:
           $ref: '#/components/schemas/relay_name'
         amperage:
@@ -1634,26 +1233,7 @@ components:
           $ref: '#/components/schemas/relay_model'
       required:
         - name
-        - type
-    uniqueId:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-          description: Unqiue ID assigned by the controller
-          example: 7
-    configFile:
-      type: object
-      properties:
-        controllers:
-          type: array
-          items: 
-            $ref: '#/components/schemas/controller'
-        breakers:
-          type: array
-          items: 
-            $ref: '#/components/schemas/breaker'
+        - uuid
        
 
 ##########################################################
