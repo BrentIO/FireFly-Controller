@@ -1067,10 +1067,10 @@ components:
 
     inputPort:
       type: object
+      propertyNames:
+          pattern: ^[1-9][0-9]*$
       additionalProperties:
         type: object
-        propertyNames:
-          pattern: ^[1-9][0-9]*$
         properties:
           name:
             type: string
@@ -1139,10 +1139,10 @@ components:
 
     outputPort:
       type: object
+      propertyNames:
+          pattern: ^[1-9][0-9]*$
       additionalProperties:
         type: object
-        propertyNames:
-          pattern: ^[1-9][0-9]*$
         properties:
           name:
             type: string
