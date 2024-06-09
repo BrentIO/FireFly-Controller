@@ -1061,11 +1061,7 @@ components:
         ports:
           $ref: '#/components/schemas/inputPort'
         outputs:
-          type: object
-        actions:
-          type: array
-          items:
-            type: string #TO DO
+          $ref: '#/components/schemas/outputPort'
       required:
         - name
 
@@ -1125,27 +1121,47 @@ components:
 
     outputPort:
       type: object
-      properties:
-        name:
-          type: string
-          description: Human-friendly name of the output
-          examples: 
-            - Chandelier
-          maxLength: 20
-        port: 
-          type: integer
-          description: Port number; Maximum is defined by the hardware capabilities
-          minimum: 1
-        
-        state:
-          type: string
-          description: Current state of the output as a percentage.  If the `type` is `BINARY`, the value will be either 0 (off) or 100 (on)
-          readOnly: true
-          minimum: 0
-          maximum: 100
-      required:
-        - port
-        - type
+      additionalProperties:
+        type: object
+        propertyNames:
+          pattern: ^[1-9][0-9]*$
+        properties:
+          name:
+            type: string
+            description: Human-friendly name
+            maxLength: 20
+          area:
+            type: string
+            description: Area where the output fixture is located
+            maxLength: 20
+          icon:
+            type: string
+            description: Reference to an MDI icon
+            maxLength: 64
+          type:
+            type: string
+            description: Defines if the fixture has a binary or variable output
+            enum:
+              - BINARY
+              - VARIABLE
+            default: BINARY
+          enabled:
+            type: boolean
+            description: Indicates if the output is enabled
+            default: true
+      examples:
+        - 4:
+            name: Chandelier
+            area: Foyer
+            icon: chandelier
+            type: VARIABLE
+          12:
+            name: Recessed Lights
+            area: Bathroom
+            icon: light-recessed
+          13:
+            enabled: false
+
 
     uuid:
       type: string
