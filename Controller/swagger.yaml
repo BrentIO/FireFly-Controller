@@ -1069,7 +1069,8 @@ components:
       type: object
       additionalProperties:
         type: object
-        pattern: ^[1-9][0-9]*$
+        propertyNames:
+          pattern: ^[1-9][0-9]*$
         properties:
           name:
             type: string
