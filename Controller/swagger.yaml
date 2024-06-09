@@ -1102,7 +1102,7 @@ components:
               actions:
               - type: DECREASE
                 output: 4
-          3:
+          5:
             name: Kitchen Entryway
             unique_id: S7
             channels:
