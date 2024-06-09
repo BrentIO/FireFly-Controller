@@ -1090,16 +1090,29 @@ components:
       examples:
         - 1:
            unique_id: S22
+           channels:
+            1:
+              long_change: true
+              actions:
+                - type: INCREASE
+                  output: 4
+            2:
+              long_change: true
+              actions:
+              - type: DECREASE
+                output: 4
           3:
             name: Kitchen Entryway
             unique_id: S7
             channels:
+              1:
+                enabled: false
               2:
                 type: NORMALLY_CLOSED
-                enabled: false
-              6:
-                long_change: true
-      
+                actions:
+                - type: TOGGLE
+                  output: 8
+
     channel:
       type: object
       properties:
@@ -1118,6 +1131,10 @@ components:
           type: boolean
           description: Indicates if the channel is enabled
           default: true
+        actions:
+            type: array
+            items:
+                $ref: '#/components/schemas/action'
 
     outputPort:
       type: object
@@ -1162,6 +1179,24 @@ components:
           13:
             enabled: false
 
+    action:
+        type: object
+        properties:
+          action:
+            type: string
+            description: Action to take
+            enum:
+              - INCREASE
+              - DECREASE
+              - TOGGLE
+          output:
+            type: number
+            format: integer
+            description: The output number the requested action will be applied to
+            pattern: ^[1-9][0-9]*$
+        required:
+          - action
+          - output
 
     uuid:
       type: string
