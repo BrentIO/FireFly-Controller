@@ -365,6 +365,7 @@ class managerInputs{
             structHealth inputControllers[IO_EXTENDER_COUNT]; /** Array of input controller health */
         };
 
+
         /** Callback function that is called when an input is made */
         void setCallback_publisher(void (*userDefinedCallback)(portChannel, boolean)) {
             ptrPublisherCallback = userDefinedCallback; }
@@ -447,6 +448,7 @@ class managerInputs{
             this->_initialized = true;
         };
 
+
         /** Get the health of the input controllers 
          * @returns All input controllers and their bus state; the count of input controllers
         */
@@ -467,6 +469,7 @@ class managerInputs{
 
             return returnValue;
         }
+
 
         /** Observes changes in inputs with each main loop() cycle */
         void loop(){
