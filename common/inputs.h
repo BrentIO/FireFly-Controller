@@ -106,6 +106,7 @@ class managerInputs{
             inputType type = NORMALLY_OPEN; /* Defines if the input is normally open or normally closed. Default NORMALLY_OPEN.*/
             boolean monitorLongChange = false; /* Defines if the pin should be monitored for long changes.  Should be _true_ for buttons and _false_ for reed switches. Default false.*/
             portChannel port_channel; /* The RJ-45 port and channel this input pin is connected to */
+            boolean enabled = true; /* If the input pin is enabled. Default true.*/
         };
 
 
@@ -242,6 +243,10 @@ class managerInputs{
 
             //Hardware detected a change; Process each pin on the specified IO extender
             for(int i = 0; i < IO_EXTENDER_COUNT_PINS; i++){
+
+                if(inputController->inputs[i].enabled == false){
+                    continue;
+                }
 
                 inputState currentState = bitToInputState(bitRead(pinRead, i));
 
@@ -494,4 +499,35 @@ class managerInputs{
                 processInputs(&this->inputControllers[i]);
             }
         };
+
+
+        /** Enables or disables a port channel
+         * @param portChannel as the human-readable port and channel to set
+         * @param enabled if the port channel should be enabled or disabled
+         * @note The input will be set to the input types' default state when enabling or disabling
+        */
+        void enablePortChannel(portChannel portChannel, boolean enabled){
+
+            for(int i = 0; i < IO_EXTENDER_COUNT; i++){
+                for(int j = 0; j < IO_EXTENDER_COUNT_PINS; j++){
+                    if(this->inputControllers[i].inputs[j].port_channel.port == portChannel.port && this->inputControllers[i].inputs[j].port_channel.channel == portChannel.channel){
+                        switch(this->inputControllers[i].inputs[j].type){
+                            
+                            case NORMALLY_OPEN:
+                                this->inputControllers[i].inputs[j].state = STATE_OPEN;
+                                break;
+
+                            case NORMALLY_CLOSED:
+                                this->inputControllers[i].inputs[j].state = STATE_CLOSED;
+                                break;
+                        }
+
+                        this->inputControllers[i].inputs[j].timeChange = 0;
+                        this->inputControllers[i].inputs[j].changeHandled = true;
+                        this->inputControllers[i].inputs[j].changeHandledLong = true;
+                        this->inputControllers[i].inputs[j].enabled = enabled;
+                    }
+                }
+            }
+        }
 };
