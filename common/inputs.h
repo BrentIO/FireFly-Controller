@@ -545,4 +545,25 @@ class managerInputs{
                 }
             }
         }
+
+
+        /** Sets the input type for a specified port channel
+         * @param portChannel as the human-readable port and channel to set
+         * @param enabled if the port channel should monitor for long changes or not
+         * @note The input will be set to the input types' default state when changing this setting
+        */
+        void enablePortChannelLongChange(portChannel portChannel, boolean enabled){
+
+            for(int i = 0; i < IO_EXTENDER_COUNT; i++){
+                for(int j = 0; j < IO_EXTENDER_COUNT_PINS; j++){
+                    if(this->inputControllers[i].inputs[j].port_channel.port == portChannel.port && this->inputControllers[i].inputs[j].port_channel.channel == portChannel.channel){
+                        this->inputControllers[i].inputs[j].monitorLongChange = enabled;
+                        this->inputControllers[i].inputs[j].timeChange = 0;
+                        this->inputControllers[i].inputs[j].changeHandled = true;
+                        this->inputControllers[i].inputs[j].changeHandledLong = true;
+                    }
+                }
+            }
+        }
+
 };
