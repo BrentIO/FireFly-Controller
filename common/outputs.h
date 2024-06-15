@@ -424,5 +424,18 @@ namespace nsOutputs{
                     }
                 }
             }
+
+            /** Enables or disables a port
+             * @param port as the human-readable port number to set
+             * @param enabled if the port should be enabled or disabled
+            */
+            void enablePort(uint8_t port, boolean enabled){
+
+                for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
+                    if(this->outputs[i].port == port){
+                        this->outputs[i].enabled = enabled;
+                    }
+                }
+            }
     };
 };
