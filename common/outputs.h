@@ -428,11 +428,15 @@ namespace nsOutputs{
             /** Enables or disables a port
              * @param port as the human-readable port number to set
              * @param enabled if the port should be enabled or disabled
+             * @note When a port is disabled, its output will be set to off prior to being disabled
             */
             void enablePort(uint8_t port, boolean enabled){
 
                 for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
                     if(this->outputs[i].port == port){
+                        if(enabled == false){
+                            this->outputs[i].set(0);
+                        }
                         this->outputs[i].enabled = enabled;
                     }
                 }
