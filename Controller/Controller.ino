@@ -208,6 +208,62 @@ void setup() {
       log_e("An Error has occurred while mounting configFS");
     }
 
+    /* Configure the web server.  
+      IMPORTANT: *** Sequence below matters, they are sorted specific to generic *** 
+    */
+
+    httpServer.on("/api/version", http_handleVersion);
+    httpServer.on("/api/events", http_handleEventLog);
+    httpServer.on("/api/errors", http_handleErrorLog);
+    httpServer.on("/auth", http_handleAuth);
+
+    if(configFS_isMounted){
+      //httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
+      //httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
+      //httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
+      //httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced));
+      //httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota", http_handleOTA_POST));
+      //httpServer.on("^\/api\/ota$", http_handleOTA);
+      //setup_OtaFirmware();
+    }else{
+      log_e("configFS is not mounted");
+      httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_configFSNotMunted);
+      httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_configFSNotMunted);
+      httpServer.on("/api/ota", http_configFSNotMunted);
+    }
+
+    if(wwwFS_isMounted){
+      httpServer.serveStatic("/", wwwFS, "/");
+      httpServer.rewrite("/ui/version", "/version.json");
+      httpServer.rewrite("/", "/index.html");
+    }
+
+  httpServer.onNotFound(http_notFound);
+
+  DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Origin"), F("*")); //Ignore CORS
+
+  #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+
+    if(WiFi.getMode() == wifi_mode_t::WIFI_MODE_NULL){
+
+      log_w("HTTP server will not be started because WiFi it has not been initialized (WIFI_MODE_NULL)");
+    
+    }else{
+      httpServer.begin();
+      eventLog.createEvent(F("Web server started"));
+
+      log_i("HTTP server ready");
+    }
+  #endif
+
+  #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+
+    httpServer.begin();
+    eventLog.createEvent(F("Web server started"));
+    log_i("HTTP server ready");
+
+  #endif
+
 
     /**
      * OTHER HTTP SETUP GOES HERE
@@ -572,4 +628,255 @@ void updateNTPTime(bool force){
         ntpSleepUntil = esp_timer_get_time() + 300000000;
       }
     }
+}
+
+
+/**
+ * Sends a 404 response indicating the resource is not found
+*/
+void http_notFound(AsyncWebServerRequest *request) {
+    request->send(404);
+}
+
+
+/**
+ * Sends a 405 response indicating the method specified is not allowed
+*/
+void http_methodNotAllowed(AsyncWebServerRequest *request) {
+    request->send(405);
+}
+
+
+/**
+ * Sends a 401 response indicating the authentication is missing or invalid
+*/
+void http_unauthorized(AsyncWebServerRequest *request) {
+    request->send(401);
+}
+
+
+/**
+ * Sends a 500 response indicating an internal server or hardware failure
+*/
+void http_error(AsyncWebServerRequest *request, String message){
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  StaticJsonDocument<256> doc;
+  doc["error"] = message;
+
+  serializeJson(doc, *response);
+  response->setCode(500);
+  request->send(response);
+}
+
+
+/**
+ * Sends a 400 response indicating an invalid request from the caller
+*/
+void http_badRequest(AsyncWebServerRequest *request, String message){
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  StaticJsonDocument<256> doc;
+  doc["message"] = message;
+
+  serializeJson(doc, *response);
+  response->setCode(400);
+  request->send(response);
+}
+
+
+/**
+ * Sends a 403 response indicating an invalid request from the caller
+*/
+void http_forbiddenRequest(AsyncWebServerRequest *request, String message){
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  StaticJsonDocument<256> doc;
+  doc["message"] = message;
+
+  serializeJson(doc, *response);
+  response->setCode(403);
+  request->send(response);
+}
+
+
+/**
+ * Sends a 200 response for any OPTIONS requests
+*/
+void http_options(AsyncWebServerRequest *request) {
+  request->send(200);
+};
+
+
+/**
+ * Generic handler to return HTTP/500 responses when the configFS file system has not been mounted
+*/
+void http_configFSNotMunted(AsyncWebServerRequest *request){
+
+  if(!request->hasHeader("visual-token")){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
+    http_unauthorized(request);
+    return;
+  }
+
+  http_error(request, F("file system not mounted"));
+
+}
+
+
+/**
+ * Handles the version endpoint requests
+*/
+void http_handleVersion(AsyncWebServerRequest *request){
+
+  if(!request->hasHeader("visual-token")){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(request->method() != ASYNC_HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  StaticJsonDocument<96> doc;
+  doc["application"] = VERSION;
+  char product_hex[16] = {0};
+  sprintf(product_hex, "0x%08X", PRODUCT_HEX);
+  doc["product_hex"] = product_hex;
+
+  serializeJson(doc, *response);
+  request->send(response);
+}
+
+
+/** 
+ * Handle http requests for the event log
+*/
+void http_handleEventLog(AsyncWebServerRequest *request){
+
+  if(!request->hasHeader("visual-token")){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(request->method() != ASYNC_HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  if(eventLog.getEvents()->size() == 0){
+    request->send(200, F("application/json"),"[]");
+    return;
+  }
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  StaticJsonDocument<EVENT_LOG_MAXIMUM_ENTRIES * 100> doc;
+
+  for(int i=0; i < eventLog.getEvents()->size(); i++){
+    JsonObject entry = doc.createNestedObject();
+    entry[F("time")] = eventLog.getEvents()->get(i).timestamp;
+
+    switch(eventLog.getEvents()->get(i).level){
+      case EventLog::LOG_LEVEL_ERROR:
+        entry[F("level")] = F("error");
+        break;
+
+      case EventLog::LOG_LEVEL_NOTIFICATION:
+        entry[F("level")] = F("notify");
+        break;
+
+      case EventLog::LOG_LEVEL_INFO:
+        entry[F("level")] = F("info");
+        break;
+
+      default:
+        entry[F("level")] = F("unknown");
+        break;
+    }
+
+    entry[F("text")] = eventLog.getEvents()->get(i).text;
+  }
+ 
+  serializeJson(doc, *response);
+  request->send(response);
+}
+
+
+/** 
+ * Handle http requests for the error log
+*/
+void http_handleErrorLog(AsyncWebServerRequest *request){
+
+  if(!request->hasHeader("visual-token")){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(request->method() != ASYNC_HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  if(eventLog.getErrors()->size() == 0){
+    request->send(200, F("application/json"),"[]");
+    return;
+  }
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  StaticJsonDocument<EVENT_LOG_MAXIMUM_ENTRIES * 64> doc;
+
+  for(int i=0; i < eventLog.getErrors()->size(); i++){
+    JsonObject entry = doc.createNestedObject();
+
+    entry[F("text")] = eventLog.getErrors()->get(i);
+  }
+
+  serializeJson(doc, *response);
+  request->send(response);
+}
+
+
+/**
+ * Creates a long-term authorization with the given visual token
+*/
+void http_handleAuth(AsyncWebServerRequest *request){
+  
+  if(request->method() != ASYNC_HTTP_POST){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  if(!request->hasHeader("visual-token")){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(!authToken.authenticate(request->header("visual-token").c_str(), true)){
+    http_unauthorized(request);
+    return;
+  }
+
+  request->send(204);
+}
 
