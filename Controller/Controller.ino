@@ -224,7 +224,7 @@ void setup() {
     */
     
 
-    oled.setPage(managerOled::PAGE_EVENT_LOG);
+  oled.setPage(managerOled::PAGE_EVENT_LOG);
 
 }
 
@@ -573,4 +573,3 @@ void updateNTPTime(bool force){
       }
     }
 
-}
