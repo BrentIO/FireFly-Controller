@@ -70,8 +70,6 @@ class managerInputs{
         };
 
 
-    private:
-
         /** Input types */
         enum inputType{
             /// @brief Input is normally open (typically a button)
@@ -81,6 +79,7 @@ class managerInputs{
             NORMALLY_CLOSED = 1,
         };
 
+    private:
 
         /** Input states that can be observed */
         enum inputState{
