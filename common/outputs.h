@@ -62,8 +62,9 @@ namespace nsOutputs{
         /// @brief the set request will not be fulfilled because the set value and the requested value were the same
         EXCESSIVE = 20,
 
-        /// @brief the controller handling the request is not enabled and will not be fulfilled
-        CONTROLLER_NOT_ENABLED = 30
+        /// @brief the controller handling the request is not enabled and request will not be fulfilled
+        CONTROLLER_NOT_ENABLED = 30,
+
     };
 
 
