@@ -65,6 +65,9 @@ namespace nsOutputs{
         /// @brief the controller handling the request is not enabled and request will not be fulfilled
         CONTROLLER_NOT_ENABLED = 30,
 
+        /// @brief the pin requested is not enabled and request will not be fulfilled
+        PIN_NOT_ENABLED = 40
+
     };
 
 
@@ -177,6 +180,7 @@ namespace nsOutputs{
             uint8_t port = 0; /* Human-readable port number */
             uint8_t pin = 0; /* Output controller pin which is attached to this output */
             outputController* controller; /* Reference to the output controller */
+            boolean enabled = true; /* If the output is enabled */
 
             #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
                 uint16_t value = 0; /* Expected PWM value for the pin */
@@ -193,6 +197,10 @@ namespace nsOutputs{
 
                 if(this->controller->enabled == false){
                     return set_result::CONTROLLER_NOT_ENABLED;
+                }
+
+                if(this->enabled == false){
+                    return set_result::PIN_NOT_ENABLED;
                 }
 
                 value = constrain(value, 0, 100);
