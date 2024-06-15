@@ -1068,10 +1068,21 @@ components:
     applicationVersionInfo:
       type: object
       properties:
-        application:
-          $ref: '#/components/schemas/applicationVersion'
+        uuid:
+          $ref: '#/components/schemas/uuid'
+        product_id:
+          $ref: '#/components/schemas/productId'
         product_hex:
           $ref: '#/components/schemas/productHex'
+        application:
+          $ref: '#/components/schemas/applicationVersion'
+
+    productId:
+      type: string
+      description: Device product ID, which includes the board revision code
+      examples: 
+        - FFC3232-2211
+      maxLength: 32
 
     uiVersionInfo:
       type: object

@@ -748,12 +748,25 @@ void http_handleVersion(AsyncWebServerRequest *request){
     return;
   }
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
-  StaticJsonDocument<96> doc;
-  doc["application"] = VERSION;
+  if(externalEEPROM.enabled == false){
+    http_error(request, F("Cannot connect to external EEPROM"));
+    return;
+  }
+
+  if(strcmp(externalEEPROM.data.uuid, "") == 0){
+    http_error(request, F("Invalid EEPROM data"));
+    return;
+  }
+
   char product_hex[16] = {0};
   sprintf(product_hex, "0x%08X", PRODUCT_HEX);
+ 
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  StaticJsonDocument<192> doc;
+  doc["uuid"] = externalEEPROM.data.uuid;
+  doc["product_id"] = externalEEPROM.data.product_id;
   doc["product_hex"] = product_hex;
+  doc["application"] = VERSION;
 
   serializeJson(doc, *response);
   request->send(response);
