@@ -45,6 +45,8 @@ paths:
         - Version
       summary: Hardware and firmware version information
       description: Retrieves the hardware and firmware version information
+      security:
+        - visualToken: []
       responses:
         '200':
           description: OK
@@ -58,6 +60,8 @@ paths:
         - Version
       summary: User interface version information
       description: Retrieves the user interface version information
+      security:
+        - visualToken: []
       responses:
         '200':
           description: OK
@@ -79,6 +83,8 @@ paths:
         - Event and Error Logs
       summary: Error log information
       description: Retrieve all of the active errors
+      security:
+        - visualToken: []
       responses:
         '200':
           description: OK
@@ -97,6 +103,8 @@ paths:
         - Event and Error Logs
       summary: Event log information
       description: Retrieve all of the events still remaining in the event log
+      security:
+        - visualToken: []
       responses:
         '200':
           description: OK
@@ -173,6 +181,8 @@ paths:
         - Configuration
       summary: OTA firmware configuration
       description: Retrieve the over-the-air (OTA) firmware configuration
+      security:
+        - visualToken: []
       responses:
         '200':
           description: OK
