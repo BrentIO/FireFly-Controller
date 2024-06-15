@@ -411,7 +411,12 @@ namespace nsOutputs{
                 return set_result::INVALID_PORT;
             }
 
-            void configurePort(uint8_t port, outputPin::outputType type){
+
+            /** Sets the port type (binary, variable)
+             * @param port as the human-readable port number to set
+             * @param type as the port output type
+            */
+            void setPortType(uint8_t port, outputPin::outputType type){
 
                 for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
                     if(this->outputs[i].port == port){
