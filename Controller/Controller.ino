@@ -244,8 +244,6 @@ void loop() {
   inputs.loop();
   temperatureSensors.loop();
 
-  outputs.configurePort(2, nsOutputs::outputPin::VARIABLE);                                                 //FOR DEBUG ONLY
-
 }
 
 /** Handles changes in observed temperatures 
