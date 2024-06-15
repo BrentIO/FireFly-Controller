@@ -63,96 +63,96 @@ fs::LittleFSFS configFS;
  * One-time setup
 */
 void setup() {
-    bool wwwFS_isMounted = false;
-    bool configFS_isMounted = false;
+  bool wwwFS_isMounted = false;
+  bool configFS_isMounted = false;
 
-    eventLog.createEvent(F("Event log started"));
-    
-    Wire.begin();
+  eventLog.createEvent(F("Event log started"));
+  
+  Wire.begin();
 
-    /* Start the auth token service */
-    authToken.begin();
-
-
-    //Configure the peripherals
-    oled.setCallback_failure(&failureHandler_oled);
-    oled.begin();
-    oled.setEventLog(&eventLog);
-    oled.setAuthorizationToken(&authToken);
-    authToken.setCallback_visualTokenChanged(&eventHandler_visualAuthChanged);
+  /* Start the auth token service */
+  authToken.begin();
 
 
-    /* Set event log callbacks to the OLED */
-    eventLog.setCallback_info(&eventHandler_eventLogInfoEvent);
-    eventLog.setCallback_notification(&eventHandler_eventLogNotificationEvent);
-    eventLog.setCallback_error(&eventHandler_eventLogErrorEvent);
-    eventLog.setCallback_resolveError(&eventHandler_eventLogResolvedErrorEvent);
+  //Configure the peripherals
+  oled.setCallback_failure(&failureHandler_oled);
+  oled.begin();
+  oled.setEventLog(&eventLog);
+  oled.setAuthorizationToken(&authToken);
+  authToken.setCallback_visualTokenChanged(&eventHandler_visualAuthChanged);
 
 
-    /* Startup the front panel */
-    frontPanel.setCallback_publisher(&eventHandler_frontPanelButtonPress);
-    frontPanel.setCallback_state_closed_at_begin(&eventHandler_frontPanelButtonClosedAtBegin);
-    frontPanel.begin();
+  /* Set event log callbacks to the OLED */
+  eventLog.setCallback_info(&eventHandler_eventLogInfoEvent);
+  eventLog.setCallback_notification(&eventHandler_eventLogNotificationEvent);
+  eventLog.setCallback_error(&eventHandler_eventLogErrorEvent);
+  eventLog.setCallback_resolveError(&eventHandler_eventLogResolvedErrorEvent);
 
 
-    /* Determine hostname */
-    #ifdef ESP32
-      uint8_t baseMac[6];
-      esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
-      char hostname[18] = {0};
-      sprintf(hostname, "FireFly-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
-    #endif
+  /* Startup the front panel */
+  frontPanel.setCallback_publisher(&eventHandler_frontPanelButtonPress);
+  frontPanel.setCallback_state_closed_at_begin(&eventHandler_frontPanelButtonClosedAtBegin);
+  frontPanel.begin();
 
 
-    /* Start networking */
-    #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
-
-      WiFi.softAP(hostname);
-      log_i("Started SoftAP %s", WiFi.softAPSSID());
-    
-      oled.setWiFiInfo(&WiFi);
-
-    #endif
+  /* Determine hostname */
+  #ifdef ESP32
+    uint8_t baseMac[6];
+    esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
+    char hostname[18] = {0};
+    sprintf(hostname, "FireFly-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
+  #endif
 
 
-    #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 && defined(ESP32)
+  /* Start networking */
+  #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
-      ESP32_W5500_onEvent();
-      ESP32_W5500_setCallback_connected(&eventHandler_ethernetConnect);
-      ESP32_W5500_setCallback_disconnected(&eventHandler_ethernetDisconnect);
+    WiFi.softAP(hostname);
+    log_i("Started SoftAP %s", WiFi.softAPSSID());
+  
+    oled.setWiFiInfo(&WiFi);
 
-      log_i("Setting up Ethernet on W5500");
+  #endif
 
-      ETH.setHostname(hostname);
-      esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
 
-      unsigned long ethernet_start_time = millis();
-      ETH.begin(SPI_MISO_PIN, SPI_MOSI_PIN, SPI_SCK_PIN, ETHERNET_PIN, ETHERNET_PIN_INTERRUPT, SPI_CLOCK_MHZ, ETH_SPI_HOST, baseMac); //Use the base MAC, not the Ethernet MAC.  Library will automatically adjust it, else future calls to get MAC addresses are skewed
+  #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 && defined(ESP32)
 
-      while(!ESP32_W5500_isConnected()){
+    ESP32_W5500_onEvent();
+    ESP32_W5500_setCallback_connected(&eventHandler_ethernetConnect);
+    ESP32_W5500_setCallback_disconnected(&eventHandler_ethernetDisconnect);
 
-        delay(100);
+    log_i("Setting up Ethernet on W5500");
 
-        if(millis() > ethernet_start_time + ETHERNET_TIMEOUT){
-            log_w("Ethernet connection timeout");
-          break;
-        }
+    ETH.setHostname(hostname);
+    esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
+
+    unsigned long ethernet_start_time = millis();
+    ETH.begin(SPI_MISO_PIN, SPI_MOSI_PIN, SPI_SCK_PIN, ETHERNET_PIN, ETHERNET_PIN_INTERRUPT, SPI_CLOCK_MHZ, ETH_SPI_HOST, baseMac); //Use the base MAC, not the Ethernet MAC.  Library will automatically adjust it, else future calls to get MAC addresses are skewed
+
+    while(!ESP32_W5500_isConnected()){
+
+      delay(100);
+
+      if(millis() > ethernet_start_time + ETHERNET_TIMEOUT){
+          log_w("Ethernet connection timeout");
+        break;
       }
+    }
 
-      if(ESP32_W5500_isConnected()){
+    if(ESP32_W5500_isConnected()){
 
-        timeClient.begin();
-        updateNTPTime(true);
+      timeClient.begin();
+      updateNTPTime(true);
 
-        if(timeClient.isTimeSet()){
-          bootTime = timeClient.getEpochTime();
-        }
+      if(timeClient.isTimeSet()){
+        bootTime = timeClient.getEpochTime();
       }
+    }
 
-      log_i("Ethernet IP: %s", ETH.localIP().toString().c_str());
-      oled.setEthernetInfo(&ETH);
+    log_i("Ethernet IP: %s", ETH.localIP().toString().c_str());
+    oled.setEthernetInfo(&ETH);
 
-    #endif
+  #endif
 
 
     /* Start external EEPROM */
