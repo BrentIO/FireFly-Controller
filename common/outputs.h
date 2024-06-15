@@ -65,8 +65,8 @@ namespace nsOutputs{
         /// @brief the controller handling the request is not enabled and request will not be fulfilled
         CONTROLLER_NOT_ENABLED = 30,
 
-        /// @brief the pin requested is not enabled and request will not be fulfilled
-        PIN_NOT_ENABLED = 40
+        /// @brief the port requested is not enabled and request will not be fulfilled
+        PORT_NOT_ENABLED = 40
 
     };
 
@@ -200,7 +200,7 @@ namespace nsOutputs{
                 }
 
                 if(this->enabled == false){
-                    return set_result::PIN_NOT_ENABLED;
+                    return set_result::PORT_NOT_ENABLED;
                 }
 
                 value = constrain(value, 0, 100);
