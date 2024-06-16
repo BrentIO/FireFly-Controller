@@ -696,6 +696,7 @@ void http_handleCert_DELETE(AsyncWebServerRequest *request){
 
   if(request->pathArg(0).length() > 31){
     http_badRequest(request, F("Filename must be 31 characters or less"));
+    return;
   }
 
   if(configFS.exists(CONFIGFS_PATH_CERTS + request->pathArg(0))){
