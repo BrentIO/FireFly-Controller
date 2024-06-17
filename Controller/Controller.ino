@@ -432,13 +432,14 @@ void eventHandler_frontPanelButtonPress(){
 }
 
 
+/** Handles the front panel button being pressed during startup */
 void eventHandler_frontPanelButtonClosedAtBegin(){
 
   log_v("Front Panel button was closed on begin()");
 
   int i = 10;
 
-  while(i>0){
+  while(i>=0){
     oled.setFactoryResetValue(i);
     oled.setPage(managerOled::PAGE_FACTORY_RESET);
 
@@ -453,10 +454,24 @@ void eventHandler_frontPanelButtonClosedAtBegin(){
     delay(1000);
   }
 
-  log_i("Front Panel button was held to completion.  Config will be deleted.");
+  configFS.begin(false, "/configFS", (uint8_t)10U, "config");
+  configFS.format();
 
-  //TODO: Add MQTT and stuff
+  log_i("Factory reset done");
+  eventLog.createEvent("Factory reset done");
+  eventLog.createEvent("Release button now");
+  oled.setPage(managerOled::PAGE_EVENT_LOG);
 
+  while(frontPanel.getButtonState() != managerFrontPanel::inputState::STATE_OPEN){
+    delay(100);
+  }
+
+  eventLog.createEvent("Rebooting...");
+  delay(3000);
+
+  #ifdef ESP32
+    ESP.restart();
+  #endif
 }
 
 
