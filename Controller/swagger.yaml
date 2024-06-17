@@ -603,8 +603,8 @@ paths:
               items:
                 $ref: '#/components/schemas/breaker'
       responses:
-        '201':
-          description: Created
+        '204':
+          description: Success
         '400':
           description: Bad Request
           content:
@@ -687,8 +687,8 @@ paths:
               items:
                 $ref: '#/components/schemas/relay'
       responses:
-        '201':
-          description: Created
+        '204':
+          description: Success
         '400':
           description: Bad Request
           content:
@@ -816,8 +816,8 @@ paths:
             schema:
               $ref: '#/components/schemas/controller'
       responses:
-        '201':
-          description: Created
+        '204':
+          description: Success
         '400':
           description: Bad Request
           content:
@@ -913,8 +913,8 @@ paths:
               items:
                 $ref: '#/components/schemas/color'
       responses:
-        '201':
-          description: Created
+        '204':
+          description: Success
         '400':
           description: Bad Request
           content:
