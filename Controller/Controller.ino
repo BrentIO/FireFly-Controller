@@ -57,6 +57,8 @@ fs::LittleFSFS wwwFS;
 fs::LittleFSFS configFS;
 
 #define CONFIGFS_PATH_CERTS "/certs/"
+#define CONFIGFS_PATH_DEVICES "/devices"
+#define CONFIGFS_PATH_DEVICES_CONTROLLERS "/devices/controllers"
 
 
 /**
@@ -218,6 +220,9 @@ void setup() {
     httpServer.on("/auth", http_handleAuth);
 
     if(configFS_isMounted){
+      httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers_PUT));
+      httpServer.on("^\/api/controllers$", ASYNC_HTTP_GET, http_handleListControllers);
+      httpServer.on("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers);
       //httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
       //httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
       //httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
@@ -908,3 +913,176 @@ void http_handleAuth(AsyncWebServerRequest *request){
   request->send(204);
 }
 
+
+
+void http_handleControllers(AsyncWebServerRequest *request){
+  switch(request->method()){
+
+    case ASYNC_HTTP_OPTIONS:
+      http_options(request);
+      break;
+
+    case ASYNC_HTTP_GET:
+
+      http_handleControllers_GET(request);
+      break;
+
+    case ASYNC_HTTP_DELETE:
+
+      http_handleControllers_DELETE(request);
+      break;
+
+    default:
+      http_methodNotAllowed(request);
+      break;
+  }
+}
+
+
+/**
+ * Handles Controller GETs
+*/
+void http_handleControllers_GET(AsyncWebServerRequest *request){
+
+  /*if(!request->hasHeader("visual-token")){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
+    http_unauthorized(request);
+    return;
+  }*/                                                                                     //DEV ONLY
+  
+  String filename = CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + request->pathArg(0);
+
+  if(!configFS.exists(filename)){
+    http_notFound(request);
+    return;
+  }
+
+  File file = configFS.open(filename);
+  request->send(file, request->pathArg(0), "application/json", false, NULL);
+  file.close();
+}
+
+
+
+/**
+ * Handles Controller DELETEs
+*/
+void http_handleControllers_DELETE(AsyncWebServerRequest *request){
+
+  /*if(!request->hasHeader("visual-token")){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
+    http_unauthorized(request);
+    return;
+  }*/                                                                                     //DEV ONLY
+
+  String filename = CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + request->pathArg(0);
+
+  if(!configFS.exists(filename)){
+    http_notFound(request);
+    return;
+  }
+
+  if(configFS.remove(filename)){
+    request->send(204);
+  }else{
+    http_error(request, "Failed when trying to delete file.");
+  }
+}
+
+
+/**
+ * Handles Controller PUTs
+*/
+void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc){
+
+  /*if(!request->hasHeader("visual-token")){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
+    http_unauthorized(request);
+    return;
+  }*/                                                                                     //DEV ONLY
+
+  if(request->method() != ASYNC_HTTP_PUT){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  if(request->pathArg(0).length() != 36){
+    http_badRequest(request, F("UUID must be exactly 36 characters"));
+    return;
+  }
+
+  if(!configFS.exists(CONFIGFS_PATH_DEVICES)){
+    if(!configFS.mkdir(CONFIGFS_PATH_DEVICES)){
+      http_error(request, F("Unable to create CONFIGFS_PATH_DEVICES directory"));
+      return;
+    };
+  }
+
+  if(!configFS.exists(CONFIGFS_PATH_DEVICES_CONTROLLERS)){
+    if(!configFS.mkdir(CONFIGFS_PATH_DEVICES_CONTROLLERS)){
+      http_error(request, F("Unable to create CONFIGFS_PATH_DEVICES_CONTROLLERS directory"));
+      return;
+    };
+  }
+
+  File file = configFS.open(CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + request->pathArg(0) , "w");
+
+  if(!file){
+    file.close();
+    http_error(request, F("Unable to open the file for writing"));
+    return;
+  }
+  
+  serializeJson(doc, file);
+  file.close();  
+
+  request->send(204);
+}
+
+
+/**
+ * Handles List Controllers
+*/
+void http_handleListControllers(AsyncWebServerRequest *request){
+
+  /*if(!request->hasHeader("visual-token")){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
+    http_unauthorized(request);
+    return;
+  }*/                                                                                     //DEV ONLY
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  StaticJsonDocument<768> doc;
+  JsonArray array = doc.to<JsonArray>();
+
+  File root = configFS.open(CONFIGFS_PATH_DEVICES_CONTROLLERS);
+
+  File file = root.openNextFile();
+
+  while(file){
+      if(!file.isDirectory()){
+        array.add(file.name());
+      }
+      file = root.openNextFile();
+    }
+
+  serializeJson(doc, *response);
+  request->send(response);
+
+}
