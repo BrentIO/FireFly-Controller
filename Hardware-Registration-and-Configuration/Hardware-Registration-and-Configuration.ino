@@ -598,6 +598,8 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
 
   if(!index){
 
+    if(!configFS.exists(CONFIGFS_PATH_CERTS)){
+      configFS.mkdir(CONFIGFS_PATH_CERTS);
     }
 
     if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + filename)){
