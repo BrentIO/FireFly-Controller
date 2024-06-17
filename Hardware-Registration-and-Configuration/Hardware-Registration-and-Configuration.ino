@@ -608,7 +608,7 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
       return;
     }
 
-    request->_tempFile = configFS.open(CONFIGFS_PATH_CERTS + filename, "w");
+    request->_tempFile = configFS.open(CONFIGFS_PATH_CERTS + (String)"/" + filename, "w");
   }
 
   request->_tempFile.write(data,len);
