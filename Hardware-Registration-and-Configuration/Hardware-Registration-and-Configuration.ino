@@ -57,7 +57,7 @@ LinkedList<forcedOtaUpdateConfig> otaFirmware_pending;
 fs::LittleFSFS wwwFS;
 fs::LittleFSFS configFS;
 
-#define CONFIGFS_PATH_CERTS "/certs/"
+#define CONFIGFS_PATH_CERTS "/certs"
 
 
 /**
@@ -328,7 +328,7 @@ void setup_OtaFirmware(){
   }
 
   otaFirmware.setManifestURL(otaConfig.url.c_str());
-  otaConfig.certificate = CONFIGFS_PATH_CERTS + otaConfig.certificate;
+  otaConfig.certificate = CONFIGFS_PATH_CERTS + (String)"/" + otaConfig.certificate;
 
   if(otaConfig.url.startsWith(F("https"))){
     if(!configFS.exists(otaConfig.certificate)){
@@ -367,7 +367,7 @@ void otaFirmware_checkPending(){
     bool updateSuccess = false;
 
     if(otaFirmware_pending[i].url.startsWith("https")){
-      otaFirmware_pending[i].certificate = CONFIGFS_PATH_CERTS + otaFirmware_pending[i].certificate;
+      otaFirmware_pending[i].certificate = CONFIGFS_PATH_CERTS + (String)"/" + otaFirmware_pending[i].certificate;
       otaFirmware.setRootCA(new CryptoFileAsset(otaFirmware_pending[i].certificate.c_str(), &configFS));
     }
 
@@ -401,7 +401,7 @@ void otaFirmware_checkPending(){
     return;
   }
 
-  otaConfig.certificate = CONFIGFS_PATH_CERTS + otaConfig.certificate;
+  otaConfig.certificate = CONFIGFS_PATH_CERTS + (String)"/" + otaConfig.certificate;
 
   if(otaConfig.url.startsWith("https")){
       otaFirmware.setRootCA(new CryptoFileAsset(otaConfig.certificate.c_str(), &configFS));
@@ -603,7 +603,7 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
       return;
     }
 
-    if(configFS.exists(CONFIGFS_PATH_CERTS + filename)){
+    if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + filename)){
       http_forbiddenRequest(request, F("Certificate already exists"));
       return;
     }
@@ -677,9 +677,9 @@ void http_handleCert_GET(AsyncWebServerRequest *request){
     http_badRequest(request, F("Filename must be 31 characters or less"));
   }
 
-  if(configFS.exists(CONFIGFS_PATH_CERTS + request->pathArg(0))){
+  if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0))){
 
-    AsyncWebServerResponse *response = request->beginResponse(configFS, CONFIGFS_PATH_CERTS + request->pathArg(0), "text/plain");
+    AsyncWebServerResponse *response = request->beginResponse(configFS, CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0), "text/plain");
     response->setCode(200);
     request->send(response);
 
@@ -698,9 +698,8 @@ void http_handleCert_DELETE(AsyncWebServerRequest *request){
     http_badRequest(request, F("Filename must be 31 characters or less"));
     return;
   }
-
-  if(configFS.exists(CONFIGFS_PATH_CERTS + request->pathArg(0))){
-    configFS.remove(CONFIGFS_PATH_CERTS + request->pathArg(0));
+  if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0))){
+    configFS.remove(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0));
     request->send(204);
   }else{
     request->send(404);
@@ -920,7 +919,7 @@ void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
       return;
     }
 
-    if(!configFS.exists(CONFIGFS_PATH_CERTS + newFirmwareRequest.certificate)){
+    if(!configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + newFirmwareRequest.certificate)){
       http_badRequest(request, F("Certificate does not exist"));
       return;
     }
@@ -1501,7 +1500,7 @@ void http_handleCerts_GET(AsyncWebServerRequest *request){
   StaticJsonDocument<768> doc;
   JsonArray array = doc.to<JsonArray>();
 
-  File root = configFS.open("/certs");
+  File root = configFS.open(CONFIGFS_PATH_CERTS);
 
   File file = root.openNextFile();
   while(file){
