@@ -615,7 +615,7 @@ components:
     error_message:
       type: object
       properties:
-        error:
+        message:
           type: string
           description: Message describing the error condition
           example: Unexpected Error

@@ -483,7 +483,7 @@ void http_error(AsyncWebServerRequest *request, String message){
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<256> doc;
-  doc["error"] = message;
+  doc["message"] = message;
 
   serializeJson(doc, *response);
   response->setCode(500);
