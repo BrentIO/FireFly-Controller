@@ -733,12 +733,12 @@ void http_options(AsyncWebServerRequest *request) {
 */
 void http_configFSNotMunted(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader("visual-token")){
+  if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
   }
@@ -753,12 +753,12 @@ void http_configFSNotMunted(AsyncWebServerRequest *request){
 */
 void http_handleVersion(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader("visual-token")){
+  if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
   }
@@ -798,12 +798,12 @@ void http_handleVersion(AsyncWebServerRequest *request){
 */
 void http_handleEventLog(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader("visual-token")){
+  if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
   }
@@ -856,12 +856,12 @@ void http_handleEventLog(AsyncWebServerRequest *request){
 */
 void http_handleErrorLog(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader("visual-token")){
+  if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
   }
@@ -900,19 +900,18 @@ void http_handleAuth(AsyncWebServerRequest *request){
     return;
   }
 
-  if(!request->hasHeader("visual-token")){
+  if(!request->hasHeader(F("visual-token"))){
     http_unauthorized(request);
     return;
   }
 
-  if(!authToken.authenticate(request->header("visual-token").c_str(), true)){
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str(), true)){
     http_unauthorized(request);
     return;
   }
 
   request->send(204);
 }
-
 
 
 void http_handleControllers(AsyncWebServerRequest *request){
@@ -944,12 +943,12 @@ void http_handleControllers(AsyncWebServerRequest *request){
 */
 void http_handleControllers_GET(AsyncWebServerRequest *request){
 
-  /*if(!request->hasHeader("visual-token")){
+  /*if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
   }*/                                                                                     //DEV ONLY
@@ -967,18 +966,17 @@ void http_handleControllers_GET(AsyncWebServerRequest *request){
 }
 
 
-
 /**
  * Handles Controller DELETEs
 */
 void http_handleControllers_DELETE(AsyncWebServerRequest *request){
 
-  /*if(!request->hasHeader("visual-token")){
+  /*if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
   }*/                                                                                     //DEV ONLY
@@ -993,7 +991,7 @@ void http_handleControllers_DELETE(AsyncWebServerRequest *request){
   if(configFS.remove(filename)){
     request->send(204);
   }else{
-    http_error(request, "Failed when trying to delete file.");
+    http_error(request, F("Failed when trying to delete file"));
   }
 }
 
@@ -1003,12 +1001,12 @@ void http_handleControllers_DELETE(AsyncWebServerRequest *request){
 */
 void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc){
 
-  /*if(!request->hasHeader("visual-token")){
+  /*if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
   }*/                                                                                     //DEV ONLY
@@ -1057,12 +1055,12 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
 */
 void http_handleListControllers(AsyncWebServerRequest *request){
 
-  /*if(!request->hasHeader("visual-token")){
+  /*if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
   }*/                                                                                     //DEV ONLY
