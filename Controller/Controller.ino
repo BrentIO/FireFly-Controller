@@ -1075,7 +1075,7 @@ void http_handleListControllers(AsyncWebServerRequest *request){
 
   while(file){
       if(!file.isDirectory()){
-        array.add(file.name());
+        array.add((String)file.name());
       }
       file = root.openNextFile();
     }
