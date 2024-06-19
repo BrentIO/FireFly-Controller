@@ -1066,7 +1066,7 @@ void http_handleListControllers(AsyncWebServerRequest *request){
   }*/                                                                                     //DEV ONLY
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
-  StaticJsonDocument<768> doc;
+  DynamicJsonDocument doc(1536);
   JsonArray array = doc.to<JsonArray>();
 
   File root = configFS.open(CONFIGFS_PATH_DEVICES_CONTROLLERS);
