@@ -1497,7 +1497,7 @@ void http_handleCerts_GET(AsyncWebServerRequest *request){
   while(file){
       if(!file.isDirectory()){
           JsonObject fileInstance = array.createNestedObject();
-          fileInstance[F("file")] = file.name();
+          fileInstance[F("file")] = (String)file.name();
           fileInstance[F("size")] = file.size();
       }
       file = root.openNextFile();
