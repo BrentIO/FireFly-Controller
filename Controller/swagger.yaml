@@ -11,7 +11,7 @@ servers:
         description: IP address of the device's ethernet interface
 tags:
   - name: Authorization
-    description: Mangage long-term http authorizations
+    description: Manage long-term http authorizations
   - name: Event and Error Logs
     description: Operations for the event and error logs
   - name: Version
@@ -23,9 +23,9 @@ tags:
   - name: High Voltage
     description: Operations for configuring high voltage devices
   - name: Controllers
-    description: Mangage controllers
+    description: Manage controllers
   - name: Clients
-    description: Mangage Clients
+    description: Manage clients
 
 ##########################################################
 ## NOTE: This may not render except in the next-gen     ##
