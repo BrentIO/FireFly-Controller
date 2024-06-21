@@ -1188,10 +1188,11 @@ components:
             type: string
             description: Human-friendly name
             maxLength: 20
-          unique_id:
+          id:
             type: string
-            description: Human-friendly name
+            description: A short ID for the input, used for addressing the device over MQTT.  When an input spans multiple input ports (such as a switch with 6 buttons), the same ID should be used across both input ports
             maxLength: 8
+            pattern: ^[A-Za-z0-9]+$
           channels:
             type: object
             propertyNames: 
@@ -1199,10 +1200,10 @@ components:
             additionalProperties:
               $ref: '#/components/schemas/channel'
         required:
-          - unique_id
+          - id
       examples:
         - 1:
-           unique_id: S22
+           id: S22
            channels:
             1:
               long_change: true
@@ -1216,7 +1217,7 @@ components:
                 output: 4
           5:
             name: Kitchen Entryway
-            unique_id: S7
+            id: S7
             channels:
               1:
                 enabled: false
