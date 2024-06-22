@@ -222,9 +222,11 @@ void setup() {
     if(configFS_isMounted){
       httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers_PUT));
       httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/breakers", http_handleBreakers_PUT));
+      httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/relays", http_handleRelays_PUT));
       httpServer.on("^\/api/controllers$", ASYNC_HTTP_GET, http_handleListControllers);
       httpServer.on("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers);
       httpServer.on("/api/breakers", http_handleBreakers);
+      httpServer.on("/api/relays", http_handleRelays);
       //httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
       //httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
       //httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
@@ -239,6 +241,7 @@ void setup() {
       httpServer.on("/api/ota", http_configFSNotMunted);
       httpServer.on("/api/controllers", http_configFSNotMunted);
       httpServer.on("/api/breakers", http_configFSNotMunted);
+      httpServer.on("/api/relays", http_configFSNotMunted);
     }
 
     if(wwwFS_isMounted){
@@ -1206,6 +1209,133 @@ void http_handleBreakers_DELETE(AsyncWebServerRequest *request){
   }
 
   String filename = CONFIGFS_PATH_DEVICES + (String)"/breakers";
+
+  if(!configFS.exists(filename)){
+    http_notFound(request);
+    return;
+  }
+
+  if(configFS.remove(filename)){
+    request->send(204);
+  }else{
+    http_error(request, F("Failed when trying to delete file"));
+  }
+}
+
+
+/**
+ * Generic handler for /api/relays
+ */
+void http_handleRelays(AsyncWebServerRequest *request){
+  switch(request->method()){
+
+    case ASYNC_HTTP_OPTIONS:
+      http_options(request);
+      break;
+
+    case ASYNC_HTTP_GET:
+
+      http_handleRelays_GET(request);
+      break;
+
+    case ASYNC_HTTP_DELETE:
+
+      http_handleRelays_DELETE(request);
+      break;
+
+    default:
+      http_methodNotAllowed(request);
+      break;
+  }
+}
+
+
+/**
+ * Handles Relays GETs
+*/
+void http_handleRelays_GET(AsyncWebServerRequest *request){
+
+  /*if(!request->hasHeader(F("visual-token"))){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+    http_unauthorized(request);
+    return;
+  }*/
+  
+  String filename = CONFIGFS_PATH_DEVICES + (String)"/relays";
+
+  if(!configFS.exists(filename)){
+    http_notFound(request);
+    return;
+  }
+
+  File file = configFS.open(filename);
+  request->send(file, "relays", "application/json", false, NULL);
+  file.close();
+}
+
+
+/**
+ * Handles Relays PUTs
+*/
+void http_handleRelays_PUT(AsyncWebServerRequest *request, JsonVariant doc){
+
+  /*if(!request->hasHeader(F("visual-token"))){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+    http_unauthorized(request);
+    return;
+  }*/
+
+  if(request->method() != ASYNC_HTTP_PUT){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  if(!configFS.exists(CONFIGFS_PATH_DEVICES)){
+    if(!configFS.mkdir(CONFIGFS_PATH_DEVICES)){
+      http_error(request, F("Unable to create CONFIGFS_PATH_DEVICES directory"));
+      return;
+    };
+  }
+
+  File file = configFS.open(CONFIGFS_PATH_DEVICES + (String)"/relays", "w");
+
+  if(!file){
+    file.close();
+    http_error(request, F("Unable to open the file for writing"));
+    return;
+  }
+
+  serializeJson(doc, file);
+  file.close();  
+
+  request->send(204);
+}
+
+
+/**
+ * Handles Relays DELETEs
+*/
+void http_handleRelays_DELETE(AsyncWebServerRequest *request){
+
+  /*if(!request->hasHeader(F("visual-token"))){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+    http_unauthorized(request);
+    return;
+  }*/
+
+  String filename = CONFIGFS_PATH_DEVICES + (String)"/relays";
 
   if(!configFS.exists(filename)){
     http_notFound(request);
