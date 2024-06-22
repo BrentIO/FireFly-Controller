@@ -235,6 +235,7 @@ void setup() {
       httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_configFSNotMunted);
       httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_configFSNotMunted);
       httpServer.on("/api/ota", http_configFSNotMunted);
+      httpServer.on("/api/controllers", http_configFSNotMunted);
     }
 
     if(wwwFS_isMounted){
