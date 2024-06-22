@@ -914,6 +914,9 @@ void http_handleAuth(AsyncWebServerRequest *request){
 }
 
 
+/**
+ * Generic handler for /api/controllers
+ */
 void http_handleControllers(AsyncWebServerRequest *request){
   switch(request->method()){
 
