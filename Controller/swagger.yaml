@@ -1396,6 +1396,14 @@ components:
           $ref: '#/components/schemas/relay_type'
         model:
           $ref: '#/components/schemas/relay_model'
+        breaker:
+          type: string
+          description: UUID of the breaker powering the relay
+          format: uuid
+          minLength: 36
+          maxLength: 36
+          examples:
+            - 811e8ade-7485-4f36-87e1-768586837188
       required:
         - name
         - uuid
