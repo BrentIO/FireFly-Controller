@@ -943,7 +943,7 @@ void http_handleControllers(AsyncWebServerRequest *request){
 */
 void http_handleControllers_GET(AsyncWebServerRequest *request){
 
-  /*if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
   }
@@ -951,7 +951,7 @@ void http_handleControllers_GET(AsyncWebServerRequest *request){
   if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
-  }*/                                                                                     //DEV ONLY
+  }
   
   String filename = CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + request->pathArg(0);
 
@@ -971,7 +971,7 @@ void http_handleControllers_GET(AsyncWebServerRequest *request){
 */
 void http_handleControllers_DELETE(AsyncWebServerRequest *request){
 
-  /*if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
   }
@@ -979,7 +979,7 @@ void http_handleControllers_DELETE(AsyncWebServerRequest *request){
   if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
-  }*/                                                                                     //DEV ONLY
+  }
 
   String filename = CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + request->pathArg(0);
 
@@ -1001,7 +1001,7 @@ void http_handleControllers_DELETE(AsyncWebServerRequest *request){
 */
 void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc){
 
-  /*if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
   }
@@ -1009,7 +1009,7 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
   if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
-  }*/                                                                                     //DEV ONLY
+  }
 
   if(request->method() != ASYNC_HTTP_PUT){
     http_methodNotAllowed(request);
@@ -1042,7 +1042,7 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
     http_error(request, F("Unable to open the file for writing"));
     return;
   }
-  
+
   serializeJson(doc, file);
   file.close();  
 
@@ -1055,7 +1055,7 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
 */
 void http_handleListControllers(AsyncWebServerRequest *request){
 
-  /*if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
   }
@@ -1063,7 +1063,7 @@ void http_handleListControllers(AsyncWebServerRequest *request){
   if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
-  }*/                                                                                     //DEV ONLY
+  }
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   DynamicJsonDocument doc(1536);
