@@ -223,10 +223,12 @@ void setup() {
       httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers_PUT));
       httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/breakers", http_handleBreakers_PUT));
       httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/relays", http_handleRelays_PUT));
+      httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/colors", http_handleColors_PUT));
       httpServer.on("^\/api/controllers$", ASYNC_HTTP_GET, http_handleListControllers);
       httpServer.on("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers);
       httpServer.on("/api/breakers", http_handleBreakers);
       httpServer.on("/api/relays", http_handleRelays);
+      httpServer.on("/api/colors", http_handleColors);
       //httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
       //httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
       //httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
@@ -242,6 +244,7 @@ void setup() {
       httpServer.on("/api/controllers", http_configFSNotMunted);
       httpServer.on("/api/breakers", http_configFSNotMunted);
       httpServer.on("/api/relays", http_configFSNotMunted);
+      httpServer.on("/api/colors", http_configFSNotMunted);
     }
 
     if(wwwFS_isMounted){
@@ -1343,6 +1346,122 @@ void http_handleRelays_DELETE(AsyncWebServerRequest *request){
   }
 
   if(configFS.remove(filename)){
+    request->send(204);
+  }else{
+    http_error(request, F("Failed when trying to delete file"));
+  }
+}
+
+
+/**
+ * Generic handler for /api/colors
+ */
+void http_handleColors(AsyncWebServerRequest *request){
+  switch(request->method()){
+
+    case ASYNC_HTTP_OPTIONS:
+      http_options(request);
+      break;
+
+    case ASYNC_HTTP_GET:
+
+      http_handleColors_GET(request);
+      break;
+
+    case ASYNC_HTTP_DELETE:
+
+      http_handleColors_DELETE(request);
+      break;
+
+    default:
+      http_methodNotAllowed(request);
+      break;
+  }
+}
+
+
+/**
+ * Handles Colors GETs
+*/
+void http_handleColors_GET(AsyncWebServerRequest *request){
+
+  if(!request->hasHeader(F("visual-token"))){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(!configFS.exists(F("/colors"))){
+    http_notFound(request);
+    return;
+  }
+
+  File file = configFS.open(F("/colors"));
+  request->send(file, (String)file.name(), F("application/json"), false, NULL);
+  file.close();
+}
+
+
+/**
+ * Handles Colors PUTs
+*/
+void http_handleColors_PUT(AsyncWebServerRequest *request, JsonVariant doc){
+
+  if(!request->hasHeader(F("visual-token"))){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(request->method() != ASYNC_HTTP_PUT){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  File file = configFS.open(F("/colors"), "w");
+
+  if(!file){
+    file.close();
+    http_error(request, F("Unable to open the file for writing"));
+    return;
+  }
+
+  serializeJson(doc, file);
+  file.close();  
+
+  request->send(204);
+}
+
+
+/**
+ * Handles Relays DELETEs
+*/
+void http_handleColors_DELETE(AsyncWebServerRequest *request){
+
+  if(!request->hasHeader(F("visual-token"))){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(!configFS.exists(F("/colors"))){
+    http_notFound(request);
+    return;
+  }
+
+  if(configFS.remove(F("/colors"))){
     request->send(204);
   }else{
     http_error(request, F("Failed when trying to delete file"));
