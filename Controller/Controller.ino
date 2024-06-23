@@ -55,6 +55,8 @@ LinkedList<forcedOtaUpdateConfig> otaFirmware_pending;
 
 fs::LittleFSFS wwwFS;
 fs::LittleFSFS configFS;
+bool wwwFS_isMounted = false;
+bool configFS_isMounted = false;
 
 #define CONFIGFS_PATH_CERTS "/certs/"
 #define CONFIGFS_PATH_DEVICES "/devices"
@@ -65,8 +67,6 @@ fs::LittleFSFS configFS;
  * One-time setup
 */
 void setup() {
-  bool wwwFS_isMounted = false;
-  bool configFS_isMounted = false;
 
   eventLog.createEvent(F("Event log started"));
   
