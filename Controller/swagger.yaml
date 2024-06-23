@@ -1296,6 +1296,12 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/tag'
+          relay:
+            type: string
+            description: UUID of the relay connected to the output
+            format: uuid
+            minLength: 36
+            maxLength: 36
       examples:
         - 4:
             name: Chandelier
@@ -1304,6 +1310,7 @@ components:
             type: VARIABLE
             tags:
               - Holiday
+            relay: e68ee5a2-1b10-4e9d-ba6d-cd55bb325b35
           12:
             name: Recessed Lights
             area: Bathroom
@@ -1359,6 +1366,10 @@ components:
       required:
         - uuid
         - name
+      examples:
+        - uuid: 811e8ade-7485-4f36-87e1-768586837188
+          name: Panel A Breaker 2
+          amperage: 20
     
     amperage_breaker:
       type: number
@@ -1421,10 +1432,18 @@ components:
           minLength: 36
           maxLength: 36
           examples:
-            - 811e8ade-7485-4f36-87e1-768586837188
       required:
         - name
         - uuid
+      examples:
+        - uuid: e68ee5a2-1b10-4e9d-ba6d-cd55bb325b35
+          name: Circuit 17
+          amperage: 4.5
+          type: BINARY
+          model: DR2220D20U
+          breaker: 811e8ade-7485-4f36-87e1-768586837188
+
+
 
     ##########################################################
     ## Clients                                              ##
