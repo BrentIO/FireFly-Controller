@@ -1091,7 +1091,7 @@ void http_handleListControllers(AsyncWebServerRequest *request){
         array.add((String)file.name());
       }
       file = root.openNextFile();
-    }
+  }
 
   serializeJson(doc, *response);
   request->send(response);
