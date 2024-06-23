@@ -1174,6 +1174,10 @@ components:
           $ref: '#/components/schemas/inputPort'
         outputs:
           $ref: '#/components/schemas/outputPort'
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/tag'
       required:
         - name
 
@@ -1210,6 +1214,9 @@ components:
               actions:
                 - type: INCREASE
                   output: 4
+              tags:
+                - Lighting
+                - Dual
             2:
               long_change: true
               actions:
@@ -1226,7 +1233,8 @@ components:
                 actions:
                 - type: TOGGLE
                   output: 12
-
+                tags:
+                - Security
     channel:
       type: object
       properties:
@@ -1249,6 +1257,10 @@ components:
             type: array
             items:
                 $ref: '#/components/schemas/action'
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/tag'
 
     outputPort:
       type: object
@@ -1280,12 +1292,18 @@ components:
             type: boolean
             description: Indicates if the output is enabled
             default: true
+          tags:
+            type: array
+            items:
+              $ref: '#/components/schemas/tag'
       examples:
         - 4:
             name: Chandelier
             area: Foyer
             icon: chandelier
             type: VARIABLE
+            tags:
+              - Holiday
           12:
             name: Recessed Lights
             area: Bathroom
@@ -1429,6 +1447,15 @@ components:
       examples:
         - name: Red
           hex: '#FF0000'
+
+    tag:
+      type: string
+      description: Arbitrary tag/reference
+      maxLength: 20
+      examples:
+        - Security
+        - Lighting
+        - Holiday
         
 
 ##########################################################
