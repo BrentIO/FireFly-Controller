@@ -26,6 +26,8 @@ tags:
     description: Manage controllers
   - name: Clients
     description: Manage clients
+  - name: General
+    description: Helper operations
 
 ##########################################################
 ## NOTE: This may not render except in the next-gen     ##
@@ -866,12 +868,12 @@ paths:
 
 
   ##########################################################
-  ## Clients                                              ##
+  ## General                                              ##
   ##########################################################
   /api/colors:
     get:
       tags:
-        - Clients
+        - General
       summary: Retrieve the list of colors
       description: Retrieve the list of colors
       security:
@@ -1446,7 +1448,7 @@ components:
 
 
     ##########################################################
-    ## Clients                                              ##
+    ## General                                              ##
     ##########################################################
 
     color:
