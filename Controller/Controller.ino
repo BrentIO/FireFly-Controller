@@ -218,6 +218,7 @@ void setup() {
     httpServer.on("/api/events", http_handleEventLog);
     httpServer.on("/api/errors", http_handleErrorLog);
     httpServer.on("/auth", http_handleAuth);
+    httpServer.on("/files", http_handleFileList_GET);
 
     if(configFS_isMounted){
       httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers_PUT));
@@ -1466,4 +1467,80 @@ void http_handleColors_DELETE(AsyncWebServerRequest *request){
   }else{
     http_error(request, F("Failed when trying to delete file"));
   }
+}
+
+
+/**
+ * Lists a given filesystem + path to an ArduinoJSON JsonArray
+ */
+void listDirToJsonArray(fs::FS &fs, const char *dirname, JsonArray &array) {
+
+  File root = fs.open(dirname);
+  if (!root) {
+    return;
+  }
+  if (!root.isDirectory()) {
+    return;
+  }
+
+  File file = root.openNextFile();
+  while (file) {
+    if (file.isDirectory()) {
+      listDirToJsonArray(fs, file.path(), array);
+    } else {
+      JsonObject entry = array.createNestedObject();
+      entry["path"] = (String)file.path();
+      entry["size"] = file.size();
+    }
+    file = root.openNextFile();
+  }
+}
+
+
+/**
+ * Handles GET requests for all filesystems
+ */
+void http_handleFileList_GET(AsyncWebServerRequest *request){
+
+  if(!request->hasHeader(F("visual-token"))){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(request->method() != ASYNC_HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  DynamicJsonDocument doc(1536);
+  JsonObject root = doc.to<JsonObject>();
+  JsonObject configObject = root.createNestedObject("config");
+  JsonObject wwwObject = root.createNestedObject("www");
+
+  if(configFS_isMounted){
+    configObject["total"] = configFS.totalBytes();
+    configObject["used"] = configFS.usedBytes();
+    JsonArray fileList = configObject.createNestedArray("files");
+    listDirToJsonArray(configFS, "/", fileList);
+  }else{
+    configObject["error"] = F("File system not mounted");
+  }
+
+  if(wwwFS_isMounted){
+    wwwObject["total"] = wwwFS.totalBytes();
+    wwwObject["used"] = wwwFS.usedBytes();
+    JsonArray fileList = wwwObject.createNestedArray("files");
+    listDirToJsonArray(wwwFS, "/", fileList);
+  }else{
+    wwwObject["error"] = F("File system not mounted");
+  }
+
+  serializeJson(doc, *response);
+  request->send(response);
 }
