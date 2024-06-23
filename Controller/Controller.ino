@@ -971,7 +971,7 @@ void http_handleControllers_GET(AsyncWebServerRequest *request){
   }
 
   File file = configFS.open(filename);
-  request->send(file, request->pathArg(0), "application/json", false, NULL);
+  request->send(file, request->pathArg(0), F("application/json"), false, NULL);
   file.close();
 }
 
@@ -1146,7 +1146,7 @@ void http_handleBreakers_GET(AsyncWebServerRequest *request){
   }
 
   File file = configFS.open(filename);
-  request->send(file, "breakers", "application/json", false, NULL);
+  request->send(file, (String)file.name(), F("application/json"), false, NULL);
   file.close();
 }
 
