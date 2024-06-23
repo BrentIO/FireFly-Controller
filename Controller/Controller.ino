@@ -1273,7 +1273,7 @@ void http_handleRelays_GET(AsyncWebServerRequest *request){
   }
 
   File file = configFS.open(filename);
-  request->send(file, "relays", "application/json", false, NULL);
+  request->send(file, (String)file.name(), F("application/json"), false, NULL);
   file.close();
 }
 
