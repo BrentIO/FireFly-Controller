@@ -1255,7 +1255,7 @@ void http_handleRelays(AsyncWebServerRequest *request){
 */
 void http_handleRelays_GET(AsyncWebServerRequest *request){
 
-  /*if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
   }
@@ -1263,7 +1263,7 @@ void http_handleRelays_GET(AsyncWebServerRequest *request){
   if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
-  }*/
+  }
   
   String filename = CONFIGFS_PATH_DEVICES + (String)"/relays";
 
@@ -1283,7 +1283,7 @@ void http_handleRelays_GET(AsyncWebServerRequest *request){
 */
 void http_handleRelays_PUT(AsyncWebServerRequest *request, JsonVariant doc){
 
-  /*if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
   }
@@ -1291,7 +1291,7 @@ void http_handleRelays_PUT(AsyncWebServerRequest *request, JsonVariant doc){
   if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
-  }*/
+  }
 
   if(request->method() != ASYNC_HTTP_PUT){
     http_methodNotAllowed(request);
@@ -1325,7 +1325,7 @@ void http_handleRelays_PUT(AsyncWebServerRequest *request, JsonVariant doc){
 */
 void http_handleRelays_DELETE(AsyncWebServerRequest *request){
 
-  /*if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
   }
@@ -1333,7 +1333,7 @@ void http_handleRelays_DELETE(AsyncWebServerRequest *request){
   if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
-  }*/
+  }
 
   String filename = CONFIGFS_PATH_DEVICES + (String)"/relays";
 
