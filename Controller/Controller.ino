@@ -1035,15 +1035,15 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
     return;
   }
 
-  if(!configFS.exists(CONFIGFS_PATH_DEVICES)){
-    if(!configFS.mkdir(CONFIGFS_PATH_DEVICES)){
+  if(!configFS.exists(F(CONFIGFS_PATH_DEVICES))){
+    if(!configFS.mkdir(F(CONFIGFS_PATH_DEVICES))){
       http_error(request, F("Unable to create CONFIGFS_PATH_DEVICES directory"));
       return;
     };
   }
 
-  if(!configFS.exists(CONFIGFS_PATH_DEVICES_CONTROLLERS)){
-    if(!configFS.mkdir(CONFIGFS_PATH_DEVICES_CONTROLLERS)){
+  if(!configFS.exists(F(CONFIGFS_PATH_DEVICES_CONTROLLERS))){
+    if(!configFS.mkdir(F(CONFIGFS_PATH_DEVICES_CONTROLLERS))){
       http_error(request, F("Unable to create CONFIGFS_PATH_DEVICES_CONTROLLERS directory"));
       return;
     };
@@ -1083,7 +1083,7 @@ void http_handleListControllers(AsyncWebServerRequest *request){
   DynamicJsonDocument doc(1536);
   JsonArray array = doc.to<JsonArray>();
 
-  File root = configFS.open(CONFIGFS_PATH_DEVICES_CONTROLLERS);
+  File root = configFS.open(F(CONFIGFS_PATH_DEVICES_CONTROLLERS));
 
   File file = root.openNextFile();
 
@@ -1175,8 +1175,8 @@ void http_handleBreakers_PUT(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  if(!configFS.exists(CONFIGFS_PATH_DEVICES)){
-    if(!configFS.mkdir(CONFIGFS_PATH_DEVICES)){
+  if(!configFS.exists(F(CONFIGFS_PATH_DEVICES))){
+    if(!configFS.mkdir(F(CONFIGFS_PATH_DEVICES))){
       http_error(request, F("Unable to create CONFIGFS_PATH_DEVICES directory"));
       return;
     };
@@ -1302,8 +1302,8 @@ void http_handleRelays_PUT(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  if(!configFS.exists(CONFIGFS_PATH_DEVICES)){
-    if(!configFS.mkdir(CONFIGFS_PATH_DEVICES)){
+  if(!configFS.exists(F(CONFIGFS_PATH_DEVICES))){
+    if(!configFS.mkdir(F(CONFIGFS_PATH_DEVICES))){
       http_error(request, F("Unable to create CONFIGFS_PATH_DEVICES directory"));
       return;
     };
