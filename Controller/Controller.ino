@@ -230,13 +230,13 @@ void setup() {
       httpServer.on("/api/breakers", http_handleBreakers);
       httpServer.on("/api/relays", http_handleRelays);
       httpServer.on("/api/colors", http_handleColors);
-      //httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
-      //httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
       //httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
       //httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced));
       //httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota", http_handleOTA_POST));
       //httpServer.on("^\/api\/ota$", http_handleOTA);
       //setup_OtaFirmware();
+      httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
+      httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
     }else{
       log_e("configFS is not mounted");
       httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_configFSNotMunted);
@@ -1543,4 +1543,180 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
 
   serializeJson(doc, *response);
   request->send(response);
+
+
+/**
+ * Handles /certs requests
+*/
+void http_handleCerts(AsyncWebServerRequest *request){
+
+  switch(request->method()){
+
+    case ASYNC_HTTP_OPTIONS:
+      http_options(request);
+      break;
+
+    case ASYNC_HTTP_POST:
+
+      break; //http_handleCerts_Upload handles all authorization and responses
+
+    case ASYNC_HTTP_GET:
+      http_handleCerts_GET(request);
+      break;
+
+    default:
+      http_methodNotAllowed(request);
+      break;
+  }
+
+}
+
+
+/** 
+ * Retrieves a list of certificates
+*/
+void http_handleCerts_GET(AsyncWebServerRequest *request){
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  StaticJsonDocument<768> doc;
+  JsonArray array = doc.to<JsonArray>();
+
+  File root = configFS.open(CONFIGFS_PATH_CERTS);
+
+  File file = root.openNextFile();
+  while(file){
+      if(!file.isDirectory()){
+          JsonObject fileInstance = array.createNestedObject();
+          fileInstance[F("file")] = (String)file.name();
+          fileInstance[F("size")] = file.size();
+      }
+      file = root.openNextFile();
+    }
+
+  serializeJson(doc, *response);
+  request->send(response);
+
+}
+
+
+/**
+ * Handles certificate uploads.  If the certificate already exists, a 403 is returned to the client
+*/
+void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
+
+  if(!request->hasHeader("visual-token")){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(request->method()!= ASYNC_HTTP_POST){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  if(!index){
+
+    if(!configFS.exists(CONFIGFS_PATH_CERTS)){
+      configFS.mkdir(CONFIGFS_PATH_CERTS);
+    }
+
+    if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + filename)){
+      http_forbiddenRequest(request, F("Certificate already exists"));
+      return;
+    }
+
+    request->_tempFile = configFS.open(CONFIGFS_PATH_CERTS + (String)"/" + filename, "w");
+  }
+
+  request->_tempFile.write(data,len);
+    
+  if(final){
+    request->_tempFile.close();
+    request->send(201);
+  }
+}
+
+
+/**
+ * Handles /certs/{file} requests
+*/
+void http_handleCert(AsyncWebServerRequest *request){
+  switch(request->method()){
+
+    case ASYNC_HTTP_OPTIONS:
+      http_options(request);
+      break;
+
+    case ASYNC_HTTP_GET:
+
+        if(!request->hasHeader("visual-token")){
+        http_unauthorized(request);
+        return;
+      }
+
+      if(!authToken.authenticate(request->header("visual-token").c_str())){
+        http_unauthorized(request);
+        return;
+      }
+
+      http_handleCert_GET(request);
+      break;
+
+    case ASYNC_HTTP_DELETE:
+
+      if(!request->hasHeader("visual-token")){
+        http_unauthorized(request);
+        return;
+      }
+
+      if(!authToken.authenticate(request->header("visual-token").c_str())){
+        http_unauthorized(request);
+        return;
+      }
+
+      http_handleCert_DELETE(request);
+      break;
+
+    default:
+      http_methodNotAllowed(request);
+      break;
+  }
+
+}
+
+
+/** 
+ * Handles retrieving a specific certificate
+*/
+void http_handleCert_GET(AsyncWebServerRequest *request){
+
+  if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0))){
+
+    AsyncWebServerResponse *response = request->beginResponse(configFS, CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0), "text/plain");
+    response->setCode(200);
+    request->send(response);
+
+  }else{
+    request->send(404);
+  }
+}
+
+
+/**
+ * Handles deleting a specific certificate
+*/
+void http_handleCert_DELETE(AsyncWebServerRequest *request){
+
+  if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0))){
+    configFS.remove(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0));
+    request->send(204);
+  }else{
+    request->send(404);
+  }
+}
 }
