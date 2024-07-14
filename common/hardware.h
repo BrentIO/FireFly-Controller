@@ -323,6 +323,16 @@
     #endif
 
 
+    #ifndef PORT_ID_MAX_LENGTH
+        #define PORT_ID_MAX_LENGTH 9 /* Maximum number of characters in a port's ID; must match Swagger + 1 for null termination */
+    #endif
+
+
+    #ifndef OUTPUT_ID_MAX_LENGTH
+        #define OUTPUT_ID_MAX_LENGTH 9 /* Maximum number of characters in an output's ID; must match Swagger + 1 for null termination */
+    #endif
+
+
     /* Check to ensure configuration is acceptable */
     #ifndef IO_EXTENDER_MODEL
         #error IO_EXTENDER_MODEL not set
