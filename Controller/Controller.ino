@@ -322,6 +322,9 @@ void setup() {
 
   #endif
 
+  /*****
+   * SETUP MQTT HERE
+   */
 
   setupIO();
 
@@ -402,7 +405,18 @@ void failureHandler_temperatureSensors(uint8_t address, managerTemperatureSensor
 */
 void eventHandler_inputs(managerInputs::portChannel portChannel, boolean longChange){
 
-  log_d(" A %s input was made on port %i channel %i", longChange ? "long":"short", portChannel.port, portChannel.channel);
+  for(int i=0; i < IO_EXTENDER_COUNT_CHANNELS_PER_PORT; i++){
+
+    if(inputPorts[portChannel.port-1].channels[i].channel == portChannel.channel){
+      log_i("A %s input made on port %i and channel %i with # actions: %i", longChange ? "long":"short", portChannel.port, portChannel.channel, inputPorts[portChannel.port-1].channels[i].actions.size());
+
+      
+
+
+      break;
+    }
+  }
+
 
   #ifdef DEBUG
     if(longChange == false){
