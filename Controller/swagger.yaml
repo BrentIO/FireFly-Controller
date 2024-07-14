@@ -1272,6 +1272,10 @@ components:
           type: boolean
           description: Indicates if the channel is enabled
           default: true
+        offset:
+          type: number
+          description: Offset to add to the channel number, used when an input spans multiple ports (such as a switch witih 6 buttons)
+          default: 0
         actions:
             type: array
             items:
@@ -1292,6 +1296,11 @@ components:
             type: string
             description: Human-friendly name
             maxLength: 20
+          id:
+            type: string
+            description: A short ID for the output, used for addressing the device over MQTT
+            maxLength: 8
+            pattern: ^[A-Za-z0-9]+$
           area:
             type: string
             description: Area where the output fixture is located
