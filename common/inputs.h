@@ -27,7 +27,7 @@ class managerInputs{
      * 
      *  -   Interrupt Pin: The pin being monitored by the CPU for changes being reported by the Input Controller
      * 
-     *  -   Port: RJ-45 port on the device, which is (typically) comprised of 4 input channels
+     *  -   Port: RJ-45 port on the device, which is (typically) comprised of 4 input channels (defined by IO_EXTENDER_COUNT_CHANNELS_PER_PORT)
      * 
      *  -   Channel: The wire within the RJ-45 port that has the ability to raise a signal high or low.  It is connected to a Pin on an Input Controller
      * 
