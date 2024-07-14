@@ -63,6 +63,48 @@ bool configFS_isMounted = false;
 #define CONFIGFS_PATH_DEVICES_CONTROLLERS "/devices/controllers"
 
 
+enum outputAction{
+  /// @brief The output should toggle the opposite of its current state
+  TOGGLE = 0,
+
+  /// @brief The output should increase its state
+  INCREASE = 1,
+
+  /// @brief The output should decrease its state
+  DECREASE = 2
+};
+
+struct inputAction{
+  /// @brief The output port number to take the action against
+  uint8_t output;
+
+  /// @brief The action to take against the output port
+  outputAction action;
+};
+
+struct inputChannel{
+  /// @brief The physical channel number, typically 1, 2, 3, or 6
+  uint8_t channel;
+
+  /// @brief Offset to the channel port, used when outputting to MQTT
+  uint8_t offset = 0;
+
+  /// @brief List of actions to take when the channel state changes from its normal position
+  LinkedList<inputAction> actions;
+};
+
+/***
+ * Reference to an input port, used 
+ */
+struct inputPort{
+  /// @brief The human-readable ID of the input port
+  char id[PORT_ID_MAX_LENGTH];
+  inputChannel channels[IO_EXTENDER_COUNT_CHANNELS_PER_PORT];
+};
+
+inputPort inputPorts[(IO_EXTENDER_COUNT_PINS / IO_EXTENDER_COUNT_CHANNELS_PER_PORT) * IO_EXTENDER_COUNT];
+
+
 /**
  * One-time setup
 */
@@ -281,18 +323,7 @@ void setup() {
   #endif
 
 
-
-
-
-    /**
-      * CONFIG READING STUFF GOES HERE
-    */
-
-
-    /** 
-     * I/O SETUP GOES HERE
-    */
-    
+  setupIO();
 
   oled.setPage(managerOled::PAGE_EVENT_LOG);
 
@@ -2108,4 +2139,248 @@ void eventHandler_otaFirmwareFinished(int partition, bool needs_restart){
       eventLog.createEvent(F("Rebooting..."), EventLog::LOG_LEVEL_NOTIFICATION);
       delay(5000);
   }
+}
+
+
+/***
+ * Configures the I/O
+ */
+void setupIO(){
+
+  if(strcmp(externalEEPROM.data.uuid, "") == 0){
+    eventLog.createEvent(F("No I/O setup (EEPROM)"), EventLog::LOG_LEVEL_ERROR);
+    return;
+  }
+
+  if(configFS_isMounted == false){
+    eventLog.createEvent(F("No I/O ConfigFS offline"), EventLog::LOG_LEVEL_ERROR);
+    return;
+  }
+
+  String filename = CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
+
+  if(!configFS.exists(filename)){
+    eventLog.createEvent(F("No I/O file to read"));
+    return;
+  }
+
+  if(setup_outputs(filename)){
+    eventLog.createEvent(F("Outputs read OK"));
+  }
+
+  if(setup_inputs(filename)){
+    eventLog.createEvent(F("I/O Ports read OK"));
+  };
+}
+
+
+
+/***
+ * Sets up the outputs from the JSON document stored on ConfigFS.
+ * 
+ * @param filename the filename of the config file to use, which should already have been checked to exist
+ * @note if the JSON document describes ports which are greater in number to the maximum number of ports for this hardware, they are ignored.  The JSON document is filtered before being read
+ */
+bool setup_outputs(String filename){
+
+  StaticJsonDocument<112> filter;
+
+  JsonObject filter_outputs__ = filter["outputs"].createNestedObject("*");
+  filter_outputs__["id"] = true;
+  filter_outputs__["area"] = true;
+  filter_outputs__["icon"] = true;
+  filter_outputs__["type"] = true;
+  filter_outputs__["enabled"] = true;
+
+  DynamicJsonDocument doc(8192); //Supports up to 32 ports
+
+  File file = configFS.open(filename, "r");
+
+  DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
+
+  if (error) {
+    eventLog.createEvent(F("Err parse outputs JSON"), EventLog::LOG_LEVEL_ERROR);
+    return false;
+  }
+
+  for (JsonPair output : doc["outputs"].as<JsonObject>()) {
+
+    int8_t outputPortNumber = atoi(output.key().c_str());
+
+    if(outputPortNumber > (OUTPUT_CONTROLLER_COUNT * OUTPUT_CONTROLLER_COUNT_PINS)){
+      char buffer[32]; 
+      strcpy(buffer, "Err out ");
+      strcat(buffer, output.key().c_str());
+      strcat(buffer, " > max");
+      eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+      continue;
+    }
+
+    if(outputPortNumber < 1){
+      char buffer[32]; 
+      strcpy(buffer, "Err out ");
+      strcat(buffer, output.key().c_str());
+      strcat(buffer, " < 1");
+      eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+      continue;
+    }
+
+    outputs.setPortId(outputPortNumber, output.value()["id"]);
+
+    if(output.value().containsKey("type")){
+      if(strcmp(output.value()["type"], "VARIABLE") == 0){
+        outputs.setPortType(outputPortNumber, nsOutputs::outputPin::VARIABLE);
+      }
+    }
+    if(output.value().containsKey("enabled")){
+      outputs.enablePort(outputPortNumber, output.value()["enabled"].as<boolean>());
+    }
+
+    const char* output_value_area = output.value()["area"]; // "swqdgakxeqwgkkrelkiq", ...
+    const char* output_value_icon = output.value()["icon"];
+  }
+
+  return true;
+}
+
+
+
+/***
+ * Sets up the inputs and actions from the JSON document stored on ConfigFS.
+ * 
+ * @param filename the filename of the config file to use, which should already have been checked to exist
+ * @returns true on success, false on failure
+ * @note if the JSON document describes ports which are greater in number to the maximum number of ports for this hardware, they are ignored.  The JSON document is filtered before being read
+ */
+bool setup_inputs(String filename){
+
+
+  StaticJsonDocument<160> filter;
+
+  JsonObject filter_ports = filter["ports"].createNestedObject("*");
+  filter_ports["id"] = true;
+
+  JsonObject filter_ports_channels = filter_ports["channels"].createNestedObject("*");
+  filter_ports_channels["type"] = true;
+  filter_ports_channels["long_change"] = true;
+  filter_ports_channels["enabled"] = true;
+  filter_ports_channels["offset"] = true;
+  filter_ports_channels["actions"] = true;
+
+  DynamicJsonDocument doc(32768); //Supports up to 32 ports
+
+  File file = configFS.open(filename, "r");
+
+  DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
+
+  file.close();
+
+  if (error) {
+    eventLog.createEvent(F("Err parse ports JSON"), EventLog::LOG_LEVEL_ERROR);
+    return false;
+  }
+
+  for (JsonPair port : doc["ports"].as<JsonObject>()) {
+
+    if(atoi(port.key().c_str()) > (IO_EXTENDER_COUNT_PINS / IO_EXTENDER_COUNT_CHANNELS_PER_PORT) * IO_EXTENDER_COUNT){
+      char buffer[32]; 
+      strcpy(buffer, "Err prt ");
+      strcat(buffer, port.key().c_str());
+      strcat(buffer, " > max");
+      eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+      continue;
+    }
+
+    if(atoi(port.key().c_str()) < 1){
+      char buffer[32]; 
+      strcpy(buffer, "Err prt ");
+      strcat(buffer, port.key().c_str());
+      strcat(buffer, " < 1");
+      eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+      continue;
+    }
+
+    strlcpy(inputPorts[atoi(port.key().c_str())-1].id, port.value()["id"], sizeof(inputPorts[atoi(port.key().c_str())-1].id));
+
+    uint8_t i = 0;
+
+    for (JsonPair port_value_channel : port.value()["channels"].as<JsonObject>()){
+
+      if(i > IO_EXTENDER_COUNT_CHANNELS_PER_PORT){
+        char buffer[32]; 
+        strcpy(buffer, "Err prt ");
+        strcat(buffer, port.key().c_str());
+        strcat(buffer, " ch > max");
+        eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+        continue;
+      }
+
+      managerInputs::portChannel portChannel;
+
+      portChannel.port = atoi(port.key().c_str());
+      portChannel.channel = atoi(port_value_channel.key().c_str());
+      inputPorts[atoi(port.key().c_str())-1].channels[i].channel = portChannel.channel;
+
+      if(port_value_channel.value()["type"]){
+        if(port_value_channel.value()["type"] != F("NORMALLY_OPEN")){
+          inputs.setPortChannelInputType(portChannel, managerInputs::NORMALLY_CLOSED);
+        }
+      }
+
+      if(port_value_channel.value()["long_change"]){
+        inputs.enablePortChannelLongChange(portChannel, port_value_channel.value()["long_change"].as<boolean>());
+      }
+
+      if(port_value_channel.value()["enabled"]){
+        inputs.enablePortChannel(portChannel, port_value_channel.value()["enabled"].as<boolean>());
+      }
+
+      if(port_value_channel.value()["offset"]){
+        inputPorts[atoi(port.key().c_str())-1].channels[i].offset = port_value_channel.value()["offset"].as<uint8_t>();
+      }
+
+      for (JsonObject port_value_channel_value_action : port_value_channel.value()["actions"].as<JsonArray>()) {
+
+        bool isOK = false;
+
+        inputAction newInputAction;
+        
+        if(strcmp(port_value_channel_value_action["action"], "INCREASE") == 0){
+          newInputAction.action = INCREASE;
+          isOK = true;
+        }
+
+        if(strcmp(port_value_channel_value_action["action"], "DECREASE") == 0){
+          newInputAction.action = DECREASE;
+          isOK = true;
+        }
+
+        if(strcmp(port_value_channel_value_action["action"], "TOGGLE") == 0){
+          newInputAction.action = TOGGLE;
+          isOK = true;
+        }
+
+        newInputAction.output = port_value_channel_value_action["output"].as<uint8_t>();
+
+        if(newInputAction.output == 0){
+          isOK = false;
+        }
+
+        if(isOK){
+          inputPorts[atoi(port.key().c_str())-1].channels[i].actions.add(newInputAction);
+        }else{
+          char buffer[32]; 
+          strcpy(buffer, "In prt ");
+          strcat(buffer, port.key().c_str());
+          strcat(buffer, " ch ");
+          strcat(buffer, port_value_channel.key().c_str());
+          strcat(buffer, "inv act");
+          eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+        }
+      }
+
+      i++;
+    }
+  }
+  return true;
 }

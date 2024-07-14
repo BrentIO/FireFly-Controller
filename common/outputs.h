@@ -181,6 +181,7 @@ namespace nsOutputs{
             uint8_t pin = 0; /* Output controller pin which is attached to this output */
             outputController* controller; /* Reference to the output controller */
             boolean enabled = true; /* If the output is enabled */
+            char id[OUTPUT_ID_MAX_LENGTH]; /* Identifier for the output */
 
             #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
                 uint16_t value = 0; /* Expected PWM value for the pin */
@@ -421,8 +422,25 @@ namespace nsOutputs{
                 for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
                     if(this->outputs[i].port == port){
                         this->outputs[i].type = type;
+                        return;
                     }
                 }
+            }
+
+            /** Gets the port type and sets the specified buffer with the value (binary, variable)
+             * @param port as the human-readable port number to get
+             * @param buffer as a pointer to a buffer where the output type should be set
+             * @returns true on success, false if the pin specified was invalid
+            */
+            boolean getPortType(uint8_t port, outputPin::outputType &buffer){
+
+                for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
+                    if(this->outputs[i].port == port){
+                        buffer = this->outputs[i].type;
+                        return true;
+                    }
+                }
+                return false;
             }
 
             /** Enables or disables a port
@@ -438,6 +456,23 @@ namespace nsOutputs{
                             this->outputs[i].set(0);
                         }
                         this->outputs[i].enabled = enabled;
+                        return;
+                    }
+                }
+            }
+
+
+            /**
+             * Sets the port's ID, which is used for MQTT
+             * @param port as the human-readable port number to set
+             * @param id as the human-readable ID as a reference
+             */
+            void setPortId(uint8_t port, const char* id){
+
+                for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
+                    if(this->outputs[i].port == port){
+                        strlcpy(this->outputs[i].id, id, sizeof(this->outputs[i].id));
+                        return;
                     }
                 }
             }
