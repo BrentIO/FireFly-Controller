@@ -42,7 +42,6 @@ def createChannels():
         
         channels[i] = {
             "type":"NORMALLY_CLOSED",
-            "long_change": False,
             "enabled": False,
             "offset":99,
             "tags": [],
@@ -54,9 +53,17 @@ def createChannels():
 
         for j in range(number_actions):
             action = {
+                "change_state": "SHORT",
                 "action":"INCREASE",
                 "output": 99
             }
+
+            if(i % 2) == 0:
+                action["action"] = "DECREASE"
+
+            if(j % 2) == 0:
+                action["change_state"] = "LONG"
+                action["action"] = action["action"] + "_MAXIMUM"
 
             channels[i]['actions'].append(action)
 
