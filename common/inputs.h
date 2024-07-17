@@ -76,7 +76,7 @@ class managerInputs{
             NORMALLY_OPEN = 0,
 
             /// @brief Input is normally closed (typically a reed switch)
-            NORMALLY_CLOSED = 1,
+            NORMALLY_CLOSED = 1
         };
 
     private:
