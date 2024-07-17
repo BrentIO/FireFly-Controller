@@ -71,7 +71,14 @@ enum outputAction{
   INCREASE = 1,
 
   /// @brief The output should decrease its state
-  DECREASE = 2
+  DECREASE = 2,
+
+  /// @brief Set the output to the maximum potential state (maximum brightness)
+  INCREASE_MAXIMUM = 3,
+
+  /// @brief Set the output the the minimum potential state (turn off)
+  DECREASE_MAXIMUM = 4
+
 };
 
 struct inputAction{
@@ -80,6 +87,10 @@ struct inputAction{
 
   /// @brief The action to take against the output port
   outputAction action;
+
+  /// @brief The change state that is required for this action to be taken
+  managerInputs::changeState changeState;
+
 };
 
 struct inputChannel{
@@ -401,17 +412,14 @@ void failureHandler_temperatureSensors(uint8_t address, managerTemperatureSensor
 
 /** Handles changes in observed inputs 
  * @param portChannel the port and channel where the change was observed
- * @param longChange when true, the change observed was a long in duration
+ * @param changeState the state of the change observed
 */
-void eventHandler_inputs(managerInputs::portChannel portChannel, boolean longChange){
+void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::changeState  changeState){
 
   for(int i=0; i < IO_EXTENDER_COUNT_CHANNELS_PER_PORT; i++){
 
     if(inputPorts[portChannel.port-1].channels[i].channel == portChannel.channel){
-      log_i("A %s input made on port %i and channel %i with # actions: %i", longChange ? "long":"short", portChannel.port, portChannel.channel, inputPorts[portChannel.port-1].channels[i].actions.size());
-
-      
-
+      log_i("A %i input made on port %i and channel %i with # actions: %i", changeState, portChannel.port, portChannel.channel, inputPorts[portChannel.port-1].channels[i].actions.size());
 
       break;
     }
@@ -2276,7 +2284,6 @@ bool setup_inputs(String filename){
 
   JsonObject filter_ports_channels = filter_ports["channels"].createNestedObject("*");
   filter_ports_channels["type"] = true;
-  filter_ports_channels["long_change"] = true;
   filter_ports_channels["enabled"] = true;
   filter_ports_channels["offset"] = true;
   filter_ports_channels["actions"] = true;
@@ -2341,10 +2348,6 @@ bool setup_inputs(String filename){
         }
       }
 
-      if(port_value_channel.value()["long_change"]){
-        inputs.enablePortChannelLongChange(portChannel, port_value_channel.value()["long_change"].as<boolean>());
-      }
-
       if(port_value_channel.value()["enabled"]){
         inputs.enablePortChannel(portChannel, port_value_channel.value()["enabled"].as<boolean>());
       }
@@ -2358,20 +2361,41 @@ bool setup_inputs(String filename){
         bool isOK = false;
 
         inputAction newInputAction;
+
+        if(port_value_channel_value_action.containsKey("action")){
         
-        if(strcmp(port_value_channel_value_action["action"], "INCREASE") == 0){
-          newInputAction.action = INCREASE;
-          isOK = true;
+          if(strcmp(port_value_channel_value_action["action"], "INCREASE") == 0){
+            newInputAction.action = INCREASE;
+            isOK = true;
+          }
+
+          if(strcmp(port_value_channel_value_action["action"], "INCREASE_MAXIMUM") == 0){
+            newInputAction.action = INCREASE_MAXIMUM;
+            isOK = true;
+          }
+
+          if(strcmp(port_value_channel_value_action["action"], "DECREASE") == 0){
+            newInputAction.action = DECREASE;
+            isOK = true;
+          }
+
+          if(strcmp(port_value_channel_value_action["action"], "DECREASE_MAXIMUM") == 0){
+            newInputAction.action = DECREASE_MAXIMUM;
+            isOK = true;
+          }
+
+          if(strcmp(port_value_channel_value_action["action"], "TOGGLE") == 0){
+            newInputAction.action = TOGGLE;
+            isOK = true;
+          }
         }
 
-        if(strcmp(port_value_channel_value_action["action"], "DECREASE") == 0){
-          newInputAction.action = DECREASE;
-          isOK = true;
-        }
-
-        if(strcmp(port_value_channel_value_action["action"], "TOGGLE") == 0){
-          newInputAction.action = TOGGLE;
-          isOK = true;
+        if(!port_value_channel_value_action.containsKey("change_state")){
+          newInputAction.changeState = managerInputs::changeState::CHANGE_STATE_SHORT_DURATION;
+        }else{
+          if(strcmp(port_value_channel_value_action["change_state"], "LONG") == 0){
+            newInputAction.changeState = managerInputs::changeState::CHANGE_STATE_LONG_DURATION;
+          }
         }
 
         newInputAction.output = port_value_channel_value_action["output"].as<uint8_t>();

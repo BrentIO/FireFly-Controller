@@ -79,6 +79,26 @@ class managerInputs{
             NORMALLY_CLOSED = 1
         };
 
+
+        /** 
+         * Change states represent potential states the input can be in from a normal state to an abnormal state 
+        */
+        enum changeState {
+
+            /// @brief The change state is not active and the input is in its normal state
+            CHANGE_STATE_NORMAL = 0,
+
+            /// @brief The change has been observed, but the IO_EXTENDER_MINIMUM_CHANGE_DELAY has not elapsed 
+            CHANGE_STATE_LESS_THAN_MINIMUM = 10,
+
+            /// @brief The change state has been observed longer than the IO_EXTENDER_MINIMUM_CHANGE_DELAY but less than the IO_EXTENDER_MINIMUM_LONG_CHANGE_DELAY
+            CHANGE_STATE_SHORT_DURATION = 20,
+
+            /// @brief The change state has exceeded the IO_EXTENDER_MINIMUM_LONG_CHANGE_DELAY
+            CHANGE_STATE_LONG_DURATION = 30
+        };
+
+
     private:
 
         /** Input states that can be observed */
@@ -99,11 +119,9 @@ class managerInputs{
          * */
         struct inputPin{
             int64_t timeChange = 0; /* Time (milliseconds) when the input state last changed.  Value is set to 0 when the state returns to its input type. Default 0.*/
-            boolean changeHandled = true; /* If the change has been handled, to make the event singular. Default true. */
-            boolean changeHandledLong = true; /* If the long change has been handled, to make the event singular. Default true. */
             inputState state = STATE_OPEN; /* The state entered at timeChange. Default STATE_OPEN.*/
             inputType type = NORMALLY_OPEN; /* Defines if the input is normally open or normally closed. Default NORMALLY_OPEN.*/
-            boolean monitorLongChange = false; /* Defines if the pin should be monitored for long changes.  Should be _true_ for buttons and _false_ for reed switches. Default false.*/
+            changeState  _changeState = CHANGE_STATE_NORMAL; /* The state the input has been observed in. Default CHANGE_STATE_NORMAL */
             portChannel port_channel; /* The RJ-45 port and channel this input pin is connected to */
             boolean enabled = true; /* If the input pin is enabled. Default true.*/
         };
@@ -133,7 +151,7 @@ class managerInputs{
 
 
         /** Reference to the callback function that will be called when an input is sensed */
-        void (*ptrPublisherCallback)(portChannel, boolean);
+        void (*ptrPublisherCallback)(portChannel, changeState );
 
 
         /** Reference to the callback function that will be called when an input controller has failed */
@@ -262,9 +280,7 @@ class managerInputs{
                         if(currentState == inputState::STATE_CLOSED){
 
                             inputController->inputs[i].timeChange = int(esp_timer_get_time()/1000);
-                            inputController->inputs[i].changeHandled = false;
-                            inputController->inputs[i].changeHandledLong = false;
-
+                            inputController->inputs[i]._changeState = CHANGE_STATE_LESS_THAN_MINIMUM;
                             break;
                         }
 
@@ -272,9 +288,7 @@ class managerInputs{
                         if(currentState == inputState::STATE_OPEN){
                         
                             inputController->inputs[i].timeChange = 0;
-                            inputController->inputs[i].changeHandled = true;
-                            inputController->inputs[i].changeHandledLong = true;
-                        
+                            inputController->inputs[i]._changeState = CHANGE_STATE_NORMAL;
                             break;
                         }
 
@@ -284,9 +298,7 @@ class managerInputs{
                         if(currentState == inputState::STATE_OPEN){
 
                             inputController->inputs[i].timeChange = int(esp_timer_get_time()/1000);
-                            inputController->inputs[i].changeHandled = false;
-                            inputController->inputs[i].changeHandledLong = false;
-                            
+                            inputController->inputs[i]._changeState = CHANGE_STATE_LESS_THAN_MINIMUM;
                             break;
                         }
 
@@ -294,9 +306,7 @@ class managerInputs{
                         if(currentState == inputState::STATE_CLOSED){
                         
                             inputController->inputs[i].timeChange = 0;
-                            inputController->inputs[i].changeHandled = true;
-                            inputController->inputs[i].changeHandledLong = true;
-
+                            inputController->inputs[i]._changeState = CHANGE_STATE_NORMAL;
                             break;
                         }
                 }
@@ -323,15 +333,15 @@ class managerInputs{
 
                 if(((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) > IO_EXTENDER_MINIMUM_CHANGE_DELAY) && ((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) < IO_EXTENDER_MINIMUM_LONG_CHANGE_DELAY)){
 
-                    if(inputController->inputs[i].changeHandled == true){
+                    if(inputController->inputs[i]._changeState == CHANGE_STATE_SHORT_DURATION){
                         continue;
                     }
 
-                    inputController->inputs[i].changeHandled = true;
+                    inputController->inputs[i]._changeState = CHANGE_STATE_SHORT_DURATION;
 
                     //Raise  an event for a short change
                     if(this->ptrPublisherCallback){
-                        this->ptrPublisherCallback(inputController->inputs[i].port_channel, false);
+                        this->ptrPublisherCallback(inputController->inputs[i].port_channel, inputController->inputs[i]._changeState);
                     }
 
                     continue;
@@ -339,19 +349,15 @@ class managerInputs{
 
                 if((int(esp_timer_get_time()/1000) - inputController->inputs[i].timeChange) > IO_EXTENDER_MINIMUM_LONG_CHANGE_DELAY){
 
-                    if(inputController->inputs[i].monitorLongChange == false){
+                    if(inputController->inputs[i]._changeState == CHANGE_STATE_LONG_DURATION){
                         continue;
                     }
 
-                    if(inputController->inputs[i].changeHandledLong == true){
-                        continue;
-                    }
-
-                    inputController->inputs[i].changeHandledLong = true;
+                    inputController->inputs[i]._changeState = CHANGE_STATE_LONG_DURATION;
 
                     //Raise  an event for a long change
                     if(this->ptrPublisherCallback){
-                        this->ptrPublisherCallback(inputController->inputs[i].port_channel, true);
+                        this->ptrPublisherCallback(inputController->inputs[i].port_channel, inputController->inputs[i]._changeState);
                     }
                 }
             }
@@ -371,7 +377,7 @@ class managerInputs{
 
 
         /** Callback function that is called when an input is made */
-        void setCallback_publisher(void (*userDefinedCallback)(portChannel, boolean)) {
+        void setCallback_publisher(void (*userDefinedCallback)(portChannel, changeState )) {
             ptrPublisherCallback = userDefinedCallback; }
 
 
@@ -522,8 +528,7 @@ class managerInputs{
                         }
 
                         this->inputControllers[i].inputs[j].timeChange = 0;
-                        this->inputControllers[i].inputs[j].changeHandled = true;
-                        this->inputControllers[i].inputs[j].changeHandledLong = true;
+                        this->inputControllers[i].inputs[j]._changeState = CHANGE_STATE_NORMAL;
                         this->inputControllers[i].inputs[j].enabled = enabled;
                     }
                 }
@@ -545,25 +550,4 @@ class managerInputs{
                 }
             }
         }
-
-
-        /** Sets the input type for a specified port channel
-         * @param portChannel as the human-readable port and channel to set
-         * @param enabled if the port channel should monitor for long changes or not
-         * @note The input will be set to the input types' default state when changing this setting
-        */
-        void enablePortChannelLongChange(portChannel portChannel, boolean enabled){
-
-            for(int i = 0; i < IO_EXTENDER_COUNT; i++){
-                for(int j = 0; j < IO_EXTENDER_COUNT_PINS; j++){
-                    if(this->inputControllers[i].inputs[j].port_channel.port == portChannel.port && this->inputControllers[i].inputs[j].port_channel.channel == portChannel.channel){
-                        this->inputControllers[i].inputs[j].monitorLongChange = enabled;
-                        this->inputControllers[i].inputs[j].timeChange = 0;
-                        this->inputControllers[i].inputs[j].changeHandled = true;
-                        this->inputControllers[i].inputs[j].changeHandledLong = true;
-                    }
-                }
-            }
-        }
-
 };

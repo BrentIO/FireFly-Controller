@@ -1229,17 +1229,20 @@ components:
            id: S22
            channels:
             1:
-              long_change: true
               actions:
+                - type: INCREASE_MAXIMUM
+                  change_state: LONG
+                  output: 4
                 - type: INCREASE
                   output: 4
               tags:
                 - Lighting
                 - Dual
             2:
-              long_change: true
+
               actions:
               - type: DECREASE
+                change_state: SHORT
                 output: 4
           5:
             name: Kitchen Entryway
@@ -1264,10 +1267,13 @@ components:
           enum:
             - NORMALLY_OPEN
             - NORMALLY_CLOSED
-        long_change:
-          type: boolean
-          description: Indicates if long changes are enabled for this input
-          default: false
+        change_state:
+          type: string
+          description: The action will be taken when the change state is observed
+          default: SHORT
+          enum:
+            - SHORT
+            - LONG
         enabled:
           type: boolean
           description: Indicates if the channel is enabled
@@ -1354,7 +1360,9 @@ components:
             description: Action to take
             enum:
               - INCREASE
+              - MAXIMUM_INCREASE
               - DECREASE
+              - MAXIMUM_DECREASE
               - TOGGLE
           output:
             type: number
