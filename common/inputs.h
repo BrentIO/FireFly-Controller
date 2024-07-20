@@ -287,6 +287,15 @@ class managerInputs{
                         if(currentState == inputState::STATE_OPEN){
                         
                             inputController->inputs[i].timeChange = 0;
+
+                            if(inputController->inputs[i]._changeState != CHANGE_STATE_NORMAL){
+
+                                //Raise  an event return to normal
+                                if(this->ptrPublisherCallback){
+                                    this->ptrPublisherCallback(inputController->inputs[i].port_channel, CHANGE_STATE_NORMAL);
+                                }
+                            }
+
                             inputController->inputs[i]._changeState = CHANGE_STATE_NORMAL;
                             break;
                         }
@@ -304,6 +313,15 @@ class managerInputs{
                         if(currentState == inputState::STATE_CLOSED){
                         
                             inputController->inputs[i].timeChange = 0;
+
+                            if(inputController->inputs[i]._changeState != CHANGE_STATE_NORMAL){
+
+                                //Raise  an event return to normal
+                                if(this->ptrPublisherCallback){
+                                    this->ptrPublisherCallback(inputController->inputs[i].port_channel, CHANGE_STATE_NORMAL);
+                                }
+                            }
+
                             inputController->inputs[i]._changeState = CHANGE_STATE_NORMAL;
                             break;
                         }
