@@ -59,6 +59,8 @@ class managerFrontPanel{
             }
 
             state = currentState;
+
+            this->setStatus(managerFrontPanel::status::NORMAL);
         }
 
         void setCallback_publisher(void (*userDefinedCallback)(void)) {
