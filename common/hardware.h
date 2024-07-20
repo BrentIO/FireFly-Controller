@@ -186,7 +186,7 @@
         #endif
 
         #ifndef IO_EXTENDER_MINIMUM_LONG_CHANGE_DELAY
-            #define IO_EXTENDER_MINIMUM_LONG_CHANGE_DELAY 1000 /* Milliseconds between the MINIMUM_CHANGE_DELAY that the change is observed before it is raised as a long change event. */
+            #define IO_EXTENDER_MINIMUM_LONG_CHANGE_DELAY 1250 /* Milliseconds between the MINIMUM_CHANGE_DELAY that the change is observed before it is raised as a long change event. */
         #endif
 
     #endif
