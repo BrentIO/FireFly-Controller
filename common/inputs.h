@@ -280,7 +280,6 @@ class managerInputs{
                         if(currentState == inputState::STATE_CLOSED){
 
                             inputController->inputs[i].timeChange = int(esp_timer_get_time()/1000);
-                            inputController->inputs[i]._changeState = CHANGE_STATE_LESS_THAN_MINIMUM;
                             break;
                         }
 
@@ -298,7 +297,6 @@ class managerInputs{
                         if(currentState == inputState::STATE_OPEN){
 
                             inputController->inputs[i].timeChange = int(esp_timer_get_time()/1000);
-                            inputController->inputs[i]._changeState = CHANGE_STATE_LESS_THAN_MINIMUM;
                             break;
                         }
 
