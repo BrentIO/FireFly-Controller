@@ -2195,6 +2195,8 @@ void eventHandler_otaFirmwareFinished(int partition, bool needs_restart){
  */
 void setupIO(){
 
+  bool isOK = true;
+
   if(strcmp(externalEEPROM.data.uuid, "") == 0){
     eventLog.createEvent(F("No I/O setup (EEPROM)"), EventLog::LOG_LEVEL_ERROR);
     return;
@@ -2212,13 +2214,19 @@ void setupIO(){
     return;
   }
 
-  if(setup_outputs(filename)){
-    eventLog.createEvent(F("Outputs read OK"));
+  if(!setup_outputs(filename)){
+    isOK = false;
   }
 
-  if(setup_inputs(filename)){
-    eventLog.createEvent(F("I/O Ports read OK"));
+  if(!setup_inputs(filename)){
+    isOK = false;
   };
+
+  if(isOK){
+      eventLog.createEvent(F("I/O setup read OK"));
+  }else{
+    eventLog.createEvent(F("I/O setup read fail"));
+  }
 }
 
 
