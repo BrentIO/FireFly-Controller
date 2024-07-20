@@ -414,13 +414,39 @@ void failureHandler_temperatureSensors(uint8_t address, managerTemperatureSensor
  * @param portChannel the port and channel where the change was observed
  * @param changeState the state of the change observed
 */
-void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::changeState  changeState){
+void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::changeState changeState){
 
   for(int i=0; i < IO_EXTENDER_COUNT_CHANNELS_PER_PORT; i++){
 
     if(inputPorts[portChannel.port-1].channels[i].channel == portChannel.channel){
-      log_i("A %i input made on port %i and channel %i with # actions: %i", changeState, portChannel.port, portChannel.channel, inputPorts[portChannel.port-1].channels[i].actions.size());
 
+      log_i("A %i input change on port %i channel %i (offset = %i) with # actions: %i", changeState, portChannel.port, portChannel.channel, inputPorts[portChannel.port-1].channels[i].offset, inputPorts[portChannel.port-1].channels[i].actions.size()); //Fire MQTT here
+
+      switch(changeState){
+
+        case managerInputs::changeState::CHANGE_STATE_NORMAL:
+          log_i("Port %i channel %i (offset = %i) is now normal", portChannel.port, portChannel.channel, inputPorts[portChannel.port-1].channels[i].offset);
+          break;
+
+        case managerInputs::changeState::CHANGE_STATE_SHORT_DURATION:
+
+          for(int j=0; j < inputPorts[portChannel.port-1].channels[i].actions.size(); j++){
+
+            if(inputPorts[portChannel.port-1].channels[i].actions.get(j).changeState == changeState){
+              log_i("\tExecuting CHANGE_STATE_SHORT_DURATION action %i on output %i: ", inputPorts[portChannel.port-1].channels[i].actions.get(i).action, inputPorts[portChannel.port-1].channels[i].actions.get(i).output);
+            }
+          }
+          break;
+
+        case managerInputs::changeState::CHANGE_STATE_LONG_DURATION:
+          
+          for(int j=0; j < inputPorts[portChannel.port-1].channels[i].actions.size(); j++){
+            if(inputPorts[portChannel.port-1].channels[i].actions.get(j).changeState == changeState){
+              log_i("\tExecuting CHANGE_STATE_LONG_DURATION action %i on output %i: ", inputPorts[portChannel.port-1].channels[i].actions.get(i).action, inputPorts[portChannel.port-1].channels[i].actions.get(i).output);
+            }
+          }
+          break;
+      }
       break;
     }
   }
