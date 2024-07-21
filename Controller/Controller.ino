@@ -440,87 +440,48 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
       break;
     }
   }
+}
 
 
-  #ifdef DEBUG
-    if(longChange == false){
-      Serial.println("[main] (eventHandler_inputs) A short input was made on port " + String(portChannel.port) + " channel " + String(portChannel.channel));
+nsOutputs::set_result actionOutputPort(uint8_t port, outputAction action){
+  uint8_t currentPortValue = outputs.getPortValue(port);
 
-      uint8_t output_port = 2;
-      uint8_t value = outputs.getPortValue(output_port);
+  nsOutputs::set_result returnValue;
 
-      if(portChannel.port == 1){
+  switch(action){
 
-        switch(portChannel.channel){
+    case outputAction::INCREASE:
+      returnValue = outputs.setPortValue(port, (currentPortValue + 10));
+      break;
 
-          case 2:
-            Serial.println(outputs.setPortValue(output_port, (value + 10)));
-            Serial.println("Increasing, New brightness: " + String(outputs.getPortValue(output_port)));
+    case outputAction::INCREASE_MAXIMUM:
+      returnValue = outputs.setPortValue(port, 100);
+      break;
 
-            break;
+    case outputAction::DECREASE:
+      returnValue = outputs.setPortValue(port, (currentPortValue - 10));
+      break;
 
+    case outputAction::DECREASE_MAXIMUM:
+      returnValue = outputs.setPortValue(port, 0);
+      break;
 
-          case 6:
-            Serial.println(outputs.setPortValue(output_port, (value - 10)));
-            Serial.println("Decreasing, New brightness: " + String(outputs.getPortValue(output_port)));
-            break;
-        }
+    case outputAction::TOGGLE:
 
-
+      if(currentPortValue > 0){
+        returnValue = outputs.setPortValue(port, 0);
+      }else{
+        returnValue = outputs.setPortValue(port, 100);
       }
-
-
-      
-
-      /*Serial.println("Current Brightness: " + String(value));
-
-      
-
-      if(value == 0){
-        increasing = true;
-        
-        Serial.println("4 New brightness: " + String(outputs.getPortValue(output_port)));
-        return;
-      }
-
-      if(value < 100 && increasing == true){
-        outputs.setPortValue(output_port, (((value + 5) + 2) % 5) * 5);
-        Serial.println("1 New brightness: " + String(outputs.getPortValue(output_port)));
-        return;
-      }
-
-      if(value < 100 && increasing == false){
-        outputs.setPortValue(output_port, (((value - 5) + 2) % 5) * 5);
-        Serial.println("2 New brightness: " + String(outputs.getPortValue(output_port)));
-        return;
-      }
-
-      if(value == 100){
-        increasing = false;
-        outputs.setPortValue(output_port, value - (((value - 5) + 2) % 5) * 5);
-        Serial.println("3 New brightness: " + String(outputs.getPortValue(output_port)));
-        return;
-      }*/
-
-      /*if(value == 0){
-        Serial.println(outputs.setPortValue(output_port, 77));
-        Serial.println("New brightness: " + String(outputs.getPortValue(output_port)));
-      }
-
-      if(value != 0){
-        Serial.println(outputs.setPortValue(output_port, 0));
-        Serial.println("New brightness: " + String(outputs.getPortValue(output_port)));
-      }*/
-
+      break;
+  }
 
   char* id = new char[OUTPUT_ID_MAX_LENGTH];
   outputs.getPortId(port, id);
 
-    }
-  #endif
   log_i("[Simulated MQTT Message] output id %s (%i) now has value of %i and function return value %i", id, port, outputs.getPortValue(port), returnValue);
 
-  //TODO: Add MQTT and stuff
+  return returnValue;
 
 }
 
