@@ -426,19 +426,11 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
           break;
 
         case managerInputs::changeState::CHANGE_STATE_SHORT_DURATION:
-
-          for(int j=0; j < inputPorts[portChannel.port-1].channels[i].actions.size(); j++){
-            if(inputPorts[portChannel.port-1].channels[i].actions.get(j).changeState == changeState){
-              log_i("\tExecuting CHANGE_STATE_SHORT_DURATION action %i on output %i: ", inputPorts[portChannel.port-1].channels[i].actions.get(j).action, inputPorts[portChannel.port-1].channels[i].actions.get(j).output); //TAKE ACTION
-            }
-          }
-          break;
-
         case managerInputs::changeState::CHANGE_STATE_LONG_DURATION:
-          
+       
           for(int j=0; j < inputPorts[portChannel.port-1].channels[i].actions.size(); j++){
             if(inputPorts[portChannel.port-1].channels[i].actions.get(j).changeState == changeState){
-              log_i("\tExecuting CHANGE_STATE_LONG_DURATION action %i on output %i: ", inputPorts[portChannel.port-1].channels[i].actions.get(j).action, inputPorts[portChannel.port-1].channels[i].actions.get(j).output); //TAKE ACTION
+              actionOutputPort(inputPorts[portChannel.port-1].channels[i].actions.get(j).output, inputPorts[portChannel.port-1].channels[i].actions.get(j).action);
             }
           }
           break;
