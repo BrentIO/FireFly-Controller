@@ -420,8 +420,6 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
 
     if(inputPorts[portChannel.port-1].channels[i].channel == portChannel.channel){
 
-      log_i("A %i input change on port %i channel %i (offset = %i) with # actions: %i", changeState, portChannel.port, portChannel.channel, inputPorts[portChannel.port-1].channels[i].offset, inputPorts[portChannel.port-1].channels[i].actions.size()); //Fire MQTT here
-
       switch(changeState){
 
         case managerInputs::changeState::CHANGE_STATE_NORMAL:
@@ -446,6 +444,8 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
           }
           break;
       }
+
+      log_i("[Simulated MQTT Message] A %i input change on port %i channel %i (offset = %i)", changeState, portChannel.port, portChannel.channel, inputPorts[portChannel.port-1].channels[i].offset);
       break;
     }
   }
