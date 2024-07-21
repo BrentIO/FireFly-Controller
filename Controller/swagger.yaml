@@ -1365,9 +1365,9 @@ components:
             description: Action to take
             enum:
               - INCREASE
-              - MAXIMUM_INCREASE
+              - INCREASE_MAXIMUM
               - DECREASE
-              - MAXIMUM_DECREASE
+              - DECREASE_MAXIMUM
               - TOGGLE
           output:
             type: number
