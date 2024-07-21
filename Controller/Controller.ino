@@ -522,9 +522,12 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
       }*/
 
 
+  char* id = new char[OUTPUT_ID_MAX_LENGTH];
+  outputs.getPortId(port, id);
 
     }
   #endif
+  log_i("[Simulated MQTT Message] output id %s (%i) now has value of %i and function return value %i", id, port, outputs.getPortValue(port), returnValue);
 
   //TODO: Add MQTT and stuff
 

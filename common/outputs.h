@@ -476,5 +476,19 @@ namespace nsOutputs{
                     }
                 }
             }
+
+            /**
+             * Gets the port's ID, which is used for MQTT
+             * @param port as the human-readable port number to set
+             * @param id as a pointer to a char* (with size of OUTPUT_ID_MAX_LENGTH) where the ID will be written
+             */
+            void getPortId(uint8_t port, char* &id){
+
+                for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
+                    if(this->outputs[i].port == port){
+                        strcpy(id, this->outputs[i].id);
+                    }
+                }
+            }
     };
 };
