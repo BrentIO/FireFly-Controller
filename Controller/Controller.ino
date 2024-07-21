@@ -423,7 +423,6 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
       switch(changeState){
 
         case managerInputs::changeState::CHANGE_STATE_NORMAL:
-          log_i("Port %i channel %i (offset = %i) is now normal", portChannel.port, portChannel.channel, inputPorts[portChannel.port-1].channels[i].offset);
           break;
 
         case managerInputs::changeState::CHANGE_STATE_SHORT_DURATION:
