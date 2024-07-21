@@ -2302,8 +2302,8 @@ bool setup_outputs(String filename){
       outputs.enablePort(outputPortNumber, output.value()["enabled"].as<boolean>());
     }
 
-    const char* output_value_area = output.value()["area"]; // "swqdgakxeqwgkkrelkiq", ...
-    const char* output_value_icon = output.value()["icon"];
+    const char* output_value_area = output.value()["area"]; //TODO
+    const char* output_value_icon = output.value()["icon"]; //TODO
   }
 
   return true;
