@@ -1304,7 +1304,7 @@ components:
             maxLength: 20
           id:
             type: string
-            description: A short ID for the output, used for addressing the device over MQTT
+            description: A unique short ID for the output, used for addressing the device over MQTT
             maxLength: 8
             pattern: ^[A-Za-z0-9]+$
           area:
@@ -1336,8 +1336,11 @@ components:
             format: uuid
             minLength: 36
             maxLength: 36
+        required:
+          - id
       examples:
         - 4:
+            id: C49
             name: Chandelier
             area: Foyer
             icon: chandelier
@@ -1346,10 +1349,12 @@ components:
               - Holiday
             relay: e68ee5a2-1b10-4e9d-ba6d-cd55bb325b35
           12:
+            id: C12
             name: Recessed Lights
             area: Bathroom
             icon: light-recessed
           13:
+            id: C7
             enabled: false
 
     action:

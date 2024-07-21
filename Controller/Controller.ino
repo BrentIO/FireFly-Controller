@@ -2281,6 +2281,15 @@ bool setup_outputs(String filename){
       continue;
     }
 
+    if(!output.value().containsKey("id")){
+      char buffer[32]; 
+      strcpy(buffer, "Err out ");
+      strcat(buffer, output.key().c_str());
+      strcat(buffer, " no id");
+      eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+      continue;
+    }
+
     outputs.setPortId(outputPortNumber, output.value()["id"]);
 
     if(output.value().containsKey("type")){
@@ -2288,6 +2297,7 @@ bool setup_outputs(String filename){
         outputs.setPortType(outputPortNumber, nsOutputs::outputPin::VARIABLE);
       }
     }
+
     if(output.value().containsKey("enabled")){
       outputs.enablePort(outputPortNumber, output.value()["enabled"].as<boolean>());
     }
