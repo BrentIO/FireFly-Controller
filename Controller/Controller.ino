@@ -274,7 +274,7 @@ void setup() {
     httpServer.on("/files", http_handleFileList_GET);
 
     if(configFS_isMounted){
-      httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers_PUT));
+      httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers_PUT, 65536,65535));
       httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/breakers", http_handleBreakers_PUT));
       httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/relays", http_handleRelays_PUT));
       httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/colors", http_handleColors_PUT));
