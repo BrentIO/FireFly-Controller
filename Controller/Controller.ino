@@ -1021,9 +1021,9 @@ void http_handleControllers_GET(AsyncWebServerRequest *request){
     return;
   }
 
-  File file = configFS.open(filename);
-  request->send(file, request->pathArg(0), F("application/json"), false, NULL);
-  file.close();
+  AsyncWebServerResponse *response = request->beginResponse(configFS, filename, F("application/json"));
+  request->send(response);
+
 }
 
 
@@ -1196,9 +1196,8 @@ void http_handleBreakers_GET(AsyncWebServerRequest *request){
     return;
   }
 
-  File file = configFS.open(filename);
-  request->send(file, (String)file.name(), F("application/json"), false, NULL);
-  file.close();
+  AsyncWebServerResponse *response = request->beginResponse(configFS, filename, F("application/json"));
+  request->send(response);
 }
 
 
@@ -1323,9 +1322,8 @@ void http_handleRelays_GET(AsyncWebServerRequest *request){
     return;
   }
 
-  File file = configFS.open(filename);
-  request->send(file, (String)file.name(), F("application/json"), false, NULL);
-  file.close();
+  AsyncWebServerResponse *response = request->beginResponse(configFS, filename, F("application/json"));
+  request->send(response);
 }
 
 
@@ -1448,9 +1446,8 @@ void http_handleColors_GET(AsyncWebServerRequest *request){
     return;
   }
 
-  File file = configFS.open(F("/colors"));
-  request->send(file, (String)file.name(), F("application/json"), false, NULL);
-  file.close();
+  AsyncWebServerResponse *response = request->beginResponse(configFS, F("/colors"), F("application/json"));
+  request->send(response);
 }
 
 
