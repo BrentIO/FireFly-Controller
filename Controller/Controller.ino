@@ -163,7 +163,7 @@ void setup() {
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
     WiFi.softAP(hostname);
-    log_i("Started SoftAP %s", WiFi.softAPSSID());
+    log_d("Started SoftAP %s", WiFi.softAPSSID());
   
     oled.setWiFiInfo(&WiFi);
 
@@ -176,7 +176,7 @@ void setup() {
     ESP32_W5500_setCallback_connected(&eventHandler_ethernetConnect);
     ESP32_W5500_setCallback_disconnected(&eventHandler_ethernetDisconnect);
 
-    log_i("Setting up Ethernet on W5500");
+    log_d("Setting up Ethernet on W5500");
 
     ETH.setHostname(hostname);
     esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
@@ -204,7 +204,7 @@ void setup() {
       }
     }
 
-    log_i("Ethernet IP: %s", ETH.localIP().toString().c_str());
+    log_d("Ethernet IP: %s", ETH.localIP().toString().c_str());
     oled.setEthernetInfo(&ETH);
 
   #endif
@@ -219,9 +219,9 @@ void setup() {
       oled.setProductID(externalEEPROM.data.product_id);
       oled.setUUID(externalEEPROM.data.uuid);
 
-      log_i("EEPROM UUID: %s", externalEEPROM.data.uuid);
-      log_i("EEPROM Product ID: %s", externalEEPROM.data.product_id);
-      log_i("EEPROM Key: %s", externalEEPROM.data.key);
+      log_d("EEPROM UUID: %s", externalEEPROM.data.uuid);
+      log_d("EEPROM Product ID: %s", externalEEPROM.data.product_id);
+      log_d("EEPROM Key: %s", externalEEPROM.data.key);
     }
 
 
@@ -321,7 +321,7 @@ void setup() {
       httpServer.begin();
       eventLog.createEvent(F("Web server started"));
 
-      log_i("HTTP server ready");
+      log_d("HTTP server ready");
     }
   #endif
 
@@ -329,7 +329,7 @@ void setup() {
 
     httpServer.begin();
     eventLog.createEvent(F("Web server started"));
-    log_i("HTTP server ready");
+    log_d("HTTP server ready");
 
   #endif
 
