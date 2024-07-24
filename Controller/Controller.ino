@@ -2190,6 +2190,7 @@ void setupIO(){
  */
 bool setup_outputs(String filename){
 
+  boolean isOK = true;
   StaticJsonDocument<112> filter;
 
   JsonObject filter_outputs__ = filter["outputs"].createNestedObject("*");
@@ -2220,6 +2221,7 @@ bool setup_outputs(String filename){
       strcat(buffer, output.key().c_str());
       strcat(buffer, " > max");
       eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+      isOK = false;
       continue;
     }
 
@@ -2229,6 +2231,7 @@ bool setup_outputs(String filename){
       strcat(buffer, output.key().c_str());
       strcat(buffer, " < 1");
       eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+      isOK = false;
       continue;
     }
 
@@ -2238,6 +2241,7 @@ bool setup_outputs(String filename){
       strcat(buffer, output.key().c_str());
       strcat(buffer, " no id");
       eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+      isOK = false;
       continue;
     }
 
@@ -2257,7 +2261,7 @@ bool setup_outputs(String filename){
     const char* output_value_icon = output.value()["icon"]; //TODO
   }
 
-  return true;
+  return isOK;
 }
 
 
@@ -2271,7 +2275,7 @@ bool setup_outputs(String filename){
  */
 bool setup_inputs(String filename){
 
-
+  boolean isOK = true;
   StaticJsonDocument<160> filter;
 
   JsonObject filter_ports = filter["ports"].createNestedObject("*");
@@ -2304,6 +2308,7 @@ bool setup_inputs(String filename){
       strcat(buffer, port.key().c_str());
       strcat(buffer, " > max");
       eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+      isOK = false;
       continue;
     }
 
@@ -2313,6 +2318,7 @@ bool setup_inputs(String filename){
       strcat(buffer, port.key().c_str());
       strcat(buffer, " < 1");
       eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+      isOK = false;
       continue;
     }
 
@@ -2328,6 +2334,7 @@ bool setup_inputs(String filename){
         strcat(buffer, port.key().c_str());
         strcat(buffer, " ch > max");
         eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+        isOK = false;
         continue;
       }
 
@@ -2353,7 +2360,7 @@ bool setup_inputs(String filename){
 
       for (JsonObject port_value_channel_value_action : port_value_channel.value()["actions"].as<JsonArray>()) {
 
-        bool isOK = false;
+        bool actionIsOK = false;
 
         inputAction newInputAction;
 
@@ -2361,27 +2368,27 @@ bool setup_inputs(String filename){
         
           if(strcmp(port_value_channel_value_action["action"], "INCREASE") == 0){
             newInputAction.action = INCREASE;
-            isOK = true;
+            actionIsOK = true;
           }
 
           if(strcmp(port_value_channel_value_action["action"], "INCREASE_MAXIMUM") == 0){
             newInputAction.action = INCREASE_MAXIMUM;
-            isOK = true;
+            actionIsOK = true;
           }
 
           if(strcmp(port_value_channel_value_action["action"], "DECREASE") == 0){
             newInputAction.action = DECREASE;
-            isOK = true;
+            actionIsOK = true;
           }
 
           if(strcmp(port_value_channel_value_action["action"], "DECREASE_MAXIMUM") == 0){
             newInputAction.action = DECREASE_MAXIMUM;
-            isOK = true;
+            actionIsOK = true;
           }
 
           if(strcmp(port_value_channel_value_action["action"], "TOGGLE") == 0){
             newInputAction.action = TOGGLE;
-            isOK = true;
+            actionIsOK = true;
           }
         }
 
@@ -2396,10 +2403,10 @@ bool setup_inputs(String filename){
         newInputAction.output = port_value_channel_value_action["output"].as<uint8_t>();
 
         if(newInputAction.output == 0){
-          isOK = false;
+          actionIsOK = false;
         }
 
-        if(isOK){
+        if(actionIsOK){
           inputPorts[atoi(port.key().c_str())-1].channels[i].actions.add(newInputAction);
         }else{
           char buffer[32]; 
@@ -2409,11 +2416,12 @@ bool setup_inputs(String filename){
           strcat(buffer, port_value_channel.key().c_str());
           strcat(buffer, "inv act");
           eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+          isOK = false;
         }
       }
 
       i++;
     }
   }
-  return true;
+  return isOK;
 }
