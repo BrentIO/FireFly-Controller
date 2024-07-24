@@ -508,7 +508,7 @@ void eventHandler_frontPanelButtonClosedAtBegin(){
 
     if(frontPanel.getButtonState() == managerFrontPanel::inputState::STATE_OPEN){
 
-      log_i("Front Panel button was released before confirmation timeout");
+      log_w("Front Panel button was released before confirmation timeout");
       return;
     }
 
