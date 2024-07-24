@@ -2120,7 +2120,7 @@ void eventHandler_otaFirmwareProgress(size_t progress, size_t size){
  * @param partition inherited from esp32FOTA library
 */
 void eventHandler_otaFirmwareFailed(int partition){
-  log_i("Failed partition: [%i]", partition);
+  log_e("Failed partition: [%i]", partition);
   eventLog.createEvent("OTA firmware failed", EventLog::LOG_LEVEL_NOTIFICATION);
 }
 
