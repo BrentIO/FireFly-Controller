@@ -2207,7 +2207,10 @@ bool setup_outputs(String filename){
   DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
 
   if (error) {
-    eventLog.createEvent(F("Err parse outputs JSON"), EventLog::LOG_LEVEL_ERROR);
+    char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out parse err %s", error.c_str());
+    log_e("%s", text);
+    eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return false;
   }
 
@@ -2216,31 +2219,28 @@ bool setup_outputs(String filename){
     int8_t outputPortNumber = atoi(output.key().c_str());
 
     if(outputPortNumber > (OUTPUT_CONTROLLER_COUNT * OUTPUT_CONTROLLER_COUNT_PINS)){
-      char buffer[32]; 
-      strcpy(buffer, "Err out ");
-      strcat(buffer, output.key().c_str());
-      strcat(buffer, " > max");
-      eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+      char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out prt %s > max", output.key().c_str());
+      log_e("%s", text);
+      eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
       isOK = false;
       continue;
     }
 
     if(outputPortNumber < 1){
-      char buffer[32]; 
-      strcpy(buffer, "Err out ");
-      strcat(buffer, output.key().c_str());
-      strcat(buffer, " < 1");
-      eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+      char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out prt %s < 1", output.key().c_str());
+      log_e("%s", text);
+      eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
       isOK = false;
       continue;
     }
 
     if(!output.value().containsKey("id")){
-      char buffer[32]; 
-      strcpy(buffer, "Err out ");
-      strcat(buffer, output.key().c_str());
-      strcat(buffer, " no id");
-      eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+      char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out prt %s no id", output.key().c_str());
+      log_e("%s", text);
+      eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
       isOK = false;
       continue;
     }
@@ -2296,28 +2296,29 @@ bool setup_inputs(String filename){
   file.close();
 
   if (error) {
-    eventLog.createEvent(F("Err parse ports JSON"), EventLog::LOG_LEVEL_ERROR);
+    char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, OLED_CHARACTERS_PER_LINE+1, "In parse err %s", error.c_str());
+    log_e("%s", text);
+    eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return false;
   }
 
   for (JsonPair port : doc["ports"].as<JsonObject>()) {
 
     if(atoi(port.key().c_str()) > (IO_EXTENDER_COUNT_PINS / IO_EXTENDER_COUNT_CHANNELS_PER_PORT) * IO_EXTENDER_COUNT){
-      char buffer[32]; 
-      strcpy(buffer, "Err prt ");
-      strcat(buffer, port.key().c_str());
-      strcat(buffer, " > max");
-      eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+      char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "In prt %s > max", port.key().c_str());
+      log_e("%s", text);
+      eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
       isOK = false;
       continue;
     }
 
     if(atoi(port.key().c_str()) < 1){
-      char buffer[32]; 
-      strcpy(buffer, "Err prt ");
-      strcat(buffer, port.key().c_str());
-      strcat(buffer, " < 1");
-      eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+      char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "In prt %s < 1", port.key().c_str());
+      log_e("%s", text);
+      eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
       isOK = false;
       continue;
     }
@@ -2329,11 +2330,10 @@ bool setup_inputs(String filename){
     for (JsonPair port_value_channel : port.value()["channels"].as<JsonObject>()){
 
       if(i > IO_EXTENDER_COUNT_CHANNELS_PER_PORT){
-        char buffer[32]; 
-        strcpy(buffer, "Err prt ");
-        strcat(buffer, port.key().c_str());
-        strcat(buffer, " ch > max");
-        eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+        char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+        snprintf(text, OLED_CHARACTERS_PER_LINE+1, "In prt %s ch > max", port.key().c_str());
+        log_e("%s", text);
+        eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
         isOK = false;
         continue;
       }
@@ -2409,13 +2409,10 @@ bool setup_inputs(String filename){
         if(actionIsOK){
           inputPorts[atoi(port.key().c_str())-1].channels[i].actions.add(newInputAction);
         }else{
-          char buffer[32]; 
-          strcpy(buffer, "In prt ");
-          strcat(buffer, port.key().c_str());
-          strcat(buffer, " ch ");
-          strcat(buffer, port_value_channel.key().c_str());
-          strcat(buffer, "inv act");
-          eventLog.createEvent(buffer, EventLog::LOG_LEVEL_ERROR);
+          char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+          snprintf(text, OLED_CHARACTERS_PER_LINE+1, "In prt %s ch %s inv act", port.key().c_str(), port_value_channel.key().c_str());
+          log_e("%s", text);
+          eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
           isOK = false;
         }
       }
