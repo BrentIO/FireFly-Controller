@@ -1189,6 +1189,12 @@ components:
           examples: 
             - First floor
           maxLength: 20
+        area:
+          type: string
+          description: Area where the controller is located
+          examples:
+            - Tech Room
+          maxLength: 20
         ports:
           $ref: '#/components/schemas/inputPort'
         outputs:
