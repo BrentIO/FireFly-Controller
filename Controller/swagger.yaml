@@ -1452,9 +1452,16 @@ components:
         - VARIABLE
       default: BINARY
     
+    relay_manufacturer:
+      type: string
+      description: Identifies the manufacturer of the relay
+      examples: 
+        - Crydom
+      maxLength: 20
+
     relay_model:
       type: string
-      description: Identifies the manufacturer and model of the relay
+      description: Identifies the model of the relay
       examples: 
         - DR2220D20U
       maxLength: 20
@@ -1470,6 +1477,8 @@ components:
           $ref: '#/components/schemas/amperage_fixture'
         type:
           $ref: '#/components/schemas/relay_type'
+        manufacturer:
+          $ref: '#/components/schemas/relay_manufacturer'
         model:
           $ref: '#/components/schemas/relay_model'
         breaker:
