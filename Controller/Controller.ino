@@ -2063,22 +2063,22 @@ void otaFirmware_checkPending(){
 
     bool updateSuccess = false;
 
-    if(otaFirmware_pending[i].url.startsWith("https")){
-      otaFirmware_pending[i].certificate = CONFIGFS_PATH_CERTS + (String)"/" + otaFirmware_pending[i].certificate;
-      otaFirmware.setRootCA(new CryptoFileAsset(otaFirmware_pending[i].certificate.c_str(), &configFS));
+    if(otaFirmware_pending.get(i).url.startsWith("https")){
+      otaFirmware_pending.get(i).certificate = CONFIGFS_PATH_CERTS + (String)"/" + otaFirmware_pending.get(i).certificate;
+      otaFirmware.setRootCA(new CryptoFileAsset(otaFirmware_pending.get(i).certificate.c_str(), &configFS));
     }
 
-    switch(otaFirmware_pending[i].type){
+    switch(otaFirmware_pending.get(i).type){
 
       case OTA_UPDATE_APP:
         eventLog.createEvent(F("OTA app forced"));
-        updateSuccess = otaFirmware.forceUpdate(otaFirmware_pending[i].url.c_str(), false);
+        updateSuccess = otaFirmware.forceUpdate(otaFirmware_pending.get(i).url.c_str(), false);
         break;
 
 
       case OTA_UPDATE_SPIFFS:
         eventLog.createEvent(F("OTA SPIFFS forced"));
-        updateSuccess = otaFirmware.forceUpdateSPIFFS(otaFirmware_pending[i].url.c_str(), false);
+        updateSuccess = otaFirmware.forceUpdateSPIFFS(otaFirmware_pending.get(i).url.c_str(), false);
         break;
     }
 
