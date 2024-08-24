@@ -355,8 +355,6 @@ void setup() {
 */
 void loop() {
 
-  /** CHECK NTP HERE */
-
   #if WIFI_MODEL != ENUM_WIFI_MODEL_ESP32 //Ignore when in SoftAP mode
     updateNTPTime();
 
@@ -2191,7 +2189,6 @@ void setupIO(){
 }
 
 
-
 /***
  * Sets up the outputs from the JSON document stored on ConfigFS.
  * 
@@ -2277,7 +2274,6 @@ bool setup_outputs(String filename){
 
   return isOK;
 }
-
 
 
 /***
