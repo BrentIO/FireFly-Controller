@@ -333,6 +333,11 @@
     #endif
 
 
+    #ifndef MQTT_RECONNECT_WAIT_MILLISECONDS
+        #define MQTT_RECONNECT_WAIT_MILLISECONDS 5000 /* Number of milliseconds to wait between MQTT reconnect attempts */
+    #endif
+
+
     /* Check to ensure configuration is acceptable */
     #ifndef IO_EXTENDER_MODEL
         #error IO_EXTENDER_MODEL not set

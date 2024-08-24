@@ -26,6 +26,7 @@
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include <esp32FOTA.hpp>
+#include "common/extendedPubSubClient.h"
 
 unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
 AsyncWebServer httpServer(80);
@@ -36,6 +37,13 @@ managerInputs inputs; /* Inputs collection */
 nsOutputs::managerOutputs outputs; /* Outputs collection */
 managerTemperatureSensors temperatureSensors; /* Temperature sensors */
 authorizationToken authToken;
+
+#if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+  WiFiClient ethClient;
+#endif
+
+exPubSubClient mqttClient(ethClient);
+LinkedList<const char*> mqttSubscriptions;
 
 #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
   WiFiUDP wifiNtpUdp;
@@ -333,9 +341,7 @@ void setup() {
 
   #endif
 
-  /*****
-   * SETUP MQTT HERE
-   */
+  setupMQTT();
 
   setupIO();
 
@@ -374,6 +380,10 @@ void loop() {
   frontPanel.loop();
   inputs.loop();
   temperatureSensors.loop();
+
+  if(!mqttClient.loop()){
+    mqtt_reconnect();
+  };
 
 }
 
@@ -2259,6 +2269,10 @@ bool setup_outputs(String filename){
 
     const char* output_value_area = output.value()["area"]; //TODO
     const char* output_value_icon = output.value()["icon"]; //TODO
+
+    char* subscriptionName = new char[8 + OUTPUT_ID_MAXIMUM_LENGTH + 1]; // "FireFly/" + output ID + 1
+    snprintf(subscriptionName, 8 + OUTPUT_ID_MAXIMUM_LENGTH + 1, "FireFly/%s", output.value()["id"].as<const char*>());
+    mqttSubscriptions.add(subscriptionName);
   }
 
   return isOK;
@@ -2421,4 +2435,141 @@ bool setup_inputs(String filename){
     }
   }
   return isOK;
+}}
+
+
+/***
+ * Attempts to reconnect to MQTT.  If the reconnect is not successful, the process will sleep until the timer elapses.
+ * 
+ */
+void mqtt_reconnect(){
+
+  //TO DO: GET CREDENTIALS FROM SOMEWHERE
+
+  if((esp_timer_get_time() - mqttClient.lastReconnectAttemptTime) / 1000  > MQTT_RECONNECT_WAIT_MILLISECONDS || mqttClient.lastReconnectAttemptTime == 0){
+
+    if(!mqttClient.connected()){
+      mqttClient.setServer("svkorl019.lan.monorailyellow.com", 1883);   //DEBUG ONLY
+
+      if(mqttClient.connect(externalEEPROM.data.uuid, "debug", "debug", mqttClient.topic_availability, 2, true, "offline")){     
+        mqttClient.lastReconnectAttemptTime = 0;
+        return;
+      }
+
+      mqttClient.lastReconnectAttemptTime = esp_timer_get_time();
+    }
+  }
 }
+
+
+/***
+ * Sets up the MQTT client for use
+ */
+void setupMQTT(){
+
+  #ifndef MQTT_TOPIC_AVAILABILITY_LENGTH
+    #define MQTT_TOPIC_AVAILABILITY_LENGTH 58
+  #endif
+
+  char *topic_availability = new char[MQTT_TOPIC_AVAILABILITY_LENGTH+1];
+  snprintf(topic_availability, MQTT_TOPIC_AVAILABILITY_LENGTH, "FireFly/%s/availability", externalEEPROM.data.uuid);
+  mqttClient.topic_availability = topic_availability;
+  mqttClient.setCallback(eventHandler_mqttMessageReceived);
+  mqttClient.setCallback_Connect(eventHandler_mqttConnect);
+  mqttClient.setCallback_Disconnect(eventHandler_mqttDisconnect);
+}
+
+
+/***
+ * Handles MQTT message received events for subscribed topics
+ */
+void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length)
+{
+
+  String payload = "";
+ 
+  for (unsigned int i = 0; i < length; i++) {
+    payload = String(payload + (char)pl[i]);
+  }
+
+  payload.trim();
+
+  log_i("\n=======================\nMQTT message arrived!\nTopic: [%s]\nPayload: [%s]\n=======================", topic, payload.c_str());
+}
+
+
+/**
+ * Handles MQTT connection events
+ */
+void eventHandler_mqttConnect(){
+  eventLog.createEvent("MQTT connected");
+  eventLog.resolveError("MQTT disconnected");
+  mqttClient.publish(mqttClient.topic_availability, "online", true);
+
+  for(int i=0; i < mqttSubscriptions.size(); i++){
+    if(mqttClient.subscribe(mqttSubscriptions.get(i))){
+      log_v("Subscribed to %s", mqttSubscriptions.get(i));
+    }
+  }
+}
+
+
+/**
+ * Handles MQTT disconnect events
+ */
+void eventHandler_mqttDisconnect(int8_t errorNumber){
+  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+
+  switch(errorNumber){
+
+    case -4:
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT conn timeout");
+      break;
+
+    case -3:
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT conn lost");
+      break;
+
+    case -2:
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT conn fail");
+      break;
+
+    case -1:
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT conn disconnect");
+      break;
+
+    case 0:
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT connected");
+      break;
+
+    case 1:
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT bad protocol");
+      break;
+
+    case 2:
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT bad client ID");
+      break;
+
+    case 3:
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT unavailable");
+      break;
+
+    case 4:
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT bad creds");
+      break;
+
+    case 5:
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT unauthorized");
+      break;
+
+    default:
+      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Unknown MQTT state");
+      break;
+  }
+
+  log_v("%s", text);
+  eventLog.createEvent(text);
+  eventLog.createEvent("MQTT disconnected", EventLog::LOG_LEVEL_NOTIFICATION);
+}
+
+
