@@ -1311,7 +1311,7 @@ components:
           id:
             type: string
             description: A unique short ID for the output, used for addressing the device over MQTT
-            maxLength: 8
+            maxLength: 8    #Maximum length relates to hardware.h -> OUTPUT_ID_MAX_LENGTH
             pattern: ^[A-Za-z0-9]+$
           area:
             type: string

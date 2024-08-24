@@ -338,6 +338,11 @@
     #endif
 
 
+    #ifndef OUTPUT_ID_MAXIMUM_LENGTH
+        #define OUTPUT_ID_MAXIMUM_LENGTH 8 /* Defined by the controller -> outputs -> ID length in the Swagger document */
+    #endif
+
+
     /* Check to ensure configuration is acceptable */
     #ifndef IO_EXTENDER_MODEL
         #error IO_EXTENDER_MODEL not set
