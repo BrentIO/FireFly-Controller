@@ -218,102 +218,102 @@ void setup() {
   #endif
 
 
-    /* Start external EEPROM */
-    externalEEPROM.setCallback_failure(&failureHandler_eeprom);
-    externalEEPROM.begin();
+  /* Start external EEPROM */
+  externalEEPROM.setCallback_failure(&failureHandler_eeprom);
+  externalEEPROM.begin();
 
-    if(externalEEPROM.enabled == true){
+  if(externalEEPROM.enabled == true){
 
-      oled.setProductID(externalEEPROM.data.product_id);
-      oled.setUUID(externalEEPROM.data.uuid);
+    oled.setProductID(externalEEPROM.data.product_id);
+    oled.setUUID(externalEEPROM.data.uuid);
 
-      log_d("EEPROM UUID: %s", externalEEPROM.data.uuid);
-      log_d("EEPROM Product ID: %s", externalEEPROM.data.product_id);
-      log_d("EEPROM Key: %s", externalEEPROM.data.key);
-    }
-
-
-    /* Start inputs */
-    inputs.setCallback_failure(&failureHandler_inputs);
-    inputs.setCallback_publisher(&eventHandler_inputs);
-    inputs.begin();
+    log_d("EEPROM UUID: %s", externalEEPROM.data.uuid);
+    log_d("EEPROM Product ID: %s", externalEEPROM.data.product_id);
+    log_d("EEPROM Key: %s", externalEEPROM.data.key);
+  }
 
 
-    /* Start outputs */
-    outputs.setCallback_failure(&failureHandler_outputs);
-    outputs.begin();
+  /* Start inputs */
+  inputs.setCallback_failure(&failureHandler_inputs);
+  inputs.setCallback_publisher(&eventHandler_inputs);
+  inputs.begin();
 
 
-    /* Start temperature sensors */
-    temperatureSensors.setCallback_publisher(&eventHandler_temperature);
-    temperatureSensors.setCallback_failure(&failureHandler_temperatureSensors);
-    temperatureSensors.begin();
+  /* Start outputs */
+  outputs.setCallback_failure(&failureHandler_outputs);
+  outputs.begin();
 
 
-    /* Start LittleFS for www */
-    if (wwwFS.begin(false, "/wwwFS", (uint8_t)10U, "www"))
-    {
-      wwwFS_isMounted = true;
-    }
-    else{
-      eventLog.createEvent(F("wwwFS mount fail"), EventLog::LOG_LEVEL_ERROR);
-      log_e("An Error has occurred while mounting www");
-    }
+  /* Start temperature sensors */
+  temperatureSensors.setCallback_publisher(&eventHandler_temperature);
+  temperatureSensors.setCallback_failure(&failureHandler_temperatureSensors);
+  temperatureSensors.begin();
 
 
-    /* Start LittleFS for config */
-    if (configFS.begin(false, "/configFS", (uint8_t)10U, "config"))
-    {
-      configFS_isMounted = true;
-    }
-    else{
-      eventLog.createEvent(F("configFS mount fail"), EventLog::LOG_LEVEL_ERROR);
-      log_e("An Error has occurred while mounting configFS");
-    }
+  /* Start LittleFS for www */
+  if (wwwFS.begin(false, "/wwwFS", (uint8_t)10U, "www"))
+  {
+    wwwFS_isMounted = true;
+  }
+  else{
+    eventLog.createEvent(F("wwwFS mount fail"), EventLog::LOG_LEVEL_ERROR);
+    log_e("An Error has occurred while mounting www");
+  }
 
-    /* Configure the web server.  
-      IMPORTANT: *** Sequence below matters, they are sorted specific to generic *** 
-    */
 
-    httpServer.on("/api/version", http_handleVersion);
-    httpServer.on("/api/events", http_handleEventLog);
-    httpServer.on("/api/errors", http_handleErrorLog);
-    httpServer.on("/auth", http_handleAuth);
-    httpServer.on("/files", http_handleFileList_GET);
+  /* Start LittleFS for config */
+  if (configFS.begin(false, "/configFS", (uint8_t)10U, "config"))
+  {
+    configFS_isMounted = true;
+  }
+  else{
+    eventLog.createEvent(F("configFS mount fail"), EventLog::LOG_LEVEL_ERROR);
+    log_e("An Error has occurred while mounting configFS");
+  }
 
-    if(configFS_isMounted){
-      httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers_PUT, 65536,65535));
-      httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/breakers", http_handleBreakers_PUT));
-      httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/relays", http_handleRelays_PUT));
-      httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/colors", http_handleColors_PUT));
-      httpServer.on("^\/api/controllers$", ASYNC_HTTP_GET, http_handleListControllers);
-      httpServer.on("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers);
-      httpServer.on("/api/breakers", http_handleBreakers);
-      httpServer.on("/api/relays", http_handleRelays);
-      httpServer.on("/api/colors", http_handleColors);
-      httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
-      httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
-      httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
-      httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced));
-      httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota", http_handleOTA_POST));
-      httpServer.on("^\/api\/ota$", http_handleOTA);
-      setup_OtaFirmware();
-    }else{
-      log_e("configFS is not mounted");
-      httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_configFSNotMunted);
-      httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_configFSNotMunted);
-      httpServer.on("/api/ota", http_configFSNotMunted);
-      httpServer.on("/api/controllers", http_configFSNotMunted);
-      httpServer.on("/api/breakers", http_configFSNotMunted);
-      httpServer.on("/api/relays", http_configFSNotMunted);
-      httpServer.on("/api/colors", http_configFSNotMunted);
-    }
+  /* Configure the web server.  
+    IMPORTANT: *** Sequence below matters, they are sorted specific to generic *** 
+  */
 
-    if(wwwFS_isMounted){
-      httpServer.serveStatic("/", wwwFS, "/");
-      httpServer.rewrite("/ui/version", "/version.json");
-      httpServer.rewrite("/", "/index.html");
-    }
+  httpServer.on("/api/version", http_handleVersion);
+  httpServer.on("/api/events", http_handleEventLog);
+  httpServer.on("/api/errors", http_handleErrorLog);
+  httpServer.on("/auth", http_handleAuth);
+  httpServer.on("/files", http_handleFileList_GET);
+
+  if(configFS_isMounted){
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers_PUT, 65536,65535));
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/breakers", http_handleBreakers_PUT));
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/relays", http_handleRelays_PUT));
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/colors", http_handleColors_PUT));
+    httpServer.on("^\/api/controllers$", ASYNC_HTTP_GET, http_handleListControllers);
+    httpServer.on("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers);
+    httpServer.on("/api/breakers", http_handleBreakers);
+    httpServer.on("/api/relays", http_handleRelays);
+    httpServer.on("/api/colors", http_handleColors);
+    httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
+    httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced));
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota", http_handleOTA_POST));
+    httpServer.on("^\/api\/ota$", http_handleOTA);
+    setup_OtaFirmware();
+  }else{
+    log_e("configFS is not mounted");
+    httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_configFSNotMunted);
+    httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_configFSNotMunted);
+    httpServer.on("/api/ota", http_configFSNotMunted);
+    httpServer.on("/api/controllers", http_configFSNotMunted);
+    httpServer.on("/api/breakers", http_configFSNotMunted);
+    httpServer.on("/api/relays", http_configFSNotMunted);
+    httpServer.on("/api/colors", http_configFSNotMunted);
+  }
+
+  if(wwwFS_isMounted){
+    httpServer.serveStatic("/", wwwFS, "/");
+    httpServer.rewrite("/ui/version", "/version.json");
+    httpServer.rewrite("/", "/index.html");
+  }
 
   httpServer.onNotFound(http_notFound);
 
