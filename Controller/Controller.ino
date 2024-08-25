@@ -23,6 +23,7 @@
 #include "common/otaConfig.h"
 #include <ArduinoJson.h>
 #include "AsyncJson.h"
+#include <StreamUtils.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include <esp32FOTA.hpp>
