@@ -2270,12 +2270,80 @@ bool setup_outputs(String filename){
       outputs.enablePort(outputPortNumber, output.value()["enabled"].as<boolean>());
     }
 
-    const char* output_value_area = output.value()["area"]; //TODO
-    const char* output_value_icon = output.value()["icon"]; //TODO
+    char* devicePlatform = new char[WORD_LENGTH_INTEGRATION];
+    strcpy(devicePlatform,"switch"); //Default
 
-    char* subscriptionName = new char[MQTT_TOPIC_OUTPUT_SET_LENGTH + 1];
-    snprintf(subscriptionName, MQTT_TOPIC_OUTPUT_SET_LENGTH + 1, output.value()["id"].as<const char*>());
-    mqttSubscriptions.add(subscriptionName);
+    if(output.value().containsKey("icon")){
+
+      if(output.value()["icon"].as<String>().indexOf("light") != -1){
+        strcpy(devicePlatform,"light");
+      }
+
+      if(output.value()["icon"].as<String>().indexOf("sconce") != -1){
+        strcpy(devicePlatform,"light");
+      }
+
+      if(output.value()["icon"].as<String>().indexOf("lamp") != -1){
+        strcpy(devicePlatform,"light");
+      }
+
+      if(output.value()["icon"].as<String>().indexOf("fan") != -1){
+        strcpy(devicePlatform,"fan");
+      }
+    }
+
+    DynamicJsonDocument mqttDoc(1024);
+
+    char* autodiscovery_topic = new char[MQTT_TOPIC_OUTPUT_AUTO_DISCOVERY_LENGTH+1];
+    snprintf(autodiscovery_topic, MQTT_TOPIC_OUTPUT_AUTO_DISCOVERY_LENGTH+1, MQTT_TOPIC_OUTPUT_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, devicePlatform, output.value()["id"].as<const char*>());
+
+    char* unique_id = new char[MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+    snprintf(unique_id, MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1, MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, output.value()["id"].as<const char*>());
+
+    char* state_topic = new char[MQTT_TOPIC_OUTPUT_STATE_LENGTH+1];
+    snprintf(state_topic, MQTT_TOPIC_OUTPUT_STATE_LENGTH+1, MQTT_TOPIC_OUTPUT_STATE_PATTERN, output.value()["id"].as<const char*>());
+
+    char* command_topic = new char[MQTT_TOPIC_OUTPUT_SET_LENGTH+1];
+    snprintf(command_topic, MQTT_TOPIC_OUTPUT_SET_LENGTH+1, MQTT_TOPIC_OUTPUT_SET_PATTERN, output.value()["id"].as<const char*>());
+
+    if(output.value().containsKey("name")){
+      mqttDoc["name"] = output.value()["name"].as<const char*>();
+    }
+    mqttDoc["unique_id"] = unique_id;
+    mqttDoc["object_id"] = unique_id;
+    if(output.value().containsKey("icon")){
+        mqttDoc["icon"] = output.value()["icon"].as<const char*>();
+    }
+
+    JsonObject device = mqttDoc.createNestedObject("device");
+    JsonArray identifiers = device.createNestedArray("identifiers");
+    identifiers.add(unique_id);
+
+    device["name"] =  "NAME TODO";
+    device["manufacturer"] = "MFG TO DO";
+    device["model"] = "MODEL TO DO";
+    device["via_device"] = externalEEPROM.data.uuid;
+
+    if(output.value().containsKey("area")){
+      device["suggested_area"] =  output.value()["area"].as<const char*>();
+    }
+    mqttDoc["state_topic"] = state_topic;
+    mqttDoc["command_topic"] = command_topic;
+    mqttDoc["availability_topic"] = mqttClient.topic_availability;
+
+    log_i("\nConnected? %s", mqttClient.connected() ? "true":"false");
+    log_i("autodiscovery_topic: %s", autodiscovery_topic);
+
+    mqttClient.beginPublish(autodiscovery_topic, measureJson(mqttDoc), true);
+    BufferingPrint bufferedClient(mqttClient, 32);
+    serializeJson(mqttDoc, bufferedClient);
+    bufferedClient.flush();
+    mqttClient.endPublish();
+
+    serializeJsonPretty(mqttDoc, Serial);
+
+
+    mqttSubscriptions.add(command_topic);
   }
 
   return isOK;
