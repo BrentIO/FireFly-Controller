@@ -117,7 +117,7 @@ struct inputChannel{
  */
 struct inputPort{
   /// @brief The human-readable ID of the input port
-  char id[PORT_ID_MAX_LENGTH];
+  char id[PORT_ID_MAX_LENGTH + 1];
   inputChannel channels[IO_EXTENDER_COUNT_CHANNELS_PER_PORT];
 };
 
