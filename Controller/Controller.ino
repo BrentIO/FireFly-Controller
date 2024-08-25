@@ -2272,8 +2272,8 @@ bool setup_outputs(String filename){
     const char* output_value_area = output.value()["area"]; //TODO
     const char* output_value_icon = output.value()["icon"]; //TODO
 
-    char* subscriptionName = new char[8 + OUTPUT_ID_MAXIMUM_LENGTH + 1]; // "FireFly/" + output ID + 1
-    snprintf(subscriptionName, 8 + OUTPUT_ID_MAXIMUM_LENGTH + 1, "FireFly/%s", output.value()["id"].as<const char*>());
+    char* subscriptionName = new char[MQTT_TOPIC_OUTPUT_SET_LENGTH + 1];
+    snprintf(subscriptionName, MQTT_TOPIC_OUTPUT_SET_LENGTH + 1, output.value()["id"].as<const char*>());
     mqttSubscriptions.add(subscriptionName);
   }
 
