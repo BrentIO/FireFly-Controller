@@ -2575,7 +2575,7 @@ void eventHandler_mqttDisconnect(int8_t errorNumber){
 
   log_v("%s", text);
   eventLog.createEvent(text);
-  eventLog.createEvent("MQTT disconnected", EventLog::LOG_LEVEL_NOTIFICATION);
+  eventLog.createEvent("MQTT disconnected", EventLog::LOG_LEVEL_ERROR);
 }
 
 
