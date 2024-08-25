@@ -391,12 +391,17 @@ void loop() {
 */
 void eventHandler_temperature(char* location, float value){
 
-  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-  snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Temp: %.2f", value);
-  eventLog.createEvent(text);
+  char* temperature = new char[6];
+  snprintf(temperature, 6, "%.2f", value);
 
-  //TODO: Add MQTT and stuff
+  char *oledText = new char[OLED_CHARACTERS_PER_LINE+1];
+  snprintf(oledText, OLED_CHARACTERS_PER_LINE+1, "Temp: %s", temperature);
+  eventLog.createEvent(oledText);
 
+  char* topic = new char[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
+  snprintf(topic, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, externalEEPROM.data.uuid, location);
+
+  mqttClient.publish(topic, temperature);
 };
 
 
