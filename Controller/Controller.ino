@@ -485,7 +485,7 @@ nsOutputs::set_result actionOutputPort(uint8_t port, outputAction action){
       break;
   }
 
-  char* id = new char[OUTPUT_ID_MAX_LENGTH];
+  char* id = new char[OUTPUT_ID_MAX_LENGTH + 1];
   outputs.getPortId(port, id);
 
   log_i("[Simulated MQTT Message] output id %s (%i) now has value of %i and function return value %i", id, port, outputs.getPortValue(port), returnValue);
