@@ -18,9 +18,15 @@
 
     #define MQTT_TOPIC_INPUT_STATE_PATTERN WORD_FIREFLY_SLASH "%s/state"           //%s = Input ID
     #define MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + INPUT_ID_MAX_LENGTH + WORD_LENGTH_STATE
+    
     #define MQTT_TOPIC_OUTPUT_SET_PATTERN WORD_FIREFLY_SLASH "%s/set"              //%s = Output ID
     #define MQTT_TOPIC_OUTPUT_SET_LENGTH WORD_LENGTH_FIREFLY + OUTPUT_ID_MAX_LENGTH + WORD_LENGTH_SET    // "FireFly/" + output ID + "/set"
     #define MQTT_TOPIC_OUTPUT_STATE_PATTERN WORD_FIREFLY_SLASH "%s/state"          //%s = Output ID
+    #define MQTT_TOPIC_OUTPUT_STATE_LENGTH WORD_LENGTH_FIREFLY + OUTPUT_ID_MAX_LENGTH + WORD_LENGTH_STATE // "FireFly/" + output ID + "/state"
+    #define MQTT_TOPIC_OUTPUT_AUTO_DISCOVERY_PATTERN "%s/%s/%s/config"  //%s = Home Assistant root topic (defaults to "homeassistant"), %s = device platform (light/fan/switch/etc), %s = output ID
+    #define MQTT_TOPIC_OUTPUT_AUTO_DISCOVERY_LENGTH WORD_LENGTH_AUTODISCOVERY_ROOT + WORD_LENGTH_INTEGRATION + 1 + OUTPUT_ID_MAX_LENGTH + WORD_LENGTH_CONFIG
+    #define MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s"       //%s = output ID
+    #define MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + OUTPUT_ID_MAX_LENGTH
 
 
     /***************** CONTROLLER PERIPHERAL TOPICS *****************/
