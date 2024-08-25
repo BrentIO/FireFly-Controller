@@ -2464,12 +2464,16 @@ void mqtt_reconnect(){
  */
 void setupMQTT(){
 
-  char *topic_availability = new char[MQTT_TOPIC_AVAILABILITY_LENGTH+1];
-  snprintf(topic_availability, MQTT_TOPIC_AVAILABILITY_LENGTH, "FireFly/%s/availability", externalEEPROM.data.uuid);
+  char *topic_availability = new char[MQTT_TOPIC_CONTROLLER_AVAILABILITY_LENGTH+1];
+  snprintf(topic_availability, MQTT_TOPIC_CONTROLLER_AVAILABILITY_LENGTH+1, MQTT_TOPIC_CONTROLLER_AVAILABILITY_PATTERN, externalEEPROM.data.uuid);
   mqttClient.topic_availability = topic_availability;
   mqttClient.setCallback(eventHandler_mqttMessageReceived);
   mqttClient.setCallback_Connect(eventHandler_mqttConnect);
   mqttClient.setCallback_Disconnect(eventHandler_mqttDisconnect);
+
+  //mqttClient.autoDiscovery.setHomeAssistantRoot("abcdefghijklmnopqrstuvwx");   //TODO: Set if it is defined in the config file
+  //mqttClient.autoDiscovery.setDeviceName("First Floor");      //TODO: Set if it is defined in the config file
+  //mqttClient.autoDiscovery.setSuggestedArea("Basement");      //TODO: Set if it is defined in the config file
 }
 
 
@@ -2503,6 +2507,11 @@ void eventHandler_mqttConnect(){
     if(mqttClient.subscribe(mqttSubscriptions.get(i))){
       log_v("Subscribed to %s", mqttSubscriptions.get(i));
     }
+  }
+
+  if(!mqttClient.autoDiscovery.sent){
+    mqtt_autoDiscovery_temperature();
+    mqttClient.autoDiscovery.sent = true;
   }
 }
 
@@ -2566,3 +2575,57 @@ void eventHandler_mqttDisconnect(int8_t errorNumber){
 }
 
 
+/**
+ * Handles temperature sensor auto discovery broadcasts
+ */
+void mqtt_autoDiscovery_temperature(){
+
+  for(int i = 0; i < TEMPERATURE_SENSOR_COUNT; i++){
+
+    char* sensorLocation = temperatureSensors.getSensorLocation(i);
+
+    DynamicJsonDocument doc(1024);
+
+    char* topic = new char[MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_LENGTH+1];
+    snprintf(topic, MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_LENGTH+1, MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid, sensorLocation);
+
+    char* unique_id = new char[MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+    snprintf(unique_id, MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1, MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid, sensorLocation);
+
+    char* state_topic = new char[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
+    snprintf(state_topic, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, externalEEPROM.data.uuid, sensorLocation);
+
+    doc["name"] = sensorLocation;
+    doc["unique_id"] = unique_id;
+    doc["object_id"] = unique_id;
+    doc["icon"] = "mdi:thermometer";
+    doc["device_class"] = "temperature";
+    doc["unit_of_measurement"] = "°C";
+
+    JsonObject device = doc.createNestedObject("device");
+    JsonArray identifiers = device.createNestedArray("identifiers");
+    identifiers.add(externalEEPROM.data.uuid);
+
+    if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
+          device["name"] =  mqttClient.autoDiscovery.deviceName;
+    }
+
+    device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
+    device["model"] = externalEEPROM.data.product_id;
+    device["serial_number"] = externalEEPROM.data.uuid;
+    device["sw_version"] = VERSION;
+
+    if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
+          device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
+    }
+
+    doc["state_topic"] = state_topic;
+    doc["availability_topic"] = mqttClient.topic_availability;
+
+    mqttClient.beginPublish(topic, measureJson(doc), true);
+    BufferingPrint bufferedClient(mqttClient, 32);
+    serializeJson(doc, bufferedClient);
+    bufferedClient.flush();
+    mqttClient.endPublish();
+  }
+}
