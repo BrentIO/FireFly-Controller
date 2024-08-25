@@ -2483,6 +2483,10 @@ void setupMQTT(){
 void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length)
 {
 
+  if(length > 10){
+    return; //Protect from abusive messages
+  }
+
   String payload = "";
  
   for (unsigned int i = 0; i < length; i++) {
