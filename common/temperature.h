@@ -278,4 +278,12 @@ class managerTemperatureSensors{
                 }
             }
         };
+
+        /**
+         * Retrieves the sensor location name from the index
+         * @param index the position in the temperature sensor array
+         */
+        char* getSensorLocation(uint8_t index){
+            return this->temperatureSensors[index].location;
+        }
 };
