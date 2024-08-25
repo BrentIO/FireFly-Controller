@@ -1188,13 +1188,13 @@ components:
           description: Human-friendly name of the controller
           examples: 
             - First floor
-          maxLength: 20
+          maxLength: 20 #Maximum length relates to hardware.h -> CONTROLLER_NAME_MAX_LENGTH
         area:
           type: string
           description: Area where the controller is located
           examples:
             - Tech Room
-          maxLength: 20
+          maxLength: 20 #Maximum length relates to hardware.h -> CONTROLLER_AREA_MAX_LENGTH
         ports:
           $ref: '#/components/schemas/inputPort'
         outputs:
@@ -1220,7 +1220,7 @@ components:
           id:
             type: string
             description: A short ID for the input, used for addressing the device over MQTT.  When an input spans multiple input ports (such as a switch with 6 buttons), the same ID should be used across both input ports
-            maxLength: 8
+            maxLength: 8 #Maximum length relates to hardware.h -> PORT_ID_MAX_LENGTH
             pattern: ^[A-Za-z0-9]+$
           channels:
             type: object

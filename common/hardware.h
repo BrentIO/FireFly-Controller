@@ -49,6 +49,7 @@
         #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
         #define TEMPERATURE_SENSOR_COUNT 1 /* The number of temperature sensors */
         #define TEMPERATURE_SENSOR_ADDRESSES {0x48} /* I2C addresses of the on-board temperature sensors */
+        #define TEMPERATURE_SENSOR_LOCATIONS {"Center"} /* Temperature locations as an array, maximum string length = 8 */
 
         /* OLED Display and Button */
         #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32 /* OLED display model */
@@ -91,6 +92,7 @@
         #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
         #define TEMPERATURE_SENSOR_COUNT 1 /* The number of temperature sensors */
         #define TEMPERATURE_SENSOR_ADDRESSES {0x48} /* I2C addresses of the on-board temperature sensors */
+        #define TEMPERATURE_SENSOR_LOCATIONS {"Center"} /* Temperature locations as an array, maximum string length = 8 */
 
         /* OLED Display and Button */
         #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32 /* OLED display model */
@@ -134,6 +136,7 @@
         #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
         #define TEMPERATURE_SENSOR_COUNT 1 /* The number of temperature sensors */
         #define TEMPERATURE_SENSOR_ADDRESSES {0x48} /* I2C addresses of the on-board temperature sensors */
+        #define TEMPERATURE_SENSOR_LOCATIONS {"Center"} /* Temperature locations as an array, maximum string length = 8 */
 
         /* OLED Display and Button */
         #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32 /* OLED display model */
@@ -321,12 +324,12 @@
 
 
     #ifndef PORT_ID_MAX_LENGTH
-        #define PORT_ID_MAX_LENGTH 9 /* Maximum number of characters in a port's ID; must match Swagger + 1 for null termination */
+        #define PORT_ID_MAX_LENGTH 8 /* Maximum number of characters in a port's ID; must match Swagger */
     #endif
 
 
     #ifndef OUTPUT_ID_MAX_LENGTH
-        #define OUTPUT_ID_MAX_LENGTH 9 /* Maximum number of characters in an output's ID; must match Swagger + 1 for null termination */
+        #define OUTPUT_ID_MAX_LENGTH 8 /* Maximum number of characters in an output's ID; must match Swagger */
     #endif
 
 
@@ -335,8 +338,18 @@
     #endif
 
 
-    #ifndef OUTPUT_ID_MAXIMUM_LENGTH
-        #define OUTPUT_ID_MAXIMUM_LENGTH 8 /* Defined by the controller -> outputs -> ID length in the Swagger document */
+    #ifndef HARDWARE_MANUFACTURER_NAME
+        #define HARDWARE_MANUFACTURER_NAME "P5 Software LLC"
+    #endif
+
+
+    #ifndef CONTROLLER_NAME_MAX_LENGTH
+        #define CONTROLLER_NAME_MAX_LENGTH 20 /* Maximum number of characters in a controller's device name; must match Swagger */
+    #endif
+
+
+    #ifndef CONTROLLER_AREA_MAX_LENGTH
+        #define CONTROLLER_AREA_MAX_LENGTH 20 /* Maximum number of characters in a controller's area; must match Swagger */
     #endif
 
 
