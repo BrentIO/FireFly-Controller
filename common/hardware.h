@@ -49,7 +49,6 @@
         #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
         #define TEMPERATURE_SENSOR_COUNT 1 /* The number of temperature sensors */
         #define TEMPERATURE_SENSOR_ADDRESSES {0x48} /* I2C addresses of the on-board temperature sensors */
-        #define TEMPERATURE_SENSOR_LOCATIONS {"CENTER"}
 
         /* OLED Display and Button */
         #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32 /* OLED display model */
@@ -92,7 +91,6 @@
         #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
         #define TEMPERATURE_SENSOR_COUNT 1 /* The number of temperature sensors */
         #define TEMPERATURE_SENSOR_ADDRESSES {0x48} /* I2C addresses of the on-board temperature sensors */
-        #define TEMPERATURE_SENSOR_LOCATIONS {"CENTER"}
 
         /* OLED Display and Button */
         #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32 /* OLED display model */
@@ -136,7 +134,6 @@
         #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
         #define TEMPERATURE_SENSOR_COUNT 1 /* The number of temperature sensors */
         #define TEMPERATURE_SENSOR_ADDRESSES {0x48} /* I2C addresses of the on-board temperature sensors */
-        #define TEMPERATURE_SENSOR_LOCATIONS {"CENTER"}
 
         /* OLED Display and Button */
         #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32 /* OLED display model */
