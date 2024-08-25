@@ -3,6 +3,12 @@
 
     #include <PubSubClient.h>
 
+    /***************** CONTROLLER AVAILABILITY TOPICS *****************/
+
+    #define MQTT_TOPIC_CONTROLLER_AVAILABILITY_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + WORD_LENGTH_AVAILABILITY
+    #define MQTT_TOPIC_CONTROLLER_AVAILABILITY_PATTERN WORD_FIREFLY_SLASH "%s/availability"    //%s = Controller UUID
+
+
     class exPubSubClient : public PubSubClient
     {           
 

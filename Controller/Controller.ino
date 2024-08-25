@@ -2464,10 +2464,6 @@ void mqtt_reconnect(){
  */
 void setupMQTT(){
 
-  #ifndef MQTT_TOPIC_AVAILABILITY_LENGTH
-    #define MQTT_TOPIC_AVAILABILITY_LENGTH 58
-  #endif
-
   char *topic_availability = new char[MQTT_TOPIC_AVAILABILITY_LENGTH+1];
   snprintf(topic_availability, MQTT_TOPIC_AVAILABILITY_LENGTH, "FireFly/%s/availability", externalEEPROM.data.uuid);
   mqttClient.topic_availability = topic_availability;
