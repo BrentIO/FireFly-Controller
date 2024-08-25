@@ -2207,6 +2207,7 @@ bool setup_outputs(String filename){
 
   JsonObject filter_outputs__ = filter["outputs"].createNestedObject("*");
   filter_outputs__["id"] = true;
+  filter_outputs__["name"] = true;
   filter_outputs__["area"] = true;
   filter_outputs__["icon"] = true;
   filter_outputs__["type"] = true;
