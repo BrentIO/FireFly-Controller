@@ -48,7 +48,7 @@
     #define MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_PATTERN "%s/sensor/FireFly-%s-temperature-%s/config"     //%s = Home Assistant root topic (defaults to "homeassistant"), %s = Controller UUID, %s = location
     #define MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_LENGTH WORD_LENGTH_AUTODISCOVERY_ROOT + 1 + WORD_LENGTH_INTEGRATION + 7 + 1 + UUID_LENGTH + 1 + 11 + 1 + 8 + WORD_LENGTH_CONFIG
     #define MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s-temperature-%s"       //%s = Controller UUID, %s = location
-    #define MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH 7 + 1 + UUID_LENGTH + 1 + 11 + 1 + 8
+    #define MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 11 + 1 + 8
 
 
     /***************** CONTROLLER FIRMWARE UPDATE TOPICS *****************/
