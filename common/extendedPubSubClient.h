@@ -9,7 +9,7 @@
     #define WORD_LENGTH_STATE 6             //len("/state")
     #define WORD_LENGTH_AVAILABILITY 13     //len("/availability")
     #define WORD_LENGTH_CONFIG 7            //len("/config")
-    #define WORD_LENGTH_SENSOR 7            //len("/sensor")
+    #define WORD_LENGTH_INTEGRATION 20        //The longest MQTT integration allowed in Home Assistant is len("/alarm_control_panel"), see https://www.home-assistant.io/integrations/mqtt/
     #define WORD_LENGTH_AUTODISCOVERY_ROOT 24 //len(this->auto_discovery_root)
     #define UUID_LENGTH 36                  //len(uuidv4)
 
@@ -40,7 +40,7 @@
     #define MQTT_TOPIC_TEMPERATURE_STATE_PATTERN WORD_FIREFLY_SLASH "%s/temperature/%s/state"        //%s = Controller UUID, %s = location
     #define MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 12 + WORD_LENGTH_STATE  //len("/temperature")
     #define MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_PATTERN "%s/sensor/FireFly-%s-temperature-%s/config"     //%s = Home Assistant root topic (defaults to "homeassistant"), %s = Controller UUID, %s = location
-    #define MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_LENGTH WORD_LENGTH_AUTODISCOVERY_ROOT + 1 + WORD_LENGTH_SENSOR + 7 + 1 + UUID_LENGTH + 1 + 11 + 1 + 8 + WORD_LENGTH_CONFIG
+    #define MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_LENGTH WORD_LENGTH_AUTODISCOVERY_ROOT + 1 + WORD_LENGTH_INTEGRATION + 7 + 1 + UUID_LENGTH + 1 + 11 + 1 + 8 + WORD_LENGTH_CONFIG
     #define MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s-temperature-%s"       //%s = Controller UUID, %s = location
     #define MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH 7 + 1 + UUID_LENGTH + 1 + 11 + 1 + 8
 
