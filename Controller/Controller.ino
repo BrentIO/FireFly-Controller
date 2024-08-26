@@ -2505,6 +2505,7 @@ void eventHandler_mqttConnect(){
 
   if(!mqttClient.autoDiscovery.sent){
     mqtt_autoDiscovery_temperature();
+    mqtt_autoDiscovery_outputs();
     mqttClient.autoDiscovery.sent = true;
   }
 }
@@ -2621,5 +2622,174 @@ void mqtt_autoDiscovery_temperature(){
     serializeJson(doc, bufferedClient);
     bufferedClient.flush();
     mqttClient.endPublish();
+  }
+}
+
+
+/**
+ * Handles output auto discovery broadcasts
+ */
+void mqtt_autoDiscovery_outputs(){
+
+  if(!configFS.exists(CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid)){
+    log_v("Controller config file does not exist");
+    return;
+  };
+
+  boolean isOK = true;
+  StaticJsonDocument<128> controllerFilterDoc;
+
+  JsonObject filter_outputs__ = controllerFilterDoc["outputs"].createNestedObject("*");
+  filter_outputs__["id"] = true;
+  filter_outputs__["name"] = true;
+  filter_outputs__["area"] = true;
+  filter_outputs__["icon"] = true;
+  filter_outputs__["type"] = true;
+  filter_outputs__["relay"] = true;
+
+  DynamicJsonDocument controllerDoc(12288); //Supports up to 32 ports
+
+  File controllerFile = configFS.open(CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid, "r");
+  DeserializationError errorControllerFileDeserialization = deserializeJson(controllerDoc, controllerFile, DeserializationOption::Filter(controllerFilterDoc));
+  controllerFile.close();
+
+  if (errorControllerFileDeserialization) {
+    return;
+  }
+
+  StaticJsonDocument<64> relayFilterDoc;
+
+  JsonObject filter_relays__ = relayFilterDoc.createNestedObject();
+  filter_relays__["uuid"] = true;
+  filter_relays__["manufacturer"] = true;
+  filter_relays__["model"] = true;
+
+  DynamicJsonDocument relayDoc(6144); //Supports up to 32 relays
+
+  File relayFile = configFS.open(CONFIGFS_PATH_DEVICES + (String)"/relays", "r");
+  deserializeJson(relayDoc, relayFile, DeserializationOption::Filter(relayFilterDoc));
+  relayFile.close();
+
+
+  for (JsonPair output : controllerDoc["outputs"].as<JsonObject>()) {
+
+    int8_t outputPortNumber = atoi(output.key().c_str());
+
+    if(outputPortNumber > (OUTPUT_CONTROLLER_COUNT * OUTPUT_CONTROLLER_COUNT_PINS)){
+      continue;
+    }
+
+    if(outputPortNumber < 1){
+      continue;
+    }
+
+    if(!output.value().containsKey("id")){
+      continue;
+    }
+
+    char* devicePlatform = new char[WORD_LENGTH_INTEGRATION];
+    strcpy(devicePlatform,"switch"); //Default
+
+    if(output.value().containsKey("icon")){
+
+      if(output.value()["icon"].as<String>().indexOf("light") != -1){
+        strcpy(devicePlatform,"light");
+      }
+
+      if(output.value()["icon"].as<String>().indexOf("sconce") != -1){
+        strcpy(devicePlatform,"light");
+      }
+
+      if(output.value()["icon"].as<String>().indexOf("lamp") != -1){
+        strcpy(devicePlatform,"light");
+      }
+
+      if(output.value()["icon"].as<String>().indexOf("fan") != -1){
+        strcpy(devicePlatform,"fan");
+      }
+    }
+
+    bool isVariableOutput = false;
+
+    if(output.value().containsKey("type")){
+      if(strcmp(output.value()["type"].as<const char*>(), "VARIABLE") == 0){
+        isVariableOutput = true;
+      }
+    }
+
+    DynamicJsonDocument mqttDoc(1024);
+
+    char* autodiscovery_topic = new char[MQTT_TOPIC_OUTPUT_AUTO_DISCOVERY_LENGTH+1];
+    snprintf(autodiscovery_topic, MQTT_TOPIC_OUTPUT_AUTO_DISCOVERY_LENGTH+1, MQTT_TOPIC_OUTPUT_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, devicePlatform, output.value()["id"].as<const char*>());
+
+    char* unique_id = new char[MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+    snprintf(unique_id, MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1, MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, output.value()["id"].as<const char*>());
+
+    char* state_topic = new char[MQTT_TOPIC_OUTPUT_STATE_LENGTH+1];
+    snprintf(state_topic, MQTT_TOPIC_OUTPUT_STATE_LENGTH+1, MQTT_TOPIC_OUTPUT_STATE_PATTERN, output.value()["id"].as<const char*>());
+
+    char* command_topic = new char[MQTT_TOPIC_OUTPUT_SET_LENGTH+1];
+    snprintf(command_topic, MQTT_TOPIC_OUTPUT_SET_LENGTH+1, MQTT_TOPIC_OUTPUT_SET_PATTERN, output.value()["id"].as<const char*>());
+
+
+    if(output.value().containsKey("name")){
+      mqttDoc["name"] = output.value()["name"].as<const char*>();
+    }
+    mqttDoc["unique_id"] = unique_id;
+    mqttDoc["object_id"] = unique_id;
+
+    if(output.value().containsKey("icon")){
+        mqttDoc["icon"] = output.value()["icon"].as<const char*>();
+    }
+
+    if(isVariableOutput){
+      mqttDoc["on_command_type"] = "brightness";
+      mqttDoc["brightness_scale"] = 100;
+      mqttDoc["state_value_template"] = "{% if value|int > 0 %}ON{% else %}OFF{% endif %}";
+      mqttDoc["brightness_command_topic"] = command_topic;
+      mqttDoc["brightness_state_topic"] = state_topic;
+    }
+
+    JsonObject device = mqttDoc.createNestedObject("device");
+    JsonArray identifiers = device.createNestedArray("identifiers");
+    identifiers.add(unique_id);
+
+    char* deviceName = new char[MQTT_OUTPUT_DEVICE_NAME_LENGTH+1];
+    snprintf(deviceName, MQTT_OUTPUT_DEVICE_NAME_LENGTH+1, MQTT_OUTPUT_DEVICE_NAME_PATTERN,  output.value()["name"].as<const char*>(), output.value()["id"].as<const char*>());
+
+    device["name"] =  deviceName;
+
+    if(output.value().containsKey("relay")){
+
+      for(JsonObject relay : relayDoc.as<JsonArray>()){
+        if(strcmp(relay["uuid"].as<const char*>(), output.value()["relay"].as<const char*>()) == 0){
+          if(relay.containsKey("manufacturer")){
+            device["manufacturer"] = relay["manufacturer"].as<const char*>();
+          };
+          if(relay.containsKey("model")){
+            device["model"] = relay["model"].as<const char*>();
+          };
+          break;
+        }
+      }
+    }
+
+    device["via_device"] = externalEEPROM.data.uuid;
+
+    if(output.value().containsKey("area")){
+      device["suggested_area"] =  output.value()["area"].as<const char*>();
+    }
+    mqttDoc["state_topic"] = state_topic;
+    mqttDoc["command_topic"] = command_topic;
+    mqttDoc["availability_topic"] = mqttClient.topic_availability;
+
+    mqttClient.beginPublish(autodiscovery_topic, measureJson(mqttDoc), true);
+    BufferingPrint bufferedClient(mqttClient, 32);
+    serializeJson(mqttDoc, bufferedClient);
+    bufferedClient.flush();
+    mqttClient.endPublish();
+
+    mqttClient.addSubscription(command_topic);
+
   }
 }
