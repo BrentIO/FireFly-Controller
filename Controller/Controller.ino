@@ -2509,11 +2509,13 @@ void eventHandler_mqttConnect(){
     mqtt_autoDiscovery_outputs();
     mqtt_autoDiscovery_start_time();
     mqtt_autoDiscovery_ip_address();
+    mqtt_autoDiscovery_mac_address();
     mqttClient.autoDiscovery.sent = true;
   }
 
   mqtt_publishStartTime();
   mqtt_publishIPAddress();
+  mqtt_publishMACAddress();
 }
 
 
@@ -2862,6 +2864,73 @@ void mqtt_publishStartTime(){
   snprintf(start_time, 21, "%i", bootTime);
 
   mqttClient.publish(state_topic, start_time);
+
+
+/**
+ * Handles MAC address sensor auto discovery broadcasts
+ */
+void mqtt_autoDiscovery_mac_address(){
+
+  DynamicJsonDocument doc(1024);
+
+  char* topic = new char[MQTT_TOPIC_MAC_ADDRESS_AUTO_DISCOVERY_LENGTH+1];
+  snprintf(topic, MQTT_TOPIC_MAC_ADDRESS_AUTO_DISCOVERY_LENGTH+1, MQTT_TOPIC_MAC_ADDRESS_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+
+  char* unique_id = new char[MQTT_MAC_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+  snprintf(unique_id, MQTT_MAC_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1, MQTT_MAC_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+
+  char* state_topic = new char[MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
+
+  doc["name"] = "MAC Address";
+  doc["unique_id"] = unique_id;
+  doc["object_id"] = unique_id;
+  doc["icon"] = "mdi:ethernet";
+  doc["entity_category"] = "diagnostic";
+
+  JsonObject device = doc.createNestedObject("device");
+  JsonArray identifiers = device.createNestedArray("identifiers");
+  identifiers.add(externalEEPROM.data.uuid);
+
+  if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
+        device["name"] =  mqttClient.autoDiscovery.deviceName;
+  }
+
+  device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
+  device["model"] = externalEEPROM.data.product_id;
+  device["serial_number"] = externalEEPROM.data.uuid;
+  device["sw_version"] = VERSION;
+
+  if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
+        device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
+  }
+
+  doc["state_topic"] = state_topic;
+  doc["availability_topic"] = mqttClient.topic_availability;
+
+  mqttClient.beginPublish(topic, measureJson(doc), true);
+  BufferingPrint bufferedClient(mqttClient, 32);
+  serializeJson(doc, bufferedClient);
+  bufferedClient.flush();
+  mqttClient.endPublish();
+}
+
+
+/**
+ * Publishes the MAC Address to MQTT
+ */
+void mqtt_publishMACAddress(){
+
+  char* state_topic = new char[MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
+
+  uint8_t ethMac[6];
+  esp_read_mac(ethMac, ESP_MAC_ETH);
+  char macAddress[18] = {0};
+  sprintf(macAddress, "%02X:%02X:%02X:%02X:%02X:%02X", ethMac[0], ethMac[1], ethMac[2], ethMac[3], ethMac[4], ethMac[5]);
+
+  mqttClient.publish(state_topic, macAddress);
+}
 
 
 /**
