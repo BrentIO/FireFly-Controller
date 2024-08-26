@@ -286,4 +286,40 @@ class managerTemperatureSensors{
         char* getSensorLocation(uint8_t index){
             return this->temperatureSensors[index].location;
         }
+        
+        
+        /**
+         * Retrieves the current temperature at the requested sensor.  This will not change the update frequency of the loop() function
+         */
+        float getCurrentTemp(uint8_t index){
+
+            float returnValue = 0;
+
+            //Loop through each temperature sensor on the board
+            for(int i = 0; i < TEMPERATURE_SENSOR_COUNT; i++){
+
+                if(i != index){
+                    continue;
+                }
+
+                if(temperatureSensors[i].enabled == false){
+                    continue;
+                }
+
+                //Temperatures will be reported in degrees C
+                #if TEMPERATURE_SENSOR_MODEL == ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075
+                    returnValue = temperatureSensors[i].hardware.getTempC();
+                #endif
+
+                //Ensure the hardware is still online
+                #if TEMPERATURE_SENSOR_MODEL == ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075
+                    if(temperatureSensors[i].hardware.i2c_error() !=0){
+
+                        failTemperatureSensor(&temperatureSensors[i], i2cResponseToFailureReason(temperatureSensors[i].hardware.i2c_error()));
+                    }
+                #endif
+            }
+
+            return returnValue;
+        }
 };

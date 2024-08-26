@@ -2513,6 +2513,7 @@ void eventHandler_mqttConnect(){
     mqttClient.autoDiscovery.sent = true;
   }
 
+  mqtt_publishTemperatures();
   mqtt_publishStartTime();
   mqtt_publishIPAddress();
   mqtt_publishMACAddress();
@@ -2630,6 +2631,24 @@ void mqtt_autoDiscovery_temperature(){
     serializeJson(doc, bufferedClient);
     bufferedClient.flush();
     mqttClient.endPublish();
+  }
+}
+
+
+/**
+ * Publishes the currently observed temperatures for all sensor locations to MQTT
+ */
+void mqtt_publishTemperatures(){
+
+  for(int i = 0; i < TEMPERATURE_SENSOR_COUNT; i++){
+
+    char* temperature = new char[6];
+    snprintf(temperature, 6, "%.2f", temperatureSensors.getCurrentTemp(i));
+
+    char* topic = new char[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
+    snprintf(topic, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, externalEEPROM.data.uuid, temperatureSensors.getSensorLocation(i));
+
+    mqttClient.publish(topic, temperature);
   }
 }
 
