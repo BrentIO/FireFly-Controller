@@ -2654,7 +2654,7 @@ void mqtt_publishTemperatures(){
     char* topic = new char[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
     snprintf(topic, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, externalEEPROM.data.uuid, temperatureSensors.getSensorLocation(i));
 
-    mqttClient.publish(topic, temperature);
+    mqttClient.publish(topic, temperature, true);
   }
 }
 
@@ -2890,7 +2890,7 @@ void mqtt_publishStartTime(){
   char* start_time = new char[21];
   snprintf(start_time, 21, "%i", bootTime);
 
-  mqttClient.publish(state_topic, start_time);
+  mqttClient.publish(state_topic, start_time, true);
 }
 
 
@@ -2957,7 +2957,7 @@ void mqtt_publishMACAddress(){
   char macAddress[18] = {0};
   sprintf(macAddress, "%02X:%02X:%02X:%02X:%02X:%02X", ethMac[0], ethMac[1], ethMac[2], ethMac[3], ethMac[4], ethMac[5]);
 
-  mqttClient.publish(state_topic, macAddress);
+  mqttClient.publish(state_topic, macAddress, true);
 }
 
 
@@ -3019,7 +3019,7 @@ void mqtt_publishIPAddress(){
   char* state_topic = new char[MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
 
-  mqttClient.publish(state_topic, ETH.localIP().toString().c_str());
+  mqttClient.publish(state_topic, ETH.localIP().toString().c_str(), true);
 }
 
 
@@ -3084,5 +3084,5 @@ void mqtt_publishCountErrors(){
   char* count = new char[3];
   snprintf(count, 3, "%i", eventLog.getErrors()->size());
 
-  mqttClient.publish(state_topic, count);
+  mqttClient.publish(state_topic, count, true);
 }
