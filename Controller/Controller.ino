@@ -717,6 +717,7 @@ void updateNTPTime(bool force){
 
     if(timeClient.isTimeSet() && bootTime == 0){
       bootTime = timeClient.getEpochTime() - (esp_timer_get_time()/1000000);
+      mqtt_publishStartTime();
     }
 }
 
@@ -2502,10 +2503,12 @@ void eventHandler_mqttConnect(){
   eventLog.resolveError("MQTT disconnected");
   mqttClient.publish(mqttClient.topic_availability, "online", true);
   mqttClient.resubscribe();
+  mqtt_publishStartTime();
 
   if(!mqttClient.autoDiscovery.sent){
     mqtt_autoDiscovery_temperature();
     mqtt_autoDiscovery_outputs();
+    mqtt_autoDiscovery_start_time();
     mqttClient.autoDiscovery.sent = true;
   }
 }
@@ -2792,4 +2795,69 @@ void mqtt_autoDiscovery_outputs(){
     mqttClient.addSubscription(command_topic);
 
   }
+}
+
+
+/**
+ * Handles start time sensor auto discovery broadcasts
+ */
+void mqtt_autoDiscovery_start_time(){
+
+  DynamicJsonDocument doc(1024);
+
+  char* topic = new char[MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_LENGTH+1];
+  snprintf(topic, MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_LENGTH+1, MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+
+  char* unique_id = new char[MQTT_TIME_START_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+  snprintf(unique_id, MQTT_TIME_START_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1, MQTT_TIME_START_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+
+  char* state_topic = new char[MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_TIME_START_STATE_PATTERN, externalEEPROM.data.uuid);
+
+  doc["name"] = "Start Time";
+  doc["unique_id"] = unique_id;
+  doc["object_id"] = unique_id;
+  doc["icon"] = "mdi:clock";
+  doc["entity_category"] = "diagnostic";
+
+  JsonObject device = doc.createNestedObject("device");
+  JsonArray identifiers = device.createNestedArray("identifiers");
+  identifiers.add(externalEEPROM.data.uuid);
+
+  if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
+        device["name"] =  mqttClient.autoDiscovery.deviceName;
+  }
+
+  device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
+  device["model"] = externalEEPROM.data.product_id;
+  device["serial_number"] = externalEEPROM.data.uuid;
+  device["sw_version"] = VERSION;
+
+  if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
+        device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
+  }
+
+  doc["state_topic"] = state_topic;
+  doc["value_template"] = "{{ ( value | int ) | timestamp_utc }}";
+  doc["availability_topic"] = mqttClient.topic_availability;
+
+  mqttClient.beginPublish(topic, measureJson(doc), true);
+  BufferingPrint bufferedClient(mqttClient, 32);
+  serializeJson(doc, bufferedClient);
+  bufferedClient.flush();
+  mqttClient.endPublish();
+
+}
+
+
+void mqtt_publishStartTime(){
+
+  char* state_topic = new char[MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_TIME_START_STATE_PATTERN, externalEEPROM.data.uuid);
+
+  char* start_time = new char[21];
+  snprintf(start_time, 21, "%i", bootTime);
+
+  mqttClient.publish(state_topic, start_time);
+
 }
