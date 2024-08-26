@@ -205,10 +205,6 @@ void setup() {
 
       timeClient.begin();
       updateNTPTime(true);
-
-      if(timeClient.isTimeSet()){
-        bootTime = timeClient.getEpochTime();
-      }
     }
 
     log_d("Ethernet IP: %s", ETH.localIP().toString().c_str());
@@ -717,6 +713,10 @@ void updateNTPTime(bool force){
       }else{
         ntpSleepUntil = esp_timer_get_time() + 300000000;
       }
+    }
+
+    if(timeClient.isTimeSet() && bootTime == 0){
+      bootTime = timeClient.getEpochTime() - (esp_timer_get_time()/1000000);
     }
 }
 
