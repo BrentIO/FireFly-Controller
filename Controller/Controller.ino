@@ -43,7 +43,6 @@ authorizationToken authToken;
 #endif
 
 exPubSubClient mqttClient(ethClient);
-LinkedList<const char*> mqttSubscriptions;
 
 #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
   WiFiUDP wifiNtpUdp;
@@ -2502,12 +2501,7 @@ void eventHandler_mqttConnect(){
   eventLog.createEvent("MQTT connected");
   eventLog.resolveError("MQTT disconnected");
   mqttClient.publish(mqttClient.topic_availability, "online", true);
-
-  for(int i=0; i < mqttSubscriptions.size(); i++){
-    if(mqttClient.subscribe(mqttSubscriptions.get(i))){
-      log_v("Subscribed to %s", mqttSubscriptions.get(i));
-    }
-  }
+  mqttClient.resubscribe();
 
   if(!mqttClient.autoDiscovery.sent){
     mqtt_autoDiscovery_temperature();

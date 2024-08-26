@@ -72,6 +72,7 @@
             using PubSubClient::PubSubClient; /* Inherit the base PubSubClient */
             const char* topic_availability; /* Topic name for availability, which will be used as the last will topic name as well */
             int64_t lastReconnectAttemptTime = 0; /* The time (millis() or equivalent) when the last reconnection was be attempted */
+            LinkedList<const char*> subscriptions; /* List of MQTT subscriptions */
             
             struct autoDiscovery{
                 bool sent = false;
@@ -95,6 +96,27 @@
                     strcpy(suggestedArea, value);
                 }
             } autoDiscovery;
+
+
+            /***
+             * Adds a new subscription to the list and automatically subscribes to the topic 
+             */
+            void addSubscription(const char* topic){
+                this->subscriptions.add(topic);
+                this->subscribe(topic);
+            }
+
+
+            /***
+             * Processes all subscriptions in the list and resubscribes to all of them
+             */
+            void resubscribe(){
+                for(int i=0; i < this->subscriptions.size(); i++){
+                    if(!this->subscribe(this->subscriptions.get(i))){
+                        log_e("FAILED to subscribe to %s", this->subscriptions.get(i));
+                    }
+                }
+            } 
     };
 
 #endif
