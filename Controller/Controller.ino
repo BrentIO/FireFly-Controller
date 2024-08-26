@@ -2503,7 +2503,6 @@ void eventHandler_mqttConnect(){
   eventLog.resolveError("MQTT disconnected");
   mqttClient.publish(mqttClient.topic_availability, "online", true);
   mqttClient.resubscribe();
-  mqtt_publishStartTime();
 
   if(!mqttClient.autoDiscovery.sent){
     mqtt_autoDiscovery_temperature();
@@ -2511,6 +2510,8 @@ void eventHandler_mqttConnect(){
     mqtt_autoDiscovery_start_time();
     mqttClient.autoDiscovery.sent = true;
   }
+
+  mqtt_publishStartTime();
 }
 
 
