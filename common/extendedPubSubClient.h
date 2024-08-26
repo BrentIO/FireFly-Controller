@@ -45,6 +45,13 @@
     #define MQTT_IP_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s-ip-address"       //%s = Controller UUID
     #define MQTT_IP_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 10
 
+    #define MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN WORD_FIREFLY_SLASH "%s/mac-address/state"     //%s = Controller UUID
+    #define MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 12 + WORD_LENGTH_STATE //len("/mac-address")
+    #define MQTT_TOPIC_MAC_ADDRESS_AUTO_DISCOVERY_PATTERN "%s/sensor/FireFly-%s-mac-address/config"     //%s = Home Assistant root topic (defaults to "homeassistant"), %s = Controller UUID
+    #define MQTT_TOPIC_MAC_ADDRESS_AUTO_DISCOVERY_LENGTH WORD_LENGTH_AUTODISCOVERY_ROOT + 1 + WORD_LENGTH_INTEGRATION + 7 + 1 + UUID_LENGTH + 1 + 11 + WORD_LENGTH_CONFIG
+    #define MQTT_MAC_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s-mac-address"       //%s = Controller UUID
+    #define MQTT_MAC_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 11
+
     #define MQTT_TOPIC_ERROR_COUNT_STATE_PATTERN WORD_FIREFLY_SLASH "%s/count-errors/state"      //%s = Controller UUID
     #define MQTT_TOPIC_ERROR_COUNT_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 13 + WORD_LENGTH_STATE //len("/count-errors")
     #define MQTT_TOPIC_ERROR_COUNT_AUTO_DISCOVERY_PATTERN "%s/sensor/FireFly-%s-count-errors/config"     //%s = Home Assistant root topic (defaults to "homeassistant"), %s = Controller UUID
