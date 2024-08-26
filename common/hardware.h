@@ -333,6 +333,11 @@
     #endif
 
 
+    #ifndef OUTPUT_NAME_MAX_LENGTH
+        #define OUTPUT_NAME_MAX_LENGTH 20 /* Maximum number of characters in an output's name; must match Swagger */
+    #endif
+
+
     #ifndef MQTT_RECONNECT_WAIT_MILLISECONDS
         #define MQTT_RECONNECT_WAIT_MILLISECONDS 5000 /* Number of milliseconds to wait between MQTT reconnect attempts */
     #endif

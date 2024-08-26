@@ -1307,7 +1307,7 @@ components:
           name:
             type: string
             description: Human-friendly name
-            maxLength: 20
+            maxLength: 20   #Maximum length relates to hardware.h -> OUTPUT_ID_MAX_LENGTH
           id:
             type: string
             description: A unique short ID for the output, used for addressing the device over MQTT
