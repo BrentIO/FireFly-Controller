@@ -2851,10 +2851,12 @@ void mqtt_autoDiscovery_start_time(){
   serializeJson(doc, bufferedClient);
   bufferedClient.flush();
   mqttClient.endPublish();
-
 }
 
 
+/**
+ * Publishes the start time to MQTT
+ */
 void mqtt_publishStartTime(){
 
   char* state_topic = new char[MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1];
@@ -2864,6 +2866,7 @@ void mqtt_publishStartTime(){
   snprintf(start_time, 21, "%i", bootTime);
 
   mqttClient.publish(state_topic, start_time);
+}
 
 
 /**

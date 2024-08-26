@@ -36,7 +36,10 @@
 
     #define MQTT_TOPIC_TIME_START_STATE_PATTERN WORD_FIREFLY_SLASH "%s/time-start/state"     //%s = Controller UUID
     #define MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 11 + WORD_LENGTH_STATE
-    #define MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_PATTERN "%s/sensor/FireFly-%s-start-time/config"     //%s = Home Assistant root topic (defaults to "homeassistant"), %s = Controller UUID
+    #define MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_PATTERN "%s/sensor/FireFly-%s-time-start/config"     //%s = Home Assistant root topic (defaults to "homeassistant"), %s = Controller UUID
+    #define MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_LENGTH WORD_LENGTH_AUTODISCOVERY_ROOT + 1 + WORD_LENGTH_INTEGRATION + 7 + 1 + UUID_LENGTH + 1 + 10 + WORD_LENGTH_CONFIG
+    #define MQTT_TIME_START_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s-time-start"       //%s = Controller UUID
+    #define MQTT_TIME_START_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 10
 
     #define MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN WORD_FIREFLY_SLASH "%s/ip-address/state"     //%s = Controller UUID
     #define MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 11 + WORD_LENGTH_STATE //len("/ip-address")
