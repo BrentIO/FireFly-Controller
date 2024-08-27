@@ -25,7 +25,6 @@
 #include <StreamUtils.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
-#include <esp32FOTA.hpp>
 #include "common/extendedPubSubClient.h"
 
 unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
@@ -54,11 +53,7 @@ uint64_t ntpSleepUntil = 0;
 
 void updateNTPTime(bool force = false);
 
-esp32FOTA otaFirmware(APPLICATION_NAME, VERSION, false); /* OTA firmware update class */
-#define FIRMWARE_CHECK_SECONDS 86400 /* Number of seconds between OTA firmware checks */
-uint64_t otaFirmware_lastCheckedTime = 0; /* The time (millis() or equivalent) when the firmware was last checked against the remote system */
-bool otaFirmware_enabled = false; /* Determines if the OTA firmware automation should be run */
-LinkedList<forcedOtaUpdateConfig> otaFirmware_pending;
+exEsp32FOTA otaFirmware(APPLICATION_NAME, VERSION, false); /* OTA firmware update class */
 
 fs::LittleFSFS wwwFS;
 fs::LittleFSFS configFS;
@@ -353,14 +348,14 @@ void loop() {
   #if WIFI_MODEL != ENUM_WIFI_MODEL_ESP32 //Ignore when in SoftAP mode
     updateNTPTime();
 
-    if(otaFirmware_enabled){
+    if(otaFirmware.enabled){
 
-      if((esp_timer_get_time() - otaFirmware_lastCheckedTime) / 1000000 > FIRMWARE_CHECK_SECONDS || otaFirmware_lastCheckedTime == 0){
+      if((esp_timer_get_time() - otaFirmware.lastCheckedTime) / 1000000 > FIRMWARE_CHECK_SECONDS || otaFirmware.lastCheckedTime == 0){
         if(otaFirmware.execHTTPcheck() == true){
               otaFirmware.execOTA();
         }
 
-        otaFirmware_lastCheckedTime = esp_timer_get_time();
+        otaFirmware.lastCheckedTime = esp_timer_get_time();
       }
     }
 
@@ -1990,7 +1985,7 @@ void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
       return;
     }
 
-    if(otaFirmware_enabled == false){
+    if(otaFirmware.enabled == false){
       http_forbiddenRequest(request, F("OTA firmware disabled"));
       return;
     }
@@ -2008,7 +2003,7 @@ void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
     newFirmwareRequest.type = OTA_UPDATE_SPIFFS;
   }
 
-  otaFirmware_pending.add(newFirmwareRequest);
+  otaFirmware.pending.add(newFirmwareRequest);
 
   request->send(202);
 }
@@ -2050,7 +2045,7 @@ void setup_OtaFirmware(){
   otaFirmware.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
   otaFirmware.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
 
-  otaFirmware_enabled = true;
+  otaFirmware.enabled = true;
   eventLog.createEvent(F("OTA update enabled"));
 }
 
@@ -2060,34 +2055,34 @@ void setup_OtaFirmware(){
 */
 void otaFirmware_checkPending(){
 
-  if(otaFirmware_pending.size() == 0){
+  if(otaFirmware.pending.size() == 0){
     return;
   }
 
-  if(otaFirmware_enabled == false){
+  if(otaFirmware.enabled == false){
     return;
   }
 
-  for(int i=0; i < otaFirmware_pending.size(); i++){
+  for(int i=0; i < otaFirmware.pending.size(); i++){
 
     bool updateSuccess = false;
 
-    if(otaFirmware_pending.get(i).url.startsWith("https")){
-      otaFirmware_pending.get(i).certificate = CONFIGFS_PATH_CERTS + (String)"/" + otaFirmware_pending.get(i).certificate;
-      otaFirmware.setRootCA(new CryptoFileAsset(otaFirmware_pending.get(i).certificate.c_str(), &configFS));
+    if(otaFirmware.pending.get(i).url.startsWith("https")){
+      otaFirmware.pending.get(i).certificate = CONFIGFS_PATH_CERTS + (String)"/" + otaFirmware.pending.get(i).certificate;
+      otaFirmware.setRootCA(new CryptoFileAsset(otaFirmware.pending.get(i).certificate.c_str(), &configFS));
     }
 
-    switch(otaFirmware_pending.get(i).type){
+    switch(otaFirmware.pending.get(i).type){
 
       case OTA_UPDATE_APP:
         eventLog.createEvent(F("OTA app forced"));
-        updateSuccess = otaFirmware.forceUpdate(otaFirmware_pending.get(i).url.c_str(), false);
+        updateSuccess = otaFirmware.forceUpdate(otaFirmware.pending.get(i).url.c_str(), false);
         break;
 
 
       case OTA_UPDATE_SPIFFS:
         eventLog.createEvent(F("OTA SPIFFS forced"));
-        updateSuccess = otaFirmware.forceUpdateSPIFFS(otaFirmware_pending.get(i).url.c_str(), false);
+        updateSuccess = otaFirmware.forceUpdateSPIFFS(otaFirmware.pending.get(i).url.c_str(), false);
         break;
     }
 
@@ -2095,14 +2090,14 @@ void otaFirmware_checkPending(){
       eventLog.createEvent(F("OTA update failed"), EventLog::LOG_LEVEL_NOTIFICATION);
     }
 
-    otaFirmware_pending.remove(i);
+    otaFirmware.pending.remove(i);
   }
 
   otaConfig otaConfig(configFS);
 
   if(otaConfig.get() != otaConfig::SUCCESS_NO_ERROR){
     eventLog.createEvent(F("OTA cert not restored"), EventLog::LOG_LEVEL_ERROR);
-    otaFirmware_enabled = false;
+    otaFirmware.enabled = false;
     eventLog.createEvent(F("OTA update disabled"));
     return;
   }

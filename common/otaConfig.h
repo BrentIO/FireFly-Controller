@@ -4,8 +4,10 @@
 
     #include <LittleFS.h>
     #include <ArduinoJson.h>
+    #include <esp32FOTA.hpp>
 
     #define OTA_FILE_NAME F("/ota.json")
+    #define FIRMWARE_CHECK_SECONDS 86400 /* Number of seconds between OTA firmware checks */
 
 
     enum otaUpdateType{
@@ -141,5 +143,16 @@
                 return IO_ERROR;
             }
         };
+
+
+    class exEsp32FOTA : public esp32FOTA
+    {           
+
+        public:
+            using esp32FOTA::esp32FOTA; /* Inherit the base esp32FOTA */
+            uint64_t lastCheckedTime = 0; /* The time (millis() or equivalent) when the firmware was last checked against the remote system */
+            bool enabled = false; /* Determines if the OTA firmware automation should be run */
+            LinkedList<forcedOtaUpdateConfig> pending; /* List of pending updates */
+    };
 
 #endif
