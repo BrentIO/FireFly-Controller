@@ -7,7 +7,12 @@
     #include <esp32FOTA.hpp>
 
     #define OTA_FILE_NAME F("/ota.json")
-    #define FIRMWARE_CHECK_SECONDS 86400 /* Number of seconds between OTA firmware checks */
+    #ifndef FIRMWARE_CHECK_SECONDS
+        #define FIRMWARE_CHECK_SECONDS 86400 /* Number of seconds between OTA firmware checks */
+    #endif
+    #ifndef
+        #define JSON_FW_BUFF_SIZE 3072 //Supports 5 versions with maximum recommended string lengths
+    #endif
 
 
     enum otaUpdateType{
