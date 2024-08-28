@@ -73,9 +73,19 @@
     /***************** FIRMWARE UPDATE TOPICS *****************/
 
     #define MQTT_TOPIC_UPDATE_STATE_PATTERN WORD_FIREFLY_SLASH "%s/update/state"       //%s = Controller UUID
+    #define MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 6 + WORD_LENGTH_STATE  //len("/update")
     #define MQTT_TOPIC_UPDATE_SET_PATTERN WORD_FIREFLY_SLASH "%s/update/set"       //%s = Controller UUID
-    #define MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN WORD_FIREFLY_SLASH "%s/update/availability"     //%s = Controller UUID
-    #define MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN "%s/update/FireFly-%s/config"     //%s = Home Assistant root topic (defaults to "homeassistant"), %s = Controller UUID
+    #define MQTT_TOPIC_UPDATE_SET_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 6 + WORD_LENGTH_SET //len("/update")
+    #define MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN "%s/update/FireFly-%s-update/config"     //%s = Home Assistant root topic (defaults to "homeassistant"), %s = Controller UUID
+    #define MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN_LENGTH WORD_LENGTH_AUTODISCOVERY_ROOT + 1 + WORD_LENGTH_INTEGRATION + 7 + 1 + UUID_LENGTH + 1 + 6 + WORD_LENGTH_CONFIG
+    #define MQTT_UPDATE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s-update"       //%s = Controller UUID
+    #define MQTT_UPDATE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 6
+
+
+    /*****************  FIRMWARE UPDATE SERVICE AVAILABILITY TOPICS *****************/
+
+    #define MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN WORD_FIREFLY_SLASH "%s/update/availability"    //%s = Controller UUID
+    #define MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 6 + WORD_LENGTH_AVAILABILITY
 
 
     /***************** CONTROLLER AVAILABILITY TOPICS *****************/

@@ -2042,6 +2042,8 @@ void setup_OtaFirmware(){
   otaFirmware.setProgressCb(eventHandler_otaFirmwareProgress);
   otaFirmware.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
   otaFirmware.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
+  otaFirmware.setUpdateAvailableCb(mqtt_publishUpdateAvailable);
+  otaFirmware.setUpdateServiceAvailabilityCb(mqtt_publishUpdateServiceAvailability);
 
   otaFirmware.enabled = true;
   eventLog.createEvent(F("OTA update enabled"));
@@ -2502,6 +2504,8 @@ void eventHandler_mqttConnect(){
   mqttClient.resubscribe();
 
   if(!mqttClient.autoDiscovery.sent){
+    mqtt_autoDiscovery_update();
+    mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus::NEVER_ATTEMPTED);
     mqtt_autoDiscovery_temperature();
     mqtt_autoDiscovery_outputs();
     mqtt_autoDiscovery_start_time();
@@ -3078,4 +3082,134 @@ void mqtt_publishCountErrors(){
   snprintf(count, 3, "%i", eventLog.getErrors()->size());
 
   mqttClient.publish(state_topic, count, true);
+}
+
+
+/**
+ * Handles update auto discovery broadcasts
+ */
+void mqtt_autoDiscovery_update(){
+  
+  char* topic = new char[MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN_LENGTH+1];
+  snprintf(topic, MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+
+  char* unique_id = new char[MQTT_UPDATE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+  snprintf(unique_id, MQTT_UPDATE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1, MQTT_UPDATE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+
+  char* state_topic = new char[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+
+  char* command_topic = new char[MQTT_TOPIC_UPDATE_SET_PATTERN_LENGTH+1];
+  snprintf(command_topic, MQTT_TOPIC_UPDATE_SET_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_SET_PATTERN, externalEEPROM.data.uuid);
+
+  char* availability_topic = new char[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
+  snprintf(availability_topic, MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1, MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, externalEEPROM.data.uuid);
+
+  DynamicJsonDocument doc(1024);
+
+  doc["name"] = "Firmware";
+  doc["unique_id"] = unique_id;
+  doc["object_id"] = unique_id;
+  doc["icon"] = "mdi:update";
+
+  JsonObject device = doc.createNestedObject("device");
+  JsonArray identifiers = device.createNestedArray("identifiers");
+  identifiers.add(externalEEPROM.data.uuid);
+
+  if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
+    device["name"] =  mqttClient.autoDiscovery.deviceName;
+  }
+
+  device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
+  device["model"] = externalEEPROM.data.product_id;
+  device["serial_number"] = externalEEPROM.data.uuid;
+  device["sw_version"] = VERSION;
+
+  if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
+        device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
+  }
+
+  JsonArray availability = doc.createNestedArray("availability"); //Note, this is different from others
+  JsonObject update_specific = availability.createNestedObject();
+  JsonObject controller_level = availability.createNestedObject();
+  update_specific["topic"] = availability_topic;
+  controller_level["topic"] = mqttClient.topic_availability;
+  doc["availability_mode"] = "all";
+
+  doc["state_topic"] = state_topic;
+  doc["command_topic"] = command_topic;
+  doc["payload_install"] = "do-update";
+
+  mqttClient.beginPublish(topic, measureJson(doc), true);
+  BufferingPrint bufferedClient(mqttClient, 32);
+  serializeJson(doc, bufferedClient);
+  bufferedClient.flush();
+  mqttClient.endPublish();
+
+  mqttClient.addSubscription(command_topic);
+}
+
+
+/**
+ * Handles broadcasting the update available to MQTT
+ */
+void mqtt_publishUpdateAvailable(JsonVariant &updateDoc){
+
+  DynamicJsonDocument mqttDoc(256);
+
+  mqttDoc["installed_version"] = VERSION;
+  mqttDoc["latest_version"] = updateDoc["version"].as<const char*>();
+
+  if(updateDoc.containsKey("title")){
+    mqttDoc["title"] = updateDoc["title"].as<const char*>();
+  }
+
+  if(updateDoc.containsKey("release_summary")){
+    mqttDoc["release_summary"] = updateDoc["release_summary"].as<const char*>();
+  }
+
+  if(updateDoc.containsKey("release_url")){
+    mqttDoc["release_url"] = updateDoc["release_url"].as<const char*>();
+  }
+
+  char* topic = new char[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+  snprintf(topic, MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+
+  mqttClient.beginPublish(topic, measureJson(mqttDoc), false); //Don't retain
+  BufferingPrint bufferedClient(mqttClient, 32);
+  serializeJson(mqttDoc, bufferedClient);
+  bufferedClient.flush();
+  mqttClient.endPublish();
+}
+
+
+/**
+ * Updates the update service availability.  If the service is available but no update is found, an MQTT event is published with the current version
+ */
+void mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus status){
+
+  char* availability_topic = new char[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
+  snprintf(availability_topic, MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1, MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, externalEEPROM.data.uuid);
+
+  if(status == esp32FOTA::lastHTTPCheckStatus::SUCCESS || status == esp32FOTA::lastHTTPCheckStatus::SUCCESS_NO_UPDATE_AVAILABLE){
+    mqttClient.publish(availability_topic, "online");
+  }else{
+    mqttClient.publish(availability_topic, "offline");
+  }
+
+  if(status == esp32FOTA::lastHTTPCheckStatus::SUCCESS_NO_UPDATE_AVAILABLE){
+    DynamicJsonDocument mqttDoc(256);
+
+    mqttDoc["installed_version"] = VERSION;
+    mqttDoc["latest_version"] = VERSION;
+
+    char* topic = new char[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+    snprintf(topic, MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+
+    mqttClient.beginPublish(topic, measureJson(mqttDoc), false); //Don't retain
+    BufferingPrint bufferedClient(mqttClient, 32);
+    serializeJson(mqttDoc, bufferedClient);
+    bufferedClient.flush();
+    mqttClient.endPublish();
+  }
 }
