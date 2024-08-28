@@ -351,10 +351,7 @@ void loop() {
     if(otaFirmware.enabled){
 
       if((esp_timer_get_time() - otaFirmware.lastCheckedTime) / 1000000 > FIRMWARE_CHECK_SECONDS || otaFirmware.lastCheckedTime == 0){
-        if(otaFirmware.execHTTPcheck() == true){
-              otaFirmware.execOTA();
-        }
-
+        otaFirmware.execHTTPcheck();
         otaFirmware.lastCheckedTime = esp_timer_get_time();
       }
     }
