@@ -348,14 +348,13 @@ void loop() {
   #if WIFI_MODEL != ENUM_WIFI_MODEL_ESP32 //Ignore when in SoftAP mode
     updateNTPTime();
 
-    if(otaFirmware.enabled){
+    if(otaFirmware.enabled && esp_timer_get_time() > 30000000){ //Wait 30 seconds after booting before checking the firmware
 
       if((esp_timer_get_time() - otaFirmware.lastCheckedTime) / 1000000 > FIRMWARE_CHECK_SECONDS || otaFirmware.lastCheckedTime == 0){
         otaFirmware.execHTTPcheck();
         otaFirmware.lastCheckedTime = esp_timer_get_time();
       }
     }
-
   #endif
 
   otaFirmware_checkPending();
