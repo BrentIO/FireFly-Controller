@@ -2612,7 +2612,7 @@ void mqtt_autoDiscovery_temperature(){
     identifiers.add(externalEEPROM.data.uuid);
 
     if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
-          device["name"] =  mqttClient.autoDiscovery.deviceName;
+      device["name"] =  mqttClient.autoDiscovery.deviceName;
     }
 
     device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
@@ -2621,7 +2621,7 @@ void mqtt_autoDiscovery_temperature(){
     device["sw_version"] = VERSION;
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
-          device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
+      device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
     }
 
     doc["state_topic"] = state_topic;
@@ -2850,7 +2850,7 @@ void mqtt_autoDiscovery_start_time(){
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
-        device["name"] =  mqttClient.autoDiscovery.deviceName;
+    device["name"] =  mqttClient.autoDiscovery.deviceName;
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
@@ -2916,7 +2916,7 @@ void mqtt_autoDiscovery_mac_address(){
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
-        device["name"] =  mqttClient.autoDiscovery.deviceName;
+    device["name"] =  mqttClient.autoDiscovery.deviceName;
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
@@ -2983,7 +2983,7 @@ void mqtt_autoDiscovery_ip_address(){
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
-        device["name"] =  mqttClient.autoDiscovery.deviceName;
+    device["name"] =  mqttClient.autoDiscovery.deviceName;
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
@@ -3045,7 +3045,7 @@ void mqtt_autoDiscovery_count_errors(){
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
-        device["name"] =  mqttClient.autoDiscovery.deviceName;
+    device["name"] =  mqttClient.autoDiscovery.deviceName;
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
