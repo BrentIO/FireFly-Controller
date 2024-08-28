@@ -32,7 +32,7 @@
     #define MQTT_OUTPUT_DEVICE_NAME_LENGTH OUTPUT_NAME_MAX_LENGTH + 1 + OUTPUT_ID_MAX_LENGTH
 
 
-    /***************** CONTROLLER PERIPHERAL TOPICS *****************/
+    /***************** PERIPHERAL TOPICS *****************/
 
     #define MQTT_TOPIC_TIME_START_STATE_PATTERN WORD_FIREFLY_SLASH "%s/time-start/state"     //%s = Controller UUID
     #define MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 11 + WORD_LENGTH_STATE
@@ -70,7 +70,7 @@
     #define MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 11 + 1 + 8
 
 
-    /***************** CONTROLLER FIRMWARE UPDATE TOPICS *****************/
+    /***************** FIRMWARE UPDATE TOPICS *****************/
 
     #define MQTT_TOPIC_UPDATE_STATE_PATTERN WORD_FIREFLY_SLASH "%s/update/state"       //%s = Controller UUID
     #define MQTT_TOPIC_UPDATE_SET_PATTERN WORD_FIREFLY_SLASH "%s/update/set"       //%s = Controller UUID
