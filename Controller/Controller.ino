@@ -1864,6 +1864,7 @@ void http_handleOTA_POST(AsyncWebServerRequest *request, JsonVariant doc){
   switch(otaConfig.create()){
 
     case otaConfig::SUCCESS_NO_ERROR:
+      setup_OtaFirmware();
       eventLog.createEvent(F("OTA config created"));
       request->send(201);
       return;
@@ -1938,6 +1939,7 @@ void http_handleOTA_DELETE(AsyncWebServerRequest *request){
       break;
 
     default:
+      otaFirmware.enabled = false;
       eventLog.createEvent(F("OTA config deleted"));
       request->send(204);
       break;
