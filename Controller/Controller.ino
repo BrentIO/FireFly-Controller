@@ -2717,7 +2717,7 @@ void mqtt_autoDiscovery_outputs(){
       continue;
     }
 
-    char* devicePlatform = new char[WORD_LENGTH_INTEGRATION];
+    char* devicePlatform = new char[WORD_LENGTH_INTEGRATION+1];
     strcpy(devicePlatform,"switch"); //Default
 
     if(output.value().containsKey("icon")){
