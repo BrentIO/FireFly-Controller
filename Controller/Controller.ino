@@ -2850,6 +2850,7 @@ void mqtt_autoDiscovery_outputs(){
 
     mqttClient.addSubscription(command_topic);
 
+    mqttClient.publish(state_topic, "0", true); //By default the controller will have set the output to off
   }
 }
 
