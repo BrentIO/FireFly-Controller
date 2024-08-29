@@ -2494,7 +2494,23 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
 
   payload.trim();
 
+  MatchState ms;
+  ms.Target(topic);
+
   log_i("\n=======================\nMQTT message arrived!\nTopic: [%s]\nPayload: [%s]\n=======================", topic, payload.c_str());
+
+  if(ms.Match("^FireFly\/([A-Za-z0-9]+)\/set$")){ //This is an output command request
+
+    payload.toUpperCase();
+
+    if(payload == "ON"){ //Non-numeric values will be changed to "0"
+      payload = "100";
+    }
+
+    outputs.setPortValue(ms.GetCapture(topic, 0), payload.toInt());
+    return;
+  }
+
 }
 
 
