@@ -2511,6 +2511,10 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
     return;
   }
 
+  if(ms.Match("^FireFly\/[0-9a-f-]+\/update\/set$")){ //This is an update command request
+    log_i("I will find queue the update!");
+    return;
+  } 
 }
 
 
