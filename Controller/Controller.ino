@@ -231,6 +231,7 @@ void setup() {
 
   /* Start outputs */
   outputs.setCallback_failure(&failureHandler_outputs);
+  outputs.setCallback_outputValueChanged(&mqtt_publishOutputValueChanged);
   outputs.begin();
 
 
@@ -3217,4 +3218,21 @@ void mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus stat
     bufferedClient.flush();
     mqttClient.endPublish();
   }
+}
+
+
+/**
+ * Broadcasts an MQTT message that an output value has changed
+ * @param id as the output's unique ID
+ * @param value the new value that should be sent to any subscribers
+ */
+void mqtt_publishOutputValueChanged(char* id, uint8_t value){
+
+    char* state_topic = new char[MQTT_TOPIC_OUTPUT_STATE_LENGTH+1];
+    snprintf(state_topic, MQTT_TOPIC_OUTPUT_STATE_LENGTH+1, MQTT_TOPIC_OUTPUT_STATE_PATTERN, id);
+
+    char* value_char = new char[4];
+    snprintf(value_char, 4, "%i", value);
+
+    mqttClient.publish(state_topic, value_char, true);
 }

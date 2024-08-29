@@ -78,6 +78,7 @@ namespace nsOutputs{
             uint8_t address = 0; /* I2C address. Default 0.*/
             bool enabled = true; /* Indicates if the controller is enabled. Default true */
             void (*failureCallback)(uint8_t, failureReason);
+            void (*outputValueChanged)(char*, uint8_t);
 
             #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
                 PCA9685 hardware = PCA9685(0); /* Reference to the hardware. */
@@ -242,6 +243,11 @@ namespace nsOutputs{
                     }
 
                     this->value = pwmValue;
+
+                    if(this->controller->outputValueChanged){
+                        this->controller->outputValueChanged(this->id, int(map(this->value, 0, OUTPUT_CONTROLLER_MAXIMUM_PWM, 0, 100)));
+                    }
+                    
                 #endif
 
                 return set_result::SUCCESS;
@@ -271,6 +277,7 @@ namespace nsOutputs{
      * ### Callbacks
      *  One callback function is supported:
      * - `setCallback_failure` which will be called if there is an error during `begin()` or if one of the input controllers falls off the bus after being initialized
+     * - `setCallback_outputValueChanged` which will be called when there are changes to an output's value
      */
     class managerOutputs{
 
@@ -283,6 +290,8 @@ namespace nsOutputs{
             /** Reference to the callback function that will be called when an output controller has failed */
             void (*ptrFailureCallback)(uint8_t, failureReason);
 
+            /** Reference to the callback function that will be called when an output value has changed */
+            void (*ptrOutputValueChanged)(char*, uint8_t);
 
         public:
 
@@ -318,6 +327,7 @@ namespace nsOutputs{
                 for(int i = 0; i < OUTPUT_CONTROLLER_COUNT; i++){
                     this->outputControllers[i].address = addressesOutputController[i];
                     this->outputControllers[i].failureCallback = ptrFailureCallback;
+                    this->outputControllers[i].outputValueChanged = ptrOutputValueChanged;
                     
                     for(int j = 0; j < OUTPUT_CONTROLLER_COUNT_PINS; j++){
 
@@ -380,6 +390,11 @@ namespace nsOutputs{
             /** Sets the callback function that is called when an output controller failure occurs */
             void setCallback_failure(void (*userDefinedCallback)(uint8_t, failureReason)) {
                 ptrFailureCallback = userDefinedCallback; }
+
+
+            /** Sets the callback function that is called when an output value has changed */
+            void setCallback_outputValueChanged(void (*userDefinedCallback)(char*, uint8_t)) {
+                ptrOutputValueChanged = userDefinedCallback; }
 
             
             /** Gets the port's value (power output/brightness/duty cycle) as a percentage, 0-100 inclusive
