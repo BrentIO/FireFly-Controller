@@ -383,7 +383,7 @@ namespace nsOutputs{
 
             
             /** Gets the port's value (power output/brightness/duty cycle) as a percentage, 0-100 inclusive
-             * @param port as the human-readable port number to get
+             * @param port as the physical port number to get
              * @returns Percentage power output/brightness/duty cycle for the given port.  If an invalid port number is provided, 0 will be returned
             */
             uint8_t getPortValue(uint8_t port){
@@ -398,7 +398,7 @@ namespace nsOutputs{
 
 
             /** Sets the power output/brightness/duty cycle for the given port and value 
-             * @param port as the human-readable port number to set
+             * @param port as the physical port number to set
              * @param value percentage power output/brightness/duty cycle for the given port.  If the port is set as binary output, anything >0 will be set to 100, all other numbers will be set to 0
              * @returns enumerated result of the request
             */
@@ -414,7 +414,7 @@ namespace nsOutputs{
 
 
             /** Sets the port type (binary, variable)
-             * @param port as the human-readable port number to set
+             * @param port as the physical port number to set
              * @param type as the port output type
             */
             void setPortType(uint8_t port, outputPin::outputType type){
@@ -428,7 +428,7 @@ namespace nsOutputs{
             }
 
             /** Gets the port type and sets the specified buffer with the value (binary, variable)
-             * @param port as the human-readable port number to get
+             * @param port as the physical port number to get
              * @param buffer as a pointer to a buffer where the output type should be set
              * @returns true on success, false if the pin specified was invalid
             */
@@ -443,8 +443,9 @@ namespace nsOutputs{
                 return false;
             }
 
+
             /** Enables or disables a port
-             * @param port as the human-readable port number to set
+             * @param port as the physical port number to set
              * @param enabled if the port should be enabled or disabled
              * @note When a port is disabled, its output will be set to off prior to being disabled
             */
