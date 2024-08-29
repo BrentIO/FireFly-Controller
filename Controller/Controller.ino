@@ -2700,7 +2700,6 @@ void mqtt_autoDiscovery_outputs(){
   deserializeJson(relayDoc, relayFile, DeserializationOption::Filter(relayFilterDoc));
   relayFile.close();
 
-
   for (JsonPair output : controllerDoc["outputs"].as<JsonObject>()) {
 
     int8_t outputPortNumber = atoi(output.key().c_str());
@@ -2760,7 +2759,6 @@ void mqtt_autoDiscovery_outputs(){
 
     char* command_topic = new char[MQTT_TOPIC_OUTPUT_SET_LENGTH+1];
     snprintf(command_topic, MQTT_TOPIC_OUTPUT_SET_LENGTH+1, MQTT_TOPIC_OUTPUT_SET_PATTERN, output.value()["id"].as<const char*>());
-
 
     if(output.value().containsKey("name")){
       mqttDoc["name"] = output.value()["name"].as<const char*>();
