@@ -2783,7 +2783,13 @@ void mqtt_autoDiscovery_outputs(){
     identifiers.add(unique_id);
 
     char* deviceName = new char[MQTT_OUTPUT_DEVICE_NAME_LENGTH+1];
-    snprintf(deviceName, MQTT_OUTPUT_DEVICE_NAME_LENGTH+1, MQTT_OUTPUT_DEVICE_NAME_PATTERN,  output.value()["name"].as<const char*>(), output.value()["id"].as<const char*>());
+
+    if(output.value().containsKey("name")){
+      snprintf(deviceName, MQTT_OUTPUT_DEVICE_NAME_LENGTH+1, MQTT_OUTPUT_DEVICE_NAME_PATTERN,  output.value()["name"].as<const char*>(), output.value()["id"].as<const char*>());
+    }
+    else{
+      snprintf(deviceName, MQTT_OUTPUT_DEVICE_NAME_LENGTH+1, "%s",  output.value()["id"].as<const char*>());
+    }
 
     device["name"] =  deviceName;
 
