@@ -464,8 +464,8 @@ namespace nsOutputs{
 
             /**
              * Sets the port's ID, which is used for MQTT
-             * @param port as the human-readable port number to set
-             * @param id as the human-readable ID as a reference
+             * @param port as the physical port number to set
+             * @param id as the unique ID used as a reference
              */
             void setPortId(uint8_t port, const char* id){
 
@@ -479,8 +479,8 @@ namespace nsOutputs{
 
             /**
              * Gets the port's ID, which is used for MQTT
-             * @param port as the human-readable port number to set
-             * @param id as a pointer to a char* (with size of OUTPUT_ID_MAX_LENGTH) where the ID will be written
+             * @param port as the physical port number to get
+             * @param id as a pointer to a char* (with size of OUTPUT_ID_MAX_LENGTH + 1) where the unique ID will be written
              */
             void getPortId(uint8_t port, char* &id){
 
