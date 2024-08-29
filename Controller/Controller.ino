@@ -2773,10 +2773,11 @@ void mqtt_autoDiscovery_outputs(){
     if(isVariableOutput){
       mqttDoc["on_command_type"] = "brightness";
       mqttDoc["brightness_scale"] = 100;
-      mqttDoc["state_value_template"] = "{% if value|int > 0 %}ON{% else %}OFF{% endif %}";
       mqttDoc["brightness_command_topic"] = command_topic;
       mqttDoc["brightness_state_topic"] = state_topic;
     }
+
+    mqttDoc["state_value_template"] = "{% if value|int > 0 %}ON{% else %}OFF{% endif %}";
 
     JsonObject device = mqttDoc.createNestedObject("device");
     JsonArray identifiers = device.createNestedArray("identifiers");
