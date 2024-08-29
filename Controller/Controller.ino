@@ -443,6 +443,11 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
 }
 
 
+/**
+ * Handles input actions against output ports
+ * @param port as the physical port number of the output
+ * @param action as the action to take on the port
+ */
 nsOutputs::set_result actionOutputPort(uint8_t port, outputAction action){
   uint8_t currentPortValue = outputs.getPortValue(port);
 
@@ -487,6 +492,9 @@ nsOutputs::set_result actionOutputPort(uint8_t port, outputAction action){
 
 
 
+/** 
+ * Handles front panel button press events
+ */
 void eventHandler_frontPanelButtonPress(){
 
   log_v("Front Panel button was pressed");
@@ -495,7 +503,9 @@ void eventHandler_frontPanelButtonPress(){
 }
 
 
-/** Handles the front panel button being pressed during startup */
+/** 
+ * Handles the front panel button being held during startup
+ */
 void eventHandler_frontPanelButtonClosedAtBegin(){
 
   log_v("Front Panel button was closed on begin()");
