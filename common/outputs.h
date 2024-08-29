@@ -181,7 +181,7 @@ namespace nsOutputs{
             uint8_t pin = 0; /* Output controller pin which is attached to this output */
             outputController* controller; /* Reference to the output controller */
             boolean enabled = true; /* If the output is enabled */
-            char id[OUTPUT_ID_MAX_LENGTH]; /* Identifier for the output */
+            char id[OUTPUT_ID_MAX_LENGTH+1]; /* Identifier for the output */
 
             #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
                 uint16_t value = 0; /* Expected PWM value for the pin */
