@@ -413,6 +413,23 @@ namespace nsOutputs{
             }
 
 
+            /**
+             * Sets the power output/brightness/duty cycle for the given port and value
+             * @param id as the output's unique ID
+             * @param value percentage power output/brightness/duty cycle for the given port.  If the port is set as binary output, anything >0 will be set to 100, all other numbers will be set to 0
+             * @returns enumerated result of the request
+             */
+            set_result setPortValue(char* id, int8_t value){
+
+                for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
+                    if(strcmp(outputs[i].id, id) == 0){
+                        return outputs[i].set(value);
+                    }
+                }
+                return set_result::INVALID_PORT;
+            }
+
+
             /** Sets the port type (binary, variable)
              * @param port as the physical port number to set
              * @param type as the port output type
