@@ -873,7 +873,7 @@ paths:
   /api/colors:
     get:
       tags:
-        - General
+        - Clients
       summary: Retrieve the list of colors
       description: Retrieve the list of colors
       security:
