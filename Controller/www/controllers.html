@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu();
+        initDB();
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark" style="max-width: 300px;"></div>
+            <div class="col py-3">
+                <div class="pageTitle">Controllers</div>
+                <div class="pageDescription">Add, remove, and modify controllers and their settings.</div>
+
+                <div class="sectionHeader">Add New Controller</div>
+                <div class="input-group">
+                    <span class="input-group-text">IP Address</span>
+                    <input type="text" class="form-control" placeholder="IP Address" aria-label="IP Address">
+                    <button class="btn btn-outline-primary" type="button">Add</button>
+                </div>
+
+                <div class="sectionHeader mt-5">Managed Controllers</div>
+                <div class="row mt-1">
+                    <div class="col-sm-6">
+                        <div class="card">
+                            <div class="card-body">
+                            <h5 class="card-title">Controller 1
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">Active</span>
+                            </h5>
+                            <div class="card-text">
+                                <div class="alert alert-primary" role="alert">Authenticate to view details.</div>
+                            </div>
+                            <div class="card-text">
+                                <div class="alert alert-danger" role="alert"><a href="#">View</a> controller errors (3).</div>
+                            </div>
+                               
+                            <div class="d-grid gap-2">
+
+                                <div id="controllerDetails">
+                                    <div class="row">
+                                        <div class="col controllerDetailsLabel">IP Address</div>
+                                        <div class="col">255.255.255.255</div>
+                                    </div>
+                                    <div class="row">
+                                            <div class="col controllerDetailsLabel">UUID</div>
+                                            <div class="col uuid">6767617d-5c2e-40eb-8af9-1e222fe2cfcc</div>
+                                    </div>
+                                    <div class="row">
+                                            <div class="col controllerDetailsLabel">Hardware Version</div>
+                                            <div class="col">FFC9999-9999</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col controllerDetailsLabel">Software Version</div>
+                                        <div class="col">2024.99.9</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col controllerDetailsLabel">UI Version</div>
+                                        <div class="col">2024.99.9</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col controllerDetailsLabel">Certificates</div>
+                                        <div class="col">mycert.pem<br>s3.pem<br>othercert.pem</div>
+                                    </div>                 
+                                </div>
+                                
+                                <button class="btn btn-primary">Authenticate</button>
+                                <button class="btn btn-outline-primary">Logout</button>
+                                <button class="btn btn-outline-warning">Pull Configuration</button>
+                                <button class="btn btn-outline-warning">Deploy Configuration</button>
+                                <button class="btn btn-outline-danger">Stop Managing and Delete</button>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="card">
+                            <div class="card-body">
+                            <h5 class="card-title">Controller 2</h5>
+                            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                            <a href="#" class="btn btn-primary">Go somewhere</a>
+                        </div>
+                    </div>
+                </div> 
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

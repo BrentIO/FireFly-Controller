@@ -1,0 +1,111 @@
+<div class="d-flex flex-column align-items-center align-items-sm-start px-2 pt-2 text-white min-vh-100"><a href="/"
+        class="d-flex align-items-center pb-3 mb-md-0 me-md-auto text-white text-decoration-none"><span
+            class="h2">FireFly Controller</span></a>
+    <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start" id="menu">
+        <li><a href="controllers.html" class="nav-link px-0 align-middle">
+            <div class="menuItem">
+                <img class="menuIcon" src="./icons/dns.svg" title="Controllers">
+                <span class="ms-1 d-none d-sm-inline">Controllers</span>
+            </div></a></li>
+        <li><a href="#" class="nav-link px-0 align-middle">
+            <div class="menuItem">
+                <img class="menuIcon" src="./icons/developer_board.svg" title="Clients">
+                <span class="ms-1 d-none d-sm-inline">Clients</span>
+            </div></a></li>
+        <li><a href="#" class="nav-link px-0 align-middle">
+            <div class="menuItem">
+                <img class="menuIcon" src="./icons/switch.svg" title="Inputs">
+                <span class="ms-1 d-none d-sm-inline">Inputs</span>
+            </div></a></li>
+        <li><a href="#" class="nav-link px-0 align-middle">
+            <div class="menuItem">
+                <img class="menuIcon" src="./icons/lightbulb_2.svg" title="Outputs">
+                <span class="ms-1 d-none d-sm-inline">Outputs</span>
+            </div></a></li>
+        <li><a href="#" class="nav-link px-0 align-middle">
+            <div class="menuItem">
+                <img class="menuIcon" src="./icons/electric_bolt.svg" title="Breakers">
+                <span class="ms-1 d-none d-sm-inline">Breakers</span>
+            </div></a></li>
+        <li><a href="#" class="nav-link px-0 align-middle">
+            <div class="menuItem">
+                <img class="menuIcon" src="./icons/instant_mix.svg" title="Relays">
+                <span class="ms-1 d-none d-sm-inline">Relays</span>
+            </div></a></li>
+        <li><a href="#submenuConfiguration" data-bs-toggle="collapse" class="nav-link px-0 align-middle">
+            <div class="menuItem">
+                <img class="menuIcon" src="./icons/settings.svg" title="Configuration">
+                <span class="ms-1 d-none d-sm-inline">Configuration</span>
+            </div></a>
+            <ul class="collapse nav flex-column ms-1" id="submenuConfiguration" data-bs-parent="#menu">
+                <li class="w-100"><a href="#" class="nav-link px-3">
+                    <div class="menuItem">
+                        <img class="menuIcon" src="./icons/palette.svg" title="Colors">
+                        <span class="ms-1 d-none d-sm-inline">Colors</span>
+                    </div>
+                </a></li>
+                <li><a href="#" class="nav-link px-3">
+                    <div class="menuItem">
+                        <img class="menuIcon" src="./icons/label.svg" title="Tags">
+                        <span class="ms-1 d-none d-sm-inline ">Tags</span>
+                    </div>
+                </a></li>
+                <li><a href="import.html" class="nav-link px-3">
+                    <div class="menuItem">
+                        <img class="menuIcon" src="./icons/download.svg" title="Import">
+                        <span class="ms-1 d-none d-sm-inline ">Import</span>
+                    </div>
+                </a></li>
+                <li><a href="#" class="nav-link px-3">
+                    <div class="menuItem">
+                        <img class="menuIcon" src="./icons/upload.svg" title="Export">
+                        <span class="ms-1 d-none d-sm-inline" onclick="exportConfig();">Export</span>
+                    </div>
+                </a></li>
+            </ul>
+        </li>
+        <li><a href="#submenuFirmware" data-bs-toggle="collapse" class="nav-link px-0 align-middle">
+            <div class="menuItem">
+                <img class="menuIcon" src="./icons/system_update_alt.svg" title="Firmware">
+                <span class="ms-1 d-none d-sm-inline">Firmware</span>
+            </div></a>
+            <ul class="collapse nav flex-column ms-1" id="submenuFirmware" data-bs-parent="#menu">
+                <li class="w-100"><a href="#" class="nav-link px-3">
+                    <div class="menuItem">
+                        <img class="menuIcon" src="./icons/verified.svg" title="Certificates">
+                        <span class="ms-1 d-none d-sm-inline">Certificates</span>
+                    </div></a></li>
+                <li class="w-100"><a href="#" class="nav-link px-3">
+                    <div class="menuItem">
+                        <img class="menuIcon" src="./icons/cloud_download.svg" title="Update">
+                        <span class="ms-1 d-none d-sm-inline">Update</span>
+                    </div></a></li>
+                <li class="w-100"><a href="#" class="nav-link px-3">
+                    <div class="menuItem">
+                        <img class="menuIcon" src="./icons/cell_tower.svg" title="OTA Configuration">
+                        <span class="ms-1 d-none d-sm-inline">OTA Configuration</span>
+                    </div></a></li>
+            </ul>
+        </li>
+        <li><a href="#errorsAndEvents" data-bs-toggle="collapse" class="nav-link px-0 align-middle">
+            <div class="menuItem">
+                <img class="menuIcon" src="./icons/monitoring.svg" title="Events and Errors">
+                <span class="ms-1 d-none d-sm-inline">Events and Errors</span>
+            </div></a>
+            <ul class="collapse nav flex-column ms-1" id="errorsAndEvents" data-bs-parent="#menu">
+                <li class="w-100"><a href="#" class="nav-link px-3">
+                    <div class="menuItem">
+                        <img class="menuIcon" src="./icons/description.svg" title="Events">
+                        <span class="d-none d-sm-inline">Events</span>
+                    </div></a></li>
+                <li><a href="#" class="nav-link px-3">
+                    <div class="menuItem">
+                        <img class="menuIcon" src="./icons/error.svg" title="Errors">
+                        <span class="d-none d-sm-inline">Errors</span>
+                    </div></a></li>
+            </ul>
+        </li>
+    </ul>
+    <div class="pb-1 versionInfo">UI: <span id="uiversion">2024.99.99</span>
+        <br>App: <span id="appversion">2024.99.99</span></div>
+</div>

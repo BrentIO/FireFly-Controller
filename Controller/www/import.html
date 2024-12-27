@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu();
+        initDB();
+
+        function uploadConfig(){
+            importConfig(document.getElementById("config-upload-file-selector").files[0]);
+        }
+
+
+        function configImportButtonToggle(){
+            var fileSelector = document.getElementById("config-upload-file-selector");
+            var button = document.getElementById("config-import-button");
+
+            if(fileSelector.files.length == 1){
+                button.disabled = false;
+            }else{
+                button.disabled = true;
+            }
+        }
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark" style="max-width: 300px;"></div>
+            <div class="col py-3">
+                <div class="pageTitle">Import Configuration</div>
+                <div class="pageDescription">Importing from a file will delete the configuration data currently configured in the browser and replace it with the file contents.</div>
+                <div class="input-group">
+                    <input type="file" class="form-control" aria-label="Upload" name="file" id="config-upload-file-selector" onchange="configImportButtonToggle();">
+                    <button id="config-import-button" class="btn btn-danger" onclick="uploadConfig();" disabled>Import Configuration</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
