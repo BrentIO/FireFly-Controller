@@ -26,80 +26,270 @@
             <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark" style="max-width: 300px;"></div>
             <div class="col py-3">
                 <div class="pageTitle">Controllers</div>
-                <div class="pageDescription">Add, remove, and modify controllers and their settings.</div>
+                <div class="pageDescription">Add and remove managed controllers.</div>
 
-                <div class="sectionHeader">Add New Controller</div>
-                <div class="input-group">
-                    <span class="input-group-text">IP Address</span>
-                    <input type="text" class="form-control" placeholder="IP Address" aria-label="IP Address">
-                    <button class="btn btn-outline-primary" type="button">Add</button>
+                <div class="sectionHeader mt-5 mb-3">Managed Controllers
+
+                    <img src="./icons/add.svg" title="Add" id="controllerAddButton" class="btn dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" onclick="toggleModalAddController();">Add New Controller</a></li>
+                        <li><a class="dropdown-item" href="#">Manage Existing by IP Address</a></li>
+                      </ul>
                 </div>
 
-                <div class="sectionHeader mt-5">Managed Controllers</div>
-                <div class="row mt-1">
-                    <div class="col-sm-6">
-                        <div class="card">
-                            <div class="card-body">
-                            <h5 class="card-title">Controller 1
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">Active</span>
-                            </h5>
-                            <div class="card-text">
-                                <div class="alert alert-primary" role="alert">Authenticate to view details.</div>
-                            </div>
-                            <div class="card-text">
-                                <div class="alert alert-danger" role="alert"><a href="#">View</a> controller errors (3).</div>
-                            </div>
-                               
-                            <div class="d-grid gap-2">
+                <div id="managedControllerList" class="row"></div>
+                <div id="managedControllerListEmpty" class="container-fluid text-center">Click <img src="./icons/add.svg" title="Add"> add button to start managing controllers.</div>
+        </div>
+    </div>
 
-                                <div id="controllerDetails">
-                                    <div class="row">
-                                        <div class="col controllerDetailsLabel">IP Address</div>
-                                        <div class="col">255.255.255.255</div>
-                                    </div>
-                                    <div class="row">
-                                            <div class="col controllerDetailsLabel">UUID</div>
-                                            <div class="col uuid">6767617d-5c2e-40eb-8af9-1e222fe2cfcc</div>
-                                    </div>
-                                    <div class="row">
-                                            <div class="col controllerDetailsLabel">Hardware Version</div>
-                                            <div class="col">FFC9999-9999</div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col controllerDetailsLabel">Software Version</div>
-                                        <div class="col">2024.99.9</div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col controllerDetailsLabel">UI Version</div>
-                                        <div class="col">2024.99.9</div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col controllerDetailsLabel">Certificates</div>
-                                        <div class="col">mycert.pem<br>s3.pem<br>othercert.pem</div>
-                                    </div>                 
-                                </div>
-                                
-                                <button class="btn btn-primary">Authenticate</button>
-                                <button class="btn btn-outline-primary">Logout</button>
-                                <button class="btn btn-outline-warning">Pull Configuration</button>
-                                <button class="btn btn-outline-warning">Deploy Configuration</button>
-                                <button class="btn btn-outline-danger">Stop Managing and Delete</button>
-                            </div>
-                            </div>
+    <!-- Add New Controller Modal -->
+    <div class="modal fade" id="addNewControllerModal" tabindex="-1" aria-labelledby="addNewControllerModalLabel" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form class="needs-validation" novalidate id="addNewControllerForm">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="addNewControllerModalLabel">Add New Controller</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group mb-3 has-validation">
+                        <span class="input-group-text">Name</span>
+                        <input class="form-control" id="addNewControllerName" placeholder="" aria-label="Name" required>
+                        <div class="invalid-feedback">
+                            A name is required.
                         </div>
                     </div>
-                    <div class="col-sm-6">
-                        <div class="card">
-                            <div class="card-body">
-                            <h5 class="card-title">Controller 2</h5>
-                            <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                            <a href="#" class="btn btn-primary">Go somewhere</a>
+                    <div class="input-group mb-3 has-validation">
+                        <span class="input-group-text">UUID</span>
+                        <input class="form-control uuid" id="addNewControllerUUID" placeholder="" aria-label="UUID" required>
+                        <button class="btn btn-outline-primary" type="button" onclick="addNewControllerGenerateUUID();">Generate</button>
+                        <div class="invalid-feedback">
+                            UUID is required.  If you don't know the UUID, click "Generate".  You can change the controller's UUID assignment later.
                         </div>
                     </div>
-                </div> 
+                    <div class="input-group mb-3 has-validation">
+                        <span class="input-group-text">Hardware Product ID</span>
+                        <select class="form-select" aria-label="Hardware Product ID" id="addNewControllerPID" required>
+                            <option value="" selected>Select...</option>
+                            <option value="FFC3232-2305">FFC3232-2305</option>
+                            <option value="FFC3232-2305">FFC0806-2305</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Select an option.
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">IP Address</span>
+                        <div class="input-group-text">
+                            <input class="form-check-input mt-0" type="checkbox" value="" aria-label="Checkbox for following text input" id="addNewControllerCheckboxIP" onchange="toggleAddNewControllerIPInputField(this);">
+                        </div>
+                        <input class="form-control" id="addNewControllerIP" placeholder="" aria-label="IP address" disabled>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="button" id="addNewControllerButtonAdd">Add</button>
+                </div>
+            </form>
             </div>
         </div>
     </div>
+
 </body>
+
+<script>
+
+    var addNewControllerModal = new bootstrap.Modal('#addNewControllerModal');
+
+
+    document.getElementById("addNewControllerButtonAdd").addEventListener('click', () => {
+
+        document.getElementById("addNewControllerName").value = document.getElementById("addNewControllerName").value.trim();
+        document.getElementById("addNewControllerUUID").value = document.getElementById("addNewControllerUUID").value.trim();
+        document.getElementById("addNewControllerIP").value = document.getElementById("addNewControllerIP").value.trim();
+
+        let form = document.getElementById("addNewControllerForm");
+        form.checkValidity();
+        form.classList.add('was-validated');
+
+        if(!form.checkValidity()){
+            return;
+        }
+
+        addControllerToDatabase();
+        drawManagedControllers();
+        toggleModalAddController();
+    })
+
+
+    async function addControllerToDatabase(){
+
+        await db.controllers.add({
+            name: document.getElementById("addNewControllerName").value,
+            uuid: document.getElementById("addNewControllerUUID").value,
+            productId: document.getElementById("addNewControllerPID").value
+        });
+
+        let controllerLS = new controllerLocalStorage(document.getElementById("addNewControllerUUID").value);
+
+        if(document.getElementById("addNewControllerIP").value != ""){
+            controllerLS.ip = document.getElementById("addNewControllerIP").value;
+        }
+        
+        controllerLS.save();
+    }
+
+    function toggleModalAddController(){
+        addNewControllerModal.toggle();
+    }
+
+    document.getElementById("addNewControllerModal").addEventListener('show.bs.modal', () => {
+        form = document.getElementById("addNewControllerForm");
+        form.reset();
+        form.classList.remove('was-validated');
+    })
+
+
+    function toggleAddNewControllerIPInputField(checkbox){
+        var inputBox = document.getElementById("addNewControllerIP");
+        if(checkbox.checked){
+            inputBox.disabled = false;
+        }else{
+            inputBox.disabled = true;
+        }
+    }
+
+    function addNewControllerGenerateUUID(){
+
+        let uuidField = document.getElementById("addNewControllerUUID");
+
+        if(uuidField.value == ""){
+            uuidField.value = self.crypto.randomUUID();
+        }
+    }
+
+
+    async function drawManagedControllers(){
+        let managedControllerList = document.getElementById("managedControllerList");
+        managedControllerList.innerHTML = '';
+
+        controllers = await db.controllers.orderBy('name').toArray();
+
+        if(controllers.length == 0){
+            document.getElementById("managedControllerListEmpty").hidden = false;
+        }else{
+            document.getElementById("managedControllerListEmpty").hidden = true;
+        }
+
+        controllers.forEach((controller) => {
+
+            let controllerLS = new controllerLocalStorage(controller.uuid);
+
+            let certificateText = "";
+
+            controllerLS.certificates.forEach((certificate) =>{
+                certificateText = certificateText + certificate + "<br>";
+            })
+
+            if(controllerLS.certificates.length == 0){
+                certificateText = "Unknown";
+            }
+
+            let newControllerCard = `
+            <div class="col">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h4 class="card-title mb-3 text-center">${controller.name}</h4>
+                        <div class="card-text">
+                            <div class="alert alert-primary" role="alert">Authenticate to view details.</div>
+                        </div>
+                        <div class="card-text">
+                            <div class="alert alert-danger" role="alert"><a href="#">View</a> controller errors (3).</div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <div id="controllerDetails">
+                                <div class="row">
+                                        <div class="col controllerDetailsLabel">UUID</div>
+                                        <div class="col uuid">${controller.uuid}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col controllerDetailsLabel">IP Address</div>
+                                    <div class="col">${controllerLS.ip??"Unknown"}</div>
+                                </div>
+                                <div class="row">
+                                        <div class="col controllerDetailsLabel">Product ID</div>
+                                        <div class="col">${controller.productId}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col controllerDetailsLabel">Software Version</div>
+                                    <div class="col">${controllerLS.softwareVersion??"Unknown"}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col controllerDetailsLabel">UI Version</div>
+                                    <div class="col">${controllerLS.softwareVersion??"Unknown"}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col controllerDetailsLabel">Certificates</div>
+                                    <div class="col">${certificateText}</div>
+                                </div>                 
+                            </div>
+                            <button class="btn btn-primary">Authenticate</button>
+                            <button class="btn btn-outline-primary">Logout</button>
+                            <button class="btn btn-outline-warning">Pull Configuration</button>
+                            <button class="btn btn-outline-warning">Deploy Configuration</button>
+                            <button class="btn btn-outline-danger" id="stopManagingAndDeleteButton${controller.id}" onclick="toggleConfirmDeleteController(${controller.id})">Stop Managing and Delete</button>
+
+                            <div class="input-group mb-3" id="confirmDeleteController${controller.id}" hidden>
+                                <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText${controller.id}" oninput="confirmDeleteControllerChallegeOnChange(${controller.id});">
+                                <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteController(${controller.id})">Cancel</button>
+                                <button class="btn btn-outline-danger" type="button" id="deleteControllerButton${controller.id}" onclick="deleteController(${controller.id});" disabled>Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`
+
+            document.getElementById('managedControllerList').insertAdjacentHTML('beforeend', newControllerCard);
+        });
+    }
+
+    async function deleteController(id){
+
+        await db.controllers.delete(id);
+
+        drawManagedControllers();
+
+
+        //console.log(`I will now delete ID ${id}`);
+
+    }
+
+    function confirmDeleteControllerChallegeOnChange(id){
+
+        if(document.getElementById('confirmDeleteText'+id).value == "confirm"){
+            document.getElementById('deleteControllerButton'+id).disabled = false;
+            document.getElementById('deleteControllerButton'+id).classList.add('btn-danger');
+            document.getElementById('deleteControllerButton'+id).classList.remove('btn-outline-danger');
+        }else{
+            document.getElementById('deleteControllerButton'+id).disabled = true;
+            document.getElementById('deleteControllerButton'+id).classList.add('btn-outline-danger');
+            document.getElementById('deleteControllerButton'+id).classList.remove('btn-danger');
+        }
+    }
+
+    function toggleConfirmDeleteController(id){
+
+        if(document.getElementById('stopManagingAndDeleteButton'+id).hidden == false){
+            document.getElementById('stopManagingAndDeleteButton'+id).hidden = true;
+            document.getElementById('confirmDeleteController'+id).hidden = false;
+        }else{
+            document.getElementById('stopManagingAndDeleteButton'+id).hidden = false;
+            document.getElementById('confirmDeleteController'+id).hidden = true;
+            document.getElementById('confirmDeleteText'+id).value = "";
+        }
+    }
+
+    drawManagedControllers();
+
+</script>
 
 </html>
