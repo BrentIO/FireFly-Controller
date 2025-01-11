@@ -116,7 +116,7 @@
         addControllerToDatabase();
         drawManagedControllers();
         toggleModalAddController();
-    })
+    });
 
 
     async function addControllerToDatabase(){
@@ -136,15 +136,18 @@
         controllerLS.save();
     }
 
+
     function toggleModalAddController(){
         addNewControllerModal.toggle();
     }
 
-    document.getElementById("addNewControllerModal").addEventListener('show.bs.modal', () => {
+    document.getElementById("addNewControllerModal").addEventListener('show.bs.modal', () => {        
         form = document.getElementById("addNewControllerForm");
         form.reset();
         form.classList.remove('was-validated');
-    })
+    });
+
+
     async function getControllerPIDs(){
 
         let pidSelect = document.getElementById("addNewControllerPID");
@@ -282,6 +285,7 @@
         }
     }
 
+    
     function toggleConfirmDeleteController(id){
 
         if(document.getElementById('stopManagingAndDeleteButton'+id).hidden == false){
