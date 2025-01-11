@@ -179,6 +179,8 @@
         if(uuidField.value == ""){
             uuidField.value = self.crypto.randomUUID();
         }
+
+        uuidEditFieldRealtimeValidation('addNewControllerUUID','value')
     }
 
 
@@ -294,7 +296,7 @@
         }
     }
 
-    
+
     function toggleConfirmDeleteController(id){
 
         if(document.getElementById('stopManagingAndDeleteButton'+id).hidden == false){
