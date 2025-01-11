@@ -37,7 +37,7 @@ async function importConfig(file){
 class controllerLocalStorage{
     ip;
     certificates = [];
-    softwareVersion;
+    firmwareVersion;
     uiVersion;
 
     constructor(uuid){
