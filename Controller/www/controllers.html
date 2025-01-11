@@ -121,13 +121,13 @@
 
     async function addControllerToDatabase(){
 
-        await db.controllers.add({
+        id = await db.controllers.add({
             name: document.getElementById("addNewControllerName").value,
             uuid: document.getElementById("addNewControllerUUID").value,
             productId: document.getElementById("addNewControllerPID").value
         });
 
-        let controllerLS = new controllerLocalStorage(document.getElementById("addNewControllerUUID").value);
+        let controllerLS = new controllerLocalStorage(id);
 
         if(document.getElementById("addNewControllerIP").value != ""){
             controllerLS.ip = document.getElementById("addNewControllerIP").value;
@@ -196,7 +196,7 @@
 
         controllers.forEach((controller) => {
 
-            let controllerLS = new controllerLocalStorage(controller.uuid);
+            let controllerLS = new controllerLocalStorage(controller.id);
 
             let certificateText = "";
 

@@ -53,9 +53,10 @@ class controllerLocalStorage{
     firmwareVersion;
     uiVersion;
     visualToken;
+    uuid;
 
-    constructor(uuid){
-        this.uuid = uuid;
+    constructor(id){
+        this.id = id;
         this.retrieve();
     }
 
@@ -83,6 +84,14 @@ class controllerLocalStorage{
         this.firmwareVersion = value;
     }
 
+    get uuid(){
+        return this.uuid;
+    }
+
+    set uuid(value){
+        this.uuid = value;
+    }
+
     get uiVersion(){
         return this.uiVersion;
     }
@@ -100,7 +109,7 @@ class controllerLocalStorage{
     }
 
     retrieve(){
-        const record = JSON.parse(localStorage.getItem(this.uuid));
+        const record = JSON.parse(localStorage.getItem(this.id));
 
         if(record == null){
             return;
@@ -124,11 +133,11 @@ class controllerLocalStorage{
     }
 
     save(){
-        localStorage.setItem(this.uuid, JSON.stringify(this));
+        localStorage.setItem(this.id, JSON.stringify(this));
     }
 
     delete(){
-        localStorage.removeItem(this.uuid);
+        localStorage.removeItem(this.id);
     }
 
 }
