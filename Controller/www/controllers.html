@@ -71,8 +71,6 @@
                         <span class="input-group-text">Hardware Product ID</span>
                         <select class="form-select" aria-label="Hardware Product ID" id="addNewControllerPID" required>
                             <option value="" selected>Select...</option>
-                            <option value="FFC3232-2305">FFC3232-2305</option>
-                            <option value="FFC3232-2305">FFC0806-2305</option>
                         </select>
                         <div class="invalid-feedback">
                             Select an option.
@@ -147,6 +145,18 @@
         form.reset();
         form.classList.remove('was-validated');
     })
+    async function getControllerPIDs(){
+
+        let pidSelect = document.getElementById("addNewControllerPID");
+        
+        pids = await db.product_ids.orderBy('pid').toArray()
+        pids.forEach((element) =>{
+            var opt = document.createElement('option');
+            opt.value = element['pid'];
+            opt.innerHTML = element['pid'];
+            pidSelect.appendChild(opt);
+        });
+    }
 
 
     function toggleAddNewControllerIPInputField(checkbox){
@@ -285,6 +295,7 @@
     }
 
     drawManagedControllers();
+    getControllerPIDs();
 
 </script>
 
