@@ -252,16 +252,12 @@
         });
     }
 
+
     async function deleteController(id){
-
         await db.controllers.delete(id);
-
-        drawManagedControllers();
-
-
-        //console.log(`I will now delete ID ${id}`);
-
+        await drawManagedControllers();
     }
+
 
     function confirmDeleteControllerChallegeOnChange(id){
 
