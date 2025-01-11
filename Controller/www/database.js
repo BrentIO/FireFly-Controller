@@ -1,15 +1,28 @@
-let dbVersion = 3;
+let dbVersion = 1;
 
 const dbName = "FireFly-Controller";
 let db = new Dexie(dbName);
+
+let product_ids = [{"pid":"FFC3232-2305","inputs":{"count":32},"outputs":{"count":32}},{"pid":"FFC0806-2305","inputs":{"count":8},"outputs":{"count":6}}];
 
 
 const initDB = () => {
     db.version(dbVersion).stores({
         colors: "name", 
         controllers: "++id, &uuid, name",
-        areas: "name"
-    })
+        areas: "name",
+        product_ids: "pid"
+    });
+
+    db.version(1).upgrade(function(transaction) {
+        transaction.product_ids.clear();
+        transaction.product_ids.bulkAdd(product_ids);
+    });
+
+    db.on("populate", function(transaction) {
+        transaction.product_ids.bulkAdd(product_ids);
+    });
+
     db.open();
 };
 
