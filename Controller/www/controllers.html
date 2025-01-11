@@ -61,7 +61,7 @@
                     </div>
                     <div class="input-group mb-3 has-validation">
                         <span class="input-group-text">UUID</span>
-                        <input class="form-control uuid" id="addNewControllerUUID" placeholder="" aria-label="UUID" required>
+                        <input class="form-control uuid" id="addNewControllerUUID" placeholder="" aria-label="UUID" required onInput="uuidEditFieldRealtimeValidation('addNewControllerUUID','value')">
                         <button class="btn btn-outline-primary" type="button" onclick="addNewControllerGenerateUUID();">Generate</button>
                         <div class="invalid-feedback">
                             UUID is required.  If you don't know the UUID, click "Generate".  You can change the controller's UUID assignment later.
@@ -223,11 +223,19 @@
                             <div id="controllerDetails">
                                 <div class="row">
                                         <div class="col controllerDetailsLabel">UUID</div>
-                                        <div class="col uuid">${controller.uuid}</div>
+                                        <div class="col"><span class="uuid" id="controllerUUID_${controller.id}" onInput="uuidEditFieldRealtimeValidation('controllerUUID_${controller.id}','innerHTML')";>${controller.uuid}</span>
+                                            <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editUUIDIcon_${controller.id}" onClick="startEditControllerUUID(${controller.id})";">
+                                            <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveUUIDIcon_${controller.id}" onClick="saveEditControllerUUID(${controller.id})"; hidden>
+                                            <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelUUIDIcon_${controller.id}" onClick="cancelEditControllerUUID(${controller.id})"; hidden>
+                                        </div>
                                 </div>
                                 <div class="row">
                                     <div class="col controllerDetailsLabel">IP Address</div>
-                                    <div class="col">${controllerLS.ip??"Unknown"}</div>
+                                    <div class="col"><span id="controllerIP_${controller.id}">${controllerLS.ip??"Unknown"}</span>
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editIPIcon_${controller.id}" onClick="startEditControllerIP(${controller.id})";>
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveIPIcon_${controller.id}" onClick="saveEditControllerIP(${controller.id})"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelIPIcon_${controller.id}" onClick="cancelEditControllerIP(${controller.id})"; hidden>
+                                        </div>
                                 </div>
                                 <div class="row">
                                         <div class="col controllerDetailsLabel">Product ID</div>
@@ -296,6 +304,124 @@
             document.getElementById('stopManagingAndDeleteButton'+id).hidden = false;
             document.getElementById('confirmDeleteController'+id).hidden = true;
             document.getElementById('confirmDeleteText'+id).value = "";
+        }
+    }
+
+
+    function startEditControllerUUID(id){
+        uuidElement = document.getElementById('controllerUUID_'+id);
+        uuidElement.setAttribute("previous-value", uuidElement.innerHTML);
+        uuidElement.contentEditable = "true";
+        uuidElement.classList.add("form-control");
+        document.getElementById('editUUIDIcon_'+id).hidden = true;
+        document.getElementById('saveUUIDIcon_'+id).hidden = false;
+        document.getElementById('cancelUUIDIcon_'+id).hidden = false;
+    }
+
+
+    function cancelEditControllerUUID(id){
+        uuidElement = document.getElementById('controllerUUID_'+id);
+        uuidElement.contentEditable = "false";
+        uuidElement.classList.remove("form-control");
+        uuidElement.innerHTML = uuidElement.getAttribute("previous-value");
+        document.getElementById('editUUIDIcon_'+id).hidden = false;
+        document.getElementById('saveUUIDIcon_'+id).hidden = true;
+        document.getElementById('cancelUUIDIcon_'+id).hidden = true;
+    }
+
+
+    async function saveEditControllerUUID(id){
+        uuidElement = document.getElementById('controllerUUID_'+id);
+        if(isValidUUID(uuidElement.innerHTML)){
+            await db.controllers.update(id, {uuid: uuidElement.innerHTML});
+            uuidElement.contentEditable = "false";
+            uuidElement.classList.remove("form-control");
+            document.getElementById('editUUIDIcon_'+id).hidden = false;
+            document.getElementById('saveUUIDIcon_'+id).hidden = true;
+            document.getElementById('cancelUUIDIcon_'+id).hidden = true;
+        }else{
+            console.warn("Invalid UUID, reverting to prior value");
+            cancelEditControllerUUID(id);
+        }
+    }
+
+
+    function startEditControllerIP(id){
+        ipElement = document.getElementById('controllerIP_'+id);
+        ipElement.setAttribute("previous-value", ipElement.innerHTML);
+        ipElement.contentEditable = "true";
+        ipElement.classList.add("form-control");
+        document.getElementById('editIPIcon_'+id).hidden = true;
+        document.getElementById('saveIPIcon_'+id).hidden = false;
+        document.getElementById('cancelIPIcon_'+id).hidden = false;
+    }
+
+
+    function cancelEditControllerIP(id){
+        ipElement = document.getElementById('controllerIP_'+id);
+        ipElement.contentEditable = "false";
+        ipElement.classList.remove("form-control");
+        ipElement.innerHTML = ipElement.getAttribute("previous-value");
+        document.getElementById('editIPIcon_'+id).hidden = false;
+        document.getElementById('saveIPIcon_'+id).hidden = true;
+        document.getElementById('cancelIPIcon_'+id).hidden = true;
+    }
+
+
+    async function saveEditControllerIP(id){
+        ipElement = document.getElementById('controllerIP_'+id);
+        ipElement.innerHTML = ipElement.innerHTML.trim();
+        if(isValidIPv4(ipElement.innerHTML) || isValidDomainName(ipElement.innerHTML)){
+            let controllerLS = new controllerLocalStorage(id);
+            controllerLS.ip = ipElement.innerHTML;
+            controllerLS.save();
+            ipElement.contentEditable = "false";
+            ipElement.classList.remove("form-control");
+            document.getElementById('editIPIcon_'+id).hidden = false;
+            document.getElementById('saveIPIcon_'+id).hidden = true;
+            document.getElementById('cancelIPIcon_'+id).hidden = true;
+        }else{
+            console.warn("Invalid IP, reverting to prior value");
+            cancelEditControllerIP(id);
+        }
+    }
+
+
+    function isValidIPv4(value){
+        var regex = /^((25[0-5]|2[0-4][0-9]|[0-1]?[0-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|[0-1]?[0-9]?[0-9])$/;
+        return regex.test(value);
+    }
+
+
+    function isValidDomainName(value){
+        var regex =/^((www\.([a-zA-Z0-9\-]{2,63}\.)+[a-zA-Z]{2,63})|(([a-zA-Z0-9\-]{2,63}\.)+[a-zA-Z]{2,63}))(\.[a-zA-Z]{2,63})?$/;
+        return regex.test(value);
+    }
+
+
+    function isValidUUID(value){
+        var regex =/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+        return regex.test(value);
+    }
+
+
+    function uuidEditFieldRealtimeValidation(element, type){
+        uuidElement = document.getElementById(element);
+
+        switch(type){
+            case "innerHTML":
+                value = uuidElement.innerHTML;
+                break;
+            case "value":
+                value = uuidElement.value;
+        }
+
+        if(isValidUUID(value)){
+            uuidElement.classList.remove("is-invalid");
+            uuidElement.classList.add("is-valid");
+        }else{
+            uuidElement.classList.add("is-invalid");
+            uuidElement.classList.remove("is-valid");
         }
     }
 
