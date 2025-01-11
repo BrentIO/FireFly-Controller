@@ -39,6 +39,7 @@ class controllerLocalStorage{
     certificates = [];
     firmwareVersion;
     uiVersion;
+    visualToken;
 
     constructor(uuid){
         this.uuid = uuid;
@@ -75,6 +76,14 @@ class controllerLocalStorage{
 
     set uiVersion(value){
         this.uiVersion = value;
+    }
+
+    get visualToken(){
+        return this.visualToken;
+    }
+
+    set visualToken(value){
+        this.visualToken = value;
     }
 
     retrieve(){
