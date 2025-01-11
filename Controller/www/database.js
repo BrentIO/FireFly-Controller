@@ -61,12 +61,12 @@ class controllerLocalStorage{
         this.certificates = value;
     }
 
-    get softwareVersion(){
-        return this.softwareVersion;
+    get firmwareVersion(){
+        return this.firmwareVersion;
     }
 
-    set softwareVersion(value){
-        this.softwareVersion = value;
+    set firmwareVersion(value){
+        this.firmwareVersion = value;
     }
 
     get uiVersion(){
@@ -92,8 +92,8 @@ class controllerLocalStorage{
             this.certificates = record.certificates;
         }
 
-        if("softwareVersion" in record){
-            this.softwareVersion = record.softwareVersion;
+        if("firmwareVersion" in record){
+            this.firmwareVersion = record.firmwareVersion;
         }
 
         if("uiVersion" in record){
