@@ -112,7 +112,7 @@ class controllerLocalStorage{
     }
 
     retrieve(){
-        const record = JSON.parse(localStorage.getItem(this.id));
+        const record = JSON.parse(localStorage.getItem("controller_" + this.id));
 
         if(record == null){
             return;
@@ -136,11 +136,11 @@ class controllerLocalStorage{
     }
 
     save(){
-        localStorage.setItem(this.id, JSON.stringify(this));
+        localStorage.setItem("controller_" + this.id, JSON.stringify(this));
     }
 
     delete(){
-        localStorage.removeItem(this.id);
+        localStorage.removeItem("controller_" + this.id);
     }
 
 }
