@@ -102,6 +102,7 @@
         }
 
         if(fileSelector.files[0].type != "application/x-x509-ca-cert"){
+            handleWarning("The file selected is not a x509 certificate.");
             return;
         }
 
