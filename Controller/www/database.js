@@ -12,7 +12,8 @@ const initDB = () => {
         colors: "name", 
         controllers: "++id, &uuid, name",
         areas: "name",
-        product_ids: "pid"
+        product_ids: "pid",
+        tags: "name"
     });
 
     db.version(1).upgrade(function(transaction) {
