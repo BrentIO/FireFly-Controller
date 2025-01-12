@@ -100,3 +100,12 @@
     font-weight:lighter;
     font-size: smaller;
 }
+
+@media screen and (max-width: 575px) {
+    .applicationName {
+        display: none !important;
+    }
+    .versionInfo {
+        display: none !important;
+    }
+}
