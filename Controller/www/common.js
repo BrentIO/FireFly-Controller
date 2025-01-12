@@ -3,6 +3,7 @@ function eventHandler(e) {
 }
 
 
+function errorHandler(e) {
 function loadMenu(){
     fetch("./menu.html")
     .then((response) => {
@@ -16,6 +17,6 @@ function loadMenu(){
         document.getElementById('menubar').innerHTML = body;
     })
     .catch(error => {
-        console.log("Cannot load menu \n" + error);
+        console.error("Cannot load menu \n" + error);
     });
 }
