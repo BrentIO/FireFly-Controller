@@ -1,15 +1,84 @@
 function eventHandler(e) {
     console.log(`Event: ${e}`);
+    showToast(e);
 }
 
 
 function errorHandler(e) {
     console.error(`Error: ${e}`);
+    showToast(e, "danger");
 }
 
 
 function warningHandler(e) {
     console.warn(`Warning: ${e}`);
+    showToast(e, "warn");
+}
+
+
+function showToast(message, type='notification', options = {}) {
+
+    if(document.getElementById("toastContainer") === null){
+        const toastContainer = document.createElement('div');
+        toastContainer.classList.add("toast-container");
+        toastContainer.classList.add("top-0");
+        toastContainer.classList.add("end-0");
+        toastContainer.classList.add("p-3");
+        toastContainer.setAttribute("id", "toastContainer");
+        document.body.appendChild(toastContainer);
+    }
+
+    const toastContainer = document.getElementById("toastContainer");
+    const toastInstance = document.createElement('div');
+    toastInstance.classList.add('toast');
+    toastInstance.classList.add('align-items-center');
+    toastInstance.classList.add('border-0');
+    toastInstance.setAttribute("role", "alert");
+    toastInstance.setAttribute("aria-live", "assertive");
+    toastInstance.setAttribute("aria-atomic", "true");
+
+    switch(type){
+        case 'danger':
+        case 'error':
+            toastInstance.classList.add("text-bg-danger");
+            options['autohide'] = false;
+            break;
+        
+        case 'warn':
+        case 'warning':
+            toastInstance.classList.add("text-bg-warning");
+            options['delay'] = 5000;
+            break;
+
+        default:
+            toastInstance.classList.add("text-bg-primary");
+            options['delay'] = 2500;
+            break;
+    }
+
+    toastInner = document.createElement('div');
+    toastInner.classList.add('d-flex');
+
+    const toastBody = document.createElement('div');
+    toastBody.classList.add('toast-body');
+    toastBody.innerText = message;
+    toastInner.appendChild(toastBody);
+
+    const toastButton = document.createElement('button');
+    toastButton.setAttribute("type", "button");
+    toastButton.classList.add('btn-close');
+    toastButton.classList.add('btn-close-white');
+    toastButton.classList.add('me-2');
+    toastButton.classList.add('m-auto');
+    toastButton.setAttribute("data-bs-dismiss", "toast");
+    toastButton.setAttribute("aria-label", "Close");
+    toastInner.appendChild(toastButton);
+
+    toastInstance.appendChild(toastInner);
+    toastContainer.appendChild(toastInstance);
+
+    const thisToast = new bootstrap.Toast(toastInstance, options);
+    thisToast.show();
 }
 
 
