@@ -101,6 +101,14 @@
     font-size: smaller;
 }
 
+.activeMenuItem{
+    color: #807d19;
+    font-weight:bold;
+    .menuIcon {
+        filter: invert(51%) sepia(58%) saturate(4149%) hue-rotate(38deg) brightness(87%) contrast(80%);
+    }
+}
+
 @media screen and (max-width: 575px) {
     .applicationName {
         display: none !important;

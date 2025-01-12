@@ -3,32 +3,32 @@
             class="h2 applicationName">FireFly Controller</span></a>
     <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start" id="menu">
         <li><a href="controllers.html" class="nav-link px-0 align-middle">
-            <div class="menuItem">
+            <div class="menuItem" id="menuItemControllers">
                 <img class="menuIcon" src="./icons/dns.svg" title="Controllers">
                 <span class="ms-1 d-none d-sm-inline">Controllers</span>
             </div></a></li>
         <li><a href="#" class="nav-link px-0 align-middle">
-            <div class="menuItem">
+            <div class="menuItem" id="menuItemClients">
                 <img class="menuIcon" src="./icons/developer_board.svg" title="Clients">
                 <span class="ms-1 d-none d-sm-inline">Clients</span>
             </div></a></li>
         <li><a href="#" class="nav-link px-0 align-middle">
-            <div class="menuItem">
+            <div class="menuItem" id="menuItemInputs">
                 <img class="menuIcon" src="./icons/switch.svg" title="Inputs">
                 <span class="ms-1 d-none d-sm-inline">Inputs</span>
             </div></a></li>
         <li><a href="#" class="nav-link px-0 align-middle">
-            <div class="menuItem">
+            <div class="menuItem" id="menuItemOutputs">
                 <img class="menuIcon" src="./icons/lightbulb_2.svg" title="Outputs">
                 <span class="ms-1 d-none d-sm-inline">Outputs</span>
             </div></a></li>
         <li><a href="#" class="nav-link px-0 align-middle">
-            <div class="menuItem">
+            <div class="menuItem" id="menuItemBreakers">
                 <img class="menuIcon" src="./icons/electric_bolt.svg" title="Breakers">
                 <span class="ms-1 d-none d-sm-inline">Breakers</span>
             </div></a></li>
         <li><a href="#" class="nav-link px-0 align-middle">
-            <div class="menuItem">
+            <div class="menuItem" id="menuItemRelays">
                 <img class="menuIcon" src="./icons/instant_mix.svg" title="Relays">
                 <span class="ms-1 d-none d-sm-inline">Relays</span>
             </div></a></li>
@@ -39,31 +39,31 @@
             </div></a>
             <ul class="collapse nav flex-column ms-1" id="submenuConfiguration" data-bs-parent="#menu">
                 <li class="w-100"><a href="areas.html" class="nav-link px-3">
-                    <div class="menuItem">
+                    <div class="menuItem" id="menuItemAreas">
                         <img class="menuIcon" src="./icons/location.svg" title="Areas">
                         <span class="ms-1 d-none d-sm-inline">Areas</span>
                     </div>
                 </a></li>
                 <li class="w-100"><a href="colors.html" class="nav-link px-3">
-                    <div class="menuItem">
+                    <div class="menuItem" id="menuItemColors">
                         <img class="menuIcon" src="./icons/palette.svg" title="Colors">
                         <span class="ms-1 d-none d-sm-inline">Colors</span>
                     </div>
                 </a></li>
                 <li><a href="tags.html" class="nav-link px-3">
-                    <div class="menuItem">
+                    <div class="menuItem" id="menuItemTags">
                         <img class="menuIcon" src="./icons/label.svg" title="Tags">
                         <span class="ms-1 d-none d-sm-inline ">Tags</span>
                     </div>
                 </a></li>
                 <li><a href="import.html" class="nav-link px-3">
-                    <div class="menuItem">
+                    <div class="menuItem" id="menuItemImport">
                         <img class="menuIcon" src="./icons/download.svg" title="Import">
                         <span class="ms-1 d-none d-sm-inline ">Import</span>
                     </div>
                 </a></li>
                 <li><a href="#" class="nav-link px-3">
-                    <div class="menuItem">
+                    <div class="menuItem" id="menuItemExport">
                         <img class="menuIcon" src="./icons/upload.svg" title="Export">
                         <span class="ms-1 d-none d-sm-inline" onclick="exportConfig();">Export</span>
                     </div>
@@ -77,17 +77,17 @@
             </div></a>
             <ul class="collapse nav flex-column ms-1" id="submenuFirmware" data-bs-parent="#menu">
                 <li class="w-100"><a href="./certificates.html" class="nav-link px-3">
-                    <div class="menuItem">
+                    <div class="menuItem" id="menuItemCertificates">
                         <img class="menuIcon" src="./icons/certificate.svg" title="Certificates">
                         <span class="ms-1 d-none d-sm-inline">Certificates</span>
                     </div></a></li>
                 <li class="w-100"><a href="#" class="nav-link px-3">
-                    <div class="menuItem">
+                    <div class="menuItem" id="menuItemUpdate">
                         <img class="menuIcon" src="./icons/cloud_download.svg" title="Update">
                         <span class="ms-1 d-none d-sm-inline">Update</span>
                     </div></a></li>
                 <li class="w-100"><a href="#" class="nav-link px-3">
-                    <div class="menuItem">
+                    <div class="menuItem" id="menuItemOTAConfiguration">
                         <img class="menuIcon" src="./icons/cell_tower.svg" title="OTA Configuration">
                         <span class="ms-1 d-none d-sm-inline">OTA Configuration</span>
                     </div></a></li>
@@ -100,12 +100,12 @@
             </div></a>
             <ul class="collapse nav flex-column ms-1" id="errorsAndEvents" data-bs-parent="#menu">
                 <li class="w-100"><a href="#" class="nav-link px-3">
-                    <div class="menuItem">
+                    <div class="menuItem" id="menuItemEvents">
                         <img class="menuIcon" src="./icons/description.svg" title="Events">
                         <span class="d-none d-sm-inline">Events</span>
                     </div></a></li>
                 <li><a href="#" class="nav-link px-3">
-                    <div class="menuItem">
+                    <div class="menuItem" id="menuItemErrors">
                         <img class="menuIcon" src="./icons/error.svg" title="Errors">
                         <span class="d-none d-sm-inline">Errors</span>
                     </div></a></li>

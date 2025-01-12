@@ -82,7 +82,7 @@ function showToast(message, type='notification', options = {}) {
 }
 
 
-function loadMenu(){
+function loadMenu(menu=null, menuItem=null){
     fetch("./menu.html")
     .then((response) => {
         if (response.ok)
@@ -93,6 +93,13 @@ function loadMenu(){
     })
     .then((body) => {
         document.getElementById('menubar').innerHTML = body;
+        if(menu != null){
+            new bootstrap.Collapse(document.getElementById(menu), {toggle: true});
+        }
+
+        if(menuItem != null){
+            document.getElementById(menuItem).classList.add("activeMenuItem");
+        }
     })
     .catch(error => {
         console.error("Cannot load menu \n" + error);
