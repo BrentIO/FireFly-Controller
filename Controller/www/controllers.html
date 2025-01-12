@@ -146,6 +146,10 @@
         form = document.getElementById("addNewControllerForm");
         form.reset();
         form.classList.remove('was-validated');
+
+        uuidField = document.getElementById("addNewControllerUUID");
+        uuidField.classList.remove("is-valid");
+        uuidField.classList.remove("is-invalid");
     });
 
 
