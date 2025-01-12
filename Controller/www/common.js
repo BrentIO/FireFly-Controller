@@ -102,7 +102,7 @@ function loadMenu(menu=null, menuItem=null){
         }
     })
     .catch(error => {
-        console.error("Cannot load menu \n" + error);
+        errorHandler("Cannot load menu \n" + error);
     });
 }
 
