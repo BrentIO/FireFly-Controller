@@ -145,4 +145,46 @@ class controllerLocalStorage{
     }
 
 }
+
+
+async function storeCertificate(filename, certificate){
+
+    if(await db.certificates.where({certificate: certificate}).count() > 0){
+        return;
+    }
+
+    truncatedCert = certificate.replace("-----BEGIN CERTIFICATE-----", "");
+    truncatedCert = truncatedCert.replace("-----END CERTIFICATE-----", "");
+
+    try {
+        decoded = decodeCert(truncatedCert);
+
+        await db.certificates.put({
+            fileName: filename,
+            certificate: certificate,
+            commonName: decoded['commonName-X520'],
+            expiration: decoded['UTCTime'],
+            countryName: decoded['countryName-X520'],
+            encryptionType: decoded['encryptionAlgo'],
+            locality: decoded['localityName-X520'],
+            organization: decoded['organizationName-X520'],
+            organizationalUnitName: decoded['organizationalUnitName-X520'],
+            stateOrProvinceName: decoded['stateOrProvinceName-X520']
+        });
+    }catch (error){
+        errorHandler(error);
+    }
+}
+
+
+async function exportCertificate(id){
+    try {
+        result = await db.certificates.where({id:id}).toArray();
+        if(result.length != 1){
+            throw new Error("Unexpected number of results when exporting.");
+        }
+        download(result[0].certificate, `${result[0].fileName}`, "application/x-x509-ca-cert");
+    } catch (error) {
+        errorHandler(error);
+    }
 }

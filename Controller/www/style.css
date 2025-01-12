@@ -88,11 +88,15 @@
 .colorHex{
     font-weight:lighter;
     font-size: smaller;
-
 }
 
 .colorPreview{
     border: thin solid #000000;
     height: 3em;
     width: 3em;
+}
+
+.certificateFileName{
+    font-weight:lighter;
+    font-size: smaller;
 }
