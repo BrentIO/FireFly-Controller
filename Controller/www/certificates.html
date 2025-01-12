@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+    <script type="text/javascript" src="./certificate-parser-min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu();
+        initDB();
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark" style="max-width: 300px;"></div>
+            <div class="col py-3">
+                <div class="pageTitle">Certificates</div>
+                <div class="pageDescription">x509 root certificates are used for validating HTTPS connections.</div>
+                <div>
+                    <div class="sectionHeader mt-5 mb-3">Certificates
+                        <img src="./icons/add.svg" title="Add" id="controllerAddButton" class="btn" role="button" aria-expanded="false" onclick="toggleAddCertificateModal();">
+                    </div>
+                    <div>
+                        <table class="table table-striped" id="certificateListTable">
+                            <thead>
+                                <tr>
+                                  <th scope="col"></th>
+                                  <th scope="col">Common Name</th>
+                                  <th scope="col">Organization</th>
+                                  <th scope="col">Organizational Unit Name</th>
+                                  <th scope="col">Expiration</th>
+                                  <th scope="col"></th>
+                                </tr>
+                              </thead>
+                            <tbody id="certificateList"></tbody>
+                        </table>
+                    </div>
+                <div id="certificateListEmpty" class="container-fluid text-center">Click <img src="./icons/add.svg" title="Add"> add button to start adding certificates.</div>
+                </div>
+
+            </div> 
+        </div>
+    </div>
+
+    <!-- Add New Certificate Modal -->
+    <div class="modal fade" id="addNewCertificateModal" tabindex="-1" aria-labelledby="addNewCertificateModalLabel" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form class="needs-validation" novalidate id="addNewCertificateForm">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="addNewCertificateModalLabel">Add New Certificate</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div>
+                        <input type="file" class="form-control" aria-label="Upload" name="file" id="certificate-upload-file-selector" onchange="uploadCertificate();">
+                    </div>
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+<script>
+
+    var addNewCertificateModal = new bootstrap.Modal('#addNewCertificateModal');
+
+
+    function toggleAddCertificateModal(){
+            addNewCertificateModal.toggle();
+    }
+
+
+    async function certTextReader(file, callback) {
+        const fr = new FileReader();
+        fr.onload = () => callback(null, fr.result);
+        fr.onerror = (err) => callback(err);
+        fr.readAsText(file);
+    }
+
+
+    async function uploadCertificate(){
+
+        fileSelector = document.getElementById("certificate-upload-file-selector");
+
+        if(fileSelector.files.length == 0){
+            return;
+        }
+
+        if(fileSelector.files[0].type != "application/x-x509-ca-cert"){
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.readAsText(fileSelector.files[0]);
+        const result = await new Promise((resolve, reject) => {
+            reader.onload = function(event) {
+            resolve(reader.result)
+            }
+        });
+
+        await storeCertificate(fileSelector.files[0].name, result);
+        await toggleAddCertificateModal();
+        await drawCertificateList();
+
+        form = document.getElementById("addNewCertificateForm");
+        form.reset();
+        form.classList.remove('was-validated');
+    }
+
+
+    document.getElementById("addNewCertificateModal").addEventListener('show.bs.modal', () => {        
+        form = document.getElementById("addNewCertificateForm");
+        form.reset();
+        form.classList.remove('was-validated');
+    });
+
+
+    async function drawCertificateList(){
+
+        let certificateList = document.getElementById("certificateList");
+        certificateList.innerHTML = '';
+
+        certificates = await db.certificates.toArray();
+
+        if(certificates.length == 0){
+            document.getElementById("certificateListEmpty").hidden = false;
+            document.getElementById("certificateListTable").hidden = true;
+        }else{
+            document.getElementById("certificateListEmpty").hidden = true;
+            document.getElementById("certificateListTable").hidden = false;
+        }
+
+        certificates.forEach((certificate) => {
+
+            let newCertificate = `
+                <tr>
+                    <td><div class="certificateFileName"><img src="./icons/certificate.svg" title="Certificates"> ${certificate.fileName??""}</div></td>
+                    <td>${certificate.commonName??""}</td>
+                    <td>${certificate.organization??""}</td>
+                    <td>${certificate.organizationalUnitName??""}</td>
+                    <td>${certificate.expiration??""}</td>
+                    <td>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-outline-primary" id="downloadCertificate_${certificate.id}" onclick="exportCertificate(${certificate.id})";);">Download</button>
+                            <button type="button" class="btn btn-danger" id="deleteCertificateButtonChallenge_${certificate.id}" onclick="toggleConfirmDeleteCertificate('${certificate.id}');">Delete</button>
+                        <div class="input-group" id="confirmDeleteCertificate_${certificate.id}" hidden>
+                            <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${certificate.id}" oninput="confirmDeleteCertificateChallegeOnChange('${certificate.id}');">
+                            <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteCertificate('${certificate.id}')">Cancel</button>
+                            <button class="btn btn-outline-danger" type="button" id="deleteCertificateButtonConfirmed_${certificate.id}" onclick="deleteCertificate(${certificate.id});" disabled>Delete</button>
+                        </div>
+                    </td>
+                </tr>`
+
+                certificateList.insertAdjacentHTML('beforeend', newCertificate);
+        });
+    }
+
+
+    async function deleteCertificate(id){
+        await db.certificates.delete(id);
+        await drawCertificateList();
+    }
+
+
+    function confirmDeleteCertificateChallegeOnChange(name){
+
+        if(document.getElementById('confirmDeleteText_'+name).value == "confirm"){
+            document.getElementById('deleteCertificateButtonConfirmed_'+name).disabled = false;
+            document.getElementById('deleteCertificateButtonConfirmed_'+name).classList.add('btn-danger');
+            document.getElementById('deleteCertificateButtonConfirmed_'+name).classList.remove('btn-outline-danger');
+        }else{
+            document.getElementById('deleteCertificateButtonConfirmed_'+name).disabled = true;
+            document.getElementById('deleteCertificateButtonConfirmed_'+name).classList.add('btn-outline-danger');
+            document.getElementById('deleteCertificateButtonConfirmed_'+name).classList.remove('btn-danger');
+        }
+    }
+
+
+    function toggleConfirmDeleteCertificate(name){
+
+        if(document.getElementById('deleteCertificateButtonChallenge_'+name).hidden == false){
+            document.getElementById('deleteCertificateButtonChallenge_'+name).hidden = true;
+            document.getElementById('confirmDeleteCertificate_'+name).hidden = false;
+        }else{
+            document.getElementById('deleteCertificateButtonChallenge_'+name).hidden = false;
+            document.getElementById('confirmDeleteCertificate_'+name).hidden = true;
+            document.getElementById('confirmDeleteText_'+name).value = "";
+        }
+    }
+
+    drawCertificateList();
+
+</script>
+
+</html>
