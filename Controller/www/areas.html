@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu();
+        initDB();
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark" style="max-width: 300px;"></div>
+            <div class="col py-3">
+                <div class="pageTitle">Areas</div>
+                <div class="pageDescription">Define and modify areas.</div>
+
+                <div class="sectionHeader mt-5 mb-3">Defined Areas
+                    <img src="./icons/add.svg" title="Add" id="addNewAreaButton" class="btn" role="button" aria-expanded="false" onclick="toggleAddAreaModal();">
+                </div>
+
+                <div>
+                    <table class="table">
+                        <tbody id="areaList"></tbody>
+                      </table>
+                </div>
+                <div id="areaListEmpty" class="container-fluid text-center">Click <img src="./icons/add.svg" title="Add"> add button to start adding areas.</div>
+            </div> 
+        </div>
+    </div>
+
+        <!-- Add New Area Modal -->
+        <div class="modal fade" id="addNewAreaModal" tabindex="-1" aria-labelledby="addNewAreaModalLabel" data-bs-backdrop="static">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <form class="needs-validation" novalidate id="addNewAreaForm">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="addNewAreaModalLabel">Add New Area</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="input-group mb-3 has-validation">
+                            <span class="input-group-text">Name</span>
+                            <input class="form-control" id="addNewAreaName" placeholder="" aria-label="Name" required>
+                            <div class="invalid-feedback">
+                                A name is required.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="button" id="addNewAreaButtonAdd">Add</button>
+                    </div>
+                </form>
+                </div>
+            </div>
+        </div>
+
+</body>
+
+<script>
+
+    var addNewAreaModal = new bootstrap.Modal('#addNewAreaModal');
+
+    async function addAreaToDatabase(){
+        await db.areas.add({
+            name: document.getElementById("addNewAreaName").value
+        });
+    }
+
+
+    document.getElementById("addNewAreaButtonAdd").addEventListener('click', () => {
+
+        document.getElementById("addNewAreaName").value = document.getElementById("addNewAreaName").value.trim();
+
+        let form = document.getElementById("addNewAreaForm");
+        form.checkValidity();
+        form.classList.add('was-validated');
+
+        if(!form.checkValidity()){
+            return;
+        }
+
+        addAreaToDatabase();
+        toggleAddAreaModal();
+        drawAreaList();
+    });
+
+
+
+    function toggleAddAreaModal(){
+        addNewAreaModal.toggle();
+    }
+
+
+    document.getElementById("addNewAreaModal").addEventListener('show.bs.modal', () => {        
+        form = document.getElementById("addNewAreaForm");
+        form.reset();
+        form.classList.remove('was-validated');
+    });
+
+
+    async function drawAreaList(){
+
+        let areaList = document.getElementById("areaList");
+        areaList.innerHTML = '';
+
+        areas = await db.areas.orderBy('name').toArray();
+
+        if(areas.length == 0){
+            document.getElementById("areaListEmpty").hidden = false;
+        }else{
+            document.getElementById("areaListEmpty").hidden = true;
+        }
+
+        areas.forEach((area) => {
+
+            let newArea = `
+                <tr>
+                    <td class="align-middle">
+                        <div class="areaName">${area.name}</div>
+                    </td>
+                    <td class="align-middle">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-danger" id="deleteAreaButtonChallenge_${area.name}" onclick="toggleConfirmDeleteArea('${area.name}');">Delete</button></div>
+                        <div class="input-group" id="confirmDeleteArea_${area.name}" hidden>
+                            <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${area.name}" oninput="confirmDeleteAreaChallegeOnChange('${area.name}');">
+                            <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteArea('${area.name}')">Cancel</button>
+                            <button class="btn btn-outline-danger" type="button" id="deleteAreaButtonConfirmed_${area.name}" onclick="deleteArea('${area.name}');" disabled>Delete</button>
+                        </div>
+
+                    </td>
+                </tr>`
+
+                areaList.insertAdjacentHTML('beforeend', newArea);
+        });
+
+       
+    }
+
+
+    async function deleteArea(name){
+        await db.areas.delete(name);
+        await drawAreaList();
+    }
+
+
+    function confirmDeleteAreaChallegeOnChange(name){
+
+        if(document.getElementById('confirmDeleteText_'+name).value == "confirm"){
+            document.getElementById('deleteAreaButtonConfirmed_'+name).disabled = false;
+            document.getElementById('deleteAreaButtonConfirmed_'+name).classList.add('btn-danger');
+            document.getElementById('deleteAreaButtonConfirmed_'+name).classList.remove('btn-outline-danger');
+        }else{
+            document.getElementById('deleteAreaButtonConfirmed_'+name).disabled = true;
+            document.getElementById('deleteAreaButtonConfirmed_'+name).classList.add('btn-outline-danger');
+            document.getElementById('deleteAreaButtonConfirmed_'+name).classList.remove('btn-danger');
+        }
+    }
+
+
+    function toggleConfirmDeleteArea(name){
+
+        if(document.getElementById('deleteAreaButtonChallenge_'+name).hidden == false){
+            document.getElementById('deleteAreaButtonChallenge_'+name).hidden = true;
+            document.getElementById('confirmDeleteArea_'+name).hidden = false;
+        }else{
+            document.getElementById('deleteAreaButtonChallenge_'+name).hidden = false;
+            document.getElementById('confirmDeleteArea_'+name).hidden = true;
+            document.getElementById('confirmDeleteText_'+name).value = "";
+        }
+    }
+
+
+    drawAreaList();
+
+</script>
+</html>
