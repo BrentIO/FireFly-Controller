@@ -8,9 +8,9 @@
 }
 
 .menuItem:hover{
-    color: #aaa622;
+    color:#e6e37f;
     .menuIcon {
-        filter: brightness(0) saturate(100%) invert(67%) sepia(32%) saturate(1021%) hue-rotate(19deg) brightness(90%) contrast(81%);
+        filter: invert(89%) sepia(5%) saturate(3662%) hue-rotate(8deg) brightness(109%) contrast(80%);
     }
 }
 
