@@ -104,6 +104,7 @@ async function exportConfig(){
     try {
         const blob = await db.export({prettyJson: true});
         download(blob, `FireFlyConfig_${Date.now()}.json`, "application/json");
+        eventHandler("Export successful!");
     } catch (error) {
         errorHandler(error);
     }
@@ -114,6 +115,7 @@ async function importConfig(file){
     try {
         await db.delete();
         db = await Dexie.import(file);
+        eventHandler("Import successful!");
     } catch (error) {
         errorHandler(error);
     }
