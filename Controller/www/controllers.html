@@ -280,6 +280,10 @@
 
     async function deleteController(id){
         await db.controllers.delete(id);
+        let controllerLS = new controllerLocalStorage(id);
+
+        controllerLS.delete();
+
         await drawManagedControllers();
     }
 
