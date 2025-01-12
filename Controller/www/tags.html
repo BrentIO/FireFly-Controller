@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu();
+        initDB();
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark" style="max-width: 300px;"></div>
+            <div class="col py-3">
+                <div class="pageTitle">Tags</div>
+                <div class="pageDescription">Define and modify tags.</div>
+
+                <div class="sectionHeader mt-5 mb-3">Defined Tags
+                    <img src="./icons/add.svg" title="Add" id="addNewTagButton" class="btn" role="button" aria-expanded="false" onclick="toggleAddTagModal();">
+                </div>
+
+                <div>
+                    <table class="table">
+                        <tbody id="tagList"></tbody>
+                      </table>
+                </div>
+                <div id="tagListEmpty" class="container-fluid text-center">Click <img src="./icons/add.svg" title="Add"> add button to start adding tags.</div>
+            </div> 
+        </div>
+    </div>
+
+        <!-- Add New Tag Modal -->
+        <div class="modal fade" id="addNewTagModal" tabindex="-1" aria-labelledby="addNewTagModalLabel" data-bs-backdrop="static">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <form class="needs-validation" novalidate id="addNewTagForm">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="addNewTagModalLabel">Add New Tag</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="input-group mb-3 has-validation">
+                            <span class="input-group-text">Name</span>
+                            <input class="form-control" id="addNewTagName" placeholder="" aria-label="Name" required>
+                            <div class="invalid-feedback">
+                                A name is required.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="button" id="addNewTagButtonAdd">Add</button>
+                    </div>
+                </form>
+                </div>
+            </div>
+        </div>
+
+</body>
+
+<script>
+
+    var addNewTagModal = new bootstrap.Modal('#addNewTagModal');
+
+    async function addTagToDatabase(){
+        await db.tags.add({
+            name: document.getElementById("addNewTagName").value
+        });
+    }
+
+
+    document.getElementById("addNewTagButtonAdd").addEventListener('click', () => {
+
+        document.getElementById("addNewTagName").value = document.getElementById("addNewTagName").value.trim();
+
+        let form = document.getElementById("addNewTagForm");
+        form.checkValidity();
+        form.classList.add('was-validated');
+
+        if(!form.checkValidity()){
+            return;
+        }
+
+        addTagToDatabase();
+        toggleAddTagModal();
+        drawTagList();
+    });
+
+
+
+    function toggleAddTagModal(){
+        addNewTagModal.toggle();
+    }
+
+
+    document.getElementById("addNewTagModal").addEventListener('show.bs.modal', () => {        
+        form = document.getElementById("addNewTagForm");
+        form.reset();
+        form.classList.remove('was-validated');
+    });
+
+
+    async function drawTagList(){
+
+        let tagList = document.getElementById("tagList");
+        tagList.innerHTML = '';
+
+        tags = await db.tags.orderBy('name').toArray();
+
+        if(tags.length == 0){
+            document.getElementById("tagListEmpty").hidden = false;
+        }else{
+            document.getElementById("tagListEmpty").hidden = true;
+        }
+
+        tags.forEach((tag) => {
+
+            let newTag = `
+                <tr>
+                    <td class="align-middle">
+                        <div class="tagName">${tag.name}</div>
+                    </td>
+                    <td class="align-middle">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-danger" id="deleteTagButtonChallenge_${tag.name}" onclick="toggleConfirmDeleteTag('${tag.name}');">Delete</button></div>
+                        <div class="input-group" id="confirmDeleteTag_${tag.name}" hidden>
+                            <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${tag.name}" oninput="confirmDeleteTagChallegeOnChange('${tag.name}');">
+                            <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteTag('${tag.name}')">Cancel</button>
+                            <button class="btn btn-outline-danger" type="button" id="deleteTagButtonConfirmed_${tag.name}" onclick="deleteTag('${tag.name}');" disabled>Delete</button>
+                        </div>
+
+                    </td>
+                </tr>`
+
+                tagList.insertAdjacentHTML('beforeend', newTag);
+        });
+
+       
+    }
+
+
+    async function deleteTag(name){
+        await db.tags.delete(name);
+        await drawTagList();
+    }
+
+
+    function confirmDeleteTagChallegeOnChange(name){
+
+        if(document.getElementById('confirmDeleteText_'+name).value == "confirm"){
+            document.getElementById('deleteTagButtonConfirmed_'+name).disabled = false;
+            document.getElementById('deleteTagButtonConfirmed_'+name).classList.add('btn-danger');
+            document.getElementById('deleteTagButtonConfirmed_'+name).classList.remove('btn-outline-danger');
+        }else{
+            document.getElementById('deleteTagButtonConfirmed_'+name).disabled = true;
+            document.getElementById('deleteTagButtonConfirmed_'+name).classList.add('btn-outline-danger');
+            document.getElementById('deleteTagButtonConfirmed_'+name).classList.remove('btn-danger');
+        }
+    }
+
+
+    function toggleConfirmDeleteTag(name){
+
+        if(document.getElementById('deleteTagButtonChallenge_'+name).hidden == false){
+            document.getElementById('deleteTagButtonChallenge_'+name).hidden = true;
+            document.getElementById('confirmDeleteTag_'+name).hidden = false;
+        }else{
+            document.getElementById('deleteTagButtonChallenge_'+name).hidden = false;
+            document.getElementById('confirmDeleteTag_'+name).hidden = true;
+            document.getElementById('confirmDeleteText_'+name).value = "";
+        }
+    }
+
+
+    drawTagList();
+
+</script>
+</html>
