@@ -42,35 +42,35 @@
         </div>
     </div>
 
-        <!-- Add New Color Modal -->
-        <div class="modal fade" id="addNewColorModal" tabindex="-1" aria-labelledby="addNewColorModalLabel" data-bs-backdrop="static">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <form class="needs-validation" novalidate id="addNewColorForm">
-                    <div class="modal-header">
-                        <h1 class="modal-title fs-5" id="addNewColorModalLabel">Add New Color</h1>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="input-group mb-3 has-validation">
-                            <span class="input-group-text">Name</span>
-                            <input class="form-control" id="addNewColorName" placeholder="" aria-label="Name" required>
-                            <div class="invalid-feedback">
-                                A name is required.
-                            </div>
-                        </div>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text">Color</span>
-                            <input type="color" class="form-control form-control-color" id="addNewColorPicker" value="#FFFFFF">
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-primary" type="button" id="addNewColorButtonAdd">Add</button>
-                    </div>
-                </form>
+    <!-- Add New Color Modal -->
+    <div class="modal fade" id="addNewColorModal" tabindex="-1" aria-labelledby="addNewColorModalLabel" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form class="needs-validation" novalidate id="addNewColorForm">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="addNewColorModalLabel">Add New Color</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                <div class="modal-body">
+                    <div class="input-group mb-3 has-validation">
+                        <span class="input-group-text">Name</span>
+                        <input class="form-control" id="addNewColorName" placeholder="" aria-label="Name" required>
+                        <div class="invalid-feedback">
+                            A name is required.
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Color</span>
+                        <input type="color" class="form-control form-control-color" id="addNewColorPicker" value="#FFFFFF">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="button" id="addNewColorButtonAdd">Add</button>
+                </div>
+            </form>
             </div>
         </div>
+    </div>
 
 </body>
 
@@ -152,8 +152,6 @@
 
                 colorList.insertAdjacentHTML('beforeend', newColor);
         });
-
-       
     }
 
 
