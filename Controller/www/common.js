@@ -4,6 +4,15 @@ function eventHandler(e) {
 
 
 function errorHandler(e) {
+    console.error(`Error: ${e}`);
+}
+
+
+function warningHandler(e) {
+    console.warn(`Warning: ${e}`);
+}
+
+
 function loadMenu(){
     fetch("./menu.html")
     .then((response) => {
