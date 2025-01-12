@@ -80,3 +80,19 @@
 #controllerAddButton{
     color: black;
 }
+
+.colorName{
+    font-weight: bold;
+}
+
+.colorHex{
+    font-weight:lighter;
+    font-size: smaller;
+
+}
+
+.colorPreview{
+    border: thin solid #000000;
+    height: 3em;
+    width: 3em;
+}
