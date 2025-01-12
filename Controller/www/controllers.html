@@ -351,7 +351,7 @@
             document.getElementById('saveUUIDIcon_'+id).hidden = true;
             document.getElementById('cancelUUIDIcon_'+id).hidden = true;
         }else{
-            console.warn("Invalid UUID, reverting to prior value");
+            warningHandler("Invalid UUID, reverting to prior value");
             cancelEditControllerUUID(id);
         }
     }
@@ -392,7 +392,7 @@
             document.getElementById('saveIPIcon_'+id).hidden = true;
             document.getElementById('cancelIPIcon_'+id).hidden = true;
         }else{
-            console.warn("Invalid IP, reverting to prior value");
+            warningHandler("Invalid IP, reverting to prior value");
             cancelEditControllerIP(id);
         }
     }
