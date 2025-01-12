@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu();
+        initDB();
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark" style="max-width: 300px;"></div>
+            <div class="col py-3">
+                <div class="pageTitle">Colors</div>
+                <div class="pageDescription">Define and modify colors used for buttons.</div>
+
+                <div class="sectionHeader mt-5 mb-3">Defined Colors
+                    <img src="./icons/add.svg" title="Add" id="addNewColorButton" class="btn" role="button" aria-expanded="false" onclick="toggleAddColorModal();">
+                </div>
+
+                <div>
+                    <table class="table">
+                        <tbody id="colorList"></tbody>
+                      </table>
+                </div>
+                <div id="colorListEmpty" class="container-fluid text-center">Click <img src="./icons/add.svg" title="Add"> add button to start adding colors.</div>
+            </div> 
+        </div>
+    </div>
+
+        <!-- Add New Color Modal -->
+        <div class="modal fade" id="addNewColorModal" tabindex="-1" aria-labelledby="addNewColorModalLabel" data-bs-backdrop="static">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <form class="needs-validation" novalidate id="addNewColorForm">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="addNewColorModalLabel">Add New Color</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="input-group mb-3 has-validation">
+                            <span class="input-group-text">Name</span>
+                            <input class="form-control" id="addNewColorName" placeholder="" aria-label="Name" required>
+                            <div class="invalid-feedback">
+                                A name is required.
+                            </div>
+                        </div>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">Color</span>
+                            <input type="color" class="form-control form-control-color" id="addNewColorPicker" value="#FFFFFF">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="button" id="addNewColorButtonAdd">Add</button>
+                    </div>
+                </form>
+                </div>
+            </div>
+        </div>
+
+</body>
+
+<script>
+
+    var addNewColorModal = new bootstrap.Modal('#addNewColorModal');
+
+    async function addColorToDatabase(){
+        await db.colors.add({
+            name: document.getElementById("addNewColorName").value,
+            hex: document.getElementById("addNewColorPicker").value
+        });
+    }
+
+
+    document.getElementById("addNewColorButtonAdd").addEventListener('click', () => {
+
+        document.getElementById("addNewColorName").value = document.getElementById("addNewColorName").value.trim();
+
+        let form = document.getElementById("addNewColorForm");
+        form.checkValidity();
+        form.classList.add('was-validated');
+
+        if(!form.checkValidity()){
+            return;
+        }
+
+        addColorToDatabase();
+        toggleAddColorModal();
+        drawColorList();
+    });
+
+
+
+    function toggleAddColorModal(){
+        addNewColorModal.toggle();
+    }
+
+
+    document.getElementById("addNewColorModal").addEventListener('show.bs.modal', () => {        
+        form = document.getElementById("addNewColorForm");
+        form.reset();
+        form.classList.remove('was-validated');
+    });
+
+
+    async function drawColorList(){
+
+        let colorList = document.getElementById("colorList");
+        colorList.innerHTML = '';
+
+        colors = await db.colors.orderBy('name').toArray();
+
+        if(colors.length == 0){
+            document.getElementById("colorListEmpty").hidden = false;
+        }else{
+            document.getElementById("colorListEmpty").hidden = true;
+        }
+
+        colors.forEach((color) => {
+
+            let newColor = `
+                <tr>
+                    <td class="align-middle"><div class="rounded colorPreview" style="background-color: ${color.hex};"></div></td>
+                    <td class="align-middle">
+                        <div class="colorName">${color.name}</div>
+                        <div class="colorHex">${color.hex}</div>
+                    </td>
+                    <td class="align-middle">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-danger" id="deleteColorButtonChallenge_${color.name}" onclick="toggleConfirmDeleteColor('${color.name}');">Delete</button></div>
+                        <div class="input-group" id="confirmDeleteColor_${color.name}" hidden>
+                            <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${color.name}" oninput="confirmDeleteColorChallegeOnChange('${color.name}');">
+                            <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteColor('${color.name}')">Cancel</button>
+                            <button class="btn btn-outline-danger" type="button" id="deleteColorButtonConfirmed_${color.name}" onclick="deleteColor('${color.name}');" disabled>Delete</button>
+                        </div>
+
+                    </td>
+                </tr>`
+
+                colorList.insertAdjacentHTML('beforeend', newColor);
+        });
+
+       
+    }
+
+
+    async function deleteColor(name){
+        await db.colors.delete(name);
+        await drawColorList();
+    }
+
+
+    function confirmDeleteColorChallegeOnChange(name){
+
+        if(document.getElementById('confirmDeleteText_'+name).value == "confirm"){
+            document.getElementById('deleteColorButtonConfirmed_'+name).disabled = false;
+            document.getElementById('deleteColorButtonConfirmed_'+name).classList.add('btn-danger');
+            document.getElementById('deleteColorButtonConfirmed_'+name).classList.remove('btn-outline-danger');
+        }else{
+            document.getElementById('deleteColorButtonConfirmed_'+name).disabled = true;
+            document.getElementById('deleteColorButtonConfirmed_'+name).classList.add('btn-outline-danger');
+            document.getElementById('deleteColorButtonConfirmed_'+name).classList.remove('btn-danger');
+        }
+    }
+
+
+    function toggleConfirmDeleteColor(name){
+
+        if(document.getElementById('deleteColorButtonChallenge_'+name).hidden == false){
+            document.getElementById('deleteColorButtonChallenge_'+name).hidden = true;
+            document.getElementById('confirmDeleteColor_'+name).hidden = false;
+        }else{
+            document.getElementById('deleteColorButtonChallenge_'+name).hidden = false;
+            document.getElementById('confirmDeleteColor_'+name).hidden = true;
+            document.getElementById('confirmDeleteText_'+name).value = "";
+        }
+    }
+
+
+    drawColorList();
+
+</script>
+</html>
