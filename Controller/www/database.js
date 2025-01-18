@@ -1,4 +1,4 @@
-let dbVersion = 9;
+let dbVersion = 11;
 
 const dbName = "FireFly-Controller";
 let db = new Dexie(dbName);
@@ -14,7 +14,8 @@ const initDB = () => {
         areas: "name",
         product_ids: "pid",
         tags: "name",
-        certificates: "++id, &certificate"
+        certificates: "++id, &certificate",
+        breakers: "++id, name"
     });
 
     db.version(1).upgrade(function(transaction) {

@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu(null, "menuItemBreakers");
+        initDB();
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark" style="max-width: 300px;"></div>
+            <div class="col py-3">
+                <div class="pageTitle">Breakers</div>
+                <div class="pageDescription">Define breakers, which will supply power to the high-voltage relays.</div>
+                
+                <div class="sectionHeader mt-5 mb-3">Defined Breakers
+                    <img src="./icons/add.svg" title="Add" id="addNewBreakerButton" class="btn" role="button" aria-expanded="false" onclick="toggleAddBreakerModal();">
+                </div>
+                <div>
+                    <table class="table table-striped" id="breakerListTable">
+                        <thead>
+                            <tr>
+                              <th scope="col">Name</th>
+                              <th scope="col">Amperage Rating</th>
+                              <th scope="col"></th>
+                            </tr>
+                          </thead>
+                        <tbody id="breakerList"></tbody>
+                      </table>
+                </div>
+                <div id="breakerListEmpty" class="container-fluid text-center">Click <img src="./icons/add.svg" title="Add"> add button to start adding breakers.</div>
+            </div> 
+        </div>
+    </div>
+
+
+
+    <!-- Add New Breaker Modal -->
+    <div class="modal fade" id="addNewBreakerModal" tabindex="-1" aria-labelledby="addNewBreakerModalLabel" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form class="needs-validation" novalidate id="addNewBreakerForm">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="addNewBreakerModalLabel">Add New Breaker</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group mb-3 has-validation">
+                        <span class="input-group-text">Name</span>
+                        <input class="form-control" id="addNewBreakerName" placeholder="" aria-label="Name" required>
+                        <div class="invalid-feedback">
+                            A name is required.
+                        </div>
+                    </div>
+                    <div class="input-group mb-3 has-validation">
+                        <span class="input-group-text">Amperage Rating</span>
+                        <input class="form-control" id="addNewBreakerAmperage" placeholder="" aria-label="Amperage" type="number" min="0" required>
+                        <div class="invalid-feedback">
+                            Amperage rating is required.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="button" id="addNewBreakerButtonAdd">Add</button>
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+<script>
+
+    var addNewBreakerModal = new bootstrap.Modal('#addNewBreakerModal');
+
+
+    document.getElementById("addNewBreakerButtonAdd").addEventListener('click', () => {
+
+        document.getElementById("addNewBreakerName").value = document.getElementById("addNewBreakerName").value.trim();
+        document.getElementById("addNewBreakerAmperage").value = document.getElementById("addNewBreakerAmperage").value.trim();
+
+
+        let form = document.getElementById("addNewBreakerForm");
+        form.checkValidity();
+        form.classList.add('was-validated');
+
+        if(!form.checkValidity()){
+            return;
+        }
+
+        addBreakerToDatabase();
+        drawBreakerList();
+        toggleAddBreakerModal();
+    });
+
+
+
+    async function addBreakerToDatabase(){
+        await db.breakers.add({
+            name: document.getElementById("addNewBreakerName").value,
+            amperage: document.getElementById("addNewBreakerAmperage").value
+        });
+    }
+
+
+    function toggleAddBreakerModal(){
+        addNewBreakerModal.toggle();
+    }
+
+
+    document.getElementById("addNewBreakerModal").addEventListener('show.bs.modal', () => {        
+        form = document.getElementById("addNewBreakerForm");
+        form.reset();
+        form.classList.remove('was-validated');
+    });
+
+
+    async function deleteBreaker(id){
+        await db.breakers.delete(id);
+        await drawBreakerList();
+    }
+
+
+    function confirmDeleteBreakerChallegeOnChange(name){
+
+        if(document.getElementById('confirmDeleteText_'+name).value == "confirm"){
+            document.getElementById('deleteBreakerButtonConfirmed_'+name).disabled = false;
+            document.getElementById('deleteBreakerButtonConfirmed_'+name).classList.add('btn-danger');
+            document.getElementById('deleteBreakerButtonConfirmed_'+name).classList.remove('btn-outline-danger');
+        }else{
+            document.getElementById('deleteBreakerButtonConfirmed_'+name).disabled = true;
+            document.getElementById('deleteBreakerButtonConfirmed_'+name).classList.add('btn-outline-danger');
+            document.getElementById('deleteBreakerButtonConfirmed_'+name).classList.remove('btn-danger');
+        }
+    }
+
+
+    function toggleConfirmDeleteBreaker(name){
+
+        if(document.getElementById('deleteBreakerButtonChallenge_'+name).hidden == false){
+            document.getElementById('deleteBreakerButtonChallenge_'+name).hidden = true;
+            document.getElementById('confirmDeleteBreaker_'+name).hidden = false;
+        }else{
+            document.getElementById('deleteBreakerButtonChallenge_'+name).hidden = false;
+            document.getElementById('confirmDeleteBreaker_'+name).hidden = true;
+            document.getElementById('confirmDeleteText_'+name).value = "";
+        }
+    }
+
+
+    async function drawBreakerList(){
+
+        let breakerList = document.getElementById("breakerList");
+        breakerList.innerHTML = '';
+
+        breakers = await db.breakers.orderBy('name').toArray();
+
+        if(breakers.length == 0){
+            document.getElementById("breakerListEmpty").hidden = false;
+        }else{
+            document.getElementById("breakerListEmpty").hidden = true;
+        }
+
+        breakers.forEach((breaker) => {
+
+            let newBreaker = `
+                <tr>
+                    <td class="align-middle">${breaker.name}</td>
+                    <td class="align-middle">${breaker.amperage}</td>
+                    <td class="align-middle">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-danger" id="deleteBreakerButtonChallenge_${breaker.id}" onclick="toggleConfirmDeleteBreaker(${breaker.id});">Delete</button></div>
+                        <div class="input-group" id="confirmDeleteBreaker_${breaker.id}" hidden>
+                            <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${breaker.id}" oninput="confirmDeleteBreakerChallegeOnChange(${breaker.id});">
+                            <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteBreaker(${breaker.id})">Cancel</button>
+                            <button class="btn btn-outline-danger" type="button" id="deleteBreakerButtonConfirmed_${breaker.id}" onclick="deleteBreaker(${breaker.id});" disabled>Delete</button>
+                        </div>
+
+                    </td>
+                </tr>`
+
+                breakerList.insertAdjacentHTML('beforeend', newBreaker);
+        });
+    }
+
+    drawBreakerList();
+
+</script>
+</html>
