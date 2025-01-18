@@ -39,9 +39,7 @@
     margin-bottom: 3em;
 }
 
-.card{
-    width: 26em;
-}
+
 
 .sectionHeader{
     font-size: 1.5em;
@@ -116,4 +114,9 @@
     .versionInfo {
         display: none !important;
     }
+    .managedControllerList {
+        margin-left: 0;
+        margin-right: 0;
+        max-width: 80% !important;
+      }
 }
