@@ -20,8 +20,6 @@ tags:
     description: Operations for the storage, retrieval, and management of certificates
   - name: Configuration
     description: Operations for configuring various services on both controllers and clients
-  - name: High Voltage
-    description: Operations for configuring high voltage devices
   - name: Controllers
     description: Manage controllers
   - name: Clients
@@ -559,179 +557,6 @@ paths:
 
 
 ##########################################################
-## High Voltage                                         ##
-##########################################################
-
-  /api/breakers:
-    get:
-      tags:
-        - High Voltage
-      summary: Retrieve the list of breakers
-      description: Retrieves the list of all breakers
-      security:
-        - visualToken: []
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/breaker'
-        '401':
-          description: Unauthorized
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
-    put:
-      tags:
-        - High Voltage
-      summary: Create or update the list of breakers
-      description: Create or update the list of breakers. Note that contents are not validated and are immediately stored to the file system.
-      security:
-        - visualToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/breaker'
-      responses:
-        '204':
-          description: Success
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/bad_request_message'
-        '401':
-          description: Unauthorized
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
-    delete:
-      tags:
-        - High Voltage
-      summary: Delete the list of breakers
-      description: Delete the list of breakers
-      security:
-        - visualToken: []
-      responses:
-        '204':
-          description: File Deleted Successfully
-        '401':
-          description: Unauthorized
-        '404':
-          description: Not Found
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
-
-  /api/relays:
-    get:
-      tags:
-        - High Voltage
-      summary: Retrieve the list of relays
-      description: Retrieve the list of relays
-      security:
-        - visualToken: []
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/relay'
-        '401':
-          description: Unauthorized
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
-    put:
-      tags:
-        - High Voltage
-      summary: Create or update the list of relays
-      description: Create or update the list of relays. Note that contents are not validated and are immediately stored to the file system.
-      security:
-        - visualToken: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/relay'
-      responses:
-        '204':
-          description: Success
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/bad_request_message'
-        '401':
-          description: Unauthorized
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
-    delete:
-      tags:
-        - High Voltage
-      summary: Delete the list of relays
-      description: Delete the list of relays
-      security:
-        - visualToken: []
-      responses:
-        '204':
-          description: File Deleted Successfully
-        '401':
-          description: Unauthorized
-        '404':
-          description: Not Found
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
-
-
-##########################################################
 ## Controllers                                          ##
 ##########################################################
 
@@ -870,12 +695,8 @@ paths:
   ##########################################################
   ## General                                              ##
   ##########################################################
-  /api/colors:
     get:
       tags:
-        - Clients
-      summary: Retrieve the list of colors
-      description: Retrieve the list of colors
       security:
         - visualToken: []
       responses:
@@ -884,9 +705,6 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/color'
         '401':
           description: Unauthorized
         '404':
@@ -901,9 +719,6 @@ paths:
                 message: File system not mounted
     put:
       tags:
-        - Clients
-      summary: Create or update the list of colors
-      description: Create or update the list of colors
       security:
         - visualToken: []
       requestBody:
@@ -911,18 +726,9 @@ paths:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/color'
       responses:
         '204':
           description: Success
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/bad_request_message'
         '401':
           description: Unauthorized
         '500':
@@ -935,9 +741,6 @@ paths:
                 message: File system not mounted
     delete:
       tags:
-        - Clients
-      summary: Delete the list of colors
-      description: Delete the list of colors
       security:
         - visualToken: []
       responses:
@@ -1336,10 +1139,6 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/tag'
-          relay:
-            type: integer
-            description: ID of the relay connected to the output
-            minimum: 1
         required:
           - id
       examples:
@@ -1351,7 +1150,6 @@ components:
             type: VARIABLE
             tags:
               - Holiday
-            relay: 31
           12:
             id: C12
             name: Recessed Lights
@@ -1389,138 +1187,10 @@ components:
       minLength: 36
       maxLength: 36
 
-    id:
-      type: integer
-      description: Unique identifier
-      minimum: 1
-
-
-    ##########################################################
-    ## High Voltage                                         ##
-    ##########################################################
-
-    breaker:
-      type: object
-      properties:
-        id:
-          $ref: '#/components/schemas/id'
-        name:
-          type: string
-          description: Human-friendly name of the breaker
-          examples: 
-            - Panel A Breaker 2
-          minLength: 1
-          maxLength: 20
-        amperage:
-          $ref: '#/components/schemas/amperage_breaker'
-      required:
-        - id
-        - name
-      examples:
-        - id: 12
-          name: Panel A Breaker 2
-          amperage: 20
-    
-    amperage_breaker:
-      type: number
-      format: double
-      description: Maximum amperage rating for the breaker
-      minimum: 0
-      default: 0
-      examples: 
-        - 20
-    
-    amperage_fixture:
-      type: number
-      format: double
-      description: Maximum amperage draw of fixture(s) when powered on to maximum potential
-      minimum: 0
-      default: 0
-      examples: 
-        - 3.5
-    
-    relay_name:
-      type: string
-      description: Human-friendly name of the relay
-      examples: 
-        - Circuit 12
-      minLength: 1
-      maxLength: 20
-    
-    relay_type:
-      type: string
-      description: Defines if the relay output to the fixture is binary or variable
-      enum:
-        - BINARY
-        - VARIABLE
-      default: BINARY
-    
-    relay_manufacturer:
-      type: string
-      description: Identifies the manufacturer of the relay
-      examples: 
-        - Crydom
-      maxLength: 20
-
-    relay_model:
-      type: string
-      description: Identifies the model of the relay
-      examples: 
-        - DR2220D20U
-      maxLength: 20
-
-    relay:
-      type: object
-      properties:
-        id:
-          $ref: '#/components/schemas/id'
-        name:
-          $ref: '#/components/schemas/relay_name'
-        amperage:
-          $ref: '#/components/schemas/amperage_fixture'
-        type:
-          $ref: '#/components/schemas/relay_type'
-        manufacturer:
-          $ref: '#/components/schemas/relay_manufacturer'
-        model:
-          $ref: '#/components/schemas/relay_model'
-        breaker:
-          $ref: '#/components/schemas/id'
-          description: ID of the breaker supplying power to this relay
-      required:
-        - name
-        - id
-      examples:
-        - id: 4
-          name: Circuit 17
-          amperage: 4.5
-          type: BINARY
-          model: DR2220D20U
-          breaker: 16
-
-
 
     ##########################################################
     ## General                                              ##
     ##########################################################
-
-    color:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Human-friendly name of the color
-        hex:
-          type: string
-          description: 'Hexidecimal color code for the color, including the # sign'
-          format: hexidecimal
-          pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
-      required:
-        - name
-        - hex
-      examples:
-        - name: Red
-          hex: '#FF0000'
 
     fileList:
       type: object
@@ -1558,8 +1228,6 @@ components:
             total: 524288
             used: 69632
             files:
-              - path: /colors
-                size: 195
               - path: /devices/controllers/3fa85f64-5717-4562-b3fc-2c963f66afa6
                 size: 912
           www:
