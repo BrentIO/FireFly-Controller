@@ -164,6 +164,73 @@
     }
 
 
+    function startEditName(id){
+        nameElement = document.getElementById('breakerName_'+id);
+        nameElement.setAttribute("previous-value", nameElement.innerHTML);
+        nameElement.contentEditable = "true";
+        nameElement.classList.add("form-control");
+        document.getElementById('editNameIcon_'+id).hidden = true;
+        document.getElementById('saveNameIcon_'+id).hidden = false;
+        document.getElementById('cancelNameIcon_'+id).hidden = false;
+    }
+
+
+    function cancelEditName(id){
+        nameElement = document.getElementById('breakerName_'+id);
+        nameElement.contentEditable = "false";
+        nameElement.classList.remove("form-control");
+        nameElement.innerHTML = nameElement.getAttribute("previous-value");
+        document.getElementById('editNameIcon_'+id).hidden = false;
+        document.getElementById('saveNameIcon_'+id).hidden = true;
+        document.getElementById('cancelNameIcon_'+id).hidden = true;
+    }
+
+
+    async function saveEditName(id){
+        nameElement = document.getElementById('breakerName_'+id);
+
+        await db.breakers.update(id, {name: nameElement.innerHTML});
+        nameElement.contentEditable = "false";
+        nameElement.classList.remove("form-control");
+        document.getElementById('editNameIcon_'+id).hidden = false;
+        document.getElementById('saveNameIcon_'+id).hidden = true;
+        document.getElementById('cancelNameIcon_'+id).hidden = true;
+    }
+
+
+    function startEditAmperage(id){
+        amperageElement = document.getElementById('breakerAmperage_'+id);
+        amperageElement.setAttribute("previous-value", amperageElement.innerHTML);
+        amperageElement.contentEditable = "true";
+        amperageElement.classList.add("form-control");
+        document.getElementById('editAmperageIcon_'+id).hidden = true;
+        document.getElementById('saveAmperageIcon_'+id).hidden = false;
+        document.getElementById('cancelAmperageIcon_'+id).hidden = false;
+    }
+
+
+    function cancelEditAmperage(id){
+        amperageElement = document.getElementById('breakerAmperage_'+id);
+        amperageElement.contentEditable = "false";
+        amperageElement.classList.remove("form-control");
+        amperageElement.innerHTML = amperageElement.getAttribute("previous-value");
+        document.getElementById('editAmperageIcon_'+id).hidden = false;
+        document.getElementById('saveAmperageIcon_'+id).hidden = true;
+        document.getElementById('cancelAmperageIcon_'+id).hidden = true;
+    }
+
+
+    async function saveEditAmperage(id){
+        amperageElement = document.getElementById('breakerAmperage_'+id);
+        await db.breakers.update(id, {amperage: parseInt(amperageElement.innerHTML)});
+        amperageElement.contentEditable = "false";
+        amperageElement.classList.remove("form-control");
+        document.getElementById('editAmperageIcon_'+id).hidden = false;
+        document.getElementById('saveAmperageIcon_'+id).hidden = true;
+        document.getElementById('cancelAmperageIcon_'+id).hidden = true;
+    }
+
+
     async function drawBreakerList(){
 
         let breakerList = document.getElementById("breakerList");
@@ -181,8 +248,20 @@
 
             let newBreaker = `
                 <tr>
-                    <td class="align-middle">${breaker.name}</td>
-                    <td class="align-middle">${breaker.amperage}</td>
+                        <td class="align-middle">
+                            <div id="editableDetails"><span id="breakerName_${breaker.id}">${breaker.name}</span>
+                                <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editNameIcon_${breaker.id}" onClick="startEditName(${breaker.id})";">
+                                <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveNameIcon_${breaker.id}" onClick="saveEditName(${breaker.id})"; hidden>
+                                <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelNameIcon_${breaker.id}" onClick="cancelEditName(${breaker.id})"; hidden>
+                            </div></td>
+                        <td class="align-middle">
+                            <div id="editableDetails"><span id="breakerAmperage_${breaker.id}">${breaker.amperage}</span>
+                                <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editAmperageIcon_${breaker.id}" onClick="startEditAmperage(${breaker.id})";">
+                                <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveAmperageIcon_${breaker.id}" onClick="saveEditAmperage(${breaker.id})"; hidden>
+                                <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelAmperageIcon_${breaker.id}" onClick="cancelEditAmperage(${breaker.id})"; hidden>
+                            </div>
+                        </td>
+
                     <td class="align-middle">
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-danger" id="deleteBreakerButtonChallenge_${breaker.id}" onclick="toggleConfirmDeleteBreaker(${breaker.id});">Delete</button></div>
                         <div class="input-group" id="confirmDeleteBreaker_${breaker.id}" hidden>
