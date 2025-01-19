@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu(null, "menuItemRelays");
+        initDB();
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark" style="max-width: 300px;"></div>
+            <div class="col py-3">
+                <div class="pageTitle">Relays</div>
+                <div class="pageDescription">Define relays, which apply power to the high-voltage load when supplied with a low-voltage signal.</div>
+                
+                <div class="sectionHeader mt-5 mb-3">Defined Relays
+                    <img src="./icons/add.svg" title="Add" id="addNewRelayButton" class="btn" role="button" aria-expanded="false" onclick="toggleAddRelayModal();">
+                </div>
+                <div>
+                    <table class="table table-striped" id="relayListTable">
+                        <thead>
+                            <tr>
+                              <th scope="col">Name</th>
+                              <th scope="col">Manufacturer</th>
+                              <th scope="col">Model</th>
+                              <th scope="col">Type</th>
+                              <th scope="col">Breaker</th>
+                              <th scope="col"></th>
+                            </tr>
+                          </thead>
+                        <tbody id="relayList"></tbody>
+                      </table>
+                </div>
+                <div id="relayListEmpty" class="container-fluid text-center">Click <img src="./icons/add.svg" title="Add"> add button to start adding relays.</div>
+            </div> 
+        </div>
+    </div>
+
+
+    <!-- Add New Relay Modal -->
+    <div class="modal fade" id="addNewRelayModal" tabindex="-1" aria-labelledby="addNewRelayModalLabel" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form class="needs-validation" novalidate id="addNewRelayForm">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="addNewRelayModalLabel">Add New Relay</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group mb-3 has-validation">
+                        <span class="input-group-text">Name</span>
+                        <input class="form-control" id="addNewRelayName" placeholder="" aria-label="Name" required>
+                        <div class="invalid-feedback">
+                            A name is required.
+                        </div>
+                    </div>
+                    <div class="input-group mb-3 no-validation">
+                        <span class="input-group-text">Relay Model</span>
+                        <select class="form-select" aria-label="Relay Model" id="relayModelSelect" onchange="relayModelDropdownChange();" required></select>
+                        <div class="invalid-feedback">
+                            Select a relay model option.
+                        </div>
+                    </div>
+                    <div id="customRelay" class="d-none">
+                        <div class="input-group mb-3 has-validation">
+                            <span class="input-group-text">Manufacturer</span>
+                            <input class="form-control" id="addNewRelayManufacturer" placeholder="" aria-label="Manufacturer" required>
+                            <div class="invalid-feedback">
+                                A manufacturer is required.
+                            </div>
+                        </div>
+                        <div class="input-group mb-3 has-validation">
+                            <span class="input-group-text">Model</span>
+                            <input class="form-control" id="addNewRelayModel" placeholder="" aria-label="Model" required>
+                            <div class="invalid-feedback">
+                                A model is required.
+                            </div>
+                        </div>
+                        <div class="input-group mb-3 has-validation">
+                            <span class="input-group-text">Description</span>
+                            <input class="form-control" id="addNewRelayDescription" placeholder="" aria-label="Description" required>
+                            <div class="invalid-feedback">
+                                A description is required.
+                            </div>
+                        </div>
+                        <div class="input-group mb-3 no-validation">
+                            <span class="input-group-text">Type</span>
+                            <select class="form-select" aria-label="Breaker" id="addNewRelayType" required>
+                                <option value="" selected disabled>Select...</option>
+                                <option value="VARIABLE">Variable</option>
+                                <option value="BINARY" selected>Binary</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Select a type option.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Breaker</span>
+                        <select class="form-select" aria-label="Breaker" id="addNewRelayBreaker" required >
+                            <option value="" selected disabled>Select...</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Select a breaker which is powering this relay.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="button" id="addNewRelayButtonAdd" onclick="addNewRelayButtonAdd_click();">Add</button>
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+<script>
+
+    var addNewRelayModal = new bootstrap.Modal('#addNewRelayModal');
+
+    var breakerList = [];
+    var relayModelList = [];
+
+
+    async function addNewRelayButtonAdd_click(){
+
+        document.getElementById("addNewRelayName").value = document.getElementById("addNewRelayName").value.trim();
+        document.getElementById("addNewRelayManufacturer").value = document.getElementById("addNewRelayManufacturer").value.trim();
+        document.getElementById("addNewRelayModel").value = document.getElementById("addNewRelayModel").value.trim();
+        document.getElementById("addNewRelayDescription").value = document.getElementById("addNewRelayDescription").value.trim();
+
+        let form = document.getElementById("addNewRelayForm");
+        form.checkValidity();
+        form.classList.add('was-validated');
+
+        if(!form.checkValidity()){
+            return;
+        }
+
+        await addRelayToDatabase();
+        await drawRelayList();
+        await toggleAddRelayModal();
+
+    }
+
+
+    async function addRelayToDatabase(){
+        if(document.getElementById("relayModelSelect").value == "CUSTOM"){
+            await db.relay_models.add({
+                manufacturer: document.getElementById("addNewRelayManufacturer").value,
+                model: document.getElementById("addNewRelayModel").value,
+                description: document.getElementById("addNewRelayDescription").value,
+                type: document.getElementById("addNewRelayType").value,
+                is_custom: "true"
+            });
+        }
+
+        await db.relays.add({
+            name: document.getElementById("addNewRelayName").value,
+            manufacturer: document.getElementById("addNewRelayManufacturer").value,
+            model: document.getElementById("addNewRelayModel").value,
+            type: document.getElementById("addNewRelayType").value,
+            breaker: parseInt(document.getElementById("addNewRelayBreaker").value)
+        });
+    }
+
+
+    function toggleAddRelayModal(){
+        addNewRelayModal.toggle();
+    }
+
+
+    document.getElementById("addNewRelayModal").addEventListener('show.bs.modal', () => {
+
+        if(breakerList.length == 0){
+            warningHandler("You must add a breaker before you can add a relay.")
+        }
+        form = document.getElementById("addNewRelayForm");
+        form.reset();
+        document.getElementById("relayModelSelect").value = "";
+        document.getElementById("addNewRelayBreaker").value = "GARBAGE";
+        document.getElementById("addNewRelayType").value = "";
+        document.getElementById("customRelay").classList.add("d-none");
+        form.classList.remove('was-validated');
+    });
+
+
+    function relayModelDropdownChange(){
+
+        switch(document.getElementById("relayModelSelect").value){
+            case "":
+                document.getElementById("customRelay").classList.add("d-none");
+                document.getElementById("addNewRelayManufacturer").value = "";
+                document.getElementById("addNewRelayModel").value = "";
+                document.getElementById("addNewRelayDescription").value = "";
+                document.getElementById("addNewRelayType").value = "";
+                break;
+
+            case "CUSTOM":
+                document.getElementById("customRelay").classList.remove("d-none");
+                document.getElementById("addNewRelayManufacturer").value = "";
+                document.getElementById("addNewRelayModel").value = "";
+                document.getElementById("addNewRelayDescription").value = "";
+                document.getElementById("addNewRelayType").value = "";
+                break;
+
+            default:
+                document.getElementById("customRelay").classList.add("d-none");
+                relayModelList.forEach((relayModel) => {
+                    if(document.getElementById("relayModelSelect").value == relayModel.id){
+                        document.getElementById("addNewRelayManufacturer").value = relayModel.manufacturer;
+                        document.getElementById("addNewRelayModel").value = relayModel.model;
+                        document.getElementById("addNewRelayDescription").value = relayModel.description;
+                        document.getElementById("addNewRelayType").value = relayModel.type;
+                    }
+                });
+
+                break;
+        }
+    }
+
+
+    async function deleteRelay(id){
+        await db.relays.delete(id);
+        await deleteUnusedCustomRelayModels();
+        await drawRelayList();
+    }
+
+
+    async function deleteUnusedCustomRelayModels(){
+
+        customRelayModels = await db.relay_models.where("is_custom").equals("true").toArray();
+        relayList = await db.relays.toArray();
+
+        for(const customRelayModel of customRelayModels){
+            var matched = false;
+            for(const relay of relayList){
+                if(relay.manufacturer == customRelayModel.manufacturer && relay.model == customRelayModel.model){
+                    matched = true;
+                    break;
+                }
+            }
+
+            if(matched == false){
+                await db.relay_models.delete(customRelayModel.id);
+            }
+        }
+    }
+
+
+    function confirmDeleteRelayChallegeOnChange(name){
+
+        if(document.getElementById('confirmDeleteText_'+name).value == "confirm"){
+            document.getElementById('deleteRelayButtonConfirmed_'+name).disabled = false;
+            document.getElementById('deleteRelayButtonConfirmed_'+name).classList.add('btn-danger');
+            document.getElementById('deleteRelayButtonConfirmed_'+name).classList.remove('btn-outline-danger');
+        }else{
+            document.getElementById('deleteRelayButtonConfirmed_'+name).disabled = true;
+            document.getElementById('deleteRelayButtonConfirmed_'+name).classList.add('btn-outline-danger');
+            document.getElementById('deleteRelayButtonConfirmed_'+name).classList.remove('btn-danger');
+        }
+    }
+
+
+    function toggleConfirmDeleteRelay(name){
+
+        if(document.getElementById('deleteRelayButtonChallenge_'+name).hidden == false){
+            document.getElementById('deleteRelayButtonChallenge_'+name).hidden = true;
+            document.getElementById('confirmDeleteRelay_'+name).hidden = false;
+        }else{
+            document.getElementById('deleteRelayButtonChallenge_'+name).hidden = false;
+            document.getElementById('confirmDeleteRelay_'+name).hidden = true;
+            document.getElementById('confirmDeleteText_'+name).value = "";
+        }
+    }
+
+
+    async function drawRelayList(){
+
+        try{
+            await getBreakerList();
+            await getRelayModelList();
+
+            let relayList = document.getElementById("relayList");
+            relayList.innerHTML = '';
+
+            const relays = await db.relays.orderBy('name').toArray();
+
+            await Promise.all(relays.map(async relay => {
+                [relay.breaker] = await Promise.all([
+                    db.breakers.where('id').equals(relay.breaker).first()
+                ])
+            }));
+
+            if(relays.length == 0){
+                document.getElementById("relayListEmpty").hidden = false;
+                document.getElementById("relayListTable").hidden = true;
+            }else{
+                document.getElementById("relayListEmpty").hidden = true;
+                document.getElementById("relayListTable").hidden = false;
+            }
+
+            relays.forEach((relay) => {
+
+                let newRelay = `
+                    <tr>
+                        <td class="align-middle">
+                            <div id="editableDetails">
+                                <span id="relayName_${relay.id}">${relay.name}</span>
+                                <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editNameIcon_${relay.id}" onClick="startEditName(${relay.id})";">
+                                <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveNameIcon_${relay.id}" onClick="saveEditName(${relay.id})"; hidden>
+                                <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelNameIcon_${relay.id}" onClick="cancelEditName(${relay.id})"; hidden>
+                            </div>
+                        </td>
+                        <td class="align-middle">${relay.manufacturer}</td>
+                        <td class="align-middle">${relay.model}</td>
+                        <td class="align-middle">${displayType(relay.type)}</td>
+                        <td class="align-middle">${relay.breaker.name??"Unknown"} (${relay.breaker.amperage??"Unknown"} Amps)</td>
+                        <td class="align-middle">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-danger" id="deleteRelayButtonChallenge_${relay.id}" onclick="toggleConfirmDeleteRelay(${relay.id});">Delete</button></div>
+                            <div class="input-group" id="confirmDeleteRelay_${relay.id}" hidden>
+                                <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${relay.id}" oninput="confirmDeleteRelayChallegeOnChange(${relay.id});">
+                                <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteRelay(${relay.id})">Cancel</button>
+                                <button class="btn btn-outline-danger" type="button" id="deleteRelayButtonConfirmed_${relay.id}" onclick="deleteRelay(${relay.id});" disabled>Delete</button>
+                            </div>
+
+                        </td>
+                    </tr>`
+
+                    relayList.insertAdjacentHTML('beforeend', newRelay);
+            });
+
+        }
+        catch (exception){
+            errorHandler(exception);
+        }
+    }
+
+
+    function displayType(type){
+        switch(type.toLowerCase()){
+            case "binary":
+                return "Binary";
+                break;
+            case "variable":
+                return "Variable";
+                break;
+            default:
+                return type;
+                break;
+        }
+    }
+
+
+    function startEditName(id){
+        nameElement = document.getElementById('relayName_'+id);
+        nameElement.setAttribute("previous-value", nameElement.innerHTML);
+        nameElement.contentEditable = "true";
+        nameElement.classList.add("form-control");
+        document.getElementById('editNameIcon_'+id).hidden = true;
+        document.getElementById('saveNameIcon_'+id).hidden = false;
+        document.getElementById('cancelNameIcon_'+id).hidden = false;
+    }
+
+
+    function cancelEditName(id){
+        nameElement = document.getElementById('relayName_'+id);
+        nameElement.contentEditable = "false";
+        nameElement.classList.remove("form-control");
+        nameElement.innerHTML = nameElement.getAttribute("previous-value");
+        document.getElementById('editNameIcon_'+id).hidden = false;
+        document.getElementById('saveNameIcon_'+id).hidden = true;
+        document.getElementById('cancelNameIcon_'+id).hidden = true;
+    }
+
+
+    async function saveEditName(id){
+        nameElement = document.getElementById('relayName_'+id);
+
+        await db.relays.update(id, {name: nameElement.innerHTML.trim()});
+        nameElement.contentEditable = "false";
+        nameElement.classList.remove("form-control");
+        document.getElementById('editNameIcon_'+id).hidden = false;
+        document.getElementById('saveNameIcon_'+id).hidden = true;
+        document.getElementById('cancelNameIcon_'+id).hidden = true;
+    }
+
+
+    async function getBreakerList(){
+
+        let breakerSelect = document.getElementById("addNewRelayBreaker");
+
+        var i, L = breakerSelect.options.length - 1;
+        for(i = L; i >= 0; i--) {
+            breakerSelect.remove(i);
+        }
+
+        breakerList = await db.breakers.orderBy('name').toArray()
+
+        breakerList.forEach((breaker) =>{
+            var opt = document.createElement('option');
+            opt.value = breaker['id'];
+            opt.innerHTML = `${breaker['name']} (${breaker['amperage']} Amps)`;
+            breakerSelect.appendChild(opt);
+        });
+
+        var opt = document.createElement('option');
+        opt.value = "";
+        opt.selected = true;
+        opt.disabled = true;
+        opt.innerHTML = `Select...`;
+        breakerSelect.prepend(opt);
+    }
+
+
+    async function getRelayModelList(){
+
+        let relayModelSelect = document.getElementById("relayModelSelect");
+
+        var i, L = relayModelSelect.options.length - 1;
+        for(i = L; i >= 0; i--) {
+            relayModelSelect.remove(i);
+        }
+
+        relayModelList = await db.relay_models.orderBy('[manufacturer+model]').toArray()
+        relayModelList.forEach((relayModel) =>{
+            var opt = document.createElement('option');
+            opt.value = relayModel['id'];
+            opt.innerHTML = `${relayModel['manufacturer']} ${relayModel['model']} (${relayModel['description']})`;
+            relayModelSelect.append(opt);
+        });
+
+        var opt = document.createElement('option');
+        opt.value = "";
+        opt.disabled = true;
+        opt.innerHTML = `Select...`;
+        relayModelSelect.prepend(opt);
+
+        var opt = document.createElement('option');
+        opt.value = "CUSTOM";
+        opt.innerHTML = `Custom`;
+        relayModelSelect.append(opt);
+    }
+
+    drawRelayList();
+
+</script>
+</html>
