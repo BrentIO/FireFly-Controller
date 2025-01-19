@@ -274,14 +274,8 @@ void setup() {
 
   if(configFS_isMounted){
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers_PUT, 65536,65535));
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/breakers", http_handleBreakers_PUT, 65536,65535));
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/relays", http_handleRelays_PUT, 65536,65535));
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/colors", http_handleColors_PUT));
     httpServer.on("^\/api/controllers$", ASYNC_HTTP_GET, http_handleListControllers);
     httpServer.on("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers);
-    httpServer.on("/api/breakers", http_handleBreakers);
-    httpServer.on("/api/relays", http_handleRelays);
-    httpServer.on("/api/colors", http_handleColors);
     httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
@@ -295,9 +289,6 @@ void setup() {
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_configFSNotMunted);
     httpServer.on("/api/ota", http_configFSNotMunted);
     httpServer.on("/api/controllers", http_configFSNotMunted);
-    httpServer.on("/api/breakers", http_configFSNotMunted);
-    httpServer.on("/api/relays", http_configFSNotMunted);
-    httpServer.on("/api/colors", http_configFSNotMunted);
   }
 
   if(wwwFS_isMounted){
@@ -1160,9 +1151,7 @@ void http_handleListControllers(AsyncWebServerRequest *request){
 
 
 /**
- * Generic handler for /api/breakers
  */
-void http_handleBreakers(AsyncWebServerRequest *request){
   switch(request->method()){
 
     case ASYNC_HTTP_OPTIONS:
@@ -1171,12 +1160,10 @@ void http_handleBreakers(AsyncWebServerRequest *request){
 
     case ASYNC_HTTP_GET:
 
-      http_handleBreakers_GET(request);
       break;
 
     case ASYNC_HTTP_DELETE:
 
-      http_handleBreakers_DELETE(request);
       break;
 
     default:
@@ -1187,9 +1174,7 @@ void http_handleBreakers(AsyncWebServerRequest *request){
 
 
 /**
- * Handles Breakers GETs
 */
-void http_handleBreakers_GET(AsyncWebServerRequest *request){
 
   if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
@@ -1200,23 +1185,17 @@ void http_handleBreakers_GET(AsyncWebServerRequest *request){
     http_unauthorized(request);
     return;
   }
-  
-  String filename = CONFIGFS_PATH_DEVICES + (String)"/breakers";
 
-  if(!configFS.exists(filename)){
     http_notFound(request);
     return;
   }
 
-  AsyncWebServerResponse *response = request->beginResponse(configFS, filename, F("application/json"));
   request->send(response);
 }
 
 
 /**
- * Handles Breaker PUTs
 */
-void http_handleBreakers_PUT(AsyncWebServerRequest *request, JsonVariant doc){
 
   if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
@@ -1233,14 +1212,6 @@ void http_handleBreakers_PUT(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  if(!configFS.exists(F(CONFIGFS_PATH_DEVICES))){
-    if(!configFS.mkdir(F(CONFIGFS_PATH_DEVICES))){
-      http_error(request, F("Unable to create CONFIGFS_PATH_DEVICES directory"));
-      return;
-    };
-  }
-
-  File file = configFS.open(CONFIGFS_PATH_DEVICES + (String)"/breakers", "w");
 
   if(!file){
     file.close();
@@ -1256,9 +1227,7 @@ void http_handleBreakers_PUT(AsyncWebServerRequest *request, JsonVariant doc){
 
 
 /**
- * Handles Breakers DELETEs
 */
-void http_handleBreakers_DELETE(AsyncWebServerRequest *request){
 
   if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
@@ -1270,255 +1239,10 @@ void http_handleBreakers_DELETE(AsyncWebServerRequest *request){
     return;
   }
 
-  String filename = CONFIGFS_PATH_DEVICES + (String)"/breakers";
-
-  if(!configFS.exists(filename)){
     http_notFound(request);
     return;
   }
 
-  if(configFS.remove(filename)){
-    request->send(204);
-  }else{
-    http_error(request, F("Failed when trying to delete file"));
-  }
-}
-
-
-/**
- * Generic handler for /api/relays
- */
-void http_handleRelays(AsyncWebServerRequest *request){
-  switch(request->method()){
-
-    case ASYNC_HTTP_OPTIONS:
-      http_options(request);
-      break;
-
-    case ASYNC_HTTP_GET:
-
-      http_handleRelays_GET(request);
-      break;
-
-    case ASYNC_HTTP_DELETE:
-
-      http_handleRelays_DELETE(request);
-      break;
-
-    default:
-      http_methodNotAllowed(request);
-      break;
-  }
-}
-
-
-/**
- * Handles Relays GETs
-*/
-void http_handleRelays_GET(AsyncWebServerRequest *request){
-
-  if(!request->hasHeader(F("visual-token"))){
-        http_unauthorized(request);
-        return;
-  }
-
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
-    http_unauthorized(request);
-    return;
-  }
-  
-  String filename = CONFIGFS_PATH_DEVICES + (String)"/relays";
-
-  if(!configFS.exists(filename)){
-    http_notFound(request);
-    return;
-  }
-
-  AsyncWebServerResponse *response = request->beginResponse(configFS, filename, F("application/json"));
-  request->send(response);
-}
-
-
-/**
- * Handles Relays PUTs
-*/
-void http_handleRelays_PUT(AsyncWebServerRequest *request, JsonVariant doc){
-
-  if(!request->hasHeader(F("visual-token"))){
-        http_unauthorized(request);
-        return;
-  }
-
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
-    http_unauthorized(request);
-    return;
-  }
-
-  if(request->method() != ASYNC_HTTP_PUT){
-    http_methodNotAllowed(request);
-    return;
-  }
-
-  if(!configFS.exists(F(CONFIGFS_PATH_DEVICES))){
-    if(!configFS.mkdir(F(CONFIGFS_PATH_DEVICES))){
-      http_error(request, F("Unable to create CONFIGFS_PATH_DEVICES directory"));
-      return;
-    };
-  }
-
-  File file = configFS.open(CONFIGFS_PATH_DEVICES + (String)"/relays", "w");
-
-  if(!file){
-    file.close();
-    http_error(request, F("Unable to open the file for writing"));
-    return;
-  }
-
-  serializeJson(doc, file);
-  file.close();  
-
-  request->send(204);
-}
-
-
-/**
- * Handles Relays DELETEs
-*/
-void http_handleRelays_DELETE(AsyncWebServerRequest *request){
-
-  if(!request->hasHeader(F("visual-token"))){
-        http_unauthorized(request);
-        return;
-  }
-
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
-    http_unauthorized(request);
-    return;
-  }
-
-  String filename = CONFIGFS_PATH_DEVICES + (String)"/relays";
-
-  if(!configFS.exists(filename)){
-    http_notFound(request);
-    return;
-  }
-
-  if(configFS.remove(filename)){
-    request->send(204);
-  }else{
-    http_error(request, F("Failed when trying to delete file"));
-  }
-}
-
-
-/**
- * Generic handler for /api/colors
- */
-void http_handleColors(AsyncWebServerRequest *request){
-  switch(request->method()){
-
-    case ASYNC_HTTP_OPTIONS:
-      http_options(request);
-      break;
-
-    case ASYNC_HTTP_GET:
-
-      http_handleColors_GET(request);
-      break;
-
-    case ASYNC_HTTP_DELETE:
-
-      http_handleColors_DELETE(request);
-      break;
-
-    default:
-      http_methodNotAllowed(request);
-      break;
-  }
-}
-
-
-/**
- * Handles Colors GETs
-*/
-void http_handleColors_GET(AsyncWebServerRequest *request){
-
-  if(!request->hasHeader(F("visual-token"))){
-        http_unauthorized(request);
-        return;
-  }
-
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
-    http_unauthorized(request);
-    return;
-  }
-
-  if(!configFS.exists(F("/colors"))){
-    http_notFound(request);
-    return;
-  }
-
-  AsyncWebServerResponse *response = request->beginResponse(configFS, F("/colors"), F("application/json"));
-  request->send(response);
-}
-
-
-/**
- * Handles Colors PUTs
-*/
-void http_handleColors_PUT(AsyncWebServerRequest *request, JsonVariant doc){
-
-  if(!request->hasHeader(F("visual-token"))){
-        http_unauthorized(request);
-        return;
-  }
-
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
-    http_unauthorized(request);
-    return;
-  }
-
-  if(request->method() != ASYNC_HTTP_PUT){
-    http_methodNotAllowed(request);
-    return;
-  }
-
-  File file = configFS.open(F("/colors"), "w");
-
-  if(!file){
-    file.close();
-    http_error(request, F("Unable to open the file for writing"));
-    return;
-  }
-
-  serializeJson(doc, file);
-  file.close();  
-
-  request->send(204);
-}
-
-
-/**
- * Handles Relays DELETEs
-*/
-void http_handleColors_DELETE(AsyncWebServerRequest *request){
-
-  if(!request->hasHeader(F("visual-token"))){
-        http_unauthorized(request);
-        return;
-  }
-
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
-    http_unauthorized(request);
-    return;
-  }
-
-  if(!configFS.exists(F("/colors"))){
-    http_notFound(request);
-    return;
-  }
-
-  if(configFS.remove(F("/colors"))){
     request->send(204);
   }else{
     http_error(request, F("Failed when trying to delete file"));
@@ -2699,7 +2423,6 @@ void mqtt_autoDiscovery_outputs(){
   filter_outputs__["area"] = true;
   filter_outputs__["icon"] = true;
   filter_outputs__["type"] = true;
-  filter_outputs__["relay"] = true;
 
   DynamicJsonDocument controllerDoc(12288); //Supports up to 32 ports
 
@@ -2710,19 +2433,6 @@ void mqtt_autoDiscovery_outputs(){
   if (errorControllerFileDeserialization) {
     return;
   }
-
-  StaticJsonDocument<64> relayFilterDoc;
-
-  JsonObject filter_relays__ = relayFilterDoc.createNestedObject();
-  filter_relays__["uuid"] = true;
-  filter_relays__["manufacturer"] = true;
-  filter_relays__["model"] = true;
-
-  DynamicJsonDocument relayDoc(6144); //Supports up to 32 relays
-
-  File relayFile = configFS.open(CONFIGFS_PATH_DEVICES + (String)"/relays", "r");
-  deserializeJson(relayDoc, relayFile, DeserializationOption::Filter(relayFilterDoc));
-  relayFile.close();
 
   for (JsonPair output : controllerDoc["outputs"].as<JsonObject>()) {
 
@@ -2817,22 +2527,6 @@ void mqtt_autoDiscovery_outputs(){
     }
 
     device["name"] =  deviceName;
-
-    if(output.value().containsKey("relay")){
-
-      for(JsonObject relay : relayDoc.as<JsonArray>()){
-        if(strcmp(relay["uuid"].as<const char*>(), output.value()["relay"].as<const char*>()) == 0){
-          if(relay.containsKey("manufacturer")){
-            device["manufacturer"] = relay["manufacturer"].as<const char*>();
-          };
-          if(relay.containsKey("model")){
-            device["model"] = relay["model"].as<const char*>();
-          };
-          break;
-        }
-      }
-    }
-
     device["via_device"] = externalEEPROM.data.uuid;
 
     if(output.value().containsKey("area")){
