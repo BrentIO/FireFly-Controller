@@ -266,3 +266,26 @@ async function exportCertificate(id){
         errorHandler(error);
     }
 }
+
+
+async function checkIfInUse_breaker(id){
+
+    const breakers = await db.breakers.where('id').equals(id).toArray();
+
+    if(breakers.length == 0){
+        return false;
+    }
+
+    await Promise.all(breakers.map(async breaker => {
+        [breaker.id] = await Promise.all([
+            db.relays.where('breaker').equals(breaker.id).first()
+        ])
+    }));
+
+    if(breakers[0].id == undefined){
+        return false;
+    }
+    else{
+        return true;
+    }
+}
