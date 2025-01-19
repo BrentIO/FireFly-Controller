@@ -246,8 +246,10 @@
 
         if(breakers.length == 0){
             document.getElementById("breakerListEmpty").hidden = false;
+            document.getElementById("breakerListTable").hidden = true;
         }else{
             document.getElementById("breakerListEmpty").hidden = true;
+            document.getElementById("breakerListTable").hidden = false;
         }
 
         breakers.forEach((breaker) => {
