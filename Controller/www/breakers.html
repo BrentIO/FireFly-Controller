@@ -195,7 +195,7 @@
     async function saveEditName(id){
         nameElement = document.getElementById('breakerName_'+id);
 
-        await db.breakers.update(id, {name: nameElement.innerHTML});
+        await db.breakers.update(id, {name: nameElement.innerHTML.trim()});
         nameElement.contentEditable = "false";
         nameElement.classList.remove("form-control");
         document.getElementById('editNameIcon_'+id).hidden = false;
