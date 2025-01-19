@@ -39,24 +39,20 @@
     margin-bottom: 3em;
 }
 
-
-
 .sectionHeader{
     font-size: 1.5em;
     font-weight: 500;
-
 }
 
 .controllerDetailsLabel{
     font-weight: 600;
-
 }
 
 .uuid{
     font-family: 'Courier New', Courier, monospace;
 }
 
-#controllerDetails{
+#editableDetails{
     .row:hover{
         background-color: #adb5bd2f;
     };
