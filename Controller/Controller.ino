@@ -276,6 +276,7 @@ void setup() {
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers_PUT, 65536,65535));
     httpServer.on("^\/api/controllers$", ASYNC_HTTP_GET, http_handleListControllers);
     httpServer.on("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers);
+    httpServer.on("/backup", http_handleBackup);
     httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
@@ -289,6 +290,7 @@ void setup() {
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_configFSNotMunted);
     httpServer.on("/api/ota", http_configFSNotMunted);
     httpServer.on("/api/controllers", http_configFSNotMunted);
+    httpServer.on("/backup", http_configFSNotMunted);
   }
 
   if(wwwFS_isMounted){
@@ -1151,7 +1153,9 @@ void http_handleListControllers(AsyncWebServerRequest *request){
 
 
 /**
+ * Generic handler for /backup
  */
+void http_handleBackup(AsyncWebServerRequest *request){
   switch(request->method()){
 
     case ASYNC_HTTP_OPTIONS:
@@ -1160,10 +1164,12 @@ void http_handleListControllers(AsyncWebServerRequest *request){
 
     case ASYNC_HTTP_GET:
 
+      http_handleBackup_GET(request);
       break;
 
     case ASYNC_HTTP_DELETE:
 
+      http_handleBackup_DELETE(request);
       break;
 
     default:
@@ -1174,7 +1180,9 @@ void http_handleListControllers(AsyncWebServerRequest *request){
 
 
 /**
+ * Handles Backup GETs
 */
+void http_handleBackup_GET(AsyncWebServerRequest *request){
 
   if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
@@ -1186,16 +1194,20 @@ void http_handleListControllers(AsyncWebServerRequest *request){
     return;
   }
 
+  if(!configFS.exists(F("/backup"))){
     http_notFound(request);
     return;
   }
 
+  AsyncWebServerResponse *response = request->beginResponse(configFS, F("/backup"), F("application/json"));
   request->send(response);
 }
 
 
 /**
+ * Handles Backup PUTs
 */
+void http_handleBackup_PUT(AsyncWebServerRequest *request, JsonVariant doc){
 
   if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
@@ -1212,6 +1224,7 @@ void http_handleListControllers(AsyncWebServerRequest *request){
     return;
   }
 
+  File file = configFS.open(F("/backup"), "w");
 
   if(!file){
     file.close();
@@ -1227,7 +1240,9 @@ void http_handleListControllers(AsyncWebServerRequest *request){
 
 
 /**
+ * Handles Backup DELETEs
 */
+void http_handleBackup_DELETE(AsyncWebServerRequest *request){
 
   if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
@@ -1239,10 +1254,12 @@ void http_handleListControllers(AsyncWebServerRequest *request){
     return;
   }
 
+  if(!configFS.exists(F("/backup"))){
     http_notFound(request);
     return;
   }
 
+  if(configFS.remove(F("/backup"))){
     request->send(204);
   }else{
     http_error(request, F("Failed when trying to delete file"));
@@ -2434,6 +2451,7 @@ void mqtt_autoDiscovery_outputs(){
     return;
   }
 
+  
   for (JsonPair output : controllerDoc["outputs"].as<JsonObject>()) {
 
     int8_t outputPortNumber = atoi(output.key().c_str());
