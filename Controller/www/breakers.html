@@ -132,6 +132,12 @@
 
 
     async function deleteBreaker(id){
+
+        if(await checkIfInUse_breaker(id) == true){
+            warningHandler("Breaker is in use and cannot be deleted.")
+            return;
+        }
+        
         await db.breakers.delete(id);
         await drawBreakerList();
     }
