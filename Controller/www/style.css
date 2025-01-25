@@ -103,6 +103,12 @@
     }
 }
 
+#managedControllerList{
+    .card{
+        max-width: 25em;
+    }
+}
+
 @media screen and (max-width: 575px) {
     .applicationName {
         display: none !important;
@@ -114,5 +120,5 @@
         margin-left: 0;
         margin-right: 0;
         max-width: 80% !important;
-      }
+    }
 }
