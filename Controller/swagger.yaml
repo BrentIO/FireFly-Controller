@@ -1016,10 +1016,6 @@ components:
           $ref: '#/components/schemas/inputPort'
         outputs:
           $ref: '#/components/schemas/outputPort'
-        tags:
-          type: array
-          items:
-            $ref: '#/components/schemas/tag'
       required:
         - name
 
@@ -1058,11 +1054,7 @@ components:
                   output: 4
                 - type: INCREASE
                   output: 4
-              tags:
-                - Lighting
-                - Dual
             2:
-
               actions:
               - type: DECREASE
                 change_state: SHORT
@@ -1078,8 +1070,6 @@ components:
                 actions:
                 - type: TOGGLE
                   output: 12
-                tags:
-                - Security
     channel:
       type: object
       properties:
@@ -1109,10 +1099,6 @@ components:
             type: array
             items:
                 $ref: '#/components/schemas/action'
-        tags:
-          type: array
-          items:
-            $ref: '#/components/schemas/tag'
 
     outputPort:
       type: object
@@ -1149,10 +1135,6 @@ components:
             type: boolean
             description: Indicates if the output is enabled
             default: true
-          tags:
-            type: array
-            items:
-              $ref: '#/components/schemas/tag'
         required:
           - id
       examples:
@@ -1162,8 +1144,6 @@ components:
             area: Foyer
             icon: chandelier
             type: VARIABLE
-            tags:
-              - Holiday
           12:
             id: C12
             name: Recessed Lights
@@ -1246,15 +1226,6 @@ components:
                 size: 912
           www:
             error: File system not mounted
-
-    tag:
-      type: string
-      description: Arbitrary tag/reference
-      maxLength: 20
-      examples:
-        - Security
-        - Lighting
-        - Holiday
 
     dexieFormat:
       type: object
