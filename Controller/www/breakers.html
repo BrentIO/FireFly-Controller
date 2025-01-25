@@ -37,6 +37,7 @@
                             <tr>
                               <th scope="col">Name</th>
                               <th scope="col">Amperage Rating</th>
+                              <th scope="col">Utilization</th>
                               <th scope="col"></th>
                             </tr>
                           </thead>
@@ -252,7 +253,35 @@
             document.getElementById("breakerListTable").hidden = false;
         }
 
+        await Promise.all(breakers.map(async breaker => {
+            [breaker.relays] = await Promise.all([
+                db.relays.where('breaker').equals(breaker.id).toArray()
+            ])
+        }));
+
         breakers.forEach((breaker) => {
+
+            breaker.load_amperage = 0;
+
+            breaker.relays.forEach((relay) => {
+                breaker.load_amperage = parseInt(breaker.load_amperage) + parseInt(relay.load_amperage);
+            });
+
+            breaker.utilization = Math.round((breaker.load_amperage / breaker.amperage) * 100);
+
+            switch(true){
+                case (breaker.utilization < 70):
+                    breaker.utilization_class = "bg-success";
+                    break;
+                case (breaker.utilization >=70 && breaker.utilization <= 80):
+                    breaker.utilization_class = "bg-warning";
+                    break;
+
+                default:
+                    breaker.utilization_class = "bg-danger";
+                    break;
+
+            }
 
             let newBreaker = `
                 <tr>
@@ -269,6 +298,11 @@
                                 <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelAmperageIcon_${breaker.id}" onClick="cancelEditAmperage(${breaker.id})"; hidden>
                             </div>
                         </td>
+                        <td class="align-middle">
+                            <div class="progress">
+                                <div class="progress-bar ${breaker.utilization_class}" role="progressbar" style="width: ${breaker.utilization}%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" title="${breaker.load_amperage} Amps">${breaker.utilization}%</div>
+                            </div>
+                        </td>
 
                     <td class="align-middle">
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-danger" id="deleteBreakerButtonChallenge_${breaker.id}" onclick="toggleConfirmDeleteBreaker(${breaker.id});">Delete</button></div>
@@ -277,7 +311,6 @@
                             <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteBreaker(${breaker.id})">Cancel</button>
                             <button class="btn btn-outline-danger" type="button" id="deleteBreakerButtonConfirmed_${breaker.id}" onclick="deleteBreaker(${breaker.id});" disabled>Delete</button>
                         </div>
-
                     </td>
                 </tr>`
 
