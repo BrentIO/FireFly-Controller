@@ -36,6 +36,7 @@
                         <thead>
                             <tr>
                               <th scope="col">Name</th>
+                              <th scope="col">Load Amperage</th>
                               <th scope="col">Manufacturer</th>
                               <th scope="col">Model</th>
                               <th scope="col">Type</th>
@@ -67,6 +68,13 @@
                         <input class="form-control" id="addNewRelayName" placeholder="" aria-label="Name" required>
                         <div class="invalid-feedback">
                             A name is required.
+                        </div>
+                    </div>
+                    <div class="input-group mb-3 has-validation">
+                        <span class="input-group-text">Load Amperage</span>
+                        <input class="form-control" id="addNewRelayAmperage" placeholder="" aria-label="Amperage" type="number" min="0" required>
+                        <div class="invalid-feedback">
+                            A load amperage is required.
                         </div>
                     </div>
                     <div class="input-group mb-3 no-validation">
@@ -173,6 +181,7 @@
 
         await db.relays.add({
             name: document.getElementById("addNewRelayName").value,
+            load_amperage: parseInt(document.getElementById("addNewRelayAmperage").value),
             manufacturer: document.getElementById("addNewRelayManufacturer").value,
             model: document.getElementById("addNewRelayModel").value,
             type: document.getElementById("addNewRelayType").value,
@@ -328,6 +337,14 @@
                                 <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelNameIcon_${relay.id}" onClick="cancelEditName(${relay.id})"; hidden>
                             </div>
                         </td>
+                        <td class="align-middle">
+                            <div id="editableDetails">
+                                <span id="relayLoadAmperage_${relay.id}" onInput="loadAmperageEditFieldRealtimeValidation('${relay.id}')";>${relay.load_amperage}</span> Amps
+                                <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editLoadAmperageIcon_${relay.id}" onClick="startEditLoadAmperage(${relay.id})";">
+                                <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveLoadAmperageIcon_${relay.id}" onClick="saveEditLoadAmperage(${relay.id})"; hidden>
+                                <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelLoadAmperageIcon_${relay.id}" onClick="cancelEditLoadAmperage(${relay.id})"; hidden>
+                            </div>
+                        </td>
                         <td class="align-middle">${relay.manufacturer}</td>
                         <td class="align-middle">${relay.model}</td>
                         <td class="align-middle">${displayType(relay.type)}</td>
@@ -402,6 +419,44 @@
     }
 
 
+    function startEditLoadAmperage(id){
+        loadAmperageElement = document.getElementById('relayLoadAmperage_'+id);
+        loadAmperageElement.setAttribute("previous-value", loadAmperageElement.innerHTML);
+        loadAmperageElement.contentEditable = "true";
+        loadAmperageElement.classList.add("form-control");
+        loadAmperageElement.attributes["type"] = "number";
+        loadAmperageElement.attributes["min"] = "0";
+        loadAmperageElement.attributes.required = true;
+        document.getElementById('editLoadAmperageIcon_'+id).hidden = true;
+        document.getElementById('saveLoadAmperageIcon_'+id).hidden = false;
+        document.getElementById('cancelLoadAmperageIcon_'+id).hidden = false;
+        loadAmperageEditFieldRealtimeValidation(id);
+    }
+
+
+    function cancelEditLoadAmperage(id){
+        loadAmperageElement = document.getElementById('relayLoadAmperage_'+id);
+        loadAmperageElement.contentEditable = "false";
+        loadAmperageElement.classList.remove("form-control");
+        loadAmperageElement.innerHTML = loadAmperageElement.getAttribute("previous-value");
+        document.getElementById('editLoadAmperageIcon_'+id).hidden = false;
+        document.getElementById('saveLoadAmperageIcon_'+id).hidden = true;
+        document.getElementById('cancelLoadAmperageIcon_'+id).hidden = true;
+    }
+
+
+    async function saveEditLoadAmperage(id){
+        loadAmperageElement = document.getElementById('relayLoadAmperage_'+id);
+
+        await db.relays.update(id, {load_amperage: parseInt(loadAmperageElement.innerHTML.trim())});
+        loadAmperageElement.contentEditable = "false";
+        loadAmperageElement.classList.remove("form-control");
+        document.getElementById('editLoadAmperageIcon_'+id).hidden = false;
+        document.getElementById('saveLoadAmperageIcon_'+id).hidden = true;
+        document.getElementById('cancelLoadAmperageIcon_'+id).hidden = true;
+    }
+
+
     async function getBreakerList(){
 
         let breakerSelect = document.getElementById("addNewRelayBreaker");
@@ -456,6 +511,24 @@
         opt.value = "CUSTOM";
         opt.innerHTML = `Custom`;
         relayModelSelect.append(opt);
+    }
+
+
+
+    function loadAmperageEditFieldRealtimeValidation(id){
+        loadAmperageElement = document.getElementById('relayLoadAmperage_'+id);
+
+        var regex = /^[0-9]+$/;
+
+        if(regex.test(loadAmperageElement.innerHTML)){
+            loadAmperageElement.classList.remove("is-invalid");
+            loadAmperageElement.classList.add("is-valid");
+            document.getElementById('saveLoadAmperageIcon_'+id).hidden = false;
+        }else{
+            loadAmperageElement.classList.add("is-invalid");
+            loadAmperageElement.classList.remove("is-valid");
+            document.getElementById('saveLoadAmperageIcon_'+id).hidden = true;
+        }
     }
 
     drawRelayList();
