@@ -114,7 +114,7 @@
     async function addBreakerToDatabase(){
         await db.breakers.add({
             name: document.getElementById("addNewBreakerName").value,
-            amperage: document.getElementById("addNewBreakerAmperage").value
+            amperage: parseInt(document.getElementById("addNewBreakerAmperage").value)
         });
     }
 
