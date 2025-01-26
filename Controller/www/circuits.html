@@ -184,8 +184,10 @@
 
 
     async function addCircuitToDatabase(){
+        let relayModelId = parseInt(document.getElementById("relayModelSelect").value)
+
         if(document.getElementById("relayModelSelect").value == "CUSTOM"){
-            await db.relay_models.add({
+            relayModelId = await db.relay_models.add({
                 manufacturer: document.getElementById("addNewRelayManufacturer").value,
                 model: document.getElementById("addNewRelayModel").value,
                 description: document.getElementById("addNewRelayDescription").value,
@@ -197,12 +199,10 @@
         await db.circuits.add({
             name: document.getElementById("addNewCircuitName").value,
             description: document.getElementById("addNewCircuitDescription").value,
-            area: document.getElementById("addNewCircuitArea").value,
+            area: parseInt(document.getElementById("addNewCircuitArea").value),
             icon: parseInt(document.getElementById("addNewCircuitIcon").value),
             load_amperage: parseInt(document.getElementById("addNewCircuitAmperage").value),
-            manufacturer: document.getElementById("addNewRelayManufacturer").value,
-            model: document.getElementById("addNewRelayModel").value,
-            type: document.getElementById("addNewCircuitType").value,
+            relay: relayModelId,
             breaker: parseInt(document.getElementById("addNewCircuitBreaker").value)
         });
     }
@@ -337,6 +337,12 @@
                 ]),
                 [circuit.icon] = await Promise.all([
                     db.circuit_icons.where('id').equals(circuit.icon).first()
+                ]),
+                [circuit.area] = await Promise.all([
+                    db.areas.where('id').equals(circuit.area).first()
+                ]),
+                [circuit.relay] = await Promise.all([
+                    db.relay_models.where('id').equals(circuit.relay).first()
                 ])
             }));
 
@@ -367,13 +373,13 @@
                                     <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelDescriptionIcon_${circuit.id}" onClick="cancelEditDescription(${circuit.id})"; hidden>
                                 </div>
                                 <div class="editableDetails">
-                                    <span class="col circuitDetailsLabel">Area:</span> <span id="circuitArea_${circuit.id}">${circuit.area}</span>
+                                    <span class="col circuitDetailsLabel">Area:</span> <span id="circuitArea_${circuit.id}">${circuit.area.name}</span>
                                     <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editAreaIcon_${circuit.id}" onClick="startEditArea(${circuit.id})";">
                                     <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveAreaIcon_${circuit.id}" onClick="saveEditArea(${circuit.id})"; hidden>
                                     <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelAreaIcon_${circuit.id}" onClick="cancelEditArea(${circuit.id})"; hidden>
                                 </div>
                                 <div class="editableDetails">
-                                    <span class="col circuitDetailsLabel">Icon:</span> <span id="circuitIcon_${circuit.id}">${circuit.icon}</span>
+                                    <span class="col circuitDetailsLabel">Icon:</span> <span id="circuitIcon_${circuit.id}">${circuit.icon.name}</span>
                                     <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editIconIcon_${circuit.id}" onClick="startEditIcon(${circuit.id})";">
                                     <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveIconIcon_${circuit.id}" onClick="saveEditIcon(${circuit.id})"; hidden>
                                     <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelIconIcon_${circuit.id}" onClick="cancelEditIcon(${circuit.id})"; hidden>
@@ -400,9 +406,6 @@
                                     <button class="btn btn-outline-danger" type="button" id="deleteCircuitButtonConfirmed_${circuit.id}" onclick="deleteCircuit(${circuit.id});" disabled>Delete</button>
                                 </div>
                             </div>
-
-
-
                         </div>
                     </div>`
 
