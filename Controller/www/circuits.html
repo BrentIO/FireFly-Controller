@@ -176,10 +176,9 @@
             return;
         }
 
+        await toggleAddCircuitModal();
         await addCircuitToDatabase();
         await drawCircuitList();
-        await toggleAddCircuitModal();
-
     }
 
 
