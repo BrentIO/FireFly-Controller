@@ -546,7 +546,7 @@
 
         areaList.forEach((area) =>{
             var opt = document.createElement('option');
-            opt.value = `${area['name']}`;
+            opt.value = `${area['id']}`;
             opt.innerHTML = `${area['name']}`;
             areaSelect.appendChild(opt);
         });

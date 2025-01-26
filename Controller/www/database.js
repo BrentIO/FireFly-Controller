@@ -10,12 +10,12 @@ let circuit_icons = [{"name":"Chandelier","icon":"mdi:chandelier"},{"name":"Rece
 
 const initDB = () => {
     db.version(dbVersion).stores({
-        colors: "name", 
+        colors: "++id, name", 
         controllers: "++id, &uuid, name",
         areas: "++id, name",
         circuit_icons: "++id, name",
-        product_ids: "pid",
-        tags: "name",
+        product_ids: "++id, pid",
+        tags: "++id, name",
         certificates: "++id, &certificate",
         breakers: "++id, name",
         circuits: "++id, name, breaker, icon",

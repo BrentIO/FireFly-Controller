@@ -133,11 +133,11 @@
                         <div class="tagName">${tag.name}</div>
                     </td>
                     <td class="align-middle">
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-danger" id="deleteTagButtonChallenge_${tag.name}" onclick="toggleConfirmDeleteTag('${tag.name}');">Delete</button></div>
-                        <div class="input-group" id="confirmDeleteTag_${tag.name}" hidden>
-                            <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${tag.name}" oninput="confirmDeleteTagChallegeOnChange('${tag.name}');">
-                            <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteTag('${tag.name}')">Cancel</button>
-                            <button class="btn btn-outline-danger" type="button" id="deleteTagButtonConfirmed_${tag.name}" onclick="deleteTag('${tag.name}');" disabled>Delete</button>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-danger" id="deleteTagButtonChallenge_${tag.id}" onclick="toggleConfirmDeleteTag(${tag.id});">Delete</button></div>
+                        <div class="input-group" id="confirmDeleteTag_${tag.id}" hidden>
+                            <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${tag.id}" oninput="confirmDeleteTagChallegeOnChange(${tag.id});">
+                            <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteTag(${tag.id})">Cancel</button>
+                            <button class="btn btn-outline-danger" type="button" id="deleteTagButtonConfirmed_${tag.id}" onclick="deleteTag(${tag.id});" disabled>Delete</button>
                         </div>
 
                     </td>
@@ -150,35 +150,35 @@
     }
 
 
-    async function deleteTag(name){
-        await db.tags.delete(name);
+    async function deleteTag(id){
+        await db.tags.delete(id);
         await drawTagList();
     }
 
 
-    function confirmDeleteTagChallegeOnChange(name){
+    function confirmDeleteTagChallegeOnChange(id){
 
-        if(document.getElementById('confirmDeleteText_'+name).value == "confirm"){
-            document.getElementById('deleteTagButtonConfirmed_'+name).disabled = false;
-            document.getElementById('deleteTagButtonConfirmed_'+name).classList.add('btn-danger');
-            document.getElementById('deleteTagButtonConfirmed_'+name).classList.remove('btn-outline-danger');
+        if(document.getElementById('confirmDeleteText_'+id).value == "confirm"){
+            document.getElementById('deleteTagButtonConfirmed_'+id).disabled = false;
+            document.getElementById('deleteTagButtonConfirmed_'+id).classList.add('btn-danger');
+            document.getElementById('deleteTagButtonConfirmed_'+id).classList.remove('btn-outline-danger');
         }else{
-            document.getElementById('deleteTagButtonConfirmed_'+name).disabled = true;
-            document.getElementById('deleteTagButtonConfirmed_'+name).classList.add('btn-outline-danger');
-            document.getElementById('deleteTagButtonConfirmed_'+name).classList.remove('btn-danger');
+            document.getElementById('deleteTagButtonConfirmed_'+id).disabled = true;
+            document.getElementById('deleteTagButtonConfirmed_'+id).classList.add('btn-outline-danger');
+            document.getElementById('deleteTagButtonConfirmed_'+id).classList.remove('btn-danger');
         }
     }
 
 
-    function toggleConfirmDeleteTag(name){
+    function toggleConfirmDeleteTag(id){
 
-        if(document.getElementById('deleteTagButtonChallenge_'+name).hidden == false){
-            document.getElementById('deleteTagButtonChallenge_'+name).hidden = true;
-            document.getElementById('confirmDeleteTag_'+name).hidden = false;
+        if(document.getElementById('deleteTagButtonChallenge_'+id).hidden == false){
+            document.getElementById('deleteTagButtonChallenge_'+id).hidden = true;
+            document.getElementById('confirmDeleteTag_'+id).hidden = false;
         }else{
-            document.getElementById('deleteTagButtonChallenge_'+name).hidden = false;
-            document.getElementById('confirmDeleteTag_'+name).hidden = true;
-            document.getElementById('confirmDeleteText_'+name).value = "";
+            document.getElementById('deleteTagButtonChallenge_'+id).hidden = false;
+            document.getElementById('confirmDeleteTag_'+id).hidden = true;
+            document.getElementById('confirmDeleteText_'+id).value = "";
         }
     }
 
