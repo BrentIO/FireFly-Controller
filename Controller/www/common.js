@@ -109,7 +109,7 @@ function loadMenu(menu=null, menuItem=null){
 
 async function exportConfig(){
     try {
-        const blob = await db.export({prettyJson: true});
+        const blob = await db.export();
         download(blob, `FireFlyConfig_${Date.now()}.json`, "application/json");
         eventHandler("Export successful!");
     } catch (error) {
