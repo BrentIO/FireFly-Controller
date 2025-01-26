@@ -1142,13 +1142,13 @@ components:
             id: C49
             name: Chandelier
             area: Foyer
-            icon: chandelier
+            icon: mdi:chandelier
             type: VARIABLE
           12:
             id: C12
             name: Recessed Lights
             area: Bathroom
-            icon: light-recessed
+            icon: mdi:light-recessed
           13:
             id: C7
             enabled: false
