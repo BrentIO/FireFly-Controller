@@ -12,7 +12,7 @@ const initDB = () => {
     db.version(dbVersion).stores({
         colors: "name", 
         controllers: "++id, &uuid, name",
-        areas: "name",
+        areas: "++id, name",
         circuit_icons: "++id, name",
         product_ids: "pid",
         tags: "name",

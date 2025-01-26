@@ -133,11 +133,11 @@
                         <div class="areaName">${area.name}</div>
                     </td>
                     <td class="align-middle">
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-danger" id="deleteAreaButtonChallenge_${area.name}" onclick="toggleConfirmDeleteArea('${area.name}');">Delete</button></div>
-                        <div class="input-group" id="confirmDeleteArea_${area.name}" hidden>
-                            <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${area.name}" oninput="confirmDeleteAreaChallegeOnChange('${area.name}');">
-                            <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteArea('${area.name}')">Cancel</button>
-                            <button class="btn btn-outline-danger" type="button" id="deleteAreaButtonConfirmed_${area.name}" onclick="deleteArea('${area.name}');" disabled>Delete</button>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-danger" id="deleteAreaButtonChallenge_${area.id}" onclick="toggleConfirmDeleteArea(${area.id});">Delete</button></div>
+                        <div class="input-group" id="confirmDeleteArea_${area.id}" hidden>
+                            <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${area.id}" oninput="confirmDeleteAreaChallegeOnChange(${area.id});">
+                            <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteArea(${area.id})">Cancel</button>
+                            <button class="btn btn-outline-danger" type="button" id="deleteAreaButtonConfirmed_${area.id}" onclick="deleteArea(${area.id});" disabled>Delete</button>
                         </div>
 
                     </td>
@@ -150,35 +150,35 @@
     }
 
 
-    async function deleteArea(name){
-        await db.areas.delete(name);
+    async function deleteArea(id){
+        await db.areas.delete(id);
         await drawAreaList();
     }
 
 
-    function confirmDeleteAreaChallegeOnChange(name){
+    function confirmDeleteAreaChallegeOnChange(id){
 
-        if(document.getElementById('confirmDeleteText_'+name).value == "confirm"){
-            document.getElementById('deleteAreaButtonConfirmed_'+name).disabled = false;
-            document.getElementById('deleteAreaButtonConfirmed_'+name).classList.add('btn-danger');
-            document.getElementById('deleteAreaButtonConfirmed_'+name).classList.remove('btn-outline-danger');
+        if(document.getElementById('confirmDeleteText_'+id).value == "confirm"){
+            document.getElementById('deleteAreaButtonConfirmed_'+id).disabled = false;
+            document.getElementById('deleteAreaButtonConfirmed_'+id).classList.add('btn-danger');
+            document.getElementById('deleteAreaButtonConfirmed_'+id).classList.remove('btn-outline-danger');
         }else{
-            document.getElementById('deleteAreaButtonConfirmed_'+name).disabled = true;
-            document.getElementById('deleteAreaButtonConfirmed_'+name).classList.add('btn-outline-danger');
-            document.getElementById('deleteAreaButtonConfirmed_'+name).classList.remove('btn-danger');
+            document.getElementById('deleteAreaButtonConfirmed_'+id).disabled = true;
+            document.getElementById('deleteAreaButtonConfirmed_'+id).classList.add('btn-outline-danger');
+            document.getElementById('deleteAreaButtonConfirmed_'+id).classList.remove('btn-danger');
         }
     }
 
 
-    function toggleConfirmDeleteArea(name){
+    function toggleConfirmDeleteArea(id){
 
-        if(document.getElementById('deleteAreaButtonChallenge_'+name).hidden == false){
-            document.getElementById('deleteAreaButtonChallenge_'+name).hidden = true;
-            document.getElementById('confirmDeleteArea_'+name).hidden = false;
+        if(document.getElementById('deleteAreaButtonChallenge_'+id).hidden == false){
+            document.getElementById('deleteAreaButtonChallenge_'+id).hidden = true;
+            document.getElementById('confirmDeleteArea_'+id).hidden = false;
         }else{
-            document.getElementById('deleteAreaButtonChallenge_'+name).hidden = false;
-            document.getElementById('confirmDeleteArea_'+name).hidden = true;
-            document.getElementById('confirmDeleteText_'+name).value = "";
+            document.getElementById('deleteAreaButtonChallenge_'+id).hidden = false;
+            document.getElementById('confirmDeleteArea_'+id).hidden = true;
+            document.getElementById('confirmDeleteText_'+id).value = "";
         }
     }
 
