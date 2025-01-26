@@ -26,7 +26,7 @@
             <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark"></div>
             <div class="col py-3">
                 <div class="pageTitle">Breakers</div>
-                <div class="pageDescription">Define breakers, which will supply power to the high-voltage relays.</div>
+                <div class="pageDescription">Define breakers, which will supply power to the high-voltage circuits.</div>
                 
                 <div class="sectionHeader mt-5 mb-3">Defined Breakers
                     <img src="./icons/add.svg" title="Add" id="addNewBreakerButton" class="btn" role="button" aria-expanded="false" onclick="toggleAddBreakerModal();">
@@ -109,7 +109,6 @@
         drawBreakerList();
         toggleAddBreakerModal();
     });
-
 
 
     async function addBreakerToDatabase(){
@@ -254,8 +253,8 @@
         }
 
         await Promise.all(breakers.map(async breaker => {
-            [breaker.relays] = await Promise.all([
-                db.relays.where('breaker').equals(breaker.id).toArray()
+            [breaker.circuits] = await Promise.all([
+                db.circuits.where('breaker').equals(breaker.id).toArray()
             ])
         }));
 
@@ -263,8 +262,8 @@
 
             breaker.load_amperage = 0;
 
-            breaker.relays.forEach((relay) => {
-                breaker.load_amperage = parseInt(breaker.load_amperage) + parseInt(relay.load_amperage);
+            breaker.circuits.forEach((circuit) => {
+                breaker.load_amperage = parseInt(breaker.load_amperage) + parseInt(circuit.load_amperage);
             });
 
             breaker.utilization = Math.round((breaker.load_amperage / breaker.amperage) * 100);

@@ -278,7 +278,7 @@ async function checkIfInUse_breaker(id){
 
     await Promise.all(breakers.map(async breaker => {
         [breaker.id] = await Promise.all([
-            db.relays.where('breaker').equals(breaker.id).first()
+            db.circuits.where('breaker').equals(breaker.id).first()
         ])
     }));
 

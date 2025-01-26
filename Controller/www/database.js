@@ -17,7 +17,7 @@ const initDB = () => {
         tags: "name",
         certificates: "++id, &certificate",
         breakers: "++id, name",
-        relays: "++id, name, breaker",
+        circuits: "++id, name, breaker, icon",
         relay_models: "++id, [manufacturer+model], is_custom"
     });
 

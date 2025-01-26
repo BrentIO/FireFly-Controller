@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu(null, "menuItemCircuits");
+        initDB();
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark"></div>
+            <div class="col py-3">
+                <div class="pageTitle">Circuits</div>
+                <div class="pageDescription">Circuits define a high-voltage load and are activated when a relay is supplied with a low-voltage output signal.</div>
+                
+                <div class="sectionHeader mt-5 mb-3">Defined Circuits
+                    <img src="./icons/add.svg" title="Add" id="addNewCircuitButton" class="btn" role="button" aria-expanded="false" onclick="toggleAddCircuitModal();">
+                </div>
+                <div>
+                    <div id="circuitListCards"></div>
+                </div>
+                <div id="circuitListEmpty" class="container-fluid text-center">Click <img src="./icons/add.svg" title="Add"> add button to start adding circuits.</div>
+            </div> 
+        </div>
+    </div>
+
+
+
+
+    <!-- Add New Circuit Modal -->
+    <div class="modal fade" id="addNewCircuitModal" tabindex="-1" aria-labelledby="addNewCircuitModalLabel" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form class="needs-validation" novalidate id="addNewCircuitForm">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="addNewCircuitModalLabel">Add New Circuit</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group mb-3 has-validation">
+                        <span class="input-group-text">Name</span>
+                        <input class="form-control" id="addNewCircuitName" placeholder="ex: C23" aria-label="Name" required>
+                        <div class="invalid-feedback">
+                            A name is required.
+                        </div>
+                    </div>
+                    <div class="input-group mb-3 has-validation">
+                        <span class="input-group-text">Description</span>
+                        <input class="form-control" id="addNewCircuitDescription" placeholder="ex: Chandelier" aria-label="Description" required>
+                        <div class="invalid-feedback">
+                            A description is required.
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Area</span>
+                        <select class="form-select" aria-label="Area" id="addNewCircuitArea" required >
+                            <option value="" selected disabled>Select...</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Select an area where the load is located.
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Icon</span>
+                        <select class="form-select" aria-label="Area" id="addNewCircuitIcon" required >
+                            <option value="" selected disabled>Select...</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Select an area where the load is located.
+                        </div>
+                    </div>
+                    <div class="input-group mb-3 has-validation">
+                        <span class="input-group-text">Load Amperage</span>
+                        <input class="form-control" id="addNewCircuitAmperage" placeholder="" aria-label="Amperage" type="number" min="0" required>
+                        <div class="invalid-feedback">
+                            A load amperage is required.
+                        </div>
+                    </div>
+                    <div class="input-group mb-3 no-validation">
+                        <span class="input-group-text">Relay Model</span>
+                        <select class="form-select" aria-label="Relay Model" id="relayModelSelect" onchange="circuitModelDropdownChange();" required></select>
+                        <div class="invalid-feedback">
+                            Select a relay model option.
+                        </div>
+                    </div>
+                    <div id="customCircuit" class="d-none">
+                        <div class="input-group mb-3 has-validation">
+                            <span class="input-group-text">Manufacturer</span>
+                            <input class="form-control" id="addNewRelayManufacturer" placeholder="" aria-label="Manufacturer" required>
+                            <div class="invalid-feedback">
+                                A manufacturer is required.
+                            </div>
+                        </div>
+                        <div class="input-group mb-3 has-validation">
+                            <span class="input-group-text">Model</span>
+                            <input class="form-control" id="addNewRelayModel" placeholder="" aria-label="Model" required>
+                            <div class="invalid-feedback">
+                                A model is required.
+                            </div>
+                        </div>
+                        <div class="input-group mb-3 has-validation">
+                            <span class="input-group-text">Description</span>
+                            <input class="form-control" id="addNewCircuitDescription" placeholder="" aria-label="Description" required>
+                            <div class="invalid-feedback">
+                                A description is required.
+                            </div>
+                        </div>
+                        <div class="input-group mb-3 no-validation">
+                            <span class="input-group-text">Type</span>
+                            <select class="form-select" aria-label="Breaker" id="addNewCircuitType" required>
+                                <option value="" selected disabled>Select...</option>
+                                <option value="VARIABLE">Variable</option>
+                                <option value="BINARY" selected>Binary</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Select a type option.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Breaker</span>
+                        <select class="form-select" aria-label="Breaker" id="addNewCircuitBreaker" required >
+                            <option value="" selected disabled>Select...</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Select a breaker which is powering this circuit.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="button" id="addNewCircuitButtonAdd" onclick="addNewCircuitButtonAdd_click();">Add</button>
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+<script>
+
+    var addNewCircuitModal = new bootstrap.Modal('#addNewCircuitModal');
+
+    var breakerList = [];
+    var circuitModelList = [];
+
+
+    async function addNewCircuitButtonAdd_click(){
+
+        document.getElementById("addNewCircuitName").value = document.getElementById("addNewCircuitName").value.trim();
+        document.getElementById("addNewRelayManufacturer").value = document.getElementById("addNewRelayManufacturer").value.trim();
+        document.getElementById("addNewRelayModel").value = document.getElementById("addNewRelayModel").value.trim();
+        document.getElementById("addNewCircuitDescription").value = document.getElementById("addNewCircuitDescription").value.trim();
+
+        let form = document.getElementById("addNewCircuitForm");
+        form.checkValidity();
+        form.classList.add('was-validated');
+
+        if(!form.checkValidity()){
+            return;
+        }
+
+        await addCircuitToDatabase();
+        await drawCircuitList();
+        await toggleAddCircuitModal();
+
+    }
+
+
+    async function addCircuitToDatabase(){
+        if(document.getElementById("relayModelSelect").value == "CUSTOM"){
+            await db.relay_models.add({
+                manufacturer: document.getElementById("addNewRelayManufacturer").value,
+                model: document.getElementById("addNewRelayModel").value,
+                description: document.getElementById("addNewCircuitDescription").value,
+                type: document.getElementById("addNewCircuitType").value,
+                is_custom: "true"
+            });
+        }
+
+        await db.circuits.add({
+            name: document.getElementById("addNewCircuitName").value,
+            load_amperage: parseInt(document.getElementById("addNewCircuitAmperage").value),
+            manufacturer: document.getElementById("addNewRelayManufacturer").value,
+            model: document.getElementById("addNewRelayModel").value,
+            type: document.getElementById("addNewCircuitType").value,
+            breaker: parseInt(document.getElementById("addNewCircuitBreaker").value)
+        });
+    }
+
+
+    function toggleAddCircuitModal(){
+        addNewCircuitModal.toggle();
+    }
+
+
+    document.getElementById("addNewCircuitModal").addEventListener('show.bs.modal', () => {
+
+        if(breakerList.length == 0){
+            warningHandler("You must add a breaker before you can add a circuit.")
+        }
+        form = document.getElementById("addNewCircuitForm");
+        form.reset();
+        document.getElementById("relayModelSelect").value = "";
+        document.getElementById("addNewCircuitBreaker").value = "GARBAGE";
+        document.getElementById("addNewCircuitType").value = "";
+        document.getElementById("customCircuit").classList.add("d-none");
+        form.classList.remove('was-validated');
+    });
+
+
+    function circuitModelDropdownChange(){
+
+        switch(document.getElementById("relayModelSelect").value){
+            case "":
+                document.getElementById("customCircuit").classList.add("d-none");
+                document.getElementById("addNewRelayManufacturer").value = "";
+                document.getElementById("addNewRelayModel").value = "";
+                document.getElementById("addNewCircuitDescription").value = "";
+                document.getElementById("addNewCircuitType").value = "";
+                break;
+
+            case "CUSTOM":
+                document.getElementById("customCircuit").classList.remove("d-none");
+                document.getElementById("addNewRelayManufacturer").value = "";
+                document.getElementById("addNewRelayModel").value = "";
+                document.getElementById("addNewCircuitDescription").value = "";
+                document.getElementById("addNewCircuitType").value = "";
+                break;
+
+            default:
+                document.getElementById("customCircuit").classList.add("d-none");
+                circuitModelList.forEach((circuitModel) => {
+                    if(document.getElementById("relayModelSelect").value == circuitModel.id){
+                        document.getElementById("addNewRelayManufacturer").value = circuitModel.manufacturer;
+                        document.getElementById("addNewRelayModel").value = circuitModel.model;
+                        document.getElementById("addNewCircuitDescription").value = circuitModel.description;
+                        document.getElementById("addNewCircuitType").value = circuitModel.type;
+                    }
+                });
+
+                break;
+        }
+    }
+
+
+    async function deleteCircuit(id){
+        await db.circuits.delete(id);
+        await deleteUnusedCustomCircuitModels();
+        await drawCircuitList();
+    }
+
+
+    async function deleteUnusedCustomCircuitModels(){
+
+        customCircuitModels = await db.relay_models.where("is_custom").equals("true").toArray();
+        circuitList = await db.circuits.toArray();
+
+        for(const customCircuitModel of customCircuitModels){
+            var matched = false;
+            for(const circuit of circuitList){
+                if(circuit.manufacturer == customCircuitModel.manufacturer && circuit.model == customCircuitModel.model){
+                    matched = true;
+                    break;
+                }
+            }
+
+            if(matched == false){
+                await db.relay_models.delete(customCircuitModel.id);
+            }
+        }
+    }
+
+
+    function confirmDeleteCircuitChallegeOnChange(name){
+
+        if(document.getElementById('confirmDeleteText_'+name).value == "confirm"){
+            document.getElementById('deleteCircuitButtonConfirmed_'+name).disabled = false;
+            document.getElementById('deleteCircuitButtonConfirmed_'+name).classList.add('btn-danger');
+            document.getElementById('deleteCircuitButtonConfirmed_'+name).classList.remove('btn-outline-danger');
+        }else{
+            document.getElementById('deleteCircuitButtonConfirmed_'+name).disabled = true;
+            document.getElementById('deleteCircuitButtonConfirmed_'+name).classList.add('btn-outline-danger');
+            document.getElementById('deleteCircuitButtonConfirmed_'+name).classList.remove('btn-danger');
+        }
+    }
+
+
+    function toggleConfirmDeleteCircuit(name){
+
+        if(document.getElementById('deleteCircuitButtonChallenge_'+name).hidden == false){
+            document.getElementById('deleteCircuitButtonChallenge_'+name).hidden = true;
+            document.getElementById('confirmDeleteCircuit_'+name).hidden = false;
+        }else{
+            document.getElementById('deleteCircuitButtonChallenge_'+name).hidden = false;
+            document.getElementById('confirmDeleteCircuit_'+name).hidden = true;
+            document.getElementById('confirmDeleteText_'+name).value = "";
+        }
+    }
+
+
+    async function drawCircuitList(){
+
+        try{
+            await getBreakerList();
+            await getCircuitModelList();
+
+            let circuitListCards = document.getElementById("circuitListCards");
+            circuitListCards.innerHTML = '';
+
+            const circuits = await db.circuits.orderBy('name').toArray();
+
+            await Promise.all(circuits.map(async circuit => {
+                [circuit.breaker] = await Promise.all([
+                    db.breakers.where('id').equals(circuit.breaker).first()
+                ])
+            }));
+
+            if(circuits.length == 0){
+                document.getElementById("circuitListEmpty").hidden = false;
+                document.getElementById("circuitListCards").hidden = true;
+            }else{
+                document.getElementById("circuitListEmpty").hidden = true;
+                document.getElementById("circuitListCards").hidden = false;
+            }
+
+            circuits.forEach((circuit) => {
+
+                    let newCircuitCard = `
+                    <div class="card" style="width: 20rem;">
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <div class="editableDetails">
+                                    <span id="circuitName_${circuit.id}" class="card-title mb-3 h3">${circuit.name}</span>
+                                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editNameIcon_${circuit.id}" onClick="startEditName(${circuit.id})";">
+                                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveNameIcon_${circuit.id}" onClick="saveEditName(${circuit.id})"; hidden>
+                                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelNameIcon_${circuit.id}" onClick="cancelEditName(${circuit.id})"; hidden>
+                                </div>
+                                <div class="editableDetails">
+                                    <span class="col circuitDetailsLabel">Description:</span> <span id="circuitDescription_${circuit.id}">${circuit.description}</span>
+                                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editDescriptionIcon_${circuit.id}" onClick="startEditDescription(${circuit.id})";">
+                                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveDescriptionIcon_${circuit.id}" onClick="saveEditDescription(${circuit.id})"; hidden>
+                                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelDescriptionIcon_${circuit.id}" onClick="cancelEditDescription(${circuit.id})"; hidden>
+                                </div>
+                                <div class="editableDetails">
+                                    <span class="col circuitDetailsLabel">Area:</span> <span id="circuitArea_${circuit.id}">${circuit.area}</span>
+                                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editAreaIcon_${circuit.id}" onClick="startEditArea(${circuit.id})";">
+                                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveAreaIcon_${circuit.id}" onClick="saveEditArea(${circuit.id})"; hidden>
+                                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelAreaIcon_${circuit.id}" onClick="cancelEditArea(${circuit.id})"; hidden>
+                                </div>
+                                <div class="editableDetails">
+                                    <span class="col circuitDetailsLabel">Icon:</span> <span id="circuitIcon_${circuit.id}">${circuit.icon}</span>
+                                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editIconIcon_${circuit.id}" onClick="startEditIcon(${circuit.id})";">
+                                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveIconIcon_${circuit.id}" onClick="saveEditIcon(${circuit.id})"; hidden>
+                                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelIconIcon_${circuit.id}" onClick="cancelEditIcon(${circuit.id})"; hidden>
+                                </div>
+                                <div class="editableDetails">
+                                    <span class="col circuitDetailsLabel">Load Amperage:</span> <span id="circuitLoadAmperage_${circuit.id}" onInput="loadAmperageEditFieldRealtimeValidation('${circuit.id}')";>${circuit.load_amperage}</span> Amps
+                                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editLoadAmperageIcon_${circuit.id}" onClick="startEditLoadAmperage(${circuit.id})";">
+                                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveLoadAmperageIcon_${circuit.id}" onClick="saveEditLoadAmperage(${circuit.id})"; hidden>
+                                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelLoadAmperageIcon_${circuit.id}" onClick="cancelEditLoadAmperage(${circuit.id})"; hidden>
+                                </div>
+                                <div>
+                                    <span class="col circuitDetailsLabel">Relay:</span> ${circuit.manufacturer} ${circuit.model} (${displayType(circuit.type)})
+                                </div>
+                                <div class="editableDetails">
+                                    <span class="col circuitDetailsLabel">Breaker:</span> <span id="circuitLoadAmperage_${circuit.id}" onInput="loadAmperageEditFieldRealtimeValidation('${circuit.id}')";>${circuit.breaker.name??"Unknown"} (${circuit.breaker.amperage??"Unknown"} Amps)</span>
+                                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editLoadAmperageIcon_${circuit.id}" onClick="startEditLoadAmperage(${circuit.id})";">
+                                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveLoadAmperageIcon_${circuit.id}" onClick="saveEditLoadAmperage(${circuit.id})"; hidden>
+                                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelLoadAmperageIcon_${circuit.id}" onClick="cancelEditLoadAmperage(${circuit.id})"; hidden>
+                                </div>
+                                <button type="button" class="btn btn-outline-danger" id="deleteCircuitButtonChallenge_${circuit.id}" onclick="toggleConfirmDeleteCircuit(${circuit.id});">Delete</button>
+                                <div class="input-group" id="confirmDeleteCircuit_${circuit.id}" hidden>
+                                    <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${circuit.id}" oninput="confirmDeleteCircuitChallegeOnChange(${circuit.id});">
+                                    <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteCircuit(${circuit.id})">Cancel</button>
+                                    <button class="btn btn-outline-danger" type="button" id="deleteCircuitButtonConfirmed_${circuit.id}" onclick="deleteCircuit(${circuit.id});" disabled>Delete</button>
+                                </div>
+                            </div>
+
+
+
+                        </div>
+                    </div>`
+
+                    circuitListCards.insertAdjacentHTML('beforeend', newCircuitCard);
+            });
+
+        }
+        catch (exception){
+            errorHandler(exception);
+        }
+    }
+
+
+    function displayType(type){
+        switch(type.toLowerCase()){
+            case "binary":
+                return "Binary";
+                break;
+            case "variable":
+                return "Variable";
+                break;
+            default:
+                return type;
+                break;
+        }
+    }
+
+
+    function startEditName(id){
+        nameElement = document.getElementById('circuitName_'+id);
+        nameElement.setAttribute("previous-value", nameElement.innerHTML);
+        nameElement.contentEditable = "true";
+        nameElement.classList.add("form-control");
+        document.getElementById('editNameIcon_'+id).hidden = true;
+        document.getElementById('saveNameIcon_'+id).hidden = false;
+        document.getElementById('cancelNameIcon_'+id).hidden = false;
+    }
+
+
+    function cancelEditName(id){
+        nameElement = document.getElementById('circuitName_'+id);
+        nameElement.contentEditable = "false";
+        nameElement.classList.remove("form-control");
+        nameElement.innerHTML = nameElement.getAttribute("previous-value");
+        document.getElementById('editNameIcon_'+id).hidden = false;
+        document.getElementById('saveNameIcon_'+id).hidden = true;
+        document.getElementById('cancelNameIcon_'+id).hidden = true;
+    }
+
+
+    async function saveEditName(id){
+        nameElement = document.getElementById('circuitName_'+id);
+
+        await db.circuits.update(id, {name: nameElement.innerHTML.trim()});
+        nameElement.contentEditable = "false";
+        nameElement.classList.remove("form-control");
+        document.getElementById('editNameIcon_'+id).hidden = false;
+        document.getElementById('saveNameIcon_'+id).hidden = true;
+        document.getElementById('cancelNameIcon_'+id).hidden = true;
+    }
+
+
+    function startEditLoadAmperage(id){
+        loadAmperageElement = document.getElementById('circuitLoadAmperage_'+id);
+        loadAmperageElement.setAttribute("previous-value", loadAmperageElement.innerHTML);
+        loadAmperageElement.contentEditable = "true";
+        loadAmperageElement.classList.add("form-control");
+        loadAmperageElement.attributes["type"] = "number";
+        loadAmperageElement.attributes["min"] = "0";
+        loadAmperageElement.attributes.required = true;
+        document.getElementById('editLoadAmperageIcon_'+id).hidden = true;
+        document.getElementById('saveLoadAmperageIcon_'+id).hidden = false;
+        document.getElementById('cancelLoadAmperageIcon_'+id).hidden = false;
+        loadAmperageEditFieldRealtimeValidation(id);
+    }
+
+
+    function cancelEditLoadAmperage(id){
+        loadAmperageElement = document.getElementById('circuitLoadAmperage_'+id);
+        loadAmperageElement.contentEditable = "false";
+        loadAmperageElement.classList.remove("form-control");
+        loadAmperageElement.innerHTML = loadAmperageElement.getAttribute("previous-value");
+        document.getElementById('editLoadAmperageIcon_'+id).hidden = false;
+        document.getElementById('saveLoadAmperageIcon_'+id).hidden = true;
+        document.getElementById('cancelLoadAmperageIcon_'+id).hidden = true;
+    }
+
+
+    async function saveEditLoadAmperage(id){
+        loadAmperageElement = document.getElementById('circuitLoadAmperage_'+id);
+
+        await db.circuits.update(id, {load_amperage: parseInt(loadAmperageElement.innerHTML.trim())});
+        loadAmperageElement.contentEditable = "false";
+        loadAmperageElement.classList.remove("form-control");
+        document.getElementById('editLoadAmperageIcon_'+id).hidden = false;
+        document.getElementById('saveLoadAmperageIcon_'+id).hidden = true;
+        document.getElementById('cancelLoadAmperageIcon_'+id).hidden = true;
+    }
+
+
+    async function getBreakerList(){
+
+        let breakerSelect = document.getElementById("addNewCircuitBreaker");
+
+        var i, L = breakerSelect.options.length - 1;
+        for(i = L; i >= 0; i--) {
+            breakerSelect.remove(i);
+        }
+
+        breakerList = await db.breakers.orderBy('name').toArray()
+
+        breakerList.forEach((breaker) =>{
+            var opt = document.createElement('option');
+            opt.value = breaker['id'];
+            opt.innerHTML = `${breaker['name']} (${breaker['amperage']} Amps)`;
+            breakerSelect.appendChild(opt);
+        });
+
+        var opt = document.createElement('option');
+        opt.value = "";
+        opt.selected = true;
+        opt.disabled = true;
+        opt.innerHTML = `Select...`;
+        breakerSelect.prepend(opt);
+    }
+
+
+    async function getCircuitModelList(){
+
+        let relayModelSelect = document.getElementById("relayModelSelect");
+
+        var i, L = relayModelSelect.options.length - 1;
+        for(i = L; i >= 0; i--) {
+            relayModelSelect.remove(i);
+        }
+
+        circuitModelList = await db.relay_models.orderBy('[manufacturer+model]').toArray()
+        circuitModelList.forEach((circuitModel) =>{
+            var opt = document.createElement('option');
+            opt.value = circuitModel['id'];
+            opt.innerHTML = `${circuitModel['manufacturer']} ${circuitModel['model']} (${circuitModel['description']})`;
+            relayModelSelect.append(opt);
+        });
+
+        var opt = document.createElement('option');
+        opt.value = "";
+        opt.disabled = true;
+        opt.innerHTML = `Select...`;
+        relayModelSelect.prepend(opt);
+
+        var opt = document.createElement('option');
+        opt.value = "CUSTOM";
+        opt.innerHTML = `Custom`;
+        relayModelSelect.append(opt);
+    }
+
+
+
+    function loadAmperageEditFieldRealtimeValidation(id){
+        loadAmperageElement = document.getElementById('circuitLoadAmperage_'+id);
+
+        var regex = /^[0-9]+$/;
+
+        if(regex.test(loadAmperageElement.innerHTML)){
+            loadAmperageElement.classList.remove("is-invalid");
+            loadAmperageElement.classList.add("is-valid");
+            document.getElementById('saveLoadAmperageIcon_'+id).hidden = false;
+        }else{
+            loadAmperageElement.classList.add("is-invalid");
+            loadAmperageElement.classList.remove("is-valid");
+            document.getElementById('saveLoadAmperageIcon_'+id).hidden = true;
+        }
+    }
+
+    drawCircuitList();
+
+</script>
+</html>
