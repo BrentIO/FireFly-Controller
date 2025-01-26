@@ -133,7 +133,7 @@
                         <div class="tagName">${tag.name}</div>
                     </td>
                     <td class="align-middle">
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-danger" id="deleteTagButtonChallenge_${tag.id}" onclick="toggleConfirmDeleteTag(${tag.id});">Delete</button></div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-outline-danger" id="deleteTagButtonChallenge_${tag.id}" onclick="toggleConfirmDeleteTag(${tag.id});">Delete</button></div>
                         <div class="input-group" id="confirmDeleteTag_${tag.id}" hidden>
                             <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${tag.id}" oninput="confirmDeleteTagChallegeOnChange(${tag.id});">
                             <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteTag(${tag.id})">Cancel</button>

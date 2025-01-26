@@ -133,7 +133,7 @@
                         <div class="areaName">${area.name}</div>
                     </td>
                     <td class="align-middle">
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-danger" id="deleteAreaButtonChallenge_${area.id}" onclick="toggleConfirmDeleteArea(${area.id});">Delete</button></div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-outline-danger" id="deleteAreaButtonChallenge_${area.id}" onclick="toggleConfirmDeleteArea(${area.id});">Delete</button></div>
                         <div class="input-group" id="confirmDeleteArea_${area.id}" hidden>
                             <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${area.id}" oninput="confirmDeleteAreaChallegeOnChange(${area.id});">
                             <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteArea(${area.id})">Cancel</button>
