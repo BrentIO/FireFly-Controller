@@ -214,9 +214,21 @@
 
     document.getElementById("addNewCircuitModal").addEventListener('show.bs.modal', () => {
 
-        if(breakerList.length == 0){
-            warningHandler("You must add a breaker before you can add a circuit.")
+        if(areaList.length == 0){
+            warningHandler("You must add an area before you can add a circuit.");
+            return;
         }
+
+        if(circuitIconList.length == 0){
+            warningHandler("You must add an icon before you can add a circuit.");
+            return;
+        }
+
+        if(breakerList.length == 0){
+            warningHandler("You must add a breaker before you can add a circuit.");
+            return;
+        }
+
         form = document.getElementById("addNewCircuitForm");
         form.reset();
         document.getElementById("relayModelSelect").value = "";
