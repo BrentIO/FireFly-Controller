@@ -79,7 +79,7 @@
                         <select class="form-select" aria-label="Area" id="addNewCircuitIcon" required >
                         </select>
                         <div class="invalid-feedback">
-                            Select an area where the load is located.
+                            Select an icon for the load.
                         </div>
                     </div>
                     <div class="input-group mb-3 has-validation">
@@ -156,11 +156,14 @@
 
     var breakerList = [];
     var relayModelList = [];
+    var areaList = [];
+    var circuitIconList = [];
 
 
     async function addNewCircuitButtonAdd_click(){
 
         document.getElementById("addNewCircuitName").value = document.getElementById("addNewCircuitName").value.trim();
+        document.getElementById("addNewCircuitDescription").value = document.getElementById("addNewCircuitDescription").value.trim();
         document.getElementById("addNewRelayManufacturer").value = document.getElementById("addNewRelayManufacturer").value.trim();
         document.getElementById("addNewRelayModel").value = document.getElementById("addNewRelayModel").value.trim();
         document.getElementById("addNewRelayDescription").value = document.getElementById("addNewRelayDescription").value.trim();
@@ -193,6 +196,9 @@
 
         await db.circuits.add({
             name: document.getElementById("addNewCircuitName").value,
+            description: document.getElementById("addNewCircuitDescription").value,
+            area: document.getElementById("addNewCircuitArea").value,
+            icon: parseInt(document.getElementById("addNewCircuitIcon").value),
             load_amperage: parseInt(document.getElementById("addNewCircuitAmperage").value),
             manufacturer: document.getElementById("addNewRelayManufacturer").value,
             model: document.getElementById("addNewRelayModel").value,
@@ -316,6 +322,8 @@
 
         try{
             await getBreakerList();
+            await getAreaList();
+            await getCircuitIconList();
             await getRelayModelList();
 
             let circuitListCards = document.getElementById("circuitListCards");
@@ -326,6 +334,9 @@
             await Promise.all(circuits.map(async circuit => {
                 [circuit.breaker] = await Promise.all([
                     db.breakers.where('id').equals(circuit.breaker).first()
+                ]),
+                [circuit.icon] = await Promise.all([
+                    db.circuit_icons.where('id').equals(circuit.icon).first()
                 ])
             }));
 
@@ -516,6 +527,58 @@
         opt.disabled = true;
         opt.innerHTML = `Select...`;
         breakerSelect.prepend(opt);
+    }
+
+
+    async function getAreaList(){
+
+        let areaSelect = document.getElementById("addNewCircuitArea");
+
+        var i, L = areaSelect.options.length - 1;
+        for(i = L; i >= 0; i--) {
+            areaSelect.remove(i);
+        }
+
+        areaList = await db.areas.orderBy('name').toArray()
+
+        areaList.forEach((area) =>{
+            var opt = document.createElement('option');
+            opt.value = `${area['name']}`;
+            opt.innerHTML = `${area['name']}`;
+            areaSelect.appendChild(opt);
+        });
+
+        var opt = document.createElement('option');
+        opt.value = "";
+        opt.selected = true;
+        opt.innerHTML = `Select...`;
+        areaSelect.prepend(opt);
+    }
+
+
+    async function getCircuitIconList(){
+
+        let iconSelect = document.getElementById("addNewCircuitIcon");
+
+        var i, L = iconSelect.options.length - 1;
+        for(i = L; i >= 0; i--) {
+            iconSelect.remove(i);
+        }
+
+        circuitIconList = await db.circuit_icons.orderBy('name').toArray()
+
+        circuitIconList.forEach((icon) =>{
+            var opt = document.createElement('option');
+            opt.value = icon['id'];
+            opt.innerHTML = `${icon['name']}`;
+            iconSelect.appendChild(opt);
+        });
+
+        var opt = document.createElement('option');
+        opt.value = "";
+        opt.selected = true;
+        opt.innerHTML = `Select...`;
+        iconSelect.prepend(opt);
     }
 
 
