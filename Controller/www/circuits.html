@@ -394,7 +394,7 @@
                                     <span class="col circuitDetailsLabel">Relay:</span> ${circuit.relay.manufacturer} ${circuit.relay.model} (${displayType(circuit.relay.type)})
                                 </div>
                                 <div class="editableDetails">
-                                    <span class="col circuitDetailsLabel">Breaker:</span> <span id="circuitLoadAmperage_${circuit.id}" onInput="loadAmperageEditFieldRealtimeValidation('${circuit.id}')";>${circuit.breaker.name??"Unknown"} (${circuit.breaker.amperage??"Unknown"} Amps)</span>
+                                    <span class="col circuitDetailsLabel">Breaker:</span> <span id="circuitBreaker_${circuit.id}">${circuit.breaker.name??"Unknown"} (${circuit.breaker.amperage??"Unknown"} Amps)</span>
                                     <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editLoadAmperageIcon_${circuit.id}" onClick="startEditLoadAmperage(${circuit.id})";">
                                     <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveLoadAmperageIcon_${circuit.id}" onClick="saveEditLoadAmperage(${circuit.id})"; hidden>
                                     <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelLoadAmperageIcon_${circuit.id}" onClick="cancelEditLoadAmperage(${circuit.id})"; hidden>
