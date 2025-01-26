@@ -312,3 +312,26 @@ async function checkIfInUse_circuit_icon(id){
         return true;
     }
 }
+
+
+async function checkIfInUse_area(id){
+
+    const areas = await db.areas.where('id').equals(id).toArray();
+
+    if(areas.length == 0){
+        return false;
+    }
+
+    await Promise.all(areas.map(async area => {
+        [area.circuit] = await Promise.all([
+            db.circuits.where('area').equals(area.id).first()
+        ])
+    }));
+
+    if(areas[0].circuit == undefined){
+        return false;
+    }
+    else{
+        return true;
+    }
+}

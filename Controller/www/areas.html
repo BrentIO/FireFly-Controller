@@ -151,6 +151,12 @@
 
 
     async function deleteArea(id){
+        
+        if(await checkIfInUse_area(id) == true){
+            warningHandler("Area is in use and cannot be deleted.")
+            return;
+        }
+
         await db.areas.delete(id);
         await drawAreaList();
     }
