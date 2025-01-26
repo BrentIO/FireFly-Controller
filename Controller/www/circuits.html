@@ -32,7 +32,7 @@
                     <img src="./icons/add.svg" title="Add" id="addNewCircuitButton" class="btn" role="button" aria-expanded="false" onclick="toggleAddCircuitModal();">
                 </div>
                 <div>
-                    <div id="circuitListCards"></div>
+                    <div id="circuitListCards" class="row"></div>
                 </div>
                 <div id="circuitListEmpty" class="container-fluid text-center">Click <img src="./icons/add.svg" title="Add"> add button to start adding circuits.</div>
             </div> 
@@ -368,53 +368,55 @@
             circuits.forEach((circuit) => {
 
                     let newCircuitCard = `
-                    <div class="card" style="width: 20rem;">
-                        <div class="card-body">
-                            <div class="d-grid gap-2">
-                                <div class="editableDetails">
-                                    <span id="circuitName_${circuit.id}" class="card-title mb-3 h3">${circuit.name}</span>
-                                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editNameIcon_${circuit.id}" onClick="startEditName(${circuit.id})";">
-                                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveNameIcon_${circuit.id}" onClick="saveEditName(${circuit.id})"; hidden>
-                                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelNameIcon_${circuit.id}" onClick="cancelEditName(${circuit.id})"; hidden>
-                                </div>
-                                <div class="editableDetails">
-                                    <span class="col circuitDetailsLabel">Description:</span> <span id="circuitDescription_${circuit.id}">${circuit.description}</span>
-                                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editDescriptionIcon_${circuit.id}" onClick="startEditDescription(${circuit.id})";">
-                                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveDescriptionIcon_${circuit.id}" onClick="saveEditDescription(${circuit.id})"; hidden>
-                                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelDescriptionIcon_${circuit.id}" onClick="cancelEditDescription(${circuit.id})"; hidden>
-                                </div>
-                                <div class="editableDetails">
-                                    <span class="col circuitDetailsLabel">Area:</span> <span id="circuitArea_${circuit.id}">${circuit.area.name}</span>
-                                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editAreaIcon_${circuit.id}" onClick="startEditArea(${circuit.id})";">
-                                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveAreaIcon_${circuit.id}" onClick="saveEditArea(${circuit.id})"; hidden>
-                                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelAreaIcon_${circuit.id}" onClick="cancelEditArea(${circuit.id})"; hidden>
-                                </div>
-                                <div class="editableDetails">
-                                    <span class="col circuitDetailsLabel">Icon:</span> <span id="circuitIcon_${circuit.id}">${circuit.icon.name}</span>
-                                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editIconIcon_${circuit.id}" onClick="startEditIcon(${circuit.id})";">
-                                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveIconIcon_${circuit.id}" onClick="saveEditIcon(${circuit.id})"; hidden>
-                                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelIconIcon_${circuit.id}" onClick="cancelEditIcon(${circuit.id})"; hidden>
-                                </div>
-                                <div class="editableDetails">
-                                    <span class="col circuitDetailsLabel">Load Amperage:</span> <span id="circuitLoadAmperage_${circuit.id}" onInput="loadAmperageEditFieldRealtimeValidation('${circuit.id}')";>${circuit.load_amperage}</span> Amps
-                                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editLoadAmperageIcon_${circuit.id}" onClick="startEditLoadAmperage(${circuit.id})";">
-                                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveLoadAmperageIcon_${circuit.id}" onClick="saveEditLoadAmperage(${circuit.id})"; hidden>
-                                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelLoadAmperageIcon_${circuit.id}" onClick="cancelEditLoadAmperage(${circuit.id})"; hidden>
-                                </div>
-                                <div>
-                                    <span class="col circuitDetailsLabel">Relay:</span> ${circuit.relay.manufacturer} ${circuit.relay.model} (${displayType(circuit.relay.type)})
-                                </div>
-                                <div class="editableDetails">
-                                    <span class="col circuitDetailsLabel">Breaker:</span> <span id="circuitBreaker_${circuit.id}">${circuit.breaker.name??"Unknown"} (${circuit.breaker.amperage??"Unknown"} Amps)</span>
-                                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editLoadAmperageIcon_${circuit.id}" onClick="startEditLoadAmperage(${circuit.id})";">
-                                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveLoadAmperageIcon_${circuit.id}" onClick="saveEditLoadAmperage(${circuit.id})"; hidden>
-                                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelLoadAmperageIcon_${circuit.id}" onClick="cancelEditLoadAmperage(${circuit.id})"; hidden>
-                                </div>
-                                <button type="button" class="btn btn-outline-danger" id="deleteCircuitButtonChallenge_${circuit.id}" onclick="toggleConfirmDeleteCircuit(${circuit.id});">Delete</button>
-                                <div class="input-group" id="confirmDeleteCircuit_${circuit.id}" hidden>
-                                    <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${circuit.id}" oninput="confirmDeleteCircuitChallegeOnChange(${circuit.id});">
-                                    <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteCircuit(${circuit.id})">Cancel</button>
-                                    <button class="btn btn-outline-danger" type="button" id="deleteCircuitButtonConfirmed_${circuit.id}" onclick="deleteCircuit(${circuit.id});" disabled>Delete</button>
+                    <div class="col">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <div class="editableDetails">
+                                        <span id="circuitName_${circuit.id}" class="card-title mb-3 h3">${circuit.name}</span>
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editNameIcon_${circuit.id}" onClick="startEditName(${circuit.id})";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveNameIcon_${circuit.id}" onClick="saveEditName(${circuit.id})"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelNameIcon_${circuit.id}" onClick="cancelEditName(${circuit.id})"; hidden>
+                                    </div>
+                                    <div class="editableDetails">
+                                        <span class="col circuitDetailsLabel">Description:</span> <span id="circuitDescription_${circuit.id}">${circuit.description}</span>
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editDescriptionIcon_${circuit.id}" onClick="startEditDescription(${circuit.id})";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveDescriptionIcon_${circuit.id}" onClick="saveEditDescription(${circuit.id})"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelDescriptionIcon_${circuit.id}" onClick="cancelEditDescription(${circuit.id})"; hidden>
+                                    </div>
+                                    <div class="editableDetails">
+                                        <span class="col circuitDetailsLabel">Area:</span> <span id="circuitArea_${circuit.id}">${circuit.area.name}</span>
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editAreaIcon_${circuit.id}" onClick="startEditArea(${circuit.id})";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveAreaIcon_${circuit.id}" onClick="saveEditArea(${circuit.id})"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelAreaIcon_${circuit.id}" onClick="cancelEditArea(${circuit.id})"; hidden>
+                                    </div>
+                                    <div class="editableDetails">
+                                        <span class="col circuitDetailsLabel">Icon:</span> <span id="circuitIcon_${circuit.id}">${circuit.icon.name}</span>
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editIconIcon_${circuit.id}" onClick="startEditIcon(${circuit.id})";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveIconIcon_${circuit.id}" onClick="saveEditIcon(${circuit.id})"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelIconIcon_${circuit.id}" onClick="cancelEditIcon(${circuit.id})"; hidden>
+                                    </div>
+                                    <div class="editableDetails">
+                                        <span class="col circuitDetailsLabel">Load Amperage:</span> <span id="circuitLoadAmperage_${circuit.id}" onInput="loadAmperageEditFieldRealtimeValidation('${circuit.id}')";>${circuit.load_amperage}</span> Amps
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editLoadAmperageIcon_${circuit.id}" onClick="startEditLoadAmperage(${circuit.id})";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveLoadAmperageIcon_${circuit.id}" onClick="saveEditLoadAmperage(${circuit.id})"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelLoadAmperageIcon_${circuit.id}" onClick="cancelEditLoadAmperage(${circuit.id})"; hidden>
+                                    </div>
+                                    <div>
+                                        <span class="col circuitDetailsLabel">Relay:</span> ${circuit.relay.manufacturer} ${circuit.relay.model} (${displayType(circuit.relay.type)})
+                                    </div>
+                                    <div class="editableDetails">
+                                        <span class="col circuitDetailsLabel">Breaker:</span> <span id="circuitBreaker_${circuit.id}">${circuit.breaker.name??"Unknown"} (${circuit.breaker.amperage??"Unknown"} Amps)</span>
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editLoadAmperageIcon_${circuit.id}" onClick="startEditLoadAmperage(${circuit.id})";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveLoadAmperageIcon_${circuit.id}" onClick="saveEditLoadAmperage(${circuit.id})"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelLoadAmperageIcon_${circuit.id}" onClick="cancelEditLoadAmperage(${circuit.id})"; hidden>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-danger" id="deleteCircuitButtonChallenge_${circuit.id}" onclick="toggleConfirmDeleteCircuit(${circuit.id});">Delete</button>
+                                    <div class="input-group" id="confirmDeleteCircuit_${circuit.id}" hidden>
+                                        <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${circuit.id}" oninput="confirmDeleteCircuitChallegeOnChange(${circuit.id});">
+                                        <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteCircuit(${circuit.id})">Cancel</button>
+                                        <button class="btn btn-outline-danger" type="button" id="deleteCircuitButtonConfirmed_${circuit.id}" onclick="deleteCircuit(${circuit.id});" disabled>Delete</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
