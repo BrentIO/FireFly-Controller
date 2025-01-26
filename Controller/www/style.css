@@ -56,7 +56,7 @@
     font-family: 'Courier New', Courier, monospace;
 }
 
-#editableDetails{
+.editableDetails{
     .row:hover{
         background-color: #adb5bd2f;
     };

@@ -285,13 +285,13 @@
             let newBreaker = `
                 <tr>
                         <td class="align-middle">
-                            <div id="editableDetails"><span id="breakerName_${breaker.id}">${breaker.name}</span>
+                            <div class="editableDetails"><span id="breakerName_${breaker.id}">${breaker.name}</span>
                                 <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editNameIcon_${breaker.id}" onClick="startEditName(${breaker.id})";">
                                 <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveNameIcon_${breaker.id}" onClick="saveEditName(${breaker.id})"; hidden>
                                 <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelNameIcon_${breaker.id}" onClick="cancelEditName(${breaker.id})"; hidden>
                             </div></td>
                         <td class="align-middle">
-                            <div id="editableDetails"><span id="breakerAmperage_${breaker.id}">${breaker.amperage}</span>
+                            <div class="editableDetails"><span id="breakerAmperage_${breaker.id}">${breaker.amperage}</span>
                                 <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editAmperageIcon_${breaker.id}" onClick="startEditAmperage(${breaker.id})";">
                                 <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveAmperageIcon_${breaker.id}" onClick="saveEditAmperage(${breaker.id})"; hidden>
                                 <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelAmperageIcon_${breaker.id}" onClick="cancelEditAmperage(${breaker.id})"; hidden>
