@@ -268,7 +268,6 @@
                         document.getElementById("addNewCircuitType").value = relayModel.type;
                     }
                 });
-
                 break;
         }
     }
@@ -483,7 +482,7 @@
 
     function startEditLoadAmperage(id){
         loadAmperageElement = document.getElementById('circuitLoadAmperage_'+id);
-        loadAmperageElement.setAttribute("previous-value", loadAmperageElement.innerHTML);
+        loadAmperageElement.setAttribute("previous-value", loadAmperageElement.innerText);
         loadAmperageElement.contentEditable = "true";
         loadAmperageElement.classList.add("form-control");
         loadAmperageElement.attributes["type"] = "number";
@@ -500,7 +499,7 @@
         loadAmperageElement = document.getElementById('circuitLoadAmperage_'+id);
         loadAmperageElement.contentEditable = "false";
         loadAmperageElement.classList.remove("form-control");
-        loadAmperageElement.innerHTML = loadAmperageElement.getAttribute("previous-value");
+        loadAmperageElement.innerText = loadAmperageElement.getAttribute("previous-value");
         document.getElementById('editLoadAmperageIcon_'+id).hidden = false;
         document.getElementById('saveLoadAmperageIcon_'+id).hidden = true;
         document.getElementById('cancelLoadAmperageIcon_'+id).hidden = true;
@@ -510,7 +509,7 @@
     async function saveEditLoadAmperage(id){
         loadAmperageElement = document.getElementById('circuitLoadAmperage_'+id);
 
-        await db.circuits.update(id, {load_amperage: parseInt(loadAmperageElement.innerHTML.trim())});
+        await db.circuits.update(id, {load_amperage: parseInt(loadAmperageElement.innerText.trim())});
         loadAmperageElement.contentEditable = "false";
         loadAmperageElement.classList.remove("form-control");
         document.getElementById('editLoadAmperageIcon_'+id).hidden = false;
@@ -634,7 +633,7 @@
 
         var regex = /^[0-9]+$/;
 
-        if(regex.test(loadAmperageElement.innerHTML)){
+        if(regex.test(loadAmperageElement.innerText)){
             loadAmperageElement.classList.remove("is-invalid");
             loadAmperageElement.classList.add("is-valid");
             document.getElementById('saveLoadAmperageIcon_'+id).hidden = false;

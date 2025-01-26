@@ -167,7 +167,7 @@
 
     function startEditName(id){
         nameElement = document.getElementById('iconName_'+id);
-        nameElement.setAttribute("previous-value", nameElement.innerHTML);
+        nameElement.setAttribute("previous-value", nameElement.innerText);
         nameElement.contentEditable = "true";
         nameElement.classList.add("form-control");
         document.getElementById('editNameIcon_'+id).hidden = true;
@@ -181,7 +181,7 @@
         nameElement = document.getElementById('iconName_'+id);
         nameElement.contentEditable = "false";
         nameElement.classList.remove("form-control");
-        nameElement.innerHTML = nameElement.getAttribute("previous-value");
+        nameElement.innerText = nameElement.getAttribute("previous-value");
         document.getElementById('editNameIcon_'+id).hidden = false;
         document.getElementById('saveNameIcon_'+id).hidden = true;
         document.getElementById('cancelNameIcon_'+id).hidden = true;
@@ -191,7 +191,7 @@
     async function saveEditName(id){
         nameElement = document.getElementById('iconName_'+id);
 
-        await db.circuit_icons.update(id, {name: nameElement.innerHTML.trim()});
+        await db.circuit_icons.update(id, {name: nameElement.innerText.trim()});
         nameElement.contentEditable = "false";
         nameElement.classList.remove("form-control");
         document.getElementById('editNameIcon_'+id).hidden = false;
@@ -202,7 +202,7 @@
 
     function startEditIcon(id){
         amperageElement = document.getElementById('iconIcon_'+id);
-        amperageElement.setAttribute("previous-value", amperageElement.innerHTML);
+        amperageElement.setAttribute("previous-value", amperageElement.innerText);
         amperageElement.contentEditable = "true";
         amperageElement.classList.add("form-control");
         document.getElementById('editIconIcon_'+id).hidden = true;
@@ -215,7 +215,7 @@
         amperageElement = document.getElementById('iconIcon_'+id);
         amperageElement.contentEditable = "false";
         amperageElement.classList.remove("form-control");
-        amperageElement.innerHTML = amperageElement.getAttribute("previous-value");
+        amperageElement.innerText = amperageElement.getAttribute("previous-value");
         document.getElementById('editIconIcon_'+id).hidden = false;
         document.getElementById('saveIconIcon_'+id).hidden = true;
         document.getElementById('cancelIconIcon_'+id).hidden = true;
@@ -224,7 +224,7 @@
 
     async function saveEditIcon(id){
         amperageElement = document.getElementById('iconIcon_'+id);
-        await db.circuit_icons.update(id, {amperage: parseInt(amperageElement.innerHTML)});
+        await db.circuit_icons.update(id, {amperage: parseInt(amperageElement.innerText)});
         amperageElement.contentEditable = "false";
         amperageElement.classList.remove("form-control");
         document.getElementById('editIconIcon_'+id).hidden = false;
@@ -236,7 +236,7 @@
     function nameEditFieldRealtimeValidation(id){
         element = document.getElementById('iconName_'+id);
 
-        if(element.innerHTML.length > 0 && element.innerHTML != "<br>"){
+        if(element.innerText.trim().length > 0){
             element.classList.remove("is-invalid");
             element.classList.add("is-valid");
             document.getElementById('saveNameIcon_'+id).hidden = false;
@@ -251,7 +251,7 @@
     function iconEditFieldRealtimeValidation(id){
         element = document.getElementById('iconIcon_'+id);
 
-        if(element.innerHTML.length > 0 && element.innerHTML != "<br>"){
+        if(element.innerText.trim().length){
             element.classList.remove("is-invalid");
             element.classList.add("is-valid");
             document.getElementById('saveIconIcon_'+id).hidden = false;
@@ -309,14 +309,7 @@
             });
     }
 
-
-    
-
-
-
     drawIconList();
-
-
 
 </script>
 </html>
