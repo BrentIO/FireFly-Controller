@@ -93,7 +93,7 @@
                     </div>
                     <div class="input-group mb-3 no-validation">
                         <span class="input-group-text">Relay Model</span>
-                        <select class="form-select" aria-label="Relay Model" id="relayModelSelect" onchange="circuitModelDropdownChange();" required></select>
+                        <select class="form-select" aria-label="Relay Model" id="relayModelSelect" onchange="relayModelDropdownChange();" required></select>
                         <div class="invalid-feedback">
                             Select a relay model option.
                         </div>
@@ -115,7 +115,7 @@
                         </div>
                         <div class="input-group mb-3 has-validation">
                             <span class="input-group-text">Description</span>
-                            <input class="form-control" id="addNewCircuitDescription" placeholder="" aria-label="Description" required>
+                            <input class="form-control" id="addNewRelayDescription" placeholder="" aria-label="Description" required>
                             <div class="invalid-feedback">
                                 A description is required.
                             </div>
@@ -157,7 +157,7 @@
     var addNewCircuitModal = new bootstrap.Modal('#addNewCircuitModal');
 
     var breakerList = [];
-    var circuitModelList = [];
+    var relayModelList = [];
 
 
     async function addNewCircuitButtonAdd_click(){
@@ -165,7 +165,7 @@
         document.getElementById("addNewCircuitName").value = document.getElementById("addNewCircuitName").value.trim();
         document.getElementById("addNewRelayManufacturer").value = document.getElementById("addNewRelayManufacturer").value.trim();
         document.getElementById("addNewRelayModel").value = document.getElementById("addNewRelayModel").value.trim();
-        document.getElementById("addNewCircuitDescription").value = document.getElementById("addNewCircuitDescription").value.trim();
+        document.getElementById("addNewRelayDescription").value = document.getElementById("addNewRelayDescription").value.trim();
 
         let form = document.getElementById("addNewCircuitForm");
         form.checkValidity();
@@ -187,7 +187,7 @@
             await db.relay_models.add({
                 manufacturer: document.getElementById("addNewRelayManufacturer").value,
                 model: document.getElementById("addNewRelayModel").value,
-                description: document.getElementById("addNewCircuitDescription").value,
+                description: document.getElementById("addNewRelayDescription").value,
                 type: document.getElementById("addNewCircuitType").value,
                 is_custom: "true"
             });
@@ -224,14 +224,14 @@
     });
 
 
-    function circuitModelDropdownChange(){
+    function relayModelDropdownChange(){
 
         switch(document.getElementById("relayModelSelect").value){
             case "":
                 document.getElementById("customCircuit").classList.add("d-none");
                 document.getElementById("addNewRelayManufacturer").value = "";
                 document.getElementById("addNewRelayModel").value = "";
-                document.getElementById("addNewCircuitDescription").value = "";
+                document.getElementById("addNewRelayDescription").value = "";
                 document.getElementById("addNewCircuitType").value = "";
                 break;
 
@@ -239,18 +239,18 @@
                 document.getElementById("customCircuit").classList.remove("d-none");
                 document.getElementById("addNewRelayManufacturer").value = "";
                 document.getElementById("addNewRelayModel").value = "";
-                document.getElementById("addNewCircuitDescription").value = "";
+                document.getElementById("addNewRelayDescription").value = "";
                 document.getElementById("addNewCircuitType").value = "";
                 break;
 
             default:
                 document.getElementById("customCircuit").classList.add("d-none");
-                circuitModelList.forEach((circuitModel) => {
-                    if(document.getElementById("relayModelSelect").value == circuitModel.id){
-                        document.getElementById("addNewRelayManufacturer").value = circuitModel.manufacturer;
-                        document.getElementById("addNewRelayModel").value = circuitModel.model;
-                        document.getElementById("addNewCircuitDescription").value = circuitModel.description;
-                        document.getElementById("addNewCircuitType").value = circuitModel.type;
+                relayModelList.forEach((relayModel) => {
+                    if(document.getElementById("relayModelSelect").value == relayModel.id){
+                        document.getElementById("addNewRelayManufacturer").value = relayModel.manufacturer;
+                        document.getElementById("addNewRelayModel").value = relayModel.model;
+                        document.getElementById("addNewRelayDescription").value = relayModel.description;
+                        document.getElementById("addNewCircuitType").value = relayModel.type;
                     }
                 });
 
@@ -261,27 +261,27 @@
 
     async function deleteCircuit(id){
         await db.circuits.delete(id);
-        await deleteUnusedCustomCircuitModels();
+        await deleteUnusedCustomRelayModels();
         await drawCircuitList();
     }
 
 
-    async function deleteUnusedCustomCircuitModels(){
+    async function deleteUnusedCustomRelayModels(){
 
-        customCircuitModels = await db.relay_models.where("is_custom").equals("true").toArray();
+        customRelayModels = await db.relay_models.where("is_custom").equals("true").toArray();
         circuitList = await db.circuits.toArray();
 
-        for(const customCircuitModel of customCircuitModels){
+        for(const customRelayModel of customRelayModels){
             var matched = false;
             for(const circuit of circuitList){
-                if(circuit.manufacturer == customCircuitModel.manufacturer && circuit.model == customCircuitModel.model){
+                if(circuit.manufacturer == customRelayModel.manufacturer && circuit.model == customRelayModel.model){
                     matched = true;
                     break;
                 }
             }
 
             if(matched == false){
-                await db.relay_models.delete(customCircuitModel.id);
+                await db.relay_models.delete(customRelayModel.id);
             }
         }
     }
@@ -318,7 +318,7 @@
 
         try{
             await getBreakerList();
-            await getCircuitModelList();
+            await getRelayModelList();
 
             let circuitListCards = document.getElementById("circuitListCards");
             circuitListCards.innerHTML = '';
@@ -521,7 +521,7 @@
     }
 
 
-    async function getCircuitModelList(){
+    async function getRelayModelList(){
 
         let relayModelSelect = document.getElementById("relayModelSelect");
 
@@ -530,11 +530,11 @@
             relayModelSelect.remove(i);
         }
 
-        circuitModelList = await db.relay_models.orderBy('[manufacturer+model]').toArray()
-        circuitModelList.forEach((circuitModel) =>{
+        relayModelList = await db.relay_models.orderBy('[manufacturer+model]').toArray()
+        relayModelList.forEach((relayModel) =>{
             var opt = document.createElement('option');
-            opt.value = circuitModel['id'];
-            opt.innerHTML = `${circuitModel['manufacturer']} ${circuitModel['model']} (${circuitModel['description']})`;
+            opt.value = relayModel['id'];
+            opt.innerHTML = `${relayModel['manufacturer']} ${relayModel['model']} (${relayModel['description']})`;
             relayModelSelect.append(opt);
         });
 
