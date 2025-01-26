@@ -289,3 +289,26 @@ async function checkIfInUse_breaker(id){
         return true;
     }
 }
+
+
+async function checkIfInUse_circuit_icon(id){
+
+    const icons = await db.circuit_icons.where('id').equals(id).toArray();
+
+    if(icons.length == 0){
+        return false;
+    }
+
+    await Promise.all(icons.map(async icon => {
+        [icon.circuit] = await Promise.all([
+            db.circuits.where('icon').equals(icon.id).first()
+        ])
+    }));
+
+    if(icons[0].circuit == undefined){
+        return false;
+    }
+    else{
+        return true;
+    }
+}

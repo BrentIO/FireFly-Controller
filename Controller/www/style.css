@@ -48,7 +48,11 @@
     font-weight: 500;
 }
 
-.controllerDetailsLabel{
+.controllerDetailsLabel {
+    font-weight: 600;
+}
+
+.circuitDetailsLabel{
     font-weight: 600;
 }
 

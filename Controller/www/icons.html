@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu("submenuConfiguration", "menuItemIcons");
+        initDB();
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark"></div>
+            <div class="col py-3">
+                <div class="pageTitle">Icons</div>
+                <div class="pageDescription">Home Assistant UI uses icons to better describe the load connected to a circuit.  The icons are defined by <a target="_blank" href="https://pictogrammers.com/library/mdi/">Material Design Icons</a>.  The full icon name should be used, for example <code>mdi:chandelier</code>.</div>
+                
+                <div class="sectionHeader mt-5 mb-3">Defined Icons
+                    <img src="./icons/add.svg" title="Add" id="addNewIconButton" class="btn" role="button" aria-expanded="false" onclick="toggleAddIconModal();">
+                </div>
+                <div>
+                    <table class="table table-striped" id="iconListTable">
+                        <thead>
+                            <tr>
+                              <th scope="col">Name</th>
+                              <th scope="col">Icon</th>
+                              <th scope="col"></th>
+                            </tr>
+                          </thead>
+                        <tbody id="iconList"></tbody>
+                      </table>
+                </div>
+                <div id="iconListEmpty" class="container-fluid text-center">Click <img src="./icons/add.svg" title="Add"> add button to start adding icons.</div>
+            </div> 
+        </div>
+    </div>
+
+    <!-- Add New Icon Modal -->
+    <div class="modal fade" id="addNewIconModal" tabindex="-1" aria-labelledby="addNewIconModalLabel" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form class="needs-validation" novalidate id="addNewIconForm">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="addNewIconModalLabel">Add New Icon</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group mb-3 has-validation">
+                        <span class="input-group-text">Name</span>
+                        <input class="form-control" id="addNewIconName" placeholder="" aria-label="Name" required>
+                        <div class="invalid-feedback">
+                            A name is required.
+                        </div>
+                    </div>
+                    <div class="input-group mb-3 has-validation">
+                        <span class="input-group-text">Icon</span>
+                        <input class="form-control" id="addNewIconIcon" placeholder="" aria-label="Icon" required>
+                        <div class="invalid-feedback">
+                            An icon is required.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="button" id="addNewIconButtonAdd">Add</button>
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+
+    var addNewIconModal = new bootstrap.Modal('#addNewIconModal');
+
+
+    document.getElementById("addNewIconButtonAdd").addEventListener('click', () => {
+
+        document.getElementById("addNewIconName").value = document.getElementById("addNewIconName").value.trim();
+        document.getElementById("addNewIconIcon").value = document.getElementById("addNewIconIcon").value.trim();
+
+
+        let form = document.getElementById("addNewIconForm");
+        form.checkValidity();
+        form.classList.add('was-validated');
+
+        if(!form.checkValidity()){
+            return;
+        }
+
+        addIconToDatabase();
+        drawIconList();
+        toggleAddIconModal();
+    });
+
+    
+    async function addIconToDatabase(){
+        await db.circuit_icons.add({
+            name: document.getElementById("addNewIconName").value,
+            icon: document.getElementById("addNewIconIcon").value
+        });
+    }
+
+
+    function toggleAddIconModal(){
+        addNewIconModal.toggle();
+    }
+
+
+    document.getElementById("addNewIconModal").addEventListener('show.bs.modal', () => {        
+        form = document.getElementById("addNewIconForm");
+        form.reset();
+        form.classList.remove('was-validated');
+    });
+
+
+    async function deleteIcon(id){
+
+        if(await checkIfInUse_circuit_icon(id) == true){
+            warningHandler("Icon is in use and cannot be deleted.")
+            return;
+        }
+        
+        await db.circuit_icons.delete(id);
+        await drawIconList();
+    }
+
+
+    function confirmDeleteIconChallegeOnChange(name){
+
+        if(document.getElementById('confirmDeleteText_'+name).value == "confirm"){
+            document.getElementById('deleteIconButtonConfirmed_'+name).disabled = false;
+            document.getElementById('deleteIconButtonConfirmed_'+name).classList.add('btn-danger');
+            document.getElementById('deleteIconButtonConfirmed_'+name).classList.remove('btn-outline-danger');
+        }else{
+            document.getElementById('deleteIconButtonConfirmed_'+name).disabled = true;
+            document.getElementById('deleteIconButtonConfirmed_'+name).classList.add('btn-outline-danger');
+            document.getElementById('deleteIconButtonConfirmed_'+name).classList.remove('btn-danger');
+        }
+    }
+
+
+    function toggleConfirmDeleteIcon(name){
+
+        if(document.getElementById('deleteIconButtonChallenge_'+name).hidden == false){
+            document.getElementById('deleteIconButtonChallenge_'+name).hidden = true;
+            document.getElementById('confirmDeleteIcon_'+name).hidden = false;
+        }else{
+            document.getElementById('deleteIconButtonChallenge_'+name).hidden = false;
+            document.getElementById('confirmDeleteIcon_'+name).hidden = true;
+            document.getElementById('confirmDeleteText_'+name).value = "";
+        }
+    }
+
+
+    function startEditName(id){
+        nameElement = document.getElementById('iconName_'+id);
+        nameElement.setAttribute("previous-value", nameElement.innerHTML);
+        nameElement.contentEditable = "true";
+        nameElement.classList.add("form-control");
+        document.getElementById('editNameIcon_'+id).hidden = true;
+        document.getElementById('saveNameIcon_'+id).hidden = false;
+        document.getElementById('cancelNameIcon_'+id).hidden = false;
+        nameEditFieldRealtimeValidation(id);
+    }
+
+
+    function cancelEditName(id){
+        nameElement = document.getElementById('iconName_'+id);
+        nameElement.contentEditable = "false";
+        nameElement.classList.remove("form-control");
+        nameElement.innerHTML = nameElement.getAttribute("previous-value");
+        document.getElementById('editNameIcon_'+id).hidden = false;
+        document.getElementById('saveNameIcon_'+id).hidden = true;
+        document.getElementById('cancelNameIcon_'+id).hidden = true;
+    }
+
+
+    async function saveEditName(id){
+        nameElement = document.getElementById('iconName_'+id);
+
+        await db.circuit_icons.update(id, {name: nameElement.innerHTML.trim()});
+        nameElement.contentEditable = "false";
+        nameElement.classList.remove("form-control");
+        document.getElementById('editNameIcon_'+id).hidden = false;
+        document.getElementById('saveNameIcon_'+id).hidden = true;
+        document.getElementById('cancelNameIcon_'+id).hidden = true;
+    }
+
+
+    function startEditIcon(id){
+        amperageElement = document.getElementById('iconIcon_'+id);
+        amperageElement.setAttribute("previous-value", amperageElement.innerHTML);
+        amperageElement.contentEditable = "true";
+        amperageElement.classList.add("form-control");
+        document.getElementById('editIconIcon_'+id).hidden = true;
+        document.getElementById('saveIconIcon_'+id).hidden = false;
+        document.getElementById('cancelIconIcon_'+id).hidden = false;
+    }
+
+
+    function cancelEditIcon(id){
+        amperageElement = document.getElementById('iconIcon_'+id);
+        amperageElement.contentEditable = "false";
+        amperageElement.classList.remove("form-control");
+        amperageElement.innerHTML = amperageElement.getAttribute("previous-value");
+        document.getElementById('editIconIcon_'+id).hidden = false;
+        document.getElementById('saveIconIcon_'+id).hidden = true;
+        document.getElementById('cancelIconIcon_'+id).hidden = true;
+    }
+
+
+    async function saveEditIcon(id){
+        amperageElement = document.getElementById('iconIcon_'+id);
+        await db.circuit_icons.update(id, {amperage: parseInt(amperageElement.innerHTML)});
+        amperageElement.contentEditable = "false";
+        amperageElement.classList.remove("form-control");
+        document.getElementById('editIconIcon_'+id).hidden = false;
+        document.getElementById('saveIconIcon_'+id).hidden = true;
+        document.getElementById('cancelIconIcon_'+id).hidden = true;
+    }
+
+
+    function nameEditFieldRealtimeValidation(id){
+        element = document.getElementById('iconName_'+id);
+
+        if(element.innerHTML.length > 0 && element.innerHTML != "<br>"){
+            element.classList.remove("is-invalid");
+            element.classList.add("is-valid");
+            document.getElementById('saveNameIcon_'+id).hidden = false;
+        }else{
+            element.classList.add("is-invalid");
+            element.classList.remove("is-valid");
+            document.getElementById('saveNameIcon_'+id).hidden = true;
+        }
+    }
+
+
+    function iconEditFieldRealtimeValidation(id){
+        element = document.getElementById('iconIcon_'+id);
+
+        if(element.innerHTML.length > 0 && element.innerHTML != "<br>"){
+            element.classList.remove("is-invalid");
+            element.classList.add("is-valid");
+            document.getElementById('saveIconIcon_'+id).hidden = false;
+        }else{
+            element.classList.add("is-invalid");
+            element.classList.remove("is-valid");
+            document.getElementById('saveIconIcon_'+id).hidden = true;
+        }
+    }
+
+
+    async function drawIconList(){
+
+        let iconList = document.getElementById("iconList");
+        iconList.innerHTML = '';
+
+        icons = await db.circuit_icons.orderBy('name').toArray();
+
+        if(icons.length == 0){
+            document.getElementById("iconListEmpty").hidden = false;
+            document.getElementById("iconListTable").hidden = true;
+        }else{
+            document.getElementById("iconListEmpty").hidden = true;
+            document.getElementById("iconListTable").hidden = false;
+        }
+
+        icons.forEach((icon) => {
+
+            let newIcon = `
+                <tr>
+                        <td class="align-middle">
+                            <div class="editableDetails"><span id="iconName_${icon.id}" onInput="nameEditFieldRealtimeValidation('${icon.id}')";>${icon.name}</span>
+                                <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editNameIcon_${icon.id}" onClick="startEditName(${icon.id})";">
+                                <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveNameIcon_${icon.id}" onClick="saveEditName(${icon.id})"; hidden>
+                                <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelNameIcon_${icon.id}" onClick="cancelEditName(${icon.id})"; hidden>
+                            </div></td>
+                        <td class="align-middle">
+                            <div class="editableDetails"><span id="iconIcon_${icon.id}" onInput="iconEditFieldRealtimeValidation('${icon.id}')";>${icon.icon}</span>
+                                <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editIconIcon_${icon.id}" onClick="startEditIcon(${icon.id})";">
+                                <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveIconIcon_${icon.id}" onClick="saveEditIcon(${icon.id})"; hidden>
+                                <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelIconIcon_${icon.id}" onClick="cancelEditIcon(${icon.id})"; hidden>
+                            </div>
+                        </td>
+                    <td class="align-middle">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-danger" id="deleteIconButtonChallenge_${icon.id}" onclick="toggleConfirmDeleteIcon(${icon.id});">Delete</button></div>
+                        <div class="input-group" id="confirmDeleteIcon_${icon.id}" hidden>
+                            <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${icon.id}" oninput="confirmDeleteIconChallegeOnChange(${icon.id});">
+                            <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteIcon(${icon.id})">Cancel</button>
+                            <button class="btn btn-outline-danger" type="button" id="deleteIconButtonConfirmed_${icon.id}" onclick="deleteIcon(${icon.id});" disabled>Delete</button>
+                        </div>
+                    </td>
+                </tr>`
+
+                iconList.insertAdjacentHTML('beforeend', newIcon);
+            });
+    }
+
+
+    
+
+
+
+    drawIconList();
+
+
+
+</script>
+</html>
