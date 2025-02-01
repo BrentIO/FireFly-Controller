@@ -40,8 +40,6 @@
     </div>
 
 
-
-
     <!-- Add New Circuit Modal -->
     <div class="modal fade" id="addNewCircuitModal" tabindex="-1" aria-labelledby="addNewCircuitModalLabel" data-bs-backdrop="static">
         <div class="modal-dialog modal-lg">
@@ -372,43 +370,46 @@
                             <div class="card-body">
                                 <div class="d-grid gap-2">
                                     <div class="editableDetails">
-                                        <span id="circuitName_${circuit.id}" class="card-title mb-3 h3">${circuit.name}</span>
-                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editNameIcon_${circuit.id}" onClick="startEditName(${circuit.id})";">
-                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveNameIcon_${circuit.id}" onClick="saveEditName(${circuit.id})"; hidden>
-                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelNameIcon_${circuit.id}" onClick="cancelEditName(${circuit.id})"; hidden>
+                                        <span id="Name_${circuit.id}" class="card-title mb-3 h3" onInput="editFieldRealtimeValidation(${circuit.id}, 'Name')";>${circuit.name}</span>
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editNameIcon_${circuit.id}" onClick="startEdit(${circuit.id}, 'Name')";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveNameIcon_${circuit.id}" onClick="saveEdit(${circuit.id}, 'Name')"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelNameIcon_${circuit.id}" onClick="cancelEdit(${circuit.id}, 'Name')"; hidden>
                                     </div>
                                     <div class="editableDetails">
-                                        <span class="col circuitDetailsLabel">Description:</span> <span id="circuitDescription_${circuit.id}">${circuit.description}</span>
-                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editDescriptionIcon_${circuit.id}" onClick="startEditDescription(${circuit.id})";">
-                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveDescriptionIcon_${circuit.id}" onClick="saveEditDescription(${circuit.id})"; hidden>
-                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelDescriptionIcon_${circuit.id}" onClick="cancelEditDescription(${circuit.id})"; hidden>
+                                        <span class="col circuitDetailsLabel">Description:</span> <span id="Description_${circuit.id}" onInput="editFieldRealtimeValidation(${circuit.id}, 'Description')";>${circuit.description}</span>
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editDescriptionIcon_${circuit.id}" onClick="startEdit(${circuit.id}, 'Description')";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveDescriptionIcon_${circuit.id}" onClick="saveEdit(${circuit.id}, 'Description')"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelDescriptionIcon_${circuit.id}" onClick="cancelEdit(${circuit.id}, 'Description')"; hidden>
                                     </div>
                                     <div class="editableDetails">
-                                        <span class="col circuitDetailsLabel">Area:</span> <span id="circuitArea_${circuit.id}">${circuit.area.name}</span>
-                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editAreaIcon_${circuit.id}" onClick="startEditArea(${circuit.id})";">
-                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveAreaIcon_${circuit.id}" onClick="saveEditArea(${circuit.id})"; hidden>
-                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelAreaIcon_${circuit.id}" onClick="cancelEditArea(${circuit.id})"; hidden>
+                                        <span class="col circuitDetailsLabel">Area:</span> <span id="Area_${circuit.id}">${circuit.area.name}</span>
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editAreaIcon_${circuit.id}" onClick="startEdit(${circuit.id}, 'Area')";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveAreaIcon_${circuit.id}" onClick="saveEdit(${circuit.id}, 'Area')"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelAreaIcon_${circuit.id}" onClick="cancelEdit(${circuit.id}, 'Area')"; hidden>
                                     </div>
                                     <div class="editableDetails">
-                                        <span class="col circuitDetailsLabel">Icon:</span> <span id="circuitIcon_${circuit.id}">${circuit.icon.name}</span>
-                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editIconIcon_${circuit.id}" onClick="startEditIcon(${circuit.id})";">
-                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveIconIcon_${circuit.id}" onClick="saveEditIcon(${circuit.id})"; hidden>
-                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelIconIcon_${circuit.id}" onClick="cancelEditIcon(${circuit.id})"; hidden>
+                                        <span class="col circuitDetailsLabel">Icon:</span> <span id="Icon_${circuit.id}">${circuit.icon.name}</span>
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editIconIcon_${circuit.id}" onClick="startEdit(${circuit.id}, 'Icon')";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveIconIcon_${circuit.id}" onClick="saveEdit(${circuit.id}, 'Icon')"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelIconIcon_${circuit.id}" onClick="cancelEdit(${circuit.id}, 'Icon')"; hidden>
                                     </div>
                                     <div class="editableDetails">
-                                        <span class="col circuitDetailsLabel">Load Amperage:</span> <span id="circuitLoadAmperage_${circuit.id}" onInput="loadAmperageEditFieldRealtimeValidation('${circuit.id}')";>${circuit.load_amperage}</span> Amps
-                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editLoadAmperageIcon_${circuit.id}" onClick="startEditLoadAmperage(${circuit.id})";">
-                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveLoadAmperageIcon_${circuit.id}" onClick="saveEditLoadAmperage(${circuit.id})"; hidden>
-                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelLoadAmperageIcon_${circuit.id}" onClick="cancelEditLoadAmperage(${circuit.id})"; hidden>
-                                    </div>
-                                    <div>
-                                        <span class="col circuitDetailsLabel">Relay:</span> ${circuit.relay.manufacturer} ${circuit.relay.model} (${displayType(circuit.relay.type)})
+                                        <span class="col circuitDetailsLabel">Load Amperage:</span> <span id="LoadAmperage_${circuit.id}" onInput="editFieldRealtimeValidation(${circuit.id}, 'LoadAmperage')";>${circuit.load_amperage}</span> Amps
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editLoadAmperageIcon_${circuit.id}" onClick="startEdit(${circuit.id}, 'LoadAmperage')";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveLoadAmperageIcon_${circuit.id}" onClick="saveEdit(${circuit.id}, 'LoadAmperage')"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelLoadAmperageIcon_${circuit.id}" onClick="cancelEdit(${circuit.id}, 'LoadAmperage')"; hidden>
                                     </div>
                                     <div class="editableDetails">
-                                        <span class="col circuitDetailsLabel">Breaker:</span> <span id="circuitBreaker_${circuit.id}">${circuit.breaker.name??"Unknown"} (${circuit.breaker.amperage??"Unknown"} Amps)</span>
-                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editLoadAmperageIcon_${circuit.id}" onClick="startEditLoadAmperage(${circuit.id})";">
-                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveLoadAmperageIcon_${circuit.id}" onClick="saveEditLoadAmperage(${circuit.id})"; hidden>
-                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelLoadAmperageIcon_${circuit.id}" onClick="cancelEditLoadAmperage(${circuit.id})"; hidden>
+                                        <span class="col circuitDetailsLabel">Relay:</span> <span id="Relay_${circuit.id}">${circuit.relay.manufacturer} ${circuit.relay.model} (${circuit.relay.description})</span>
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editRelayIcon_${circuit.id}" onClick="startEdit(${circuit.id}, 'Relay')";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveRelayIcon_${circuit.id}" onClick="saveEdit(${circuit.id}, 'Relay')"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelRelayIcon_${circuit.id}" onClick="cancelEdit(${circuit.id}, 'Relay')"; hidden>
+                                    </div>
+                                    <div class="editableDetails">
+                                        <span class="col circuitDetailsLabel">Breaker:</span> <span id="Breaker_${circuit.id}">${circuit.breaker.name??"Unknown"} (${circuit.breaker.amperage??"Unknown"} Amps)</span>
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editBreakerIcon_${circuit.id}" onClick="startEdit(${circuit.id}, 'Breaker')";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveBreakerIcon_${circuit.id}" onClick="saveEdit(${circuit.id}, 'Breaker')"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelBreakerIcon_${circuit.id}" onClick="cancelEdit(${circuit.id}, 'Breaker')"; hidden>
                                     </div>
                                     <button type="button" class="btn btn-outline-danger" id="deleteCircuitButtonChallenge_${circuit.id}" onclick="toggleConfirmDeleteCircuit(${circuit.id});">Delete</button>
                                     <div class="input-group" id="confirmDeleteCircuit_${circuit.id}" hidden>
@@ -431,90 +432,234 @@
     }
 
 
-    function displayType(type){
-        switch(type.toLowerCase()){
-            case "binary":
-                return "Binary";
+    function startEdit(id, fieldName){
+        switch(fieldName){
+
+            case 'Name':
+            case 'Description':
+                element = document.getElementById(fieldName + "_" +id);
+                element.setAttribute("previous-value", element.innerText);
+                element.contentEditable = "true";
+                element.classList.add("form-control");
+                editFieldRealtimeValidation(id, fieldName);
                 break;
-            case "variable":
-                return "Variable";
+
+            case 'Area':
+                if(!document.getElementById("editAreaSelect_" + id)){
+                    element = document.getElementById("Area_" +id);
+                    var selectList = document.createElement("select");
+                    selectList.id = "editAreaSelect_" + id;
+                    element.setAttribute("previous-value", element.innerText);
+                    element.innerText = "";
+                    element.appendChild(selectList);
+                }
+
+                editAreaSelect = document.getElementById("editAreaSelect_" + id);
+                editAreaSelect.hidden = false;
+
+                var i, L = editAreaSelect.options.length - 1;
+                for(i = L; i >= 0; i--) {
+                    editAreaSelect.remove(i);
+                }
+
+                areaList.forEach((area) =>{
+                    var opt = document.createElement('option');
+                    opt.value = `${area['id']}`;
+                    opt.innerHTML = `${area['name']}`;
+                    if(opt.innerHTML == element.getAttribute("previous-value")){
+                        opt.selected = true;
+                    }
+                    editAreaSelect.appendChild(opt);
+                });
                 break;
+
+            case 'Icon':
+                if(!document.getElementById("editIconSelect_" + id)){
+                    element = document.getElementById("Icon_" +id);
+                    var selectList = document.createElement("select");
+                    selectList.id = "editIconSelect_" + id;
+                    element.setAttribute("previous-value", element.innerText);
+                    element.innerText = "";
+                    element.appendChild(selectList);
+                }
+
+                editIconSelect = document.getElementById("editIconSelect_" + id);
+                editIconSelect.hidden = false;
+
+                var i, L = editIconSelect.options.length - 1;
+                for(i = L; i >= 0; i--) {
+                    editIconSelect.remove(i);
+                }
+
+                circuitIconList.forEach((icon) =>{
+                    var opt = document.createElement('option');
+                    opt.value = `${icon['id']}`;
+                    opt.innerHTML = `${icon['name']}`;
+                    if(opt.innerHTML == element.getAttribute("previous-value")){
+                        opt.selected = true;
+                    }
+                    editIconSelect.appendChild(opt);
+                });
+                break;
+
+            case 'LoadAmperage':
+                element = document.getElementById('LoadAmperage_'+id);
+                element.setAttribute("previous-value", element.innerText);
+                element.contentEditable = "true";
+                element.classList.add("form-control");
+                element.setAttribute("type", "number");
+                element.setAttribute("min", "0");
+                element.setAttribute("required", true);
+                element.addEventListener("input", (event) => {
+                    loadAmperageEditFieldRealtimeValidation(event.target.id);
+                })
+                break;
+
+            case 'Relay':
+                if(!document.getElementById("editRelaySelect_" + id)){
+                    element = document.getElementById("Relay_" +id);
+                    var selectList = document.createElement("select");
+                    selectList.id = "editRelaySelect_" + id;
+                    element.setAttribute("previous-value", element.innerText);
+                    element.innerText = "";
+                    element.appendChild(selectList);
+                }
+
+                editRelaySelect = document.getElementById("editRelaySelect_" + id);
+                editRelaySelect.hidden = false;
+
+                var i, L = editRelaySelect.options.length - 1;
+                for(i = L; i >= 0; i--) {
+                    editRelaySelect.remove(i);
+                }
+
+                relayModelList.forEach((relayModel) =>{
+                    var opt = document.createElement('option');
+                    opt.value = `${relayModel['id']}`;
+                    opt.innerHTML = `${relayModel['manufacturer']} ${relayModel['model']} (${relayModel['description']})`;
+                    if(opt.innerHTML == element.getAttribute("previous-value")){
+                        opt.selected = true;
+                    }
+                    editRelaySelect.appendChild(opt);
+                });
+                break;
+
+            case 'Breaker':
+                if(!document.getElementById("editBreakerSelect_" + id)){
+                    element = document.getElementById("Breaker_" +id);
+                    var selectList = document.createElement("select");
+                    selectList.id = "editBreakerSelect_" + id;
+                    element.setAttribute("previous-value", element.innerText);
+                    element.innerText = "";
+                    element.appendChild(selectList);
+                }
+
+                editBreakerSelect = document.getElementById("editBreakerSelect_" + id);
+                editBreakerSelect.hidden = false;
+
+                var i, L = editBreakerSelect.options.length - 1;
+                for(i = L; i >= 0; i--) {
+                    editBreakerSelect.remove(i);
+                }
+
+                breakerList.forEach((breaker) =>{
+                    var opt = document.createElement('option');
+                    opt.value = `${breaker['id']}`;
+                    opt.innerHTML = `${breaker['name']} (${breaker['amperage']} Amps)`;
+                    if(opt.innerHTML == element.getAttribute("previous-value")){
+                        opt.selected = true;
+                    }
+                    editBreakerSelect.appendChild(opt);
+                });
+                break;
+
             default:
-                return type;
+                errorHandler("Field name " + fieldName + " is not known and cannot be edited");
                 break;
         }
+
+        document.getElementById('edit' + fieldName + 'Icon_'+id).hidden = true;
+        document.getElementById('save' + fieldName + 'Icon_'+id).hidden = false;
+        document.getElementById('cancel' + fieldName + 'Icon_'+id).hidden = false;
+
+
     }
 
 
-    function startEditName(id){
-        nameElement = document.getElementById('circuitName_'+id);
-        nameElement.setAttribute("previous-value", nameElement.innerHTML);
-        nameElement.contentEditable = "true";
-        nameElement.classList.add("form-control");
-        document.getElementById('editNameIcon_'+id).hidden = true;
-        document.getElementById('saveNameIcon_'+id).hidden = false;
-        document.getElementById('cancelNameIcon_'+id).hidden = false;
+    function cancelEdit(id, fieldName){
+        element = document.getElementById(fieldName + "_" +id);
+        element.contentEditable = "false";
+        element.classList.remove("form-control");
+        element.innerText = element.getAttribute("previous-value");
+        document.getElementById('edit'+ fieldName + 'Icon_'+id).hidden = false;
+        document.getElementById('save'+ fieldName + 'Icon_'+id).hidden = true;
+        document.getElementById('cancel'+ fieldName + 'Icon_'+id).hidden = true;
     }
 
 
-    function cancelEditName(id){
-        nameElement = document.getElementById('circuitName_'+id);
-        nameElement.contentEditable = "false";
-        nameElement.classList.remove("form-control");
-        nameElement.innerHTML = nameElement.getAttribute("previous-value");
-        document.getElementById('editNameIcon_'+id).hidden = false;
-        document.getElementById('saveNameIcon_'+id).hidden = true;
-        document.getElementById('cancelNameIcon_'+id).hidden = true;
+    async function saveEdit(id, fieldName){
+        switch(fieldName){
+            case 'Name':
+                element = document.getElementById(fieldName + "_" +id);
+                await db.circuits.update(id, {name: element.innerText.trim()});
+                break;
+            case 'Description':
+                element = document.getElementById(fieldName + "_" +id);
+                await db.circuits.update(id, {description: element.innerText.trim()});
+                break;
+            case 'Area':
+                element = document.getElementById("editAreaSelect_" +id);
+                await db.circuits.update(id, {area: parseInt(element.value)});
+                document.getElementById("editAreaSelect_" +id).hidden = true;
+                document.getElementById("Area_" +id).innerText = document.getElementById("editAreaSelect_" +id).options[document.getElementById("editAreaSelect_" +id).selectedIndex].text;
+                break;
+            case 'Icon':
+                element = document.getElementById("editIconSelect_" +id);
+                await db.circuits.update(id, {icon: parseInt(element.value)});
+                document.getElementById("editIconSelect_" +id).hidden = true;
+                document.getElementById("Icon_" +id).innerText = document.getElementById("editIconSelect_" +id).options[document.getElementById("editIconSelect_" +id).selectedIndex].text;
+                break;
+            case 'LoadAmperage':
+                element = document.getElementById(fieldName + "_" +id);
+                await db.circuits.update(id, {load_amperage: parseInt(element.innerText.trim())});
+                break;
+            case 'Relay':
+                element = document.getElementById("editRelaySelect_" +id);
+                await db.circuits.update(id, {relay: parseInt(element.value)});
+                document.getElementById("editRelaySelect_" +id).hidden = true;
+                document.getElementById("Relay_" +id).innerText = document.getElementById("editRelaySelect_" +id).options[document.getElementById("editRelaySelect_" +id).selectedIndex].text;
+                break;
+            case 'Breaker':
+                element = document.getElementById("editBreakerSelect_" +id);
+                await db.circuits.update(id, {breaker: parseInt(element.value)});
+                document.getElementById("editBreakerSelect_" +id).hidden = true;
+                document.getElementById("Breaker_" +id).innerText = document.getElementById("editBreakerSelect_" +id).options[document.getElementById("editBreakerSelect_" +id).selectedIndex].text;
+                break;
+            default:
+                errorHandler("Field name " + fieldName + " is not known and will not be updated");
+                break;
+        }
+
+        element.contentEditable = "false";
+        element.classList.remove("form-control");
+        document.getElementById('edit'+ fieldName + 'Icon_'+id).hidden = false;
+        document.getElementById('save'+ fieldName + 'Icon_'+id).hidden = true;
+        document.getElementById('cancel'+ fieldName + 'Icon_'+id).hidden = true;
     }
 
 
-    async function saveEditName(id){
-        nameElement = document.getElementById('circuitName_'+id);
+    function editFieldRealtimeValidation(id, fieldName){
+        element = document.getElementById(fieldName + "_" +id);
 
-        await db.circuits.update(id, {name: nameElement.innerHTML.trim()});
-        nameElement.contentEditable = "false";
-        nameElement.classList.remove("form-control");
-        document.getElementById('editNameIcon_'+id).hidden = false;
-        document.getElementById('saveNameIcon_'+id).hidden = true;
-        document.getElementById('cancelNameIcon_'+id).hidden = true;
-    }
-
-
-    function startEditLoadAmperage(id){
-        loadAmperageElement = document.getElementById('circuitLoadAmperage_'+id);
-        loadAmperageElement.setAttribute("previous-value", loadAmperageElement.innerText);
-        loadAmperageElement.contentEditable = "true";
-        loadAmperageElement.classList.add("form-control");
-        loadAmperageElement.attributes["type"] = "number";
-        loadAmperageElement.attributes["min"] = "0";
-        loadAmperageElement.attributes.required = true;
-        document.getElementById('editLoadAmperageIcon_'+id).hidden = true;
-        document.getElementById('saveLoadAmperageIcon_'+id).hidden = false;
-        document.getElementById('cancelLoadAmperageIcon_'+id).hidden = false;
-        loadAmperageEditFieldRealtimeValidation(id);
-    }
-
-
-    function cancelEditLoadAmperage(id){
-        loadAmperageElement = document.getElementById('circuitLoadAmperage_'+id);
-        loadAmperageElement.contentEditable = "false";
-        loadAmperageElement.classList.remove("form-control");
-        loadAmperageElement.innerText = loadAmperageElement.getAttribute("previous-value");
-        document.getElementById('editLoadAmperageIcon_'+id).hidden = false;
-        document.getElementById('saveLoadAmperageIcon_'+id).hidden = true;
-        document.getElementById('cancelLoadAmperageIcon_'+id).hidden = true;
-    }
-
-
-    async function saveEditLoadAmperage(id){
-        loadAmperageElement = document.getElementById('circuitLoadAmperage_'+id);
-
-        await db.circuits.update(id, {load_amperage: parseInt(loadAmperageElement.innerText.trim())});
-        loadAmperageElement.contentEditable = "false";
-        loadAmperageElement.classList.remove("form-control");
-        document.getElementById('editLoadAmperageIcon_'+id).hidden = false;
-        document.getElementById('saveLoadAmperageIcon_'+id).hidden = true;
-        document.getElementById('cancelLoadAmperageIcon_'+id).hidden = true;
+        if(element.innerText.trim().length > 0){
+            element.classList.remove("is-invalid");
+            element.classList.add("is-valid");
+            document.getElementById('save'+ fieldName + 'Icon_'+id).hidden = false;
+        }else{
+            element.classList.add("is-invalid");
+            element.classList.remove("is-valid");
+            document.getElementById('save'+ fieldName + 'Icon_'+id).hidden = true;
+        }
     }
 
 
@@ -628,8 +773,10 @@
 
 
 
-    function loadAmperageEditFieldRealtimeValidation(id){
-        loadAmperageElement = document.getElementById('circuitLoadAmperage_'+id);
+    function loadAmperageEditFieldRealtimeValidation(element){
+
+        let id = element.replace("LoadAmperage_", "");
+        loadAmperageElement = document.getElementById(element);
 
         var regex = /^[0-9]+$/;
 
