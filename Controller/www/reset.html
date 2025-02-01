@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu("submenuConfiguration", "menuItemResetDatabase");
+        initDB();
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark"></div>
+            <div class="col py-3">
+                <div class="pageTitle">Reset Database</div>
+                <div class="pageDescription">You can delete all configuration data in your browser and reset the database.  This is useful when the data has become corrupt.</div>
+
+                <div>
+                    <button id="reset-database" class="btn btn-outline-danger" onclick="toggleConfirmResetDatabase();">Delete All Configuration Data and Reset Database</button></div>
+
+                <div class="input-group" id="confirmResetDatabase" hidden>
+                    <input type="text" class="form-control" placeholder="type 'confirm'" id="confirmResetDatabaseText" oninput="confirmResetDatabaseChallegeOnChange();">
+                    <button class="btn btn-secondary" type="button" onclick="toggleConfirmResetDatabase()">Cancel</button>
+                    <button class="btn btn-outline-danger" type="button" id="resetDatabaseButtonConfirmed" onclick="handleReset();" disabled>Delete All Configuration Data and Reset Database</button>
+                </div>
+            </div> 
+        </div>
+    </div>
+</body>
+
+<script>
+
+    function toggleConfirmResetDatabase(){
+
+        if(document.getElementById('confirmResetDatabase').hidden == false){
+            document.getElementById('reset-database').hidden = false;
+            document.getElementById('confirmResetDatabase').hidden = true;
+            document.getElementById('confirmResetDatabaseText').value = "";
+            confirmResetDatabaseChallegeOnChange();
+        }else{
+            document.getElementById('reset-database').hidden = true;
+            document.getElementById('confirmResetDatabase').hidden = false;
+            document.getElementById('confirmResetDatabaseText').value = "";
+        }
+    }
+
+
+    function confirmResetDatabaseChallegeOnChange(){
+
+        if(document.getElementById('confirmResetDatabaseText').value == "confirm"){
+            document.getElementById('resetDatabaseButtonConfirmed').disabled = false;
+            document.getElementById('resetDatabaseButtonConfirmed').classList.add('btn-danger');
+            document.getElementById('resetDatabaseButtonConfirmed').classList.remove('btn-outline-danger');
+        }else{
+            document.getElementById('resetDatabaseButtonConfirmed').disabled = true;
+            document.getElementById('resetDatabaseButtonConfirmed').classList.add('btn-outline-danger');
+            document.getElementById('resetDatabaseButtonConfirmed').classList.remove('btn-danger');
+        }
+    }
+
+
+    async function handleReset(){
+        await resetDatabase();
+        toggleConfirmResetDatabase();
+    }
+
+</script>
+</html>

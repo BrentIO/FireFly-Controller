@@ -129,6 +129,16 @@ async function importConfig(file){
 }
 
 
+async function resetDatabase(){
+    try {
+        await db.delete();
+        eventHandler("Reset complete!");
+    } catch (error) {
+        errorHandler(error);
+    }
+}
+
+
 class controllerLocalStorage{
     ip;
     certificates = [];
