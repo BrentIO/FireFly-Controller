@@ -145,7 +145,7 @@
 
     function confirmDeleteBreakerChallegeOnChange(name){
 
-        if(document.getElementById('confirmDeleteText_'+name).value == "confirm"){
+        if(document.getElementById('confirmDeleteText_'+name).value == "delete"){
             document.getElementById('deleteBreakerButtonConfirmed_'+name).disabled = false;
             document.getElementById('deleteBreakerButtonConfirmed_'+name).classList.add('btn-danger');
             document.getElementById('deleteBreakerButtonConfirmed_'+name).classList.remove('btn-outline-danger');
@@ -306,7 +306,7 @@
                     <td class="align-middle">
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-outline-danger" id="deleteBreakerButtonChallenge_${breaker.id}" onclick="toggleConfirmDeleteBreaker(${breaker.id});">Delete</button></div>
                         <div class="input-group" id="confirmDeleteBreaker_${breaker.id}" hidden>
-                            <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${breaker.id}" oninput="confirmDeleteBreakerChallegeOnChange(${breaker.id});">
+                            <input type="text" class="form-control" placeholder="type \'delete\'" id="confirmDeleteText_${breaker.id}" oninput="confirmDeleteBreakerChallegeOnChange(${breaker.id});">
                             <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteBreaker(${breaker.id})">Cancel</button>
                             <button class="btn btn-outline-danger" type="button" id="deleteBreakerButtonConfirmed_${breaker.id}" onclick="deleteBreaker(${breaker.id});" disabled>Delete</button>
                         </div>

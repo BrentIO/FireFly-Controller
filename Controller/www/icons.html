@@ -140,7 +140,7 @@
 
     function confirmDeleteIconChallegeOnChange(name){
 
-        if(document.getElementById('confirmDeleteText_'+name).value == "confirm"){
+        if(document.getElementById('confirmDeleteText_'+name).value == "delete"){
             document.getElementById('deleteIconButtonConfirmed_'+name).disabled = false;
             document.getElementById('deleteIconButtonConfirmed_'+name).classList.add('btn-danger');
             document.getElementById('deleteIconButtonConfirmed_'+name).classList.remove('btn-outline-danger');
@@ -298,7 +298,7 @@
                     <td class="align-middle">
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-outline-danger" id="deleteIconButtonChallenge_${icon.id}" onclick="toggleConfirmDeleteIcon(${icon.id});">Delete</button></div>
                         <div class="input-group" id="confirmDeleteIcon_${icon.id}" hidden>
-                            <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${icon.id}" oninput="confirmDeleteIconChallegeOnChange(${icon.id});">
+                            <input type="text" class="form-control" placeholder="type \'delete\'" id="confirmDeleteText_${icon.id}" oninput="confirmDeleteIconChallegeOnChange(${icon.id});">
                             <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteIcon(${icon.id})">Cancel</button>
                             <button class="btn btn-outline-danger" type="button" id="deleteIconButtonConfirmed_${icon.id}" onclick="deleteIcon(${icon.id});" disabled>Delete</button>
                         </div>

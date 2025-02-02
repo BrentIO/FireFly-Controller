@@ -301,7 +301,7 @@
 
     function confirmDeleteCircuitChallegeOnChange(name){
 
-        if(document.getElementById('confirmDeleteText_'+name).value == "confirm"){
+        if(document.getElementById('confirmDeleteText_'+name).value == "delete"){
             document.getElementById('deleteCircuitButtonConfirmed_'+name).disabled = false;
             document.getElementById('deleteCircuitButtonConfirmed_'+name).classList.add('btn-danger');
             document.getElementById('deleteCircuitButtonConfirmed_'+name).classList.remove('btn-outline-danger');
@@ -413,7 +413,7 @@
                                     </div>
                                     <button type="button" class="btn btn-outline-danger" id="deleteCircuitButtonChallenge_${circuit.id}" onclick="toggleConfirmDeleteCircuit(${circuit.id});">Delete</button>
                                     <div class="input-group" id="confirmDeleteCircuit_${circuit.id}" hidden>
-                                        <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${circuit.id}" oninput="confirmDeleteCircuitChallegeOnChange(${circuit.id});">
+                                        <input type="text" class="form-control" placeholder="type \'delete\'" id="confirmDeleteText_${circuit.id}" oninput="confirmDeleteCircuitChallegeOnChange(${circuit.id});">
                                         <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteCircuit(${circuit.id})">Cancel</button>
                                         <button class="btn btn-outline-danger" type="button" id="deleteCircuitButtonConfirmed_${circuit.id}" onclick="deleteCircuit(${circuit.id});" disabled>Delete</button>
                                     </div>

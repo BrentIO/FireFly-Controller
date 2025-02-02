@@ -270,7 +270,7 @@
                             <button class="btn btn-outline-danger" id="stopManagingAndDeleteButton${controller.id}" onclick="toggleConfirmDeleteController(${controller.id})">Stop Managing and Delete</button>
 
                             <div class="input-group mb-3" id="confirmDeleteController${controller.id}" hidden>
-                                <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText${controller.id}" oninput="confirmDeleteControllerChallegeOnChange(${controller.id});">
+                                <input type="text" class="form-control" placeholder="type \'delete\'" id="confirmDeleteText${controller.id}" oninput="confirmDeleteControllerChallegeOnChange(${controller.id});">
                                 <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteController(${controller.id})">Cancel</button>
                                 <button class="btn btn-outline-danger" type="button" id="deleteControllerButton${controller.id}" onclick="deleteController(${controller.id});" disabled>Delete</button>
                             </div>
@@ -296,7 +296,7 @@
 
     function confirmDeleteControllerChallegeOnChange(id){
 
-        if(document.getElementById('confirmDeleteText'+id).value == "confirm"){
+        if(document.getElementById('confirmDeleteText'+id).value == "delete"){
             document.getElementById('deleteControllerButton'+id).disabled = false;
             document.getElementById('deleteControllerButton'+id).classList.add('btn-danger');
             document.getElementById('deleteControllerButton'+id).classList.remove('btn-outline-danger');

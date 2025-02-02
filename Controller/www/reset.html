@@ -32,7 +32,7 @@
                     <button id="reset-database" class="btn btn-outline-danger" onclick="toggleConfirmResetDatabase();">Delete All Configuration Data and Reset Database</button></div>
 
                 <div class="input-group" id="confirmResetDatabase" hidden>
-                    <input type="text" class="form-control" placeholder="type 'confirm'" id="confirmResetDatabaseText" oninput="confirmResetDatabaseChallegeOnChange();">
+                    <input type="text" class="form-control" placeholder="type 'reset'" id="confirmResetDatabaseText" oninput="confirmResetDatabaseChallegeOnChange();">
                     <button class="btn btn-secondary" type="button" onclick="toggleConfirmResetDatabase()">Cancel</button>
                     <button class="btn btn-outline-danger" type="button" id="resetDatabaseButtonConfirmed" onclick="handleReset();" disabled>Delete All Configuration Data and Reset Database</button>
                 </div>
@@ -60,7 +60,7 @@
 
     function confirmResetDatabaseChallegeOnChange(){
 
-        if(document.getElementById('confirmResetDatabaseText').value == "confirm"){
+        if(document.getElementById('confirmResetDatabaseText').value == "reset"){
             document.getElementById('resetDatabaseButtonConfirmed').disabled = false;
             document.getElementById('resetDatabaseButtonConfirmed').classList.add('btn-danger');
             document.getElementById('resetDatabaseButtonConfirmed').classList.remove('btn-outline-danger');

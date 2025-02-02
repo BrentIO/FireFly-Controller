@@ -135,7 +135,7 @@
                     <td class="align-middle">
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end"><button type="button" class="btn btn-outline-danger" id="deleteAreaButtonChallenge_${area.id}" onclick="toggleConfirmDeleteArea(${area.id});">Delete</button></div>
                         <div class="input-group" id="confirmDeleteArea_${area.id}" hidden>
-                            <input type="text" class="form-control" placeholder="type \'confirm\'" id="confirmDeleteText_${area.id}" oninput="confirmDeleteAreaChallegeOnChange(${area.id});">
+                            <input type="text" class="form-control" placeholder="type \'delete\'" id="confirmDeleteText_${area.id}" oninput="confirmDeleteAreaChallegeOnChange(${area.id});">
                             <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteArea(${area.id})">Cancel</button>
                             <button class="btn btn-outline-danger" type="button" id="deleteAreaButtonConfirmed_${area.id}" onclick="deleteArea(${area.id});" disabled>Delete</button>
                         </div>
@@ -164,7 +164,7 @@
 
     function confirmDeleteAreaChallegeOnChange(id){
 
-        if(document.getElementById('confirmDeleteText_'+id).value == "confirm"){
+        if(document.getElementById('confirmDeleteText_'+id).value == "delete"){
             document.getElementById('deleteAreaButtonConfirmed_'+id).disabled = false;
             document.getElementById('deleteAreaButtonConfirmed_'+id).classList.add('btn-danger');
             document.getElementById('deleteAreaButtonConfirmed_'+id).classList.remove('btn-outline-danger');
