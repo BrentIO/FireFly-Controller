@@ -131,6 +131,7 @@
     border-radius: 5px;
     margin: 3px;
     width: 130px;
+    height: 130px;
 }
 
 .outputPortLabel{
@@ -144,26 +145,31 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 40px;
+
 }
 
 .availableCircuit{
     font-size: smaller;
     .card{
-        width: 10rem;
         background-color: #c0e7c3;
         text-align: center;
+        height: 130px;
+        max-width: 130px;
     }
 }
 
 .availableOutputPort{
     background-color: white;
-
 }
 
 .assignedOutputPort{
     background-color: #c0e7c3;
+    .additionalDetail{
+        text-align: center;
+        font-size: smaller;
+    }
 }
+
 
 #deleteCircuitAssignmentArea{
     min-height: 130px;

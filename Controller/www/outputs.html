@@ -96,17 +96,20 @@
                 if(controller.outputs[i] == undefined){
                     newOutputPort = `
                         <div class="col">
-                            <div class="outputPort">
+                            <div class="outputPort availableOutputPort" id="controller_${controller.id}_port_${i}" controllerId="${controller.id}" port="${i}" ondrop="assignedCircuitCardDrop(event);"  ondragover="{event.preventDefault();}">
                                 <div class="outputPortLabel">Port ${i}</div>
-                                <div class="outputPortBody availableOutputPort" id="controller_${controller.id}_port_${i}" controllerId="${controller.id}" port="${i}" ondrop="outputCircuitCardDrop(event);"  ondragover="{event.preventDefault();}"></div>
+                                <div class="outputPortBody"></div>
                             </div>
                         </div>`
                 }else{
+
                     newOutputPort = `
                         <div class="col">
                             <div class="outputPort assignedOutputPort" draggable="true" controllerId="${controller.id}" port="${i}" circuitId="${controller.outputs[i].id}" ondragstart="assignedCircuitDragStart(event);" ondragover="{event.preventDefault();}" ondragend="assignedCircuitDragEnd(event);">
                                 <div class="outputPortLabel">Port ${i}</div>
                                 <div class="outputPortBody h3" id="controller_${controller.id}_port_${i}">${controller.outputs[i].name}</div>
+                                <div class="additionalDetail">${controller.outputs[i].area.name}</div>
+                                <div class="additionalDetail">${controller.outputs[i].description}</div>
                             </div>
                         </div>`
                 }
@@ -154,8 +157,8 @@
                     <div class="card mb-3" id="circuit_${circuit.id}" circuitId="${circuit.id}" draggable="true" ondragstart="availableCircuitOnDragStart(event);">
                         <div class="card-body">
                             <div class="card-title mb-3 h3">${circuit.name}</div>
-                            <div class="">${circuit.area.name}</div>
-                            <div class="">${circuit.description}</div>
+                            <div>${circuit.area.name}</div>
+                            <div>${circuit.description}</div>
                         </div>
                     </div>
                 </div>`;
@@ -189,7 +192,7 @@
     }
 
 
-    async function outputCircuitCardDrop(event){
+    async function assignedCircuitCardDrop(event){
 
         try{
             if(isNaN(parseInt(event.dataTransfer.getData("circuitId")))){
@@ -219,7 +222,6 @@
     async function assignedCircuitDrop(event){
 
         try{
-
 
             if(isNaN(parseInt(event.dataTransfer.getData("controllerId")))){
                     throw new Error("Invalid controller ID");
