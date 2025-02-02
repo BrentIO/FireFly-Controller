@@ -199,7 +199,7 @@
             area: parseInt(document.getElementById("addNewCircuitArea").value),
             icon: parseInt(document.getElementById("addNewCircuitIcon").value),
             load_amperage: parseInt(document.getElementById("addNewCircuitAmperage").value),
-            relay: relayModelId,
+            relay_model: relayModelId,
             breaker: parseInt(document.getElementById("addNewCircuitBreaker").value)
         });
     }
@@ -350,7 +350,7 @@
                     db.areas.where('id').equals(circuit.area).first()
                 ]),
                 [circuit.relay] = await Promise.all([
-                    db.relay_models.where('id').equals(circuit.relay).first()
+                    db.relay_models.where('id').equals(circuit.relay_model).first()
                 ])
             }));
 
@@ -625,7 +625,7 @@
                 break;
             case 'Relay':
                 element = document.getElementById("editRelaySelect_" +id);
-                await db.circuits.update(id, {relay: parseInt(element.value)});
+                await db.circuits.update(id, {relay_model: parseInt(element.value)});
                 document.getElementById("editRelaySelect_" +id).hidden = true;
                 document.getElementById("Relay_" +id).innerText = document.getElementById("editRelaySelect_" +id).options[document.getElementById("editRelaySelect_" +id).selectedIndex].text;
                 break;
