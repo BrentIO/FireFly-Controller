@@ -28,22 +28,20 @@
                 <div class="pageTitle">Outputs</div>
                 <div class="pageDescription">Outputs map circuits to physical outputs on the controller.</div>
                 <div>
-                    <h2>Unassigned Circuits</h2>
-                    <div id="circuitCardList"></div>
-                    <div id="circuitCardListEmpty">All circuits have been assigned, or no circuits have been added.</div>
-
+                    <h2>Assignable Circuits</h2>
+                    <div id="circuitCardList" class="row"></div>
+                    <div id="circuitCardListEmpty" hidden>All circuits have been assigned.</div>
                     <div style="height: 3em;"></div>
-
                     <h2>Controller Outputs</h2>
                     <div id="controllerCardList"></div>
-                    <div id="controllerCardListEmpty">Add a controller to assign an output.</div>
+                    <div id="controllerCardListEmpty" hidden>Add a controller to assign an output.</div>
+                    <div id="deleteCircuitAssignmentArea" ondrop="assignedCircuitDrop(event);"  ondragover="{event.preventDefault();}" hidden>Unassign</div>
                 </div>
             </div> 
         </div>
     </div>
 </body>
 <script>
-
 
     async function drawAllControllerOutputs(){
 
@@ -59,6 +57,13 @@
                 ])
             }))
         }));
+
+        if(controllers.length == 0){
+
+            let controllerCardListEmpty = document.getElementById("controllerCardListEmpty");
+            controllerCardListEmpty.hidden = false;
+            return;
+        }
 
         let controllerCardList = document.getElementById("controllerCardList");
         controllerCardList.innerHTML = '';
@@ -84,30 +89,30 @@
             for (let i = 1; i <= controller.product.outputs.count; i++) {
 
                 if(controller.outputs[i] == undefined){
-                    newOutputGroup = `
+                    newOutputPort = `
                         <div class="col">
                             <div class="outputPort">
                                 <div class="outputPortLabel">Port ${i}</div>
-                                <div class="outputPortBody unassignedOutputPort" id="controller_${controller.id}_port_${i}" controllerId="${controller.id}" port="${i}" ondrop="outputCircuitCardDrop(event);"  ondragover="{event.preventDefault();}"></div>
+                                <div class="outputPortBody availableOutputPort" id="controller_${controller.id}_port_${i}" controllerId="${controller.id}" port="${i}" ondrop="outputCircuitCardDrop(event);"  ondragover="{event.preventDefault();}"></div>
                             </div>
                         </div>`
                 }else{
-                    newOutputGroup = `
+                    newOutputPort = `
                         <div class="col">
-                            <div class="outputPort assignedOutputPort">
+                            <div class="outputPort assignedOutputPort" draggable="true" controllerId="${controller.id}" port="${i}" circuitId="${controller.outputs[i].id}" ondragstart="assignedCircuitDragStart(event);" ondragover="{event.preventDefault();}" ondragend="assignedCircuitDragEnd(event);">
                                 <div class="outputPortLabel">Port ${i}</div>
-                                <div class="outputPortBody h3" id="controller_${controller.id}_port_${i}">${controller.outputs[i].name}<img src="./icons/delete_forever.svg" title="Delete" controllerId="${controller.id}" port="${i}" onClick="deleteCircuitAssignment(event)";"></div>
+                                <div class="outputPortBody h3" id="controller_${controller.id}_port_${i}">${controller.outputs[i].name}</div>
                             </div>
                         </div>`
                 }
-                outputPorts.insertAdjacentHTML('beforeend', newOutputGroup);
+                outputPorts.insertAdjacentHTML('beforeend', newOutputPort);
             }
         });
 
     }
 
 
-    async function drawUnassignedCircuits(){
+    async function drawAvailableCircuits(){
 
         assignedCircuits = [];
 
@@ -127,6 +132,9 @@
             }
         });
 
+        let circuitCardListEmpty = document.getElementById("circuitCardListEmpty");
+        circuitCardListEmpty.hidden = false;
+
         let circuitCardList = document.getElementById('circuitCardList');
         circuitCardList.innerHTML = '';
 
@@ -136,9 +144,9 @@
                 return;
             }
 
-            newUnAssignedCircuit = `
-                <div class="unassignedCircuit">
-                    <div class="card mb-3" id="circuit_${circuit.id}" circuit="${circuit.id}" draggable="true" ondragstart="unassignedCircuitOnDragStart(event);">
+            newAvailableCircuit = `
+                <div class="availableCircuit col">
+                    <div class="card mb-3" id="circuit_${circuit.id}" circuitId="${circuit.id}" draggable="true" ondragstart="availableCircuitOnDragStart(event);">
                         <div class="card-body">
                             <div class="card-title mb-3 h3">${circuit.name}</div>
                             <div class="">${circuit.area.name}</div>
@@ -147,42 +155,111 @@
                     </div>
                 </div>`;
 
-            circuitCardList.insertAdjacentHTML('beforeend', newUnAssignedCircuit);
+            circuitCardList.insertAdjacentHTML('beforeend', newAvailableCircuit);
+            circuitCardListEmpty.hidden = true;
 
         });
     }
 
 
-    function unassignedCircuitOnDragStart(event){
-        event.dataTransfer.setData("circuit", event.target.getAttribute("circuit"));
+    function availableCircuitOnDragStart(event){
+        event.dataTransfer.setData("circuitId", event.target.getAttribute("circuitId"));
+    }
+
+
+    function assignedCircuitDragStart(event){
+
+        event.dataTransfer.setData("circuitId", event.target.getAttribute("circuitId"));
+        event.dataTransfer.setData("controllerId", event.target.getAttribute("controllerId"));
+        event.dataTransfer.setData("port", event.target.getAttribute("port"));
+
+        let deleteCircuitAssignmentArea = document.getElementById('deleteCircuitAssignmentArea');
+        deleteCircuitAssignmentArea.hidden = false;
+    }
+
+
+    function assignedCircuitDragEnd(event){
+        let deleteCircuitAssignmentArea = document.getElementById('deleteCircuitAssignmentArea');
+        deleteCircuitAssignmentArea.hidden = true;
     }
 
 
     async function outputCircuitCardDrop(event){
 
-        event.preventDefault();
+        try{
+            if(isNaN(parseInt(event.dataTransfer.getData("circuitId")))){
+                throw new Error("Invalid circuit ID");
+            }
+
+            if(event.dataTransfer.getData("port") !=""){
+
+                if(isNaN(parseInt(event.dataTransfer.getData("controllerId")))){
+                    throw new Error("Invalid controller ID");
+                }
+
+                deleteCircuitAssignment(parseInt(event.dataTransfer.getData("controllerId")), event.dataTransfer.getData("port"));
+            }
+
+            assignCircuitToPort(parseInt(event.target.getAttribute("controllerId")), event.target.getAttribute("port"), parseInt(event.dataTransfer.getData("circuitId")));
+
+        }catch (error){
+            errorHandler(error);
+        }
+
+        await drawAvailableCircuits();
+        await drawAllControllerOutputs();
+    }
+
+
+    async function assignedCircuitDrop(event){
 
         try{
-            await db.controllers.update(parseInt(event.target.getAttribute("controllerId")), {[`outputs.${event.target.getAttribute("port")}`]: parseInt(event.dataTransfer.getData("circuit"))});
+
+
+            if(isNaN(parseInt(event.dataTransfer.getData("controllerId")))){
+                    throw new Error("Invalid controller ID");
+            }
+
+            if(event.dataTransfer.getData("port") == ""){
+                throw new Error("Invalid port");
+            }
+
+            deleteCircuitAssignment(parseInt(event.dataTransfer.getData("controllerId")), event.dataTransfer.getData("port"));
+
+        }catch (error){
+            errorHandler(error);
+        }
+
+        await drawAvailableCircuits();
+        await drawAllControllerOutputs();
+    }
+
+
+    async function deleteCircuitAssignmentEvent(event){
+
+        await deleteCircuitAssignment(parseInt(event.target.getAttribute("controllerId")), event.target.getAttribute("port"));
+        await drawAvailableCircuits();
+        await drawAllControllerOutputs();
+    }
+
+
+    async function assignCircuitToPort(controllerId, port, circuitId){
+        try{
+            await db.controllers.update(controllerId, {[`outputs.${port}`]: circuitId});
         }
         catch (error){
             errorHandler(error);
         }
-        finally{
-            await drawUnassignedCircuits();
-            await drawAllControllerOutputs();
-        }
     }
 
 
-    async function deleteCircuitAssignment(event){
-
+    async function deleteCircuitAssignment(controllerId, port){
         try{
-            await db.controllers.where({id: parseInt(event.target.getAttribute("controllerId"))}).modify(function(record) {
+            await db.controllers.where({id: controllerId}).modify(function(record) {
 
                 for (const [key, value] of Object.entries(record.outputs)) {
-                    if(key == event.target.getAttribute("port")){
-                        delete record.outputs[event.target.getAttribute("port")];
+                    if(key == port){
+                        delete record.outputs[port];
                     }
                 }
             });
@@ -190,13 +267,10 @@
         catch (error){
             errorHandler(error);
         }
-        finally{
-            await drawUnassignedCircuits();
-            await drawAllControllerOutputs();
-        }
     }
 
-    drawUnassignedCircuits();
+
+    drawAvailableCircuits();
     drawAllControllerOutputs();
 
 
