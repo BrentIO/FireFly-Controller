@@ -197,6 +197,12 @@
 
         controllers = await db.controllers.orderBy('name').toArray();
 
+        await Promise.all(controllers.map(async controller => {
+            [controller.product] = await Promise.all([
+                db.controller_products.where('id').equals(controller.product).first()
+            ])
+        }));
+
         if(controllers.length == 0){
             document.getElementById("managedControllerListEmpty").hidden = false;
         }else{
@@ -248,7 +254,7 @@
                                 </div>
                                 <div class="row">
                                         <div class="col controllerDetailsLabel">Product ID</div>
-                                        <div class="col">${controller.product??"Unknown"}</div>
+                                        <div class="col">${controller.product.pid??"Unknown"}</div>
                                 </div>
                                 <div class="row">
                                     <div class="col controllerDetailsLabel">Firmware Version</div>
