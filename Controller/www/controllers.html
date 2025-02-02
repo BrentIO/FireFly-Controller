@@ -126,6 +126,8 @@
             name: document.getElementById("addNewControllerName").value,
             uuid: document.getElementById("addNewControllerUUID").value,
             product: parseInt(document.getElementById("addNewControllerPID").value),
+            outputs: {},
+            inputs: {}
         });
 
         let controllerLS = new controllerLocalStorage(id);
