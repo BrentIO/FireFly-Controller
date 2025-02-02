@@ -345,3 +345,72 @@ async function checkIfInUse_area(id){
         return true;
     }
 }
+
+
+async function checkIfInUse_circuit(id){
+
+    assignedCircuits = [];
+
+    circuits = await db.circuits.orderBy('name').toArray();
+
+    if(circuits.length == 0){
+        return false;
+    }
+
+    await Promise.all(circuits.map(async circuit => {
+        [circuit.area] = await Promise.all([
+            db.areas.where('id').equals(circuit.area).first()
+        ])
+    }));
+
+    controllers = await db.controllers.toArray();
+
+    controllers.forEach((controller) => {
+        for (const [key, value] of Object.entries(controller.outputs)) {
+            assignedCircuits.push(value);
+        }
+    });
+
+
+    if(assignedCircuits.includes(id)){
+        return true;
+    }
+
+    return false;
+}
+
+
+async function checkIfInUse_controller(id){
+
+    let controller = await db.controllers.where("id").equals(id).first();
+
+    for (const [key, value] of Object.entries(controller.outputs)) {
+        return true;
+    }
+
+    for (const [key, value] of Object.entries(controller.inputs)) {
+        return true;
+    }
+
+    return false;
+}
+
+
+async function deleteUnusedCustomRelayModels(){
+
+    relay_models = await db.relay_models.where("is_custom").equals("true").toArray();
+
+    await Promise.all(relay_models.map(async relay_model => {
+        [relay_model.circuits] = await Promise.all([
+            db.circuits.where('relay_model').equals(relay_model.id).toArray()
+        ])
+    }));
+
+    for(const relay_model of relay_models){
+
+        if(relay_model.circuits.length == 0){
+            await db.relay_models.delete(relay_model.id);
+        }
+    }
+
+}

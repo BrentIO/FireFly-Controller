@@ -55,6 +55,11 @@
                 [controller.outputs[circuit.at(0)]] = await Promise.all([
                     db.circuits.where('id').equals(circuit.at(1)).first()
                 ])
+            })),
+            await Promise.all(Object.entries(controller.outputs).map(async circuit => {
+                [controller.outputs[circuit.at(0)].area] = await Promise.all([
+                    db.areas.where('id').equals(circuit.at(1).area).first()
+                ])
             }))
         }));
 

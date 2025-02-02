@@ -272,30 +272,17 @@
 
 
     async function deleteCircuit(id){
+
+        await deleteUnusedCustomRelayModels();
+
+        if(await checkIfInUse_circuit(id) == true){
+            warningHandler("Circuit is in use and cannot be deleted.")
+            return;
+        }
+
         await db.circuits.delete(id);
         await deleteUnusedCustomRelayModels();
         await drawCircuitList();
-    }
-
-
-    async function deleteUnusedCustomRelayModels(){
-
-        customRelayModels = await db.relay_models.where("is_custom").equals("true").toArray();
-        circuitList = await db.circuits.toArray();
-
-        for(const customRelayModel of customRelayModels){
-            var matched = false;
-            for(const circuit of circuitList){
-                if(circuit.manufacturer == customRelayModel.manufacturer && circuit.model == customRelayModel.model){
-                    matched = true;
-                    break;
-                }
-            }
-
-            if(matched == false){
-                await db.relay_models.delete(customRelayModel.id);
-            }
-        }
     }
 
 

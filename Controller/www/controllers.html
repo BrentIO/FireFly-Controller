@@ -285,6 +285,12 @@
 
 
     async function deleteController(id){
+
+        if(await checkIfInUse_controller(id) == true){
+            warningHandler("Controller is in use and cannot be deleted.")
+            return;
+        }
+
         await db.controllers.delete(id);
         let controllerLS = new controllerLocalStorage(id);
 
