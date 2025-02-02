@@ -124,6 +124,52 @@
     }
 }
 
+
+.outputPort{
+    border-color: black;
+    border-style: solid;
+    border-width: 3px;
+    margin: 3px;
+    width: 130px;
+}
+
+.outputPortLabel{
+    text-align: center;
+    background-color: black;
+    color: white;
+    font-weight: bold;
+}
+
+.outputPortBody{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80px;
+    img{
+        width: 0.75em;
+        height: 0.75em;
+    }
+}
+
+.unassignedCircuit{
+    font-size: smaller;
+    .card{
+        width: 10rem;
+        background-color: #c0e7c3;
+        text-align: center;
+    }
+}
+
+.unassignedOutputPort{
+    background-color: white;
+
+}
+
+.assignedOutputPort{
+    background-color: #51bd5a;
+
+}
+
 @media screen and (max-width: 575px) {
     .applicationName {
         display: none !important;

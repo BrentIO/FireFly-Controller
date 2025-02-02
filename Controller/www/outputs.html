@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu(null, "menuItemOutputs");
+        initDB();
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark"></div>
+            <div class="col py-3">
+                <div class="pageTitle">Outputs</div>
+                <div class="pageDescription">Outputs map circuits to physical outputs on the controller.</div>
+                <div>
+                    <h2>Unassigned Circuits</h2>
+                    <div id="circuitCardList"></div>
+                    <div id="circuitCardListEmpty">All circuits have been assigned, or no circuits have been added.</div>
+
+                    <div style="height: 3em;"></div>
+
+                    <h2>Controller Outputs</h2>
+                    <div id="controllerCardList"></div>
+                    <div id="controllerCardListEmpty">Add a controller to assign an output.</div>
+                </div>
+            </div> 
+        </div>
+    </div>
+</body>
+<script>
+
+
+    async function drawAllControllerOutputs(){
+
+        let controllers = await db.controllers.orderBy('name').toArray();
+
+        await Promise.all(controllers.map(async controller => {
+            [controller.product] = await Promise.all([
+                db.controller_products.where('id').equals(controller.product).first()
+            ]), 
+            await Promise.all(Object.entries(controller.outputs).map(async circuit => {
+                [controller.outputs[circuit.at(0)]] = await Promise.all([
+                    db.circuits.where('id').equals(circuit.at(1)).first()
+                ])
+            }))
+        }));
+
+        let controllerCardList = document.getElementById("controllerCardList");
+        controllerCardList.innerHTML = '';
+
+        controllers.forEach((controller) => {
+            
+            let newControllerCard = `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="card-title mb-3 h3">${controller.name}</div>
+                            <div class="container">
+                                <div class="row" id="controller_${controller.id}_outputPorts">
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+
+            controllerCardList.insertAdjacentHTML('beforeend', newControllerCard);
+
+            let outputPorts = document.getElementById(`controller_${controller.id}_outputPorts`);
+            outputPorts.innerHTML = '';
+
+            for (let i = 1; i <= controller.product.outputs.count; i++) {
+
+                if(controller.outputs[i] == undefined){
+                    newOutputGroup = `
+                        <div class="col">
+                            <div class="outputPort">
+                                <div class="outputPortLabel">Port ${i}</div>
+                                <div class="outputPortBody unassignedOutputPort" id="controller_${controller.id}_port_${i}" controllerId="${controller.id}" port="${i}" ondrop="outputCircuitCardDrop(event);"  ondragover="{event.preventDefault();}"></div>
+                            </div>
+                        </div>`
+                }else{
+                    newOutputGroup = `
+                        <div class="col">
+                            <div class="outputPort assignedOutputPort">
+                                <div class="outputPortLabel">Port ${i}</div>
+                                <div class="outputPortBody h3" id="controller_${controller.id}_port_${i}">${controller.outputs[i].name}<img src="./icons/delete_forever.svg" title="Delete" controllerId="${controller.id}" port="${i}" onClick="deleteCircuitAssignment(event)";"></div>
+                            </div>
+                        </div>`
+                }
+                outputPorts.insertAdjacentHTML('beforeend', newOutputGroup);
+            }
+        });
+
+    }
+
+
+    async function drawUnassignedCircuits(){
+
+        assignedCircuits = [];
+
+        circuits = await db.circuits.orderBy('name').toArray();
+
+        await Promise.all(circuits.map(async circuit => {
+            [circuit.area] = await Promise.all([
+                db.areas.where('id').equals(circuit.area).first()
+            ])
+        }));
+
+        controllers = await db.controllers.toArray();
+
+        controllers.forEach((controller) => {
+            for (const [key, value] of Object.entries(controller.outputs)) {
+                assignedCircuits.push(value);
+            }
+        });
+
+        let circuitCardList = document.getElementById('circuitCardList');
+        circuitCardList.innerHTML = '';
+
+        circuits.forEach((circuit) => {
+
+            if(assignedCircuits.includes(circuit.id)){
+                return;
+            }
+
+            newUnAssignedCircuit = `
+                <div class="unassignedCircuit">
+                    <div class="card mb-3" id="circuit_${circuit.id}" circuit="${circuit.id}" draggable="true" ondragstart="unassignedCircuitOnDragStart(event);">
+                        <div class="card-body">
+                            <div class="card-title mb-3 h3">${circuit.name}</div>
+                            <div class="">${circuit.area.name}</div>
+                            <div class="">${circuit.description}</div>
+                        </div>
+                    </div>
+                </div>`;
+
+            circuitCardList.insertAdjacentHTML('beforeend', newUnAssignedCircuit);
+
+        });
+    }
+
+
+    function unassignedCircuitOnDragStart(event){
+        event.dataTransfer.setData("circuit", event.target.getAttribute("circuit"));
+    }
+
+
+    async function outputCircuitCardDrop(event){
+
+        event.preventDefault();
+
+        try{
+            await db.controllers.update(parseInt(event.target.getAttribute("controllerId")), {[`outputs.${event.target.getAttribute("port")}`]: parseInt(event.dataTransfer.getData("circuit"))});
+        }
+        catch (error){
+            errorHandler(error);
+        }
+        finally{
+            await drawUnassignedCircuits();
+            await drawAllControllerOutputs();
+        }
+    }
+
+
+    async function deleteCircuitAssignment(event){
+
+        try{
+            await db.controllers.where({id: parseInt(event.target.getAttribute("controllerId"))}).modify(function(record) {
+
+                for (const [key, value] of Object.entries(record.outputs)) {
+                    if(key == event.target.getAttribute("port")){
+                        delete record.outputs[event.target.getAttribute("port")];
+                    }
+                }
+            });
+        }
+        catch (error){
+            errorHandler(error);
+        }
+        finally{
+            await drawUnassignedCircuits();
+            await drawAllControllerOutputs();
+        }
+    }
+
+    drawUnassignedCircuits();
+    drawAllControllerOutputs();
+
+
+</script>
+</html>
