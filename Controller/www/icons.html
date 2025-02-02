@@ -108,8 +108,8 @@
     
     async function addIconToDatabase(){
         await db.circuit_icons.add({
-            name: document.getElementById("addNewIconName").value,
-            icon: document.getElementById("addNewIconIcon").value
+            name: document.getElementById("addNewIconName").value.trim(),
+            icon: document.getElementById("addNewIconIcon").value.trim().slice(0,64)
         });
     }
 

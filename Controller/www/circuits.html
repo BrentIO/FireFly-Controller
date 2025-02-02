@@ -52,14 +52,14 @@
                 <div class="modal-body">
                     <div class="input-group mb-3 has-validation">
                         <span class="input-group-text">Name</span>
-                        <input class="form-control" id="addNewCircuitName" placeholder="ex: C23" aria-label="Name" required>
+                        <input class="form-control" id="addNewCircuitName" placeholder="ex: C23" aria-label="Name" maxlength="8" required>
                         <div class="invalid-feedback">
                             A name is required.
                         </div>
                     </div>
                     <div class="input-group mb-3 has-validation">
                         <span class="input-group-text">Description</span>
-                        <input class="form-control" id="addNewCircuitDescription" placeholder="ex: Chandelier" aria-label="Description" required>
+                        <input class="form-control" id="addNewCircuitDescription" placeholder="ex: Chandelier" aria-label="Description" maxlength="20" required>
                         <div class="invalid-feedback">
                             A description is required.
                         </div>
@@ -194,8 +194,8 @@
         }
 
         await db.circuits.add({
-            name: document.getElementById("addNewCircuitName").value,
-            description: document.getElementById("addNewCircuitDescription").value,
+            name: document.getElementById("addNewCircuitName").value.trim().slice(0,8),
+            description: document.getElementById("addNewCircuitDescription").value.trim().slice(0,20),
             area: parseInt(document.getElementById("addNewCircuitArea").value),
             icon: parseInt(document.getElementById("addNewCircuitIcon").value),
             load_amperage: parseInt(document.getElementById("addNewCircuitAmperage").value),

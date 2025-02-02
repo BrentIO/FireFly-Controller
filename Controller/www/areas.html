@@ -54,7 +54,7 @@
                     <div class="modal-body">
                         <div class="input-group mb-3 has-validation">
                             <span class="input-group-text">Name</span>
-                            <input class="form-control" id="addNewAreaName" placeholder="" aria-label="Name" required>
+                            <input class="form-control" id="addNewAreaName" placeholder="" aria-label="Name" maxlength="20" required>
                             <div class="invalid-feedback">
                                 A name is required.
                             </div>
@@ -76,7 +76,7 @@
 
     async function addAreaToDatabase(){
         await db.areas.add({
-            name: document.getElementById("addNewAreaName").value
+            name: document.getElementById("addNewAreaName").value.trim().slice(0,20)
         });
     }
 

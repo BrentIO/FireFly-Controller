@@ -55,7 +55,7 @@
                 <div class="modal-body">
                     <div class="input-group mb-3 has-validation">
                         <span class="input-group-text">Name</span>
-                        <input class="form-control" id="addNewControllerName" placeholder="" aria-label="Name" required>
+                        <input class="form-control" id="addNewControllerName" placeholder="" aria-label="Name" maxlength="20" required>
                         <div class="invalid-feedback">
                             A name is required.
                         </div>
@@ -123,8 +123,8 @@
     async function addControllerToDatabase(){
 
         id = await db.controllers.add({
-            name: document.getElementById("addNewControllerName").value,
-            uuid: document.getElementById("addNewControllerUUID").value,
+            name: document.getElementById("addNewControllerName").value.trim().slice(0,20),
+            uuid: document.getElementById("addNewControllerUUID").value.trim().slice(0,36),
             product: parseInt(document.getElementById("addNewControllerPID").value),
             outputs: {},
             inputs: {}
