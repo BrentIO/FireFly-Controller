@@ -125,7 +125,7 @@
         id = await db.controllers.add({
             name: document.getElementById("addNewControllerName").value,
             uuid: document.getElementById("addNewControllerUUID").value,
-            productId: document.getElementById("addNewControllerPID").value
+            product: parseInt(document.getElementById("addNewControllerPID").value),
         });
 
         let controllerLS = new controllerLocalStorage(id);
@@ -157,10 +157,10 @@
 
         let pidSelect = document.getElementById("addNewControllerPID");
         
-        pids = await db.product_ids.orderBy('pid').toArray()
+        pids = await db.controller_products.orderBy('pid').toArray()
         pids.forEach((element) =>{
             var opt = document.createElement('option');
-            opt.value = element['pid'];
+            opt.value = element['id'];
             opt.innerHTML = element['pid'];
             pidSelect.appendChild(opt);
         });
@@ -246,7 +246,7 @@
                                 </div>
                                 <div class="row">
                                         <div class="col controllerDetailsLabel">Product ID</div>
-                                        <div class="col">${controller.productId??"Unknown"}</div>
+                                        <div class="col">${controller.product??"Unknown"}</div>
                                 </div>
                                 <div class="row">
                                     <div class="col controllerDetailsLabel">Firmware Version</div>
