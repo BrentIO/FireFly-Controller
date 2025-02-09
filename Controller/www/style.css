@@ -196,6 +196,7 @@
 }
 
 #clientPreviewImage{
+    width: 80%;
     max-width: 400px;
     border-style:solid; 
     border-radius:3em;
