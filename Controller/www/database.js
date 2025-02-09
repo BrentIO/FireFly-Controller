@@ -19,7 +19,8 @@ const initDB = () => {
         certificates: "++id, &certificate",
         breakers: "++id, name",
         circuits: "++id, name, breaker, area, icon, relay_model",
-        relay_models: "++id, [manufacturer+model], is_custom"
+        relay_models: "++id, [manufacturer+model], is_custom",
+        clients: "++id, name, &uuid"
     });
 
     db.version(1).upgrade(function(transaction) {

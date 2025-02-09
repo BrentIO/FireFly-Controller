@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu(null, "menuItemClients");
+        initDB();
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark"></div>
+            <div class="col py-3">
+                <div><a href="./clients.html">&larr; Back to Clients</a></div>
+                <div class="pageTitle" id="pageTitle"></div>
+                <div class="pageDescription" id="pageDescription"></div>
+                <div>
+                    <svg id="clientPreviewImage" viewbox="0 0 400 600">
+                        <defs>
+                            <radialGradient id="innerGradient">
+                                <stop offset="10%" stop-color="#C0C0C0" />
+                                <stop offset="95%" stop-color="#a6a6a6" />
+                            </radialGradient>
+                            <radialGradient id="emptyGradient">
+                                <stop offset="10%" stop-color="#595959" />
+                                <stop offset="95%" stop-color="#737373" />
+                                </radialGradient>
+                            <linearGradient id="outerGradient" gradientTransform="rotate(90)">
+                                <stop class="stop1" offset="0%" stop-color="#C0C0C0" />
+                                <stop class="stop2" offset="50%" stop-color="#C0C0C0" />
+                                <stop class="stop3" offset="100%" stop-color="#a6a6a6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-primary" role="button" id="addButtonButton" onclick="toggleAddButtonModal();">Add Button</button>
+                </div>
+                <div class="mt-3">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th scope="col">Position</th>
+                                <th scope="col">Color</th>
+                                <th scope="col">Enabled</th>
+                                <th scope="col">Move</th>
+                                <th scope="col"></th>
+                            </tr>
+                          </thead>
+                        <tbody id="hidList"></tbody>
+                    </table>
+                </div>
+            </div> 
+        </div>
+    </div>
+
+
+    <!-- Add New Button Modal -->
+    <div class="modal fade" id="addNewButtonModal" tabindex="-1" aria-labelledby="addNewButtonModalLabel" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form class="needs-validation" novalidate id="addNewButtonForm">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="addNewButtonModalLabel">Add New Button</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Color</span>
+                        <div class="input-group-text" id="addNewButtonColorPreview"></div>
+                        <select class="form-select" aria-label="Color" id="addNewButtonColor" onchange="setColorPreview();" required>
+                            <option value="" selected disabled>Select...</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Select button color.
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Switch Type</span>
+                        <select class="form-select" aria-label="Type" id="addNewButtonSwitchType" required >
+                            <option value="NORMALLY_OPEN" selected>Normally Open</option>
+                            <option value="NORMALLY_CLOSED">Normally Closed</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Select button type.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="button" id="addNewButtonModalAddButton" onclick="addNewButton_click();">Add</button>
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script>
+
+    client={};
+    colorList=[];
+
+    var addNewButtonModal = new bootstrap.Modal('#addNewButtonModal');
+
+    function toggleAddButtonModal(){
+        addNewButtonModal.toggle();
+    }
+
+
+
+    async function getClient(){
+
+        try{
+            client = await db.clients.where('id').equals(parseInt(urlParams.get('id'))).first();
+
+            await Promise.all(client.hids.map(async hid => {
+                [hid.color] = await Promise.all([
+                    db.colors.where('id').equals(hid.color).first()
+                ])
+            }));
+
+            if(typeof client == "undefined"){
+                throw new Error("Invalid ID.");
+            };
+
+            document.getElementById("pageTitle").innerText = "Client " + client.name;
+            document.getElementById("pageDescription").innerHTML = client.description;
+
+            drawHIDPicture();
+            drawHIDList();
+
+        }catch(exception){
+            errorHandler(exception);
+            //window.location.href = "./clients.html";
+        }
+
+    }
+
+
+    function getHIDLocation(total, hid){
+
+        locations = {"1":[[200,300]],"2":[[200,200],[200,400]],"3":[[200,150],[200,300],[200,450]],"4":[[125,200],[275,200],[125,400],[275,400]],"5":[[125,150],[275,150],[125,300],[275,300],[200,450]],"6":[[125,150],[275,150],[125,300],[275,300],[125,450],[275,450]],"51":[[200,150],[125,300],[275,300],[125,450],[275,450]]};
+
+        try{
+
+            if(locations[total] === undefined){
+                throw new Error("Missing faceplate definition for size " + total);
+            }
+
+            if(locations[total][hid] === undefined){
+                throw new Error("Missing HID definition for faceplate " + total + " HID " + (hid + 1));
+            }
+
+            return locations[total][hid];
+
+        }catch(exception){
+            errorHandler(exception);
+        }
+    }
+
+
+    async function getColorList(){
+
+        let colorListSelect = document.getElementById("addNewButtonColor");
+
+        var i, L = colorListSelect.options.length - 1;
+        for(i = L; i >= 0; i--) {
+            colorListSelect.remove(i);
+        }
+
+        colorList = await db.colors.orderBy('name').toArray()
+        colorList.forEach((color) =>{
+            var opt = document.createElement('option');
+            opt.value = color['id'];
+            opt.innerHTML = `${color['name']}`;
+            colorListSelect.append(opt);
+        });
+
+        var opt = document.createElement('option');
+        opt.value = "";
+        opt.disabled = true;
+        opt.selected = true;
+        opt.innerHTML = `Select...`;
+        colorListSelect.prepend(opt);
+
+    }
+
+
+    function setColorPreview(){
+
+        let colorListSelect = document.getElementById("addNewButtonColor");
+        let colorPreview = document.getElementById("addNewButtonColorPreview");
+
+        colorList.forEach((color) => {
+            if(color.id == colorListSelect.value){
+                colorPreview.style.backgroundColor = color.hex;
+            }
+        })
+    }
+
+
+    function drawHIDPicture(){
+
+        var svgns = "http://www.w3.org/2000/svg";
+        var svg = document.getElementById('clientPreviewImage');
+        var addButtonButton = document.getElementById('addButtonButton');
+
+        try{
+
+            if(!('hids' in client)){
+                addButtonButton.disabled = false;
+                return;
+            }
+
+            for(const element of svg.querySelectorAll("circle")){
+                element.remove();
+            }
+
+            if(client.hids.length >= 6){
+                addButtonButton.disabled = true;
+            }else{
+                addButtonButton.disabled = false;
+            }
+
+            for(let i = 0; i < client.hids.length; i++){
+
+                hidLocation = getHIDLocation(client.hids.length, i);
+
+                switch(client.hids[i].type){
+
+                    case "BUTTON":
+                        var outterButton = document.createElementNS(svgns, "circle");
+                        outterButton.setAttributeNS(null, "cx", hidLocation[0]);
+                        outterButton.setAttributeNS(null, "cy", hidLocation[1]);
+                        outterButton.setAttributeNS(null, "r",  50);
+                        outterButton.setAttributeNS(null, "fill", "url('#innerGradient')");
+                        outterButton.setAttribute("onclick", `editButton('${i}');`);
+                        svg.appendChild(outterButton);
+
+                        var innerButton = document.createElementNS(svgns, "circle");
+                        innerButton.setAttributeNS(null, "cx", hidLocation[0]);
+                        innerButton.setAttributeNS(null, "cy", hidLocation[1]);
+                        innerButton.setAttributeNS(null, "r",  33);
+                        innerButton.setAttributeNS(null, "stroke", `${client.hids[i]['color']['hex']}`);
+                        innerButton.setAttributeNS(null, "stroke-width", "10px");
+                        innerButton.setAttributeNS(null, "fill", "url('#innerGradient')");
+                        innerButton.setAttribute("onclick", `editButton('${i}');`);
+                        svg.appendChild(innerButton);
+
+                        break;
+
+                    default:
+                        throw new Error("Unknown HID type " + client.hids[i].type);
+                        break;
+                }
+            }
+   
+        }catch(exception){
+            errorHandler(exception);
+        }
+    }
+
+
+    function drawHIDList(){
+        var hidList = document.getElementById('hidList');
+        hidList.innerHTML = '';
+
+        let i=0;
+
+        client.hids.forEach((hid) =>{
+            i++;
+
+            let hidEntry = `
+            <tr>
+                <td class="align-middle">${i}</td>
+                <td class="align-middle">${hid.color.name}</td>
+                <td class="align-middle">${hid.enabled??"Yes"}</td>
+                <td class="align-middle">`
+
+            if(i != 1){
+                hidEntry += `<button class="btn btn-outline-primary" role="button" onclick="moveHID(${i-1}, 'up');">&uarr;</button> `
+            }
+
+            if(i < client.hids.length){
+                hidEntry += ` <button class="btn btn-outline-primary" role="button" onclick="moveHID(${i-1}, 'down');">&darr;</button>`
+            }
+
+            hidEntry += `</td>
+            <td><button class="btn btn-outline-danger" role="button" onclick="deleteHID(${i-1});">Delete</button></td>
+
+            </tr>`
+
+            hidList.insertAdjacentHTML('beforeend', hidEntry);
+
+        });
+
+    }
+
+
+    function editButton(element){
+        console.log(element);
+    }
+
+
+    async function deleteHID(element){
+
+        await db.clients.where('id').equals(client.id).modify(client =>{
+            client.hids.splice(element, 1)
+        });
+
+        await getClient();
+    }
+
+
+    async function moveHID(element, direction){
+
+        destination = element;
+
+        if(direction == "down"){
+            destination++;
+        }else{
+            destination--;
+        }
+
+        await db.clients.where('id').equals(client.id).modify(client =>
+            client.hids = move_array(client.hids, element, destination)
+        );
+
+        await getClient();
+    }
+
+
+    function move_array(theArray, from, to) {
+        let numberOfDeletedElm = 1;
+
+        const elm = theArray.splice(from, numberOfDeletedElm)[0];
+
+        numberOfDeletedElm = 0;
+
+        theArray.splice(to, numberOfDeletedElm, elm);
+        return theArray;
+    }
+
+
+    async function addNewButton_click(){
+
+        let form = document.getElementById("addNewButtonForm");
+        form.checkValidity();
+        form.classList.add('was-validated');
+
+        if(!form.checkValidity()){
+            return;
+        }
+
+        await addNewButtonToDatabase();
+        await getClient();
+        await toggleAddButtonModal();
+    }
+
+
+    async function addNewButtonToDatabase(){
+
+        await db.clients.where('id').equals(client.id).modify(client =>
+            client.hids.push({"color": parseInt(document.getElementById('addNewButtonColor').value), "type":"BUTTON", "switch_type":document.getElementById('addNewButtonSwitchType').value})
+        );
+    }
+
+
+
+
+
+    const urlParams = new URLSearchParams(window.location.search);
+
+    if(isNaN(parseInt(urlParams.get('id')))){
+        window.location.href = "./clients.html";
+    }
+
+    getClient();
+    getColorList();
+
+</script>
+</html>

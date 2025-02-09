@@ -396,6 +396,14 @@ async function checkIfInUse_controller(id){
 }
 
 
+async function checkIfInUse_client(id){
+
+    console.log("TO DO");
+
+    return false;
+}
+
+
 async function deleteUnusedCustomRelayModels(){
 
     relay_models = await db.relay_models.where("is_custom").equals("true").toArray();

@@ -56,6 +56,10 @@
     font-weight: 600;
 }
 
+.clientDetailsLabel{
+    font-weight: 600;
+}
+
 .uuid{
     font-family: 'Courier New', Courier, monospace;
 }
@@ -124,6 +128,12 @@
     }
 }
 
+#managedClientCards{
+    .card{
+        max-width: 25em;
+    }
+}
+
 .outputPort{
     border-color: black;
     border-style: solid;
@@ -183,6 +193,14 @@
     color: darkgray;
     border-style:dotted;
     text-align: center;
+}
+
+#clientPreviewImage{
+    max-width: 400px;
+    border-style:solid; 
+    border-radius:3em;
+    border-width: 1px;
+    background-color:#FAF9F6;
 }
 
 @media screen and (max-width: 575px) {
