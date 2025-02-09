@@ -80,7 +80,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="input-group mb-3">
-                        <span class="input-group-text">Color</span>
+                        <span class="input-group-text" id="input-group-color">Color</span>
                         <div class="input-group-text" id="addNewButtonColorPreview"></div>
                         <select class="form-select" aria-label="Color" id="addNewButtonColor" onchange="setColorPreview();" required>
                             <option value="" selected disabled>Select...</option>
@@ -119,6 +119,16 @@
     function toggleAddButtonModal(){
         addNewButtonModal.toggle();
     }
+
+
+    document.getElementById("addNewButtonModal").addEventListener('show.bs.modal', () => {
+
+        form = document.getElementById("addNewButtonForm");
+        form.reset();
+        document.getElementById("addNewButtonColor").value = "";
+        setColorPreview();
+        form.classList.remove('was-validated');
+    });
 
 
 
@@ -204,6 +214,11 @@
 
         let colorListSelect = document.getElementById("addNewButtonColor");
         let colorPreview = document.getElementById("addNewButtonColorPreview");
+
+        if(colorListSelect.value == ""){
+            colorPreview.style = getComputedStyle(document.getElementById("input-group-color"));
+            return;
+        }
 
         colorList.forEach((color) => {
             if(color.id == colorListSelect.value){
