@@ -121,7 +121,7 @@
                             <select class="form-select" aria-label="Breaker" id="addNewCircuitType" required>
                                 <option value="" selected disabled>Select...</option>
                                 <option value="VARIABLE">Variable</option>
-                                <option value="BINARY" selected>Binary</option>
+                                <option value="BINARY">Binary</option>
                             </select>
                             <div class="invalid-feedback">
                                 Select a type option.
@@ -230,7 +230,7 @@
         form = document.getElementById("addNewCircuitForm");
         form.reset();
         document.getElementById("relayModelSelect").value = "";
-        document.getElementById("addNewCircuitBreaker").value = "GARBAGE";
+        document.getElementById("addNewCircuitBreaker").value = "";
         document.getElementById("addNewCircuitType").value = "";
         document.getElementById("customCircuit").classList.add("d-none");
         form.classList.remove('was-validated');
@@ -568,8 +568,6 @@
         document.getElementById('edit' + fieldName + 'Icon_'+id).hidden = true;
         document.getElementById('save' + fieldName + 'Icon_'+id).hidden = false;
         document.getElementById('cancel' + fieldName + 'Icon_'+id).hidden = false;
-
-
     }
 
 
