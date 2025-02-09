@@ -49,6 +49,7 @@
                 </div>
                 <div class="mt-3">
                     <button class="btn btn-primary" role="button" id="addButtonButton" onclick="toggleAddButtonModal();">Add Button</button>
+                    <button type="button" class="btn btn-outline-success" data-bs-toggle="button" id="invertButton" onclick="getClient()">Invert</button>
                 </div>
                 <div class="mt-3">
                     <table class="table table-striped">
@@ -150,6 +151,12 @@
             document.getElementById("pageTitle").innerText = "Client " + client.name;
             document.getElementById("pageDescription").innerHTML = client.description;
 
+            if(client.hids.length == 5){
+                document.getElementById("invertButton").hidden = false;
+            }else{
+                document.getElementById("invertButton").hidden = true;
+            }
+
             drawHIDPicture();
             drawHIDList();
 
@@ -162,6 +169,7 @@
 
 
     function getHIDLocation(total, hid){
+
 
         locations = {"1":[[200,300]],"2":[[200,200],[200,400]],"3":[[200,150],[200,300],[200,450]],"4":[[125,200],[275,200],[125,400],[275,400]],"5":[[125,150],[275,150],[125,300],[275,300],[200,450]],"6":[[125,150],[275,150],[125,300],[275,300],[125,450],[275,450]],"51":[[200,150],[125,300],[275,300],[125,450],[275,450]]};
 
@@ -254,6 +262,10 @@
             for(let i = 0; i < client.hids.length; i++){
 
                 hidLocation = getHIDLocation(client.hids.length, i);
+
+                if(client.hids.length == 5 && document.getElementById("invertButton").classList.contains("active")){
+                    hidLocation = getHIDLocation(51, i);
+                }
 
                 switch(client.hids[i].type){
 
