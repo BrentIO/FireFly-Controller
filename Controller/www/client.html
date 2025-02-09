@@ -48,7 +48,11 @@
                     </svg>
                 </div>
                 <div class="mt-3">
-                    <button class="btn btn-primary" role="button" id="addButtonButton" onclick="toggleAddButtonModal();">Add Button</button>
+                    <button class="btn btn-primary dropdown-toggle" role="button" id="addNewHID" role="button" data-bs-toggle="dropdown" aria-expanded="false">Add</button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" onclick="toggleAddButtonModal();">Button</a></li>
+                        <li><a class="dropdown-item" onclick="toggleAddSwitchModal();">Switch</a></li>
+                      </ul>
                     <button type="button" class="btn btn-outline-success" data-bs-toggle="button" id="invertButton" onclick="getClient()">Invert</button>
                 </div>
                 <div class="mt-3">
@@ -108,17 +112,55 @@
             </div>
         </div>
     </div>
+
+
+    <!-- Add New Switch Modal -->
+    <div class="modal fade" id="addNewSwitchModal" tabindex="-1" aria-labelledby="addNewSwitchModalLabel" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form class="needs-validation" novalidate id="addNewSwitchForm">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="addNewSwitchModalLabel">Add New Switch</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Switch Type</span>
+                        <select class="form-select" aria-label="Type" id="addNewSwitchSwitchType" required >
+                            <option value="NORMALLY_OPEN" selected>Normally Open</option>
+                            <option value="NORMALLY_CLOSED">Normally Closed</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Select a switch type.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="button" id="addNewSwitchModalAddButton" onclick="addNewSwitch_click();">Add</button>
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
 </body>
 
 <script>
 
-    client={};
-    colorList=[];
+    const maximumHIDsPerClient = 6;
+
+    var client={};
+    var colorList=[];
 
     var addNewButtonModal = new bootstrap.Modal('#addNewButtonModal');
+    var addNewSwitchModal = new bootstrap.Modal('#addNewSwitchModal');
 
     function toggleAddButtonModal(){
         addNewButtonModal.toggle();
+    }
+
+
+    function toggleAddSwitchModal(){
+        addNewSwitchModal.toggle();
     }
 
 
@@ -133,6 +175,15 @@
 
 
 
+    document.getElementById("addNewSwitchModal").addEventListener('show.bs.modal', () => {
+
+        form = document.getElementById("addNewSwitchForm");
+        form.reset();
+        form.classList.remove('was-validated');
+    });
+
+
+
     async function getClient(){
 
         try{
@@ -140,7 +191,7 @@
 
             await Promise.all(client.hids.map(async hid => {
                 [hid.color] = await Promise.all([
-                    db.colors.where('id').equals(hid.color).first()
+                    db.colors.where('id').equals(hid.color || []).first()
                 ])
             }));
 
@@ -169,7 +220,6 @@
 
 
     function getHIDLocation(total, hid){
-
 
         locations = {"1":[[200,300]],"2":[[200,200],[200,400]],"3":[[200,150],[200,300],[200,450]],"4":[[125,200],[275,200],[125,400],[275,400]],"5":[[125,150],[275,150],[125,300],[275,300],[200,450]],"6":[[125,150],[275,150],[125,300],[275,300],[125,450],[275,450]],"51":[[200,150],[125,300],[275,300],[125,450],[275,450]]};
 
@@ -240,12 +290,12 @@
 
         var svgns = "http://www.w3.org/2000/svg";
         var svg = document.getElementById('clientPreviewImage');
-        var addButtonButton = document.getElementById('addButtonButton');
+        var addNewHID = document.getElementById('addNewHID');
 
         try{
 
             if(!('hids' in client)){
-                addButtonButton.disabled = false;
+                addNewHID.disabled = false;
                 return;
             }
 
@@ -253,10 +303,14 @@
                 element.remove();
             }
 
-            if(client.hids.length >= 6){
-                addButtonButton.disabled = true;
+            for(const element of svg.querySelectorAll("rect")){
+                element.remove();
+            }
+
+            if(client.hids.length >= maximumHIDsPerClient){
+                addNewHID.disabled = true;
             }else{
-                addButtonButton.disabled = false;
+                addNewHID.disabled = false;
             }
 
             for(let i = 0; i < client.hids.length; i++){
@@ -290,6 +344,27 @@
 
                         break;
 
+                    case "SWITCH":
+
+                        var outterSwitch = document.createElementNS(svgns, "rect");
+                        outterSwitch.setAttributeNS(null, "x", (hidLocation[0]-50));
+                        outterSwitch.setAttributeNS(null, "y", (hidLocation[1]-30));
+                        outterSwitch.setAttributeNS(null, "height",  50);
+                        outterSwitch.setAttributeNS(null, "width",  100);
+                        outterSwitch.setAttributeNS(null, "fill", "#737373");
+                        outterSwitch.setAttribute("onclick", `editSwitch('${i}');`);
+                        svg.appendChild(outterSwitch);
+
+                        var innerSwitch = document.createElementNS(svgns, "rect");
+                        innerSwitch.setAttributeNS(null, "x", (hidLocation[0]-50));
+                        innerSwitch.setAttributeNS(null, "y", (hidLocation[1]-30));
+                        innerSwitch.setAttributeNS(null, "height",  50);
+                        innerSwitch.setAttributeNS(null, "width",  30);
+                        innerSwitch.setAttributeNS(null, "fill", "url('#innerGradient')");
+                        innerSwitch.setAttribute("onclick", `editSwitch('${i}');`);
+                        svg.appendChild(innerSwitch);
+                        break;
+
                     default:
                         throw new Error("Unknown HID type " + client.hids[i].type);
                         break;
@@ -313,8 +388,14 @@
 
             let hidEntry = `
             <tr>
-                <td class="align-middle">${i}</td>
-                <td class="align-middle">${hid.color.name}</td>
+                <td class="align-middle">${i}</td>`
+                
+            if(typeof hid.color == "undefined"){
+                hidEntry += `<td class="align-middle">Switch</td>`;
+            }else{
+                hidEntry += `<td class="align-middle">${hid.color.name}</td>`;
+            }
+                hidEntry += `
                 <td class="align-middle">${hid.enabled??"Yes"}</td>
                 <td class="align-middle">`
 
@@ -344,6 +425,11 @@
 
 
     function editButton(element){
+        console.log(element);
+    }
+
+
+    function editSwitch(element){
         console.log(element);
     }
 
@@ -439,7 +525,28 @@
     }
 
 
+    async function addNewSwitch_click(){
 
+        let form = document.getElementById("addNewSwitchForm");
+        form.checkValidity();
+        form.classList.add('was-validated');
+
+        if(!form.checkValidity()){
+            return;
+        }
+
+        await addNewSwitchToDatabase();
+        await getClient();
+        await toggleAddSwitchModal();
+    }
+
+
+    async function addNewSwitchToDatabase(){
+
+        await db.clients.where('id').equals(client.id).modify(client =>
+            client.hids.push({"type":"SWITCH", "switch_type":document.getElementById('addNewSwitchSwitchType').value})
+        );
+    }
 
 
     const urlParams = new URLSearchParams(window.location.search);
