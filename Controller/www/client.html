@@ -300,8 +300,13 @@
             }
 
             hidEntry += `</td>
-            <td><button class="btn btn-outline-danger" role="button" onclick="deleteHID(${i-1});">Delete</button></td>
-
+                <td><button type="button" class="btn btn-outline-danger" id="deleteHIDButtonChallenge_${i-1}" onclick="toggleConfirmDeleteHID(${i-1});">Delete</button>
+                    <div class="input-group" id="confirmDeleteHID_${i-1}" hidden>
+                            <input type="text" class="form-control" placeholder="type \'delete\'" id="confirmDeleteText_${i-1}" oninput="confirmDeleteHIDChallegeOnChange(${i-1});">
+                            <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteHID(${i-1})">Cancel</button>
+                            <button class="btn btn-outline-danger" type="button" id="deleteHIDButtonConfirmed_${i-1}" onclick="deleteHID(${i-1});" disabled>Delete</button>
+                    </div>
+                </td>
             </tr>`
 
             hidList.insertAdjacentHTML('beforeend', hidEntry);
@@ -313,6 +318,33 @@
 
     function editButton(element){
         console.log(element);
+    }
+
+
+    function toggleConfirmDeleteHID(name){
+
+        if(document.getElementById('deleteHIDButtonChallenge_'+name).hidden == false){
+            document.getElementById('deleteHIDButtonChallenge_'+name).hidden = true;
+            document.getElementById('confirmDeleteHID_'+name).hidden = false;
+        }else{
+            document.getElementById('deleteHIDButtonChallenge_'+name).hidden = false;
+            document.getElementById('confirmDeleteHID_'+name).hidden = true;
+            document.getElementById('confirmDeleteText_'+name).value = "";
+        }
+    }
+
+
+    function confirmDeleteHIDChallegeOnChange(name){
+
+        if(document.getElementById('confirmDeleteText_'+name).value == "delete"){
+            document.getElementById('deleteHIDButtonConfirmed_'+name).disabled = false;
+            document.getElementById('deleteHIDButtonConfirmed_'+name).classList.add('btn-danger');
+            document.getElementById('deleteHIDButtonConfirmed_'+name).classList.remove('btn-outline-danger');
+        }else{
+            document.getElementById('deleteHIDButtonConfirmed_'+name).disabled = true;
+            document.getElementById('deleteHIDButtonConfirmed_'+name).classList.add('btn-outline-danger');
+            document.getElementById('deleteHIDButtonConfirmed_'+name).classList.remove('btn-danger');
+        }
     }
 
 
