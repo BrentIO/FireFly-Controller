@@ -1080,13 +1080,6 @@ components:
           enum:
             - NORMALLY_OPEN
             - NORMALLY_CLOSED
-        change_state:
-          type: string
-          description: The action will be taken when the change state is observed
-          default: SHORT
-          enum:
-            - SHORT
-            - LONG
         enabled:
           type: boolean
           description: Indicates if the channel is enabled
@@ -1156,6 +1149,13 @@ components:
     action:
         type: object
         properties:
+          change_state:
+            type: string
+            description: The action will be taken when the change state is observed
+            default: SHORT
+            enum:
+              - SHORT
+              - LONG
           action:
             type: string
             description: Action to take
