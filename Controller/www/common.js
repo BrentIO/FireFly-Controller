@@ -412,5 +412,36 @@ async function deleteUnusedCustomRelayModels(){
             await db.relay_models.delete(relay_model.id);
         }
     }
+}
+
+
+function isValidUUID(value){
+    var regex =/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+    return regex.test(value);
+}
+
+
+function uuidEditFieldRealtimeValidation(element, type){
+    uuidElement = document.getElementById(element);
+
+    switch(type){
+        case "innerHTML":
+            value = uuidElement.innerHTML;
+            break;
+        case "innerText":
+            value = uuidElement.innerText;
+            break;
+        case "value":
+            value = uuidElement.value;
+    }
+
+    if(isValidUUID(value)){
+        uuidElement.classList.remove("is-invalid");
+        uuidElement.classList.add("is-valid");
+    }else{
+        uuidElement.classList.add("is-invalid");
+        uuidElement.classList.remove("is-valid");
+    }
+}
 
 }
