@@ -351,8 +351,6 @@ async function checkIfInUse_area(id){
 
 async function checkIfInUse_circuit(id){
 
-    assignedCircuits = [];
-
     circuits = await db.circuits.orderBy('name').toArray();
 
     if(circuits.length == 0){
@@ -365,6 +363,8 @@ async function checkIfInUse_circuit(id){
         ])
     }));
 
+    assignedCircuits = [];
+
     controllers = await db.controllers.toArray();
 
     controllers.forEach((controller) => {
@@ -373,9 +373,20 @@ async function checkIfInUse_circuit(id){
         }
     });
 
-
     if(assignedCircuits.includes(id)){
         return true;
+    }
+
+    clients = await db.clients.toArray();
+
+    for(var i=0; i < clients.length; i++){
+        for(var j=0; j < clients[i].hids.length; j++){
+            for(var k=0; i < clients[i].hids[j].actions.length; k++){
+                if(clients[i].hids[j].actions[k].circuit == id){
+                    return true;
+                }
+            }
+        }
     }
 
     return false;
@@ -453,6 +464,7 @@ function uuidEditFieldRealtimeValidation(element, type){
         uuidElement.classList.remove("is-valid");
     }
 }
+
 
 function move_array(theArray, from, to) {
     let numberOfDeletedElm = 1;
