@@ -1,3 +1,5 @@
+const maximumHIDsPerClient = 6;
+
 function eventHandler(e) {
     console.log(`Event: ${e}`);
     showToast(e);
@@ -451,5 +453,17 @@ function uuidEditFieldRealtimeValidation(element, type){
         uuidElement.classList.remove("is-valid");
     }
 }
+
+function move_array(theArray, from, to) {
+    let numberOfDeletedElm = 1;
+
+    const elm = theArray.splice(from, numberOfDeletedElm)[0];
+
+    numberOfDeletedElm = 0;
+
+    theArray.splice(to, numberOfDeletedElm, elm);
+    return theArray;
+}
+
 
 }

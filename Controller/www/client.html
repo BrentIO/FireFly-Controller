@@ -148,8 +148,6 @@
 
 <script>
 
-    const maximumHIDsPerClient = 6;
-
     var client={};
     var colorList=[];
 
@@ -488,18 +486,6 @@
         );
 
         await getClient();
-    }
-
-
-    function move_array(theArray, from, to) {
-        let numberOfDeletedElm = 1;
-
-        const elm = theArray.splice(from, numberOfDeletedElm)[0];
-
-        numberOfDeletedElm = 0;
-
-        theArray.splice(to, numberOfDeletedElm, elm);
-        return theArray;
     }
 
 
