@@ -364,7 +364,27 @@
     }
 
 
-    function drawHIDPicture(){
+    async function drawHIDPicture(){
+
+        client = await db.clients.where('id').equals(client.id).first();
+
+        await Promise.all(client.hids.map(async hid => {
+            [hid.color] = await Promise.all([
+                db.colors.where('id').equals(hid.color || []).first()
+            ]),
+            await Promise.all(hid.actions.map(async action => {
+                [action.circuit] = await Promise.all([
+                    db.circuits.where('id').equals(action.circuit).first()
+                ]),
+                [action.circuit.area] = await Promise.all([
+                    db.areas.where('id').equals(action.circuit.area).first()
+                ])
+            }))
+        }));
+
+        if(typeof client == "undefined"){
+            throw new Error("Invalid ID.");
+        };
 
         var svgns = "http://www.w3.org/2000/svg";
         var svg = document.getElementById('clientPreviewImage');
@@ -465,10 +485,24 @@
             if(typeof hid.color == "undefined"){
                 hidEntry += `<td class="align-middle">None</td>`;
             }else{
-                hidEntry += `<td class="align-middle">${hid.color.name}</td>`;
+                hidEntry += `<td class="align-middle">
+                <div class="editableDetails">
+                    <span id="ButtonColor_${i}" class="card-title mb-3">${hid.color.name}</span>
+                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editButtonColorIcon_${i}" onClick="startEdit(${i}, 'ButtonColor')";">
+                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveButtonColorIcon_${i}" onClick="saveEdit(${i}, 'ButtonColor')"; hidden>
+                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelButtonColorIcon_${i}" onClick="cancelEdit(${i}, 'ButtonColor')"; hidden>
+                </div>
+                </td>`;
             }
 
-            hidEntry += `<td class="align-middle">${hid.switch_type.replace("NORMALLY_OPEN", "Normally Open").replace("NORMALLY_CLOSED", "Normally Closed")}</td>
+            hidEntry += `<td class="align-middle">
+                <div class="editableDetails">
+                    <span id="SwitchType_${i}" class="card-title mb-3">${hid.switch_type.replace("NORMALLY_OPEN", "Normally Open").replace("NORMALLY_CLOSED", "Normally Closed")}</span>
+                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editSwitchTypeIcon_${i}" onClick="startEdit(${i}, 'SwitchType')";">
+                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveSwitchTypeIcon_${i}" onClick="saveEdit(${i}, 'SwitchType')"; hidden>
+                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelSwitchTypeIcon_${i}" onClick="cancelEdit(${i}, 'SwitchType')"; hidden>
+                </div>
+                </td>
             <td class="align-middle">`;
 
             j = 0;
@@ -520,7 +554,14 @@
                 <div><button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleAddActionModal(${i});">Add</button></div>
             </td>          
 
-            <td class="align-middle">${hid.enabled.toString().replace("true", "Yes").replace("false", "<span class='text-danger'>No<span>")}</td>
+            <td class="align-middle">
+                <div class="editableDetails">
+                    <span id="Enabled_${i}" class="card-title mb-3";>${hid.enabled.toString().replace("true", "Yes").replace("false", "No")}</span>
+                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editEnabledIcon_${i}" onClick="startEdit(${i}, 'Enabled')";">
+                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveEnabledIcon_${i}" onClick="saveEdit(${i}, 'Enabled')"; hidden>
+                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelEnabledIcon_${i}" onClick="cancelEdit(${i}, 'Enabled')"; hidden>
+                </div>
+            </td>
             <td class="align-middle">`
 
             if(i != 0){
@@ -770,6 +811,168 @@
             opt.innerHTML = `${circuit['name']}: ${circuit.area.name} ${circuit.description}`;
             circuitSelect.appendChild(opt);
         });  
+    }
+
+
+    function startEdit(id, fieldName){
+        switch(fieldName){
+
+            case 'SwitchType':
+                if(!document.getElementById("editSwitchTypeSelect_" + id)){
+                    element = document.getElementById("SwitchType_" +id);
+                    var selectList = document.createElement("select");
+                    selectList.id = "editSwitchTypeSelect_" + id;
+                    element.setAttribute("previous-value", element.innerText);
+                    element.innerText = "";
+                    element.appendChild(selectList);
+                }
+
+                editSwitchTypeSelect = document.getElementById("editSwitchTypeSelect_" + id);
+                editSwitchTypeSelect.hidden = false;
+
+                var i, L = editSwitchTypeSelect.options.length - 1;
+                for(i = L; i >= 0; i--) {
+                    editSwitchTypeSelect.remove(i);
+                }
+
+                options = [{"name":"Normally Open", "value":"NORMALLY_OPEN"},{"name":"Normally Closed", "value":"NORMALLY_CLOSED"}]
+
+                options.forEach((option) =>{
+                    var opt = document.createElement('option');
+                    opt.value = `${option['value']}`;
+                    opt.innerHTML = `${option['name']}`;
+                    if(opt.innerHTML == element.getAttribute("previous-value")){
+                        opt.selected = true;
+                    }
+                    editSwitchTypeSelect.appendChild(opt);
+                });
+                break;
+
+            case 'ButtonColor':
+                if(!document.getElementById("editButtonColorSelect_" + id)){
+                    element = document.getElementById("ButtonColor_" +id);
+                    var selectList = document.createElement("select");
+                    selectList.id = "editButtonColorSelect_" + id;
+                    element.setAttribute("previous-value", element.innerText);
+                    element.innerText = "";
+                    element.appendChild(selectList);
+                }
+
+                editButtonColorSelect = document.getElementById("editButtonColorSelect_" + id);
+                editButtonColorSelect.hidden = false;
+
+                var i, L = editButtonColorSelect.options.length - 1;
+                for(i = L; i >= 0; i--) {
+                    editButtonColorSelect.remove(i);
+                }
+
+                colorList.forEach((color) =>{
+                    var opt = document.createElement('option');
+                    opt.value = `${color['id']}`;
+                    opt.innerHTML = `${color['name']}`;
+                    if(opt.innerHTML == element.getAttribute("previous-value")){
+                        opt.selected = true;
+                    }
+                    editButtonColorSelect.appendChild(opt);
+                });
+                break;
+
+            case 'Enabled':
+
+                if(!document.getElementById("editEnabledSelect_" + id)){
+                    element = document.getElementById("Enabled_" +id);
+                    var selectList = document.createElement("select");
+                    selectList.id = "editEnabledSelect_" + id;
+                    element.setAttribute("previous-value", element.innerText);
+                    element.innerText = "";
+                    element.appendChild(selectList);
+                }
+            
+                editEnabledSelect = document.getElementById("editEnabledSelect_" + id);
+                editEnabledSelect.hidden = false;
+
+                var i, L = editEnabledSelect.options.length - 1;
+                for(i = L; i >= 0; i--) {
+                    editEnabledSelect.remove(i);
+                }
+
+                options = [{"name":"Yes", "value":"true"},{"name":"No", "value":"false"}]
+
+                options.forEach((option) =>{
+                    var opt = document.createElement('option');
+                    opt.value = `${option['value']}`;
+                    opt.innerHTML = `${option['name']}`;
+                    if(opt.innerHTML == element.getAttribute("previous-value")){
+                        opt.selected = true;
+                    }
+                    editEnabledSelect.appendChild(opt);
+                });
+                break;
+
+            default:
+                errorHandler("Field name " + fieldName + " is not known and cannot be edited");
+                break;
+        }
+
+        document.getElementById('edit' + fieldName + 'Icon_'+id).hidden = true;
+        document.getElementById('save' + fieldName + 'Icon_'+id).hidden = false;
+        document.getElementById('cancel' + fieldName + 'Icon_'+id).hidden = false;
+    }
+
+
+    function cancelEdit(id, fieldName){
+        element = document.getElementById(fieldName + "_" +id);
+        element.contentEditable = "false";
+        element.classList.remove("form-control");
+        element.innerText = element.getAttribute("previous-value");
+        document.getElementById('edit'+ fieldName + 'Icon_'+id).hidden = false;
+        document.getElementById('save'+ fieldName + 'Icon_'+id).hidden = true;
+        document.getElementById('cancel'+ fieldName + 'Icon_'+id).hidden = true;
+    }
+
+
+    async function saveEdit(id, fieldName){
+
+        switch(fieldName){
+
+            case 'SwitchType':
+                await db.clients.where('id').equals(client.id).modify(client =>{
+                    client.hids[id].switch_type = document.getElementById("editSwitchTypeSelect_" +id).options[document.getElementById("editSwitchTypeSelect_" +id).selectedIndex].value
+                });
+
+                document.getElementById("SwitchType_" +id).innerText = document.getElementById("editSwitchTypeSelect_" +id).options[document.getElementById("editSwitchTypeSelect_" +id).selectedIndex].text;
+                break;
+
+            case 'ButtonColor':
+                await db.clients.where('id').equals(client.id).modify(client =>{
+                    client.hids[id].color = parseInt(document.getElementById("editButtonColorSelect_" +id).options[document.getElementById("editButtonColorSelect_" +id).selectedIndex].value)
+                });
+
+                document.getElementById("ButtonColor_" +id).innerText = document.getElementById("editButtonColorSelect_" +id).options[document.getElementById("editButtonColorSelect_" +id).selectedIndex].text;
+                break;
+
+            case 'Enabled':
+                await db.clients.where('id').equals(client.id).modify(client =>{
+                    client.hids[id].enabled = (String(document.getElementById("editEnabledSelect_" +id).options[document.getElementById("editEnabledSelect_" +id).selectedIndex].value).toLowerCase() === 'true')
+                });
+
+                document.getElementById("Enabled_" +id).innerText = document.getElementById("editEnabledSelect_" +id).options[document.getElementById("editEnabledSelect_" +id).selectedIndex].text;
+                break;
+
+
+
+            default:
+                errorHandler("Field name " + fieldName + " is not known and will not be updated");
+                break;
+        }
+
+        element.contentEditable = "false";
+        element.classList.remove("form-control");
+        document.getElementById('edit'+ fieldName + 'Icon_'+id).hidden = false;
+        document.getElementById('save'+ fieldName + 'Icon_'+id).hidden = true;
+        document.getElementById('cancel'+ fieldName + 'Icon_'+id).hidden = true;
+
+        drawHIDPicture();
     }
 
 
