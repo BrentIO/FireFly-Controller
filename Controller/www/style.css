@@ -204,6 +204,11 @@
     background-color:#FAF9F6;
 }
 
+.actionDeleteButton{
+    height: 2em;
+    filter: brightness(0) saturate(100%) invert(32%) sepia(96%) saturate(7130%) hue-rotate(355deg) brightness(100%) contrast(119%);
+}
+
 @media screen and (max-width: 575px) {
     .applicationName {
         display: none !important;

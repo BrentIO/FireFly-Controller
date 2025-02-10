@@ -120,12 +120,12 @@
     <div class="modal fade" id="addNewSwitchModal" tabindex="-1" aria-labelledby="addNewSwitchModalLabel" data-bs-backdrop="static">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <form class="needs-validation" novalidate id="addNewSwitchForm">
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="addNewSwitchModalLabel">Add New Switch</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <form class="needs-validation" novalidate id="addNewSwitchForm">
                     <div class="input-group mb-3">
                         <span class="input-group-text">Switch Type</span>
                         <select class="form-select" aria-label="Type" id="addNewSwitchSwitchType" required >
@@ -136,11 +136,60 @@
                             Select a switch type.
                         </div>
                     </div>
+                    </form>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-primary" type="button" id="addNewSwitchModalAddButton" onclick="addNewSwitch_click();">Add</button>
                 </div>
-            </form>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Action Modal-->
+    <div class="modal fade" id="addActionModal" tabindex="-1" aria-labelledby="addActionModalLabel" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="addActionModalLabel">Add Action</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form class="needs-validation" novalidate id="addNewActionForm">
+                    <input type="hidden" id="addNewActionHID" name="addNewActionHID" value="">
+                    <div class="input-group mb-3 has-validation">
+                        
+                        <span class="input-group-text">When a</span>
+                        <select class="form-select" id="addNewActionChangeState" required>
+                            <option value="SHORT" selected>Short Change</option>
+                            <option value="LONG">Long Change</option>
+                        </select>
+                        <span class="input-group-text">is observed, make</span>
+
+                        <select class="form-select" id="addNewActionCircuit" required onchange="addActionDrawAvailableActionsForSelectedCircuit();">
+                        </select>
+                        <div class="invalid-feedback">
+                            You must select a circuit.
+                        </div>
+
+                        <select class="form-select" id="addNewActionAction" required disabled>
+                            <option value="" selected disabled>Select...</option>
+                            <option value="INCREASE">Increase</option>
+                            <option value="INCREASE_MAXIMUM">Increase Maximum</option>
+                            <option value="DECREASE">Decrease</option>
+                            <option value="DECREASE_MAXIMUM">Decrease Maximum</option>
+                            <option value="TOGGLE">Toggle</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Select an action to take.
+                        </div>
+                    
+                    </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="button" id="addNewSwitchModalAddButton" onclick="addActionSave_click();">Add</button>
+                </div>
             </div>
         </div>
     </div>
@@ -150,9 +199,13 @@
 
     var client={};
     var colorList=[];
+    var circuitList=[];
+
 
     var addNewButtonModal = new bootstrap.Modal('#addNewButtonModal');
     var addNewSwitchModal = new bootstrap.Modal('#addNewSwitchModal');
+    var addActionModal = new bootstrap.Modal('#addActionModal');
+
 
     function toggleAddButtonModal(){
         addNewButtonModal.toggle();
@@ -161,6 +214,15 @@
 
     function toggleAddSwitchModal(){
         addNewSwitchModal.toggle();
+    }
+
+
+    function toggleAddActionModal(element = null){
+
+        if(element != null){
+            document.getElementById("addNewActionHID").value = element;
+        }
+        addActionModal.toggle();
     }
 
 
@@ -174,7 +236,6 @@
     });
 
 
-
     document.getElementById("addNewSwitchModal").addEventListener('show.bs.modal', () => {
 
         form = document.getElementById("addNewSwitchForm");
@@ -183,6 +244,14 @@
     });
 
 
+    document.getElementById("addActionModal").addEventListener('show.bs.modal', () => {
+
+        form = document.getElementById("addNewActionForm");
+        form.reset();
+        document.getElementById('addNewActionCircuit').value = "";
+        document.getElementById('addNewActionAction').disabled = true;
+        form.classList.remove('was-validated');
+    });
 
     async function getClient(){
 
@@ -192,14 +261,24 @@
             await Promise.all(client.hids.map(async hid => {
                 [hid.color] = await Promise.all([
                     db.colors.where('id').equals(hid.color || []).first()
-                ])
+                ]),
+                await Promise.all(hid.actions.map(async action => {
+                    [action.circuit] = await Promise.all([
+                        db.circuits.where('id').equals(action.circuit).first()
+                    ]),
+                    [action.circuit.area] = await Promise.all([
+                        db.areas.where('id').equals(action.circuit.area).first()
+                    ])
+
+                }))
+
             }));
 
             if(typeof client == "undefined"){
                 throw new Error("Invalid ID.");
             };
 
-            document.getElementById("pageTitle").innerText = "Client " + client.name;
+            document.getElementById("pageTitle").innerText = client.name;
             document.getElementById("pageDescription").innerHTML = client.description;
 
             if(client.hids.length == 5){
@@ -208,8 +287,9 @@
                 document.getElementById("invertButton").hidden = true;
             }
 
-            drawHIDPicture();
-            drawHIDList();
+            await getCircuitList();
+            await drawHIDPicture();
+            await drawHIDList();
 
         }catch(exception){
             errorHandler(exception);
@@ -329,7 +409,6 @@
                         outterButton.setAttributeNS(null, "cy", hidLocation[1]);
                         outterButton.setAttributeNS(null, "r",  50);
                         outterButton.setAttributeNS(null, "fill", "url('#innerGradient')");
-                        outterButton.setAttribute("onclick", `editButton('${i}');`);
                         svg.appendChild(outterButton);
 
                         var innerButton = document.createElementNS(svgns, "circle");
@@ -339,20 +418,17 @@
                         innerButton.setAttributeNS(null, "stroke", `${client.hids[i]['color']['hex']}`);
                         innerButton.setAttributeNS(null, "stroke-width", "10px");
                         innerButton.setAttributeNS(null, "fill", "url('#innerGradient')");
-                        innerButton.setAttribute("onclick", `editButton('${i}');`);
                         svg.appendChild(innerButton);
 
                         break;
 
                     case "SWITCH":
-
                         var outterSwitch = document.createElementNS(svgns, "rect");
                         outterSwitch.setAttributeNS(null, "x", (hidLocation[0]-50));
                         outterSwitch.setAttributeNS(null, "y", (hidLocation[1]-30));
                         outterSwitch.setAttributeNS(null, "height",  50);
                         outterSwitch.setAttributeNS(null, "width",  100);
                         outterSwitch.setAttributeNS(null, "fill", "#737373");
-                        outterSwitch.setAttribute("onclick", `editSwitch('${i}');`);
                         svg.appendChild(outterSwitch);
 
                         var innerSwitch = document.createElementNS(svgns, "rect");
@@ -361,7 +437,6 @@
                         innerSwitch.setAttributeNS(null, "height",  50);
                         innerSwitch.setAttributeNS(null, "width",  30);
                         innerSwitch.setAttributeNS(null, "fill", "url('#innerGradient')");
-                        innerSwitch.setAttribute("onclick", `editSwitch('${i}');`);
                         svg.appendChild(innerSwitch);
                         break;
 
@@ -384,53 +459,105 @@
         let i=0;
 
         client.hids.forEach((hid) =>{
-            i++;
 
             let hidEntry = `
             <tr>
-                <td class="align-middle">${i}</td>`
-                
+                <td class="align-middle">${i+1}</td>`
+
             if(typeof hid.color == "undefined"){
-                hidEntry += `<td class="align-middle">Switch</td>`;
+                hidEntry += `<td class="align-middle">None</td>`;
             }else{
                 hidEntry += `<td class="align-middle">${hid.color.name}</td>`;
             }
-                hidEntry += `
-                <td class="align-middle">${hid.enabled??"Yes"}</td>
-                <td class="align-middle">`
 
-            if(i != 1){
-                hidEntry += `<button class="btn btn-outline-primary" role="button" onclick="moveHID(${i-1}, 'up');">&uarr;</button> `
+            hidEntry += `<td class="align-middle">${hid.switch_type.replace("NORMALLY_OPEN", "Normally Open").replace("NORMALLY_CLOSED", "Normally Closed")}</td>
+            <td class="align-middle">`;
+
+            j = 0;
+
+            hid.actions.forEach((action)=>{
+
+                var change_state = "";
+                var action_type = "";
+
+                switch(action.change_state){
+                    case "SHORT":
+                        change_state = "Short Change";
+                        break;
+                    case "LONG":
+                        change_state = "Long Change";
+                        break;
+                    default:
+                        change_state = "Unknown Change State";
+                        break;
+                }
+
+                switch (action.action){
+                    case "INCREASE":
+                        action_type = "Increase"; 
+                        break;
+                    case "INCREASE_MAXIMUM":
+                        action_type = "Increase Maximum";
+                        break;
+                    case "DECREASE":
+                        action_type = "Decrease";
+                        break;
+                    case "DECREASE_MAXIMUM":
+                        action_type = "Decrease Maximum";
+                        break;
+                    case "TOGGLE":
+                        action_type = "Toggle";
+                        break;
+                    default:
+                        break;
+                }
+
+                hidEntry += `<div>${change_state}: ${action_type} ${action.circuit.name}  ${action.circuit.area.name} ${action.circuit.description} <img src="./icons/delete_forever.svg" title="Delete" id="controllerAddButton" class="btn actionDeleteButton" role="button" onclick="deleteAction(${i},${j});"></div>`
+
+                j++;
+
+            })
+
+            hidEntry += `
+                <div><button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleAddActionModal(${i});">Add</button></div>
+            </td>          
+
+            <td class="align-middle">${hid.enabled.toString().replace("true", "Yes").replace("false", "<span class='text-danger'>No<span>")}</td>
+            <td class="align-middle">`
+
+            if(i != 0){
+                hidEntry += `<button class="btn btn-outline-primary" role="button" onclick="moveHID(${i}, 'up');">&uarr;</button> `
             }
 
-            if(i < client.hids.length){
-                hidEntry += ` <button class="btn btn-outline-primary" role="button" onclick="moveHID(${i-1}, 'down');">&darr;</button>`
+            if(i < client.hids.length-1){
+                hidEntry += ` <button class="btn btn-outline-primary" role="button" onclick="moveHID(${i}, 'down');">&darr;</button>`
             }
 
             hidEntry += `</td>
-                <td><button type="button" class="btn btn-outline-danger" id="deleteHIDButtonChallenge_${i-1}" onclick="toggleConfirmDeleteHID(${i-1});">Delete</button>
-                    <div class="input-group" id="confirmDeleteHID_${i-1}" hidden>
-                            <input type="text" class="form-control" placeholder="type \'delete\'" id="confirmDeleteText_${i-1}" oninput="confirmDeleteHIDChallegeOnChange(${i-1});">
-                            <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteHID(${i-1})">Cancel</button>
-                            <button class="btn btn-outline-danger" type="button" id="deleteHIDButtonConfirmed_${i-1}" onclick="deleteHID(${i-1});" disabled>Delete</button>
+                <td class="align-middle"><button type="button" class="btn btn-outline-danger" id="deleteHIDButtonChallenge_${i}" onclick="toggleConfirmDeleteHID(${i});">Delete</button>
+                    <div class="input-group" id="confirmDeleteHID_${i}" hidden>
+                            <input type="text" class="form-control" placeholder="type \'delete\'" id="confirmDeleteText_${i}" oninput="confirmDeleteHIDChallegeOnChange(${i});">
+                            <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteHID(${i})">Cancel</button>
+                            <button class="btn btn-outline-danger" type="button" id="deleteHIDButtonConfirmed_${i}" onclick="deleteHID(${i});" disabled>Delete</button>
                     </div>
                 </td>
             </tr>`
 
             hidList.insertAdjacentHTML('beforeend', hidEntry);
+            i++;
 
         });
-
     }
 
 
-    function editButton(element){
-        console.log(element);
-    }
+    async function deleteAction(hid, element){
 
+        await db.clients.where('id').equals(client.id).modify(client =>{
+            client.hids[hid].actions.splice(element, 1)
+        });
 
-    function editSwitch(element){
-        console.log(element);
+        await getClient();
+
     }
 
 
@@ -508,7 +635,7 @@
     async function addNewButtonToDatabase(){
 
         await db.clients.where('id').equals(client.id).modify(client =>
-            client.hids.push({"color": parseInt(document.getElementById('addNewButtonColor').value), "type":"BUTTON", "switch_type":document.getElementById('addNewButtonSwitchType').value})
+            client.hids.push({"color": parseInt(document.getElementById('addNewButtonColor').value), "type":"BUTTON", "switch_type":document.getElementById('addNewButtonSwitchType').value, "enabled": true, "actions":[]})
         );
     }
 
@@ -532,8 +659,119 @@
     async function addNewSwitchToDatabase(){
 
         await db.clients.where('id').equals(client.id).modify(client =>
-            client.hids.push({"type":"SWITCH", "switch_type":document.getElementById('addNewSwitchSwitchType').value})
+            client.hids.push({"type":"SWITCH", "switch_type":document.getElementById('addNewSwitchSwitchType').value, "enabled": true, "actions":[]})
         );
+    }
+
+
+    async function addActionSave_click(){
+
+        let form = document.getElementById("addNewActionForm");
+        form.checkValidity();
+        form.classList.add('was-validated');
+
+        if(!form.checkValidity()){
+            return;
+        }
+
+        await addNewActionToDatabase();
+        await getClient();
+        await toggleAddActionModal();
+    }
+
+
+    async function addNewActionToDatabase(){
+
+        await db.clients.where('id').equals(client.id).modify(client =>
+            client.hids[parseInt(document.getElementById("addNewActionHID").value)].actions.push({
+                "change_state": document.getElementById("addNewActionChangeState").value,
+                "circuit": parseInt(document.getElementById("addNewActionCircuit").value),
+                "action": document.getElementById("addNewActionAction").value
+            })
+        );
+
+    }
+
+
+    function addActionDrawAvailableActionsForSelectedCircuit(){
+
+        document.getElementById('addNewActionAction').value = "";
+
+        if(document.getElementById('addNewActionCircuit').value == ""){
+            document.getElementById('addNewActionAction').disabled = true;
+            
+            return;
+        }
+
+        document.getElementById('addNewActionAction').disabled = false;
+
+        circuitList.forEach((circuit) =>{
+
+            if(circuit.id == parseInt(document.getElementById('addNewActionCircuit').value)){
+
+                switch(circuit.relay.type){
+                    case "BINARY":
+
+                        for(var i = 0; i < document.getElementById('addNewActionAction').options.length; i++){
+                            if(document.getElementById('addNewActionAction').options[i].value.includes("INCREASE") || document.getElementById('addNewActionAction').options[i].value.includes("DECREASE")){
+                                document.getElementById('addNewActionAction').options[i].hidden = true;
+                            }
+                        }
+
+                        break;
+
+                    case "VARIABLE":
+
+                        for(var i = 0; i < document.getElementById('addNewActionAction').options.length; i++){
+                            if(document.getElementById('addNewActionAction').options[i].value.includes("INCREASE") || document.getElementById('addNewActionAction').options[i].value.includes("DECREASE")){
+                                document.getElementById('addNewActionAction').options[i].hidden = false;
+                            }
+                        }
+
+                        break;
+
+                    default:
+                        throw new Error("Unknown relay type " + circuit.relay.type);
+                        break;
+                }
+            }
+        });
+    }
+
+
+    async function getCircuitList(){
+  
+        let circuitSelect = document.getElementById("addNewActionCircuit");
+
+        var i, L = circuitSelect.options.length - 1;
+        for(i = L; i >= 0; i--) {
+            circuitSelect.remove(i);
+        }
+
+        var opt = document.createElement('option');
+        opt.value = "";
+        opt.disabled = true;
+        opt.selected = true;
+        opt.innerHTML = `Select...`;
+        circuitSelect.prepend(opt);
+
+        circuitList = await db.circuits.orderBy('name').toArray();
+
+        await Promise.all(circuitList.map(async circuit => {
+            [circuit.area] = await Promise.all([
+                db.areas.where('id').equals(circuit.area).first()
+            ]),
+            [circuit.relay] = await Promise.all([
+                db.relay_models.where('id').equals(circuit.relay_model).first()
+            ])
+        }));
+
+        circuitList.forEach((circuit) =>{
+            var opt = document.createElement('option');
+            opt.value = circuit['id'];
+            opt.innerHTML = `${circuit['name']}: ${circuit.area.name} ${circuit.description}`;
+            circuitSelect.appendChild(opt);
+        });  
     }
 
 
