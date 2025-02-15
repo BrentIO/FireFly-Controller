@@ -61,6 +61,14 @@
                             A description is required.
                         </div>
                     </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Area</span>
+                        <select class="form-select" aria-label="Area" id="addNewClientArea" required >
+                        </select>
+                        <div class="invalid-feedback">
+                            Select an area where the client is located.
+                        </div>
+                    </div>
                     <div class="input-group mb-3 has-validation">
                         <span class="input-group-text">UUID</span>
                         <input class="form-control uuid" id="addNewClientUUID" placeholder="" aria-label="UUID" required onInput="uuidEditFieldRealtimeValidation('addNewClientUUID','value')">
@@ -82,7 +90,14 @@
 <script>
     var addNewClientModal = new bootstrap.Modal('#addNewClientModal');
 
+    var areaList = [];
+
     document.getElementById("addNewClientModal").addEventListener('show.bs.modal', () => {
+
+        if(areaList.length == 0){
+            warningHandler("You must add an area before you can add a client.");
+            return;
+        }
 
         form = document.getElementById("addNewClientForm");
         form.reset();
@@ -137,6 +152,7 @@
                 name: document.getElementById("addNewClientName").value.trim().slice(0,8),
                 description: document.getElementById("addNewClientDescription").value.trim().slice(0,20),
                 uuid: document.getElementById("addNewClientUUID").value.trim().slice(0,36),
+                area: parseInt(document.getElementById("addNewClientArea").value),
                 hids:[]
             });
 
@@ -148,59 +164,84 @@
 
     async function drawManagedClients(){
 
-        let managedClientCards = document.getElementById("managedClientCards");
-        managedClientCards.innerHTML = '';
+        try{
 
-        const clients = await db.clients.orderBy('name').toArray();
+            await getAreaList();
+
+            let managedClientCards = document.getElementById("managedClientCards");
+            managedClientCards.innerHTML = '';
+
+            const clients = await db.clients.orderBy('name').toArray();
+
+            await Promise.all(clients.map(async client => {
+                [client.area] = await Promise.all([
+                    db.areas.where('id').equals(client.area).first()
+                ])
+            }));
+
+            if(clients.length == 0){
+                document.getElementById("managedClientCardsEmpty").hidden = false;
+                document.getElementById("managedClientCards").hidden = true;
+            }else{
+                document.getElementById("managedClientCardsEmpty").hidden = true;
+                document.getElementById("managedClientCards").hidden = false;
+            }
+
+            clients.forEach((client) => {
+
+                let newClientCard = `
+                    <div class="col">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <div class="editableDetails">
+                                        <span id="Name_${client.id}" class="card-title mb-3 h3" onInput="editFieldRealtimeValidation(${client.id}, 'Name')";>${client.name}</span>
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editNameIcon_${client.id}" onClick="startEdit(${client.id}, 'Name')";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveNameIcon_${client.id}" onClick="saveEdit(${client.id}, 'Name')"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelNameIcon_${client.id}" onClick="cancelEdit(${client.id}, 'Name')"; hidden>
+                                    </div>
+                                    <div class="editableDetails">
+                                        <span class="col clientDetailsLabel">Description:</span> <span id="Description_${client.id}" onInput="editFieldRealtimeValidation(${client.id}, 'Description')";>${client.description}</span>
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editDescriptionIcon_${client.id}" onClick="startEdit(${client.id}, 'Description')";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveDescriptionIcon_${client.id}" onClick="saveEdit(${client.id}, 'Description')"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelDescriptionIcon_${client.id}" onClick="cancelEdit(${client.id}, 'Description')"; hidden>
+                                    </div>
+                                     <div class="editableDetails">
+                                        <span class="col circuitDetailsLabel">Area:</span> <span id="Area_${client.id}">${client.area.name}</span>
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editAreaIcon_${client.id}" onClick="startEdit(${client.id}, 'Area')";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveAreaIcon_${client.id}" onClick="saveEdit(${client.id}, 'Area')"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelAreaIcon_${client.id}" onClick="cancelEdit(${client.id}, 'Area')"; hidden>
+                                    </div>
+                                    <div class="editableDetails">
+                                        <span class="col clientDetailsLabel">UUID:</span> <span class="uuid" id="UUID_${client.id}" onInput="editFieldRealtimeValidation(${client.id}, 'UUID')";>${client.uuid}</span>
+                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editUUIDIcon_${client.id}" onClick="startEdit(${client.id}, 'UUID')";">
+                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveUUIDIcon_${client.id}" onClick="saveEdit(${client.id}, 'UUID')"; hidden>
+                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelUUIDIcon_${client.id}" onClick="cancelEdit(${client.id}, 'UUID')"; hidden>
+                                    </div>`
+
+                                if(client.hids.length > 4){
+                                    newClientCard += `<div class="alert alert-primary" role="alert">This client requires multiple input ports.</div>`
+                                }
 
 
-        if(clients.length == 0){
-            document.getElementById("managedClientCardsEmpty").hidden = false;
-            document.getElementById("managedClientCards").hidden = true;
-        }else{
-            document.getElementById("managedClientCardsEmpty").hidden = true;
-            document.getElementById("managedClientCards").hidden = false;
-        }
-
-        clients.forEach((client) => {
-
-            let newClientCard = `
-                <div class="col">
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <div class="d-grid gap-2">
-                                <div class="editableDetails">
-                                    <span id="Name_${client.id}" class="card-title mb-3 h3" onInput="editFieldRealtimeValidation(${client.id}, 'Name')";>${client.name}</span>
-                                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editNameIcon_${client.id}" onClick="startEdit(${client.id}, 'Name')";">
-                                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveNameIcon_${client.id}" onClick="saveEdit(${client.id}, 'Name')"; hidden>
-                                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelNameIcon_${client.id}" onClick="cancelEdit(${client.id}, 'Name')"; hidden>
-                                </div>
-                                <div class="editableDetails">
-                                    <span class="col clientDetailsLabel">Description:</span> <span id="Description_${client.id}" onInput="editFieldRealtimeValidation(${client.id}, 'Description')";>${client.description}</span>
-                                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editDescriptionIcon_${client.id}" onClick="startEdit(${client.id}, 'Description')";">
-                                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveDescriptionIcon_${client.id}" onClick="saveEdit(${client.id}, 'Description')"; hidden>
-                                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelDescriptionIcon_${client.id}" onClick="cancelEdit(${client.id}, 'Description')"; hidden>
-                                </div>
-                                <div class="editableDetails">
-                                    <span class="col clientDetailsLabel">UUID:</span> <span class="uuid" id="UUID_${client.id}" onInput="editFieldRealtimeValidation(${client.id}, 'UUID')";>${client.uuid}</span>
-                                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editUUIDIcon_${client.id}" onClick="startEdit(${client.id}, 'UUID')";">
-                                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveUUIDIcon_${client.id}" onClick="saveEdit(${client.id}, 'UUID')"; hidden>
-                                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelUUIDIcon_${client.id}" onClick="cancelEdit(${client.id}, 'UUID')"; hidden>
-                                </div>
-                                <button class="btn btn-primary" onClick="window.location.href = './client.html?id=${client.id}';">Edit Buttons/Switches</button>
-                                <button type="button" class="btn btn-outline-danger" id="deleteClientButtonChallenge_${client.id}" onclick="toggleConfirmDeleteClient(${client.id});">Delete</button>
-                                <div class="input-group" id="confirmDeleteClient_${client.id}" hidden>
-                                        <input type="text" class="form-control" placeholder="type \'delete\'" id="confirmDeleteText_${client.id}" oninput="confirmDeleteClientChallegeOnChange(${client.id});">
-                                        <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteClient(${client.id})">Cancel</button>
-                                        <button class="btn btn-outline-danger" type="button" id="deleteClientButtonConfirmed_${client.id}" onclick="deleteClient(${client.id});" disabled>Delete</button>
+                                newClientCard +=`<button class="btn btn-primary" onClick="window.location.href = './client.html?id=${client.id}';">Edit Buttons/Switches</button>
+                                    <button type="button" class="btn btn-outline-danger" id="deleteClientButtonChallenge_${client.id}" onclick="toggleConfirmDeleteClient(${client.id});">Delete</button>
+                                    <div class="input-group" id="confirmDeleteClient_${client.id}" hidden>
+                                            <input type="text" class="form-control" placeholder="type \'delete\'" id="confirmDeleteText_${client.id}" oninput="confirmDeleteClientChallegeOnChange(${client.id});">
+                                            <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteClient(${client.id})">Cancel</button>
+                                            <button class="btn btn-outline-danger" type="button" id="deleteClientButtonConfirmed_${client.id}" onclick="deleteClient(${client.id});" disabled>Delete</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>`
+                    </div>`
 
-            managedClientCards.insertAdjacentHTML('beforeend', newClientCard);
-        });
+                managedClientCards.insertAdjacentHTML('beforeend', newClientCard);
+            });
+        }
+        catch (exception){
+            errorHandler(exception);
+        }
     }
 
 
@@ -254,6 +295,36 @@
                 element.classList.add("form-control");
                 editFieldRealtimeValidation(id, fieldName);
                 break;
+
+            case 'Area':
+                if(!document.getElementById("editAreaSelect_" + id)){
+                    element = document.getElementById("Area_" +id);
+                    var selectList = document.createElement("select");
+                    selectList.id = "editAreaSelect_" + id;
+                    element.setAttribute("previous-value", element.innerText);
+                    element.innerText = "";
+                    element.appendChild(selectList);
+                }
+
+                editAreaSelect = document.getElementById("editAreaSelect_" + id);
+                editAreaSelect.hidden = false;
+
+                var i, L = editAreaSelect.options.length - 1;
+                for(i = L; i >= 0; i--) {
+                    editAreaSelect.remove(i);
+                }
+
+                areaList.forEach((area) =>{
+                    var opt = document.createElement('option');
+                    opt.value = `${area['id']}`;
+                    opt.innerHTML = `${area['name']}`;
+                    if(opt.innerHTML == element.getAttribute("previous-value")){
+                        opt.selected = true;
+                    }
+                    editAreaSelect.appendChild(opt);
+                });
+                break;
+
             case 'UUID':
                 element = document.getElementById(fieldName + "_" +id);
                 element.setAttribute("previous-value", element.innerText);
@@ -317,6 +388,12 @@
             case 'Description':
                 await db.clients.update(id, {description: value});
                 break;
+            case 'Area':
+                element = document.getElementById("editAreaSelect_" +id);
+                await db.clients.update(id, {area: parseInt(element.value)});
+                document.getElementById("editAreaSelect_" +id).hidden = true;
+                document.getElementById("Area_" +id).innerText = document.getElementById("editAreaSelect_" +id).options[document.getElementById("editAreaSelect_" +id).selectedIndex].text;
+                break;
             case 'UUID':
                 if(isValidUUID(value)){
                     await db.clients.update(id, {uuid: value});
@@ -338,6 +415,32 @@
     }
 
 
+    async function getAreaList(){
+
+        let areaSelect = document.getElementById("addNewClientArea");
+
+        var i, L = areaSelect.options.length - 1;
+        for(i = L; i >= 0; i--) {
+            areaSelect.remove(i);
+        }
+
+        areaList = await db.areas.orderBy('name').toArray()
+
+        areaList.forEach((area) =>{
+            var opt = document.createElement('option');
+            opt.value = `${area['id']}`;
+            opt.innerHTML = `${area['name']}`;
+            areaSelect.appendChild(opt);
+        });
+
+        var opt = document.createElement('option');
+        opt.value = "";
+        opt.selected = true;
+        opt.innerHTML = `Select...`;
+        areaSelect.prepend(opt);
+    }
+    
+    
     drawManagedClients();
 
 </script>
