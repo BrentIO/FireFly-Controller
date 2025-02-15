@@ -123,7 +123,7 @@
         let uuidField = document.getElementById("addNewClientUUID");
 
         if(uuidField.value == ""){
-            uuidField.value = self.crypto.randomUUID();
+            uuidField.value = randomUUID();
         }
 
         uuidEditFieldRealtimeValidation('addNewClientUUID','value')

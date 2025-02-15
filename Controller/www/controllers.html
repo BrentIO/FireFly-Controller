@@ -184,7 +184,7 @@
         let uuidField = document.getElementById("addNewControllerUUID");
 
         if(uuidField.value == ""){
-            uuidField.value = self.crypto.randomUUID();
+            uuidField.value = randomUUID();
         }
 
         uuidEditFieldRealtimeValidation('addNewControllerUUID','value')
