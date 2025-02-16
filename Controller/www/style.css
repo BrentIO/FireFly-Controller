@@ -193,13 +193,13 @@
 .availableClient{
     font-size: smaller;
     .card{
-        background-color: #c0e7c3;
+        background-color: #ffc885;
         text-align: center;
         min-height: 130px;
         max-width: 130px;
     }
     .extendedClient{
-        background-color: #ebf9ff;
+        background-color: #ffefdb;
     }
 }
 
@@ -220,13 +220,13 @@
 }
 
 .assignedInputPort{
-    background-color: #c0e7c3;
+    background-color: #ffc885;
     .additionalDetail{
         text-align: center;
         font-size: smaller;
     }
     .extendedClient{
-        background-color: #ebf9ff;
+        background-color: #ffefdb;
     }
 }
 
@@ -268,7 +268,7 @@
 }
 
 .extendedClient{
-    background-color: #ebf9ff;
+    background-color: #ffefdb;
 }
 
 .actionDeleteButton{
