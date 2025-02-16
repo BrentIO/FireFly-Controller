@@ -219,7 +219,7 @@
                                         <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelUUIDIcon_${client.id}" onClick="cancelEdit(${client.id}, 'UUID')"; hidden>
                                     </div>`
 
-                                if(client.hids.length > 4){
+                                if(client.hids.length > maximumHIDsPerInputPort){
                                     newClientCard += `<div class="alert alert-primary" role="alert">This client requires multiple input ports.</div>`
                                 }
 

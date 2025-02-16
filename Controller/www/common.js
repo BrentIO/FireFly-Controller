@@ -1,4 +1,5 @@
 const maximumHIDsPerClient = 6;
+const maximumHIDsPerInputPort = 4;
 
 function eventHandler(e) {
     console.log(`Event: ${e}`);
