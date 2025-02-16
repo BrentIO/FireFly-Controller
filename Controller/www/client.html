@@ -198,6 +198,7 @@
 <script>
 
     var client={};
+    var combinedHIDList=[];
     var colorList=[];
     var circuitList=[];
 
@@ -258,7 +259,19 @@
         try{
             client = await db.clients.where('id').equals(parseInt(urlParams.get('id'))).first();
 
-            await Promise.all(client.hids.map(async hid => {
+            if(typeof client == "undefined"){
+                throw new Error("Invalid ID.");
+            };
+
+            combinedHIDList = [];
+            combinedHIDList = combinedHIDList.concat(client.hids.slice());
+
+            if(typeof client.extends != "undefined"){
+                client.extends = await db.clients.where('id').equals(client.extends || {}).first();
+                combinedHIDList = combinedHIDList.concat(client.extends.hids.slice());
+            };
+
+            await Promise.all(combinedHIDList.map(async hid => {
                 [hid.color] = await Promise.all([
                     db.colors.where('id').equals(hid.color || []).first()
                 ]),
@@ -272,14 +285,10 @@
                 }))
             }));
 
-            if(typeof client == "undefined"){
-                throw new Error("Invalid ID.");
-            };
-
             document.getElementById("pageTitle").innerText = client.name;
             document.getElementById("pageDescription").innerHTML = client.description;
 
-            if(client.hids.length == 5){
+            if(combinedHIDList.length == 5){
                 document.getElementById("invertButton").hidden = false;
             }else{
                 document.getElementById("invertButton").hidden = true;
@@ -366,37 +375,12 @@
 
     async function drawHIDPicture(){
 
-        client = await db.clients.where('id').equals(client.id).first();
-
-        await Promise.all(client.hids.map(async hid => {
-            [hid.color] = await Promise.all([
-                db.colors.where('id').equals(hid.color || []).first()
-            ]),
-            await Promise.all(hid.actions.map(async action => {
-                [action.circuit] = await Promise.all([
-                    db.circuits.where('id').equals(action.circuit).first()
-                ]),
-                [action.circuit.area] = await Promise.all([
-                    db.areas.where('id').equals(action.circuit.area).first()
-                ])
-            }))
-        }));
-
-        if(typeof client == "undefined"){
-            throw new Error("Invalid ID.");
-        };
-
         var svgns = "http://www.w3.org/2000/svg";
         var svg = document.getElementById('clientPreviewImage');
         var addNewHID = document.getElementById('addNewHID');
 
         try{
-
-            if(!('hids' in client)){
-                addNewHID.disabled = false;
-                return;
-            }
-
+           
             for(const element of svg.querySelectorAll("circle")){
                 element.remove();
             }
@@ -405,21 +389,27 @@
                 element.remove();
             }
 
-            if(client.hids.length >= maximumHIDsPerClient){
+            maximumHIDsThisClient = maximumHIDsPerInputPort;
+
+            if(typeof client.extends != "undefined"){
+                maximumHIDsThisClient = maximumHIDsPerClient;
+            }
+            
+            if(combinedHIDList.length >= maximumHIDsThisClient){
                 addNewHID.disabled = true;
             }else{
                 addNewHID.disabled = false;
             }
 
-            for(let i = 0; i < client.hids.length; i++){
+            for(let i = 0; i < combinedHIDList.length; i++){
 
-                hidLocation = getHIDLocation(client.hids.length, i);
+                hidLocation = getHIDLocation(combinedHIDList.length, i);
 
-                if(client.hids.length == 5 && document.getElementById("invertButton").classList.contains("active")){
+                if(combinedHIDList.length == 5 && document.getElementById("invertButton").classList.contains("active")){
                     hidLocation = getHIDLocation(51, i);
                 }
 
-                switch(client.hids[i].type){
+                switch(combinedHIDList[i].type){
 
                     case "BUTTON":
                         var outterButton = document.createElementNS(svgns, "circle");
@@ -433,7 +423,7 @@
                         innerButton.setAttributeNS(null, "cx", hidLocation[0]);
                         innerButton.setAttributeNS(null, "cy", hidLocation[1]);
                         innerButton.setAttributeNS(null, "r",  33);
-                        innerButton.setAttributeNS(null, "stroke", `${client.hids[i]['color']['hex']}`);
+                        innerButton.setAttributeNS(null, "stroke", `${combinedHIDList[i]['color']['hex']}`);
                         innerButton.setAttributeNS(null, "stroke-width", "10px");
                         innerButton.setAttributeNS(null, "fill", "url('#innerGradient')");
                         svg.appendChild(innerButton);
@@ -459,7 +449,7 @@
                         break;
 
                     default:
-                        throw new Error("Unknown HID type " + client.hids[i].type);
+                        throw new Error("Unknown HID type " + combinedHIDList[i].type);
                         break;
                 }
             }
@@ -476,7 +466,7 @@
 
         let i=0;
 
-        client.hids.forEach((hid) =>{
+        combinedHIDList.forEach((hid) =>{
 
             let hidEntry = `
             <tr>
@@ -568,7 +558,7 @@
                 hidEntry += `<button class="btn btn-outline-primary" role="button" onclick="moveHID(${i}, 'up');">&uarr;</button> `
             }
 
-            if(i < client.hids.length-1){
+            if(i < combinedHIDList.length-1){
                 hidEntry += ` <button class="btn btn-outline-primary" role="button" onclick="moveHID(${i}, 'down');">&darr;</button>`
             }
 
@@ -591,12 +581,10 @@
 
     async function deleteAction(hid, element){
 
-        await db.clients.where('id').equals(client.id).modify(client =>{
-            client.hids[hid].actions.splice(element, 1)
-        });
+        combinedHIDList[hid].actions.splice(element, 1);
 
+        await writeHIDsToDatabase();
         await getClient();
-
     }
 
 
@@ -629,10 +617,9 @@
 
     async function deleteHID(element){
 
-        await db.clients.where('id').equals(client.id).modify(client =>{
-            client.hids.splice(element, 1)
-        });
+        combinedHIDList.splice(element, 1);
 
+        await writeHIDsToDatabase();
         await getClient();
     }
 
@@ -647,10 +634,9 @@
             destination--;
         }
 
-        await db.clients.where('id').equals(client.id).modify(client =>
-            client.hids = move_array(client.hids, element, destination)
-        );
+        combinedHIDList = move_array(combinedHIDList, element, destination);
 
+        await writeHIDsToDatabase();
         await getClient();
     }
 
@@ -671,11 +657,38 @@
     }
 
 
-    async function addNewButtonToDatabase(){
+    async function writeHIDsToDatabase(){
+
+        for(i = 0; i < combinedHIDList.length; i++){
+
+            if(combinedHIDList[i].type == "BUTTON"){
+                if(typeof combinedHIDList[i].color.id != "undefined"){
+                    combinedHIDList[i].color = combinedHIDList[i].color.id;
+                }    
+            }
+
+            for(j=0; j < combinedHIDList[i].actions.length; j++){
+                if(typeof combinedHIDList[i].actions[j].circuit.id != "undefined"){
+                    combinedHIDList[i].actions[j].circuit = combinedHIDList[i].actions[j].circuit.id;
+                }
+            }
+        }
 
         await db.clients.where('id').equals(client.id).modify(client =>
-            client.hids.push({"color": parseInt(document.getElementById('addNewButtonColor').value), "type":"BUTTON", "switch_type":document.getElementById('addNewButtonSwitchType').value, "enabled": true, "actions":[]})
+            client.hids = combinedHIDList.slice(0,maximumHIDsPerInputPort)
         );
+
+        if(typeof client.extends != "undefined"){
+            await db.clients.where('id').equals(client.extends.id).modify(client =>
+                client.hids = combinedHIDList.slice(maximumHIDsPerInputPort,maximumHIDsPerClient)
+            );
+        };
+    }
+
+
+    async function addNewButtonToDatabase(){
+        combinedHIDList.push({"color": parseInt(document.getElementById('addNewButtonColor').value), "type":"BUTTON", "switch_type":document.getElementById('addNewButtonSwitchType').value, "enabled": true, "actions":[]});
+        await writeHIDsToDatabase();
     }
 
 
@@ -697,9 +710,8 @@
 
     async function addNewSwitchToDatabase(){
 
-        await db.clients.where('id').equals(client.id).modify(client =>
-            client.hids.push({"type":"SWITCH", "switch_type":document.getElementById('addNewSwitchSwitchType').value, "enabled": true, "actions":[]})
-        );
+        combinedHIDList.push({"type":"SWITCH", "switch_type":document.getElementById('addNewSwitchSwitchType').value, "enabled": true, "actions":[]});
+        await writeHIDsToDatabase();
     }
 
 
@@ -721,14 +733,13 @@
 
     async function addNewActionToDatabase(){
 
-        await db.clients.where('id').equals(client.id).modify(client =>
-            client.hids[parseInt(document.getElementById("addNewActionHID").value)].actions.push({
+        combinedHIDList[parseInt(document.getElementById("addNewActionHID").value)].actions.push({
                 "change_state": document.getElementById("addNewActionChangeState").value,
                 "circuit": parseInt(document.getElementById("addNewActionCircuit").value),
                 "action": document.getElementById("addNewActionAction").value
-            })
-        );
+            });
 
+        await writeHIDsToDatabase();
     }
 
 
@@ -936,30 +947,22 @@
         switch(fieldName){
 
             case 'SwitchType':
-                await db.clients.where('id').equals(client.id).modify(client =>{
-                    client.hids[id].switch_type = document.getElementById("editSwitchTypeSelect_" +id).options[document.getElementById("editSwitchTypeSelect_" +id).selectedIndex].value
-                });
-
+                combinedHIDList[id].switch_type = document.getElementById("editSwitchTypeSelect_" +id).options[document.getElementById("editSwitchTypeSelect_" +id).selectedIndex].value;
+                await writeHIDsToDatabase();
                 document.getElementById("SwitchType_" +id).innerText = document.getElementById("editSwitchTypeSelect_" +id).options[document.getElementById("editSwitchTypeSelect_" +id).selectedIndex].text;
                 break;
 
             case 'ButtonColor':
-                await db.clients.where('id').equals(client.id).modify(client =>{
-                    client.hids[id].color = parseInt(document.getElementById("editButtonColorSelect_" +id).options[document.getElementById("editButtonColorSelect_" +id).selectedIndex].value)
-                });
-
+                combinedHIDList[id].color = parseInt(document.getElementById("editButtonColorSelect_" +id).options[document.getElementById("editButtonColorSelect_" +id).selectedIndex].value);
+                await writeHIDsToDatabase();
                 document.getElementById("ButtonColor_" +id).innerText = document.getElementById("editButtonColorSelect_" +id).options[document.getElementById("editButtonColorSelect_" +id).selectedIndex].text;
                 break;
 
             case 'Enabled':
-                await db.clients.where('id').equals(client.id).modify(client =>{
-                    client.hids[id].enabled = (String(document.getElementById("editEnabledSelect_" +id).options[document.getElementById("editEnabledSelect_" +id).selectedIndex].value).toLowerCase() === 'true')
-                });
-
+                combinedHIDList[id].enabled = (String(document.getElementById("editEnabledSelect_" +id).options[document.getElementById("editEnabledSelect_" +id).selectedIndex].value).toLowerCase() === 'true');
+                await writeHIDsToDatabase();
                 document.getElementById("Enabled_" +id).innerText = document.getElementById("editEnabledSelect_" +id).options[document.getElementById("editEnabledSelect_" +id).selectedIndex].text;
                 break;
-
-
 
             default:
                 errorHandler("Field name " + fieldName + " is not known and will not be updated");
@@ -972,7 +975,8 @@
         document.getElementById('save'+ fieldName + 'Icon_'+id).hidden = true;
         document.getElementById('cancel'+ fieldName + 'Icon_'+id).hidden = true;
 
-        drawHIDPicture();
+        await getClient();
+        await drawHIDPicture();
     }
 
 
