@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu(null, "menuItemInputs");
+        initDB();
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark"></div>
+            <div class="col py-3">
+                <div class="pageTitle">Inputs</div>
+                <div class="pageDescription">Inputs map clients to physical input ports on the controller.</div>
+                <div>
+                    <h2>Assignable Clients</h2>
+                    <div id="clientCardList" class="row"></div>
+                    <div id="clientCardListEmpty" hidden>All clients have been assigned.</div>
+                    <div style="height: 3em;"></div>
+
+                    <div id="controllerCardList"></div>
+                    <div id="controllerCardListEmpty" hidden>Add a controller to assign an input.</div>
+                    <div id="deleteClientAssignmentArea" ondrop="assignedClientDrop(event);"  ondragover="{event.preventDefault();}" hidden>Unassign</div>
+            </div> 
+        </div>
+    </div>
+</body>
+<script>
+
+async function drawAllControllerInputs(){
+
+    let controllers = await db.controllers.orderBy('name').toArray();
+
+    await Promise.all(controllers.map(async controller => {
+        [controller.product] = await Promise.all([
+            db.controller_products.where('id').equals(controller.product).first()
+        ]), 
+        await Promise.all(Object.entries(controller.inputs).map(async client => {
+            [controller.inputs[client.at(0)]] = await Promise.all([
+                db.clients.where('id').equals(client.at(1)).first()
+            ])
+        })),
+        await Promise.all(Object.entries(controller.inputs).map(async client => {
+            [controller.inputs[client.at(0)].area] = await Promise.all([
+                db.areas.where('id').equals(client.at(1).area).first()
+            ])
+        }))
+    }));
+
+    if(controllers.length == 0){
+
+        let controllerCardListEmpty = document.getElementById("controllerCardListEmpty");
+        controllerCardListEmpty.hidden = false;
+        return;
+    }
+
+    let controllerCardList = document.getElementById("controllerCardList");
+    controllerCardList.innerHTML = '';
+
+    controllers.forEach((controller) => {
+        
+        let newControllerCard = `
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="card-title mb-3 h3">${controller.name}</div>
+                        <div class="container">
+                            <div class="row" id="controller_${controller.id}_inputPorts">
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+
+        controllerCardList.insertAdjacentHTML('beforeend', newControllerCard);
+
+        let inputPorts = document.getElementById(`controller_${controller.id}_inputPorts`);
+        inputPorts.innerHTML = '';
+
+        for (let i = 1; i <= controller.product.inputs.count; i++) {
+
+            if(controller.inputs[i] == undefined){
+                newInputPort = `
+                    <div class="col">
+                        <div class="inputPort availableInputPort" id="controller_${controller.id}_port_${i}" controllerId="${controller.id}" port="${i}" ondrop="assignedClientCardDrop(event);"  ondragover="{event.preventDefault();}">
+                            <div class="inputPortLabel">Port ${i}</div>
+                            <div class="inputPortBody"></div>
+                        </div>
+                    </div>`
+            }else{
+
+                newInputPort = `
+                    <div class="col">
+                        <div class="inputPort assignedInputPort" draggable="true" controllerId="${controller.id}" port="${i}" clientId="${controller.inputs[i].id}" ondragstart="assignedClientDragStart(event);" ondragover="{event.preventDefault();}" ondragend="assignedClientDragEnd(event);">
+                            <div class="inputPortLabel">Port ${i}</div>
+                            <div class="inputPortBody h3" id="controller_${controller.id}_port_${i}">${controller.inputs[i].name}</div>
+                            <div class="additionalDetail">${controller.inputs[i].area.name}</div>
+                            <div class="additionalDetail">${controller.inputs[i].description}</div>
+                        </div>
+                    </div>`
+            }
+            inputPorts.insertAdjacentHTML('beforeend', newInputPort);
+        }
+    });
+
+}
+
+
+async function drawAvailableClients(){
+
+    assignedClients = [];
+
+    clients = await db.clients.orderBy('name').toArray();
+
+    await Promise.all(clients.map(async client => {
+        [client.area] = await Promise.all([
+            db.areas.where('id').equals(client.area).first()
+        ])
+    }));
+
+    controllers = await db.controllers.toArray();
+
+    controllers.forEach((controller) => {
+        for (const [key, value] of Object.entries(controller.inputs)) {
+            assignedClients.push(value);
+        }
+    });
+
+    let clientCardListEmpty = document.getElementById("clientCardListEmpty");
+    clientCardListEmpty.hidden = false;
+
+    let clientCardList = document.getElementById('clientCardList');
+    clientCardList.innerHTML = '';
+
+    clients.forEach((client) => {
+
+        if(assignedClients.includes(client.id)){
+            return;
+        }
+
+        newAvailableClient = `
+            <div class="availableClient col">
+                <div class="card mb-3" id="client_${client.id}" clientId="${client.id}" draggable="true" ondragstart="availableClientOnDragStart(event);">
+                    <div class="card-body">
+                        <div class="card-title mb-3 h3">${client.name}</div>
+                        <div>${client.area.name}</div>
+                        <div>${client.description}</div>
+                    </div>
+                </div>
+            </div>`;
+
+        clientCardList.insertAdjacentHTML('beforeend', newAvailableClient);
+        
+        clientCardListEmpty.hidden = true;
+
+    });
+}
+
+
+function availableClientOnDragStart(event){
+        event.dataTransfer.setData("clientId", event.target.getAttribute("clientId"));
+    }
+
+
+function assignedClientDragStart(event){
+
+    event.dataTransfer.setData("clientId", event.target.getAttribute("clientId"));
+    event.dataTransfer.setData("controllerId", event.target.getAttribute("controllerId"));
+    event.dataTransfer.setData("port", event.target.getAttribute("port"));
+
+    let deleteClientAssignmentArea = document.getElementById('deleteClientAssignmentArea');
+    deleteClientAssignmentArea.hidden = false;
+}
+
+
+function assignedClientDragEnd(event){
+    let deleteClientAssignmentArea = document.getElementById('deleteClientAssignmentArea');
+    deleteClientAssignmentArea.hidden = true;
+}
+
+
+async function assignedClientCardDrop(event){
+
+    try{
+        if(isNaN(parseInt(event.dataTransfer.getData("clientId")))){
+            throw new Error("Invalid client ID");
+        }
+
+        if(event.dataTransfer.getData("port") !=""){
+
+            if(isNaN(parseInt(event.dataTransfer.getData("controllerId")))){
+                throw new Error("Invalid controller ID");
+            }
+
+            deleteClientAssignment(parseInt(event.dataTransfer.getData("controllerId")), event.dataTransfer.getData("port"));
+        }
+
+        assignClientToPort(parseInt(event.target.getAttribute("controllerId")), event.target.getAttribute("port"), parseInt(event.dataTransfer.getData("clientId")));
+
+    }catch (error){
+        errorHandler(error);
+    }
+
+    await drawAvailableClients();
+    await drawAllControllerInputs();
+}
+
+
+async function assignedClientDrop(event){
+
+    try{
+
+        if(isNaN(parseInt(event.dataTransfer.getData("controllerId")))){
+                throw new Error("Invalid controller ID");
+        }
+
+        if(event.dataTransfer.getData("port") == ""){
+            throw new Error("Invalid port");
+        }
+
+        deleteClientAssignment(parseInt(event.dataTransfer.getData("controllerId")), event.dataTransfer.getData("port"));
+
+    }catch (error){
+        errorHandler(error);
+    }
+
+    await drawAvailableClients();
+    await drawAllControllerInputs();
+}
+
+
+async function deleteClientAssignmentEvent(event){
+
+    await deleteClientAssignment(parseInt(event.target.getAttribute("controllerId")), event.target.getAttribute("port"));
+    await drawAvailableClients();
+    await drawAllControllerInputs();
+}
+
+
+async function assignClientToPort(controllerId, port, clientId){
+    try{
+        await db.controllers.update(controllerId, {[`inputs.${port}`]: clientId});
+    }
+    catch (error){
+        errorHandler(error);
+    }
+}
+
+
+async function deleteClientAssignment(controllerId, port){
+    try{
+        await db.controllers.where({id: controllerId}).modify(function(record) {
+
+            for (const [key, value] of Object.entries(record.inputs)) {
+                if(key == port){
+                    delete record.inputs[port];
+                }
+            }
+        });
+    }
+    catch (error){
+        errorHandler(error);
+    }
+}
+
+    drawAvailableClients();
+    drawAllControllerInputs();
+
+</script>
+</html>
