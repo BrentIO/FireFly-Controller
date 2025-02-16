@@ -91,6 +91,8 @@
     var addNewClientModal = new bootstrap.Modal('#addNewClientModal');
 
     var areaList = [];
+    var clients = [];
+    var extendedClients = [];
 
     document.getElementById("addNewClientModal").addEventListener('show.bs.modal', () => {
 
@@ -165,17 +167,20 @@
     async function drawManagedClients(){
 
         try{
-
             await getAreaList();
+            await getExtendedClients();
 
             let managedClientCards = document.getElementById("managedClientCards");
             managedClientCards.innerHTML = '';
 
-            const clients = await db.clients.orderBy('name').toArray();
+            clients = await db.clients.orderBy('name').toArray();
 
             await Promise.all(clients.map(async client => {
                 [client.area] = await Promise.all([
                     db.areas.where('id').equals(client.area).first()
+                ]),
+                [client.extends] = await Promise.all([
+                    db.clients.where('id').equals(client.extends || []).first()
                 ])
             }));
 
@@ -192,7 +197,7 @@
                 let newClientCard = `
                     <div class="col">
                         <div class="card mb-3">
-                            <div class="card-body">
+                            <div class="card-body" id="Card_${client.id}">
                                 <div class="d-grid gap-2">
                                     <div class="editableDetails">
                                         <span id="Name_${client.id}" class="card-title mb-3 h3" onInput="editFieldRealtimeValidation(${client.id}, 'Name')";>${client.name}</span>
@@ -211,26 +216,42 @@
                                         <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editAreaIcon_${client.id}" onClick="startEdit(${client.id}, 'Area')";">
                                         <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveAreaIcon_${client.id}" onClick="saveEdit(${client.id}, 'Area')"; hidden>
                                         <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelAreaIcon_${client.id}" onClick="cancelEdit(${client.id}, 'Area')"; hidden>
-                                    </div>
-                                    <div class="editableDetails">
-                                        <span class="col clientDetailsLabel">UUID:</span> <span class="uuid" id="UUID_${client.id}" onInput="editFieldRealtimeValidation(${client.id}, 'UUID')";>${client.uuid}</span>
-                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editUUIDIcon_${client.id}" onClick="startEdit(${client.id}, 'UUID')";">
-                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveUUIDIcon_${client.id}" onClick="saveEdit(${client.id}, 'UUID')"; hidden>
-                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelUUIDIcon_${client.id}" onClick="cancelEdit(${client.id}, 'UUID')"; hidden>
                                     </div>`
 
-                                if(client.hids.length > maximumHIDsPerInputPort){
-                                    newClientCard += `<div class="alert alert-primary" role="alert">This client requires multiple input ports.</div>`
-                                }
+                                    if(extendedClients.includes(client.id)){
+                                        newClientCard +=`<div class="alert alert-info" role="alert">This client is being extended.</div>`;
+                                    }
 
+                                    if(!extendedClients.includes(client.id)){
+                                        newClientCard +=`<div class="editableDetails">`
 
-                                newClientCard +=`<button class="btn btn-primary" onClick="window.location.href = './client.html?id=${client.id}';">Edit Buttons/Switches</button>
-                                    <button type="button" class="btn btn-outline-danger" id="deleteClientButtonChallenge_${client.id}" onclick="toggleConfirmDeleteClient(${client.id});">Delete</button>
-                                    <div class="input-group" id="confirmDeleteClient_${client.id}" hidden>
-                                            <input type="text" class="form-control" placeholder="type \'delete\'" id="confirmDeleteText_${client.id}" oninput="confirmDeleteClientChallegeOnChange(${client.id});">
-                                            <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteClient(${client.id})">Cancel</button>
-                                            <button class="btn btn-outline-danger" type="button" id="deleteClientButtonConfirmed_${client.id}" onclick="deleteClient(${client.id});" disabled>Delete</button>
-                                    </div>
+                                            if(typeof client.extends != "undefined"){
+                                                newClientCard +=`<span class="col circuitDetailsLabel">Extends:</span> <span id="Extends_${client.id}">${client.extends.name}</span>`
+                                            }else{
+                                                newClientCard +=`<span class="col circuitDetailsLabel">Extends:</span> <span id="Extends_${client.id}">None</span>`
+                                            }
+                                    
+                                            newClientCard +=`
+                                            <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editExtendsIcon_${client.id}" onClick="startEdit(${client.id}, 'Extends')";">
+                                            <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveExtendsIcon_${client.id}" onClick="saveEdit(${client.id}, 'Extends')"; hidden>
+                                            <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelExtendsIcon_${client.id}" onClick="cancelEdit(${client.id}, 'Extends')"; hidden>
+                                        </div>
+                                        <div class="editableDetails">
+                                            <span class="col clientDetailsLabel">UUID:</span> <span class="uuid" id="UUID_${client.id}" onInput="editFieldRealtimeValidation(${client.id}, 'UUID')";>${client.uuid}</span>
+                                            <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editUUIDIcon_${client.id}" onClick="startEdit(${client.id}, 'UUID')";">
+                                            <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveUUIDIcon_${client.id}" onClick="saveEdit(${client.id}, 'UUID')"; hidden>
+                                            <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelUUIDIcon_${client.id}" onClick="cancelEdit(${client.id}, 'UUID')"; hidden>
+                                        </div>
+                                        <button class="btn btn-primary" onClick="window.location.href = './client.html?id=${client.id}';">Edit Buttons/Switches</button>
+                                        <button type="button" class="btn btn-outline-danger" id="deleteClientButtonChallenge_${client.id}" onclick="toggleConfirmDeleteClient(${client.id});">Delete</button>
+                                        <div class="input-group" id="confirmDeleteClient_${client.id}" hidden>
+                                                <input type="text" class="form-control" placeholder="type \'delete\'" id="confirmDeleteText_${client.id}" oninput="confirmDeleteClientChallegeOnChange(${client.id});">
+                                                <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteClient(${client.id})">Cancel</button>
+                                                <button class="btn btn-outline-danger" type="button" id="deleteClientButtonConfirmed_${client.id}" onclick="deleteClient(${client.id});" disabled>Delete</button>
+                                        </div>`
+
+                                    }
+                                    newClientCard +=`
                                 </div>
                             </div>
                         </div>
@@ -325,6 +346,54 @@
                 });
                 break;
 
+            case 'Extends':
+                if(!document.getElementById("editExtendsSelect_" + id)){
+                    element = document.getElementById("Extends_" +id);
+                    var selectList = document.createElement("select");
+                    selectList.id = "editExtendsSelect_" + id;
+                    element.setAttribute("previous-value", element.innerText);
+                    element.innerText = "";
+                    element.appendChild(selectList);
+                }
+
+                editExtendsSelect = document.getElementById("editExtendsSelect_" + id);
+                editExtendsSelect.hidden = false;
+
+                var i, L = editExtendsSelect.options.length - 1;
+
+                for(i = L; i >= 0; i--) {
+                    editExtendsSelect.remove(i);
+                }
+
+                var opt = document.createElement('option');
+                opt.value = "";
+                opt.innerHTML = `None`;
+                editExtendsSelect.prepend(opt);
+
+                clients.forEach((client) =>{
+                    if(id == client.id){
+                        return;
+                    }
+
+                    if(extendedClients.includes(client.id)){
+                        return;
+                    }
+
+                    if(typeof client.extends != "undefined"){
+                        return;
+                    }
+
+                    var opt = document.createElement('option');
+                    opt.value = `${client['id']}`;
+                    opt.innerHTML = `${client['name']}`;
+
+                    if(opt.innerHTML == document.getElementById("Extends_" +id).getAttribute("previous-value")??""){
+                        opt.selected = true;
+                    }
+                    editExtendsSelect.appendChild(opt);
+                });
+                break;
+
             case 'UUID':
                 element = document.getElementById(fieldName + "_" +id);
                 element.setAttribute("previous-value", element.innerText);
@@ -394,6 +463,17 @@
                 document.getElementById("editAreaSelect_" +id).hidden = true;
                 document.getElementById("Area_" +id).innerText = document.getElementById("editAreaSelect_" +id).options[document.getElementById("editAreaSelect_" +id).selectedIndex].text;
                 break;
+            case 'Extends':
+                element = document.getElementById("editExtendsSelect_" +id);
+                if(element.value == ""){
+                    await db.clients.where({id: id}).modify(function(record) {
+                        delete record.extends;
+                    });
+                }else{
+                    await db.clients.update(id, {extends: parseInt(element.value)});
+                }
+                await drawManagedClients();
+                break;
             case 'UUID':
                 if(isValidUUID(value)){
                     await db.clients.update(id, {uuid: value});
@@ -440,6 +520,20 @@
         areaSelect.prepend(opt);
     }
     
+
+    async function getExtendedClients(){
+
+        extendedClients = [];
+
+        clientList =  await db.clients.orderBy('name').toArray()
+
+        clientList.forEach((client)=>{
+
+            if(typeof client.extends != "undefined"){
+                extendedClients.push(client.extends);
+            }
+        });
+    }
     
     drawManagedClients();
 

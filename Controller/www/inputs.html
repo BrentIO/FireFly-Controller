@@ -42,7 +42,11 @@
 </body>
 <script>
 
+extendedClients = [];
+
 async function drawAllControllerInputs(){
+
+    await getExtendedClients();
 
     let controllers = await db.controllers.orderBy('name').toArray();
 
@@ -104,15 +108,21 @@ async function drawAllControllerInputs(){
 
                 newInputPort = `
                     <div class="col">
-                        <div class="inputPort assignedInputPort" draggable="true" controllerId="${controller.id}" port="${i}" clientId="${controller.inputs[i].id}" ondragstart="assignedClientDragStart(event);" ondragover="{event.preventDefault();}" ondragend="assignedClientDragEnd(event);">
+                        <div class="inputPort assignedInputPort" id="controller_${controller.id}_port_${i}" draggable="true" controllerId="${controller.id}" port="${i}" clientId="${controller.inputs[i].id}" ondragstart="assignedClientDragStart(event);" ondragover="{event.preventDefault();}" ondragend="assignedClientDragEnd(event);">
                             <div class="inputPortLabel">Port ${i}</div>
-                            <div class="inputPortBody h3" id="controller_${controller.id}_port_${i}">${controller.inputs[i].name}</div>
+                            <div class="inputPortBody h3" >${controller.inputs[i].name}</div>
                             <div class="additionalDetail">${controller.inputs[i].area.name}</div>
                             <div class="additionalDetail">${controller.inputs[i].description}</div>
                         </div>
                     </div>`
             }
             inputPorts.insertAdjacentHTML('beforeend', newInputPort);
+
+            if(controller.inputs[i] != undefined){
+                if(extendedClients.includes(controller.inputs[i].id)){
+                    document.getElementById(`controller_${controller.id}_port_${i}`).classList.add("extendedClient");
+                }
+            }
         }
     });
 
@@ -122,6 +132,8 @@ async function drawAllControllerInputs(){
 async function drawAvailableClients(){
 
     assignedClients = [];
+
+    await getExtendedClients();
 
     clients = await db.clients.orderBy('name').toArray();
 
@@ -163,6 +175,10 @@ async function drawAvailableClients(){
             </div>`;
 
         clientCardList.insertAdjacentHTML('beforeend', newAvailableClient);
+
+        if(extendedClients.includes(client.id)){
+            document.getElementById(`client_${client.id}`).classList.add("extendedClient");
+        }
         
         clientCardListEmpty.hidden = true;
 
@@ -274,6 +290,21 @@ async function deleteClientAssignment(controllerId, port){
     catch (error){
         errorHandler(error);
     }
+}
+
+    
+async function getExtendedClients(){
+
+    extendedClients = [];
+
+    clientList =  await db.clients.orderBy('name').toArray()
+
+    clientList.forEach((client)=>{
+
+        if(typeof client.extends != "undefined"){
+            extendedClients.push(client.extends);
+        }
+    });
 }
 
     drawAvailableClients();
