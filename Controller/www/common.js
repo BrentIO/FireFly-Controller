@@ -352,18 +352,6 @@ async function checkIfInUse_area(id){
 
 async function checkIfInUse_circuit(id){
 
-    circuits = await db.circuits.orderBy('name').toArray();
-
-    if(circuits.length == 0){
-        return false;
-    }
-
-    await Promise.all(circuits.map(async circuit => {
-        [circuit.area] = await Promise.all([
-            db.areas.where('id').equals(circuit.area).first()
-        ])
-    }));
-
     assignedCircuits = [];
 
     controllers = await db.controllers.toArray();
