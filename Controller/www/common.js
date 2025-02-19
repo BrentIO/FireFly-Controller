@@ -400,7 +400,29 @@ async function checkIfInUse_controller(id){
 
 async function checkIfInUse_client(id){
 
-    console.log("TO DO");
+    assignedInputs = [];
+
+    controllers = await db.controllers.toArray();
+
+    controllers.forEach((controller) => {
+        for (const [key, value] of Object.entries(controller.inputs)) {
+            assignedInputs.push(value);
+        }
+    });
+
+    if(assignedInputs.includes(id)){
+        return true;
+    }
+
+    let clients = await db.clients.toArray();
+
+    for(var i = 0; i < clients.length; i++){
+        if("extends" in clients[i]){
+            if(clients[i].extends == id){
+                return true;
+            }
+        }
+    }
 
     return false;
 }
