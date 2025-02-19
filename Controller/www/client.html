@@ -265,10 +265,12 @@
 
             combinedHIDList = [];
             combinedHIDList = combinedHIDList.concat(client.hids.slice());
+            combinedHIDList = combinedHIDList.slice(0,maximumHIDsPerInputPort);
 
             if(typeof client.extends != "undefined"){
                 client.extends = await db.clients.where('id').equals(client.extends || {}).first();
                 combinedHIDList = combinedHIDList.concat(client.extends.hids.slice());
+                combinedHIDList = combinedHIDList.slice(0,maximumHIDsPerClient);
             };
 
             await Promise.all(combinedHIDList.map(async hid => {
