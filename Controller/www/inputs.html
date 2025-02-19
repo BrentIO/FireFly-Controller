@@ -48,7 +48,7 @@ async function drawAllControllerInputs(){
 
     await getExtendedClients();
 
-    let controllers = await db.controllers.orderBy('name').toArray();
+    var controllers = await db.controllers.orderBy('name').toArray();
 
     await Promise.all(controllers.map(async controller => {
         [controller.product] = await Promise.all([
@@ -68,17 +68,17 @@ async function drawAllControllerInputs(){
 
     if(controllers.length == 0){
 
-        let controllerCardListEmpty = document.getElementById("controllerCardListEmpty");
+        var controllerCardListEmpty = document.getElementById("controllerCardListEmpty");
         controllerCardListEmpty.hidden = false;
         return;
     }
 
-    let controllerCardList = document.getElementById("controllerCardList");
+    var controllerCardList = document.getElementById("controllerCardList");
     controllerCardList.innerHTML = '';
 
     controllers.forEach((controller) => {
         
-        let newControllerCard = `
+        var newControllerCard = `
                 <div class="card mb-3">
                     <div class="card-body">
                         <div class="card-title mb-3 h3">${controller.name}</div>
@@ -91,7 +91,7 @@ async function drawAllControllerInputs(){
 
         controllerCardList.insertAdjacentHTML('beforeend', newControllerCard);
 
-        let inputPorts = document.getElementById(`controller_${controller.id}_inputPorts`);
+        var inputPorts = document.getElementById(`controller_${controllers[i].id}_inputPorts`);
         inputPorts.innerHTML = '';
 
         for (let i = 1; i <= controller.product.inputs.count; i++) {
@@ -135,7 +135,7 @@ async function drawAvailableClients(){
 
     await getExtendedClients();
 
-    clients = await db.clients.orderBy('name').toArray();
+    var clients = await db.clients.orderBy('name').toArray();
 
     await Promise.all(clients.map(async client => {
         [client.area] = await Promise.all([
@@ -143,7 +143,7 @@ async function drawAvailableClients(){
         ])
     }));
 
-    controllers = await db.controllers.toArray();
+    var controllers = await db.controllers.toArray();
 
     controllers.forEach((controller) => {
         for (const [key, value] of Object.entries(controller.inputs)) {
