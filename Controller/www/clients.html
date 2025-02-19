@@ -375,7 +375,7 @@
                         return;
                     }
 
-                    if(extendedClients.includes(client.id)){
+                    if(extendedClients.includes(client.id) && client.name != document.getElementById("Extends_" +id).getAttribute("previous-value")){
                         return;
                     }
 
