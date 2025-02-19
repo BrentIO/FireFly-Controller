@@ -382,7 +382,7 @@ async function checkIfInUse_circuit(id){
 
     for(var i=0; i < clients.length; i++){
         for(var j=0; j < clients[i].hids.length; j++){
-            for(var k=0; i < clients[i].hids[j].actions.length; k++){
+            for(var k=0; k < clients[i].hids[j].actions.length; k++){
                 if(clients[i].hids[j].actions[k].circuit == id){
                     return true;
                 }
