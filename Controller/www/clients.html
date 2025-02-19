@@ -385,9 +385,9 @@
 
                     var opt = document.createElement('option');
                     opt.value = `${client['id']}`;
-                    opt.innerHTML = `${client['name']}`;
+                    opt.innerText = `${client['name']}`;
 
-                    if(opt.innerHTML == document.getElementById("Extends_" +id).getAttribute("previous-value")??""){
+                    if(opt.innerText == document.getElementById("Extends_" +id).getAttribute("previous-value")??""){
                         opt.selected = true;
                     }
                     editExtendsSelect.appendChild(opt);
