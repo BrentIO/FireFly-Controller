@@ -76,14 +76,14 @@ async function drawAllControllerInputs(){
     var controllerCardList = document.getElementById("controllerCardList");
     controllerCardList.innerHTML = '';
 
-    controllers.forEach((controller) => {
+    for(var i=0; i < controllers.length; i++){
         
         var newControllerCard = `
                 <div class="card mb-3">
                     <div class="card-body">
-                        <div class="card-title mb-3 h3">${controller.name}</div>
+                        <div class="card-title mb-3 h3">${controllers[i].name}</div>
                         <div class="container">
-                            <div class="row" id="controller_${controller.id}_inputPorts">
+                            <div class="row" id="controller_${controllers[i].id}_inputPorts">
                             </div>
                         </div>
                     </div>
@@ -94,38 +94,39 @@ async function drawAllControllerInputs(){
         var inputPorts = document.getElementById(`controller_${controllers[i].id}_inputPorts`);
         inputPorts.innerHTML = '';
 
-        for (let i = 1; i <= controller.product.inputs.count; i++) {
+        for (var j = 1; j <= controllers[i].product.inputs.count; j++) {
 
-            if(controller.inputs[i] == undefined){
+            if(controllers[i].inputs[j] == undefined){
                 newInputPort = `
                     <div class="col">
-                        <div class="inputPort availableInputPort" id="controller_${controller.id}_port_${i}" controllerId="${controller.id}" port="${i}" ondrop="assignedClientCardDrop(event);"  ondragover="{event.preventDefault();}">
-                            <div class="inputPortLabel">Port ${i}</div>
+                        <div class="inputPort availableInputPort" id="controller_${controllers[i].id}_port_${j}" controllerId="${controllers[i].id}" port="${j}" ondrop="assignedClientCardDrop(event);"  ondragover="{event.preventDefault();}">
+                            <div class="inputPortLabel">Port ${j}</div>
                             <div class="inputPortBody"></div>
                         </div>
                     </div>`
             }else{
 
+                controllerAssignmentRestriction = await getControllerAssignmentRestriction(controllers[i].inputs[j].id);
+
                 newInputPort = `
                     <div class="col">
-                        <div class="inputPort assignedInputPort" id="controller_${controller.id}_port_${i}" draggable="true" controllerId="${controller.id}" port="${i}" clientId="${controller.inputs[i].id}" ondragstart="assignedClientDragStart(event);" ondragover="{event.preventDefault();}" ondragend="assignedClientDragEnd(event);">
-                            <div class="inputPortLabel">Port ${i}</div>
-                            <div class="inputPortBody h3" >${controller.inputs[i].name}</div>
-                            <div class="additionalDetail">${controller.inputs[i].area.name}</div>
-                            <div class="additionalDetail">${controller.inputs[i].description}</div>
+                        <div class="inputPort assignedInputPort" id="controller_${controllers[i].id}_port_${j}" draggable="true" controllerId="${controllers[i].id}" port="${j}" clientId="${controllers[i].inputs[j].id}" controllerAssignmentRestriction="${controllerAssignmentRestriction??""}" ondragstart="assignedClientDragStart(event);" ondragover="{event.preventDefault();}" ondragend="assignedClientDragEnd(event);">
+                            <div class="inputPortLabel">Port ${j}</div>
+                            <div class="inputPortBody h3" >${controllers[i].inputs[j].name}</div>
+                            <div class="additionalDetail">${controllers[i].inputs[j].area.name}</div>
+                            <div class="additionalDetail">${controllers[i].inputs[j].description}</div>
                         </div>
                     </div>`
             }
             inputPorts.insertAdjacentHTML('beforeend', newInputPort);
 
-            if(controller.inputs[i] != undefined){
-                if(extendedClients.includes(controller.inputs[i].id)){
-                    document.getElementById(`controller_${controller.id}_port_${i}`).classList.add("extendedClient");
+            if(controllers[i].inputs[j] != undefined){
+                if(extendedClients.includes(controllers[i].inputs[j].id)){
+                    document.getElementById(`controller_${controllers[i].id}_port_${j}`).classList.add("extendedClient");
                 }
             }
         }
-    });
-
+    }
 }
 
 
@@ -157,44 +158,47 @@ async function drawAvailableClients(){
     let clientCardList = document.getElementById('clientCardList');
     clientCardList.innerHTML = '';
 
-    clients.forEach((client) => {
+    for(var i=0; i < clients.length; i++){
 
-        if(assignedClients.includes(client.id)){
-            return;
+        if(assignedClients.includes(clients[i].id)){
+            continue;
         }
+
+        controllerAssignmentRestriction = await getControllerAssignmentRestriction(clients[i].id);
 
         newAvailableClient = `
             <div class="availableClient col">
-                <div class="card mb-3" id="client_${client.id}" clientId="${client.id}" draggable="true" ondragstart="availableClientOnDragStart(event);">
+                <div class="card mb-3" id="client_${clients[i].id}" clientId="${clients[i].id}" controllerAssignmentRestriction="${controllerAssignmentRestriction??""}" draggable="true" ondragstart="availableClientOnDragStart(event);">
                     <div class="card-body">
-                        <div class="card-title mb-3 h3">${client.name}</div>
-                        <div>${client.area.name}</div>
-                        <div>${client.description}</div>
+                        <div class="card-title mb-3 h3">${clients[i].name}</div>
+                        <div>${clients[i].area.name}</div>
+                        <div>${clients[i].description}</div>
                     </div>
                 </div>
             </div>`;
 
         clientCardList.insertAdjacentHTML('beforeend', newAvailableClient);
 
-        if(extendedClients.includes(client.id)){
-            document.getElementById(`client_${client.id}`).classList.add("extendedClient");
+        if(extendedClients.includes(clients[i].id)){
+            document.getElementById(`client_${clients[i].id}`).classList.add("extendedClient");
         }
         
         clientCardListEmpty.hidden = true;
-
-    });
+    }
 }
 
 
 function availableClientOnDragStart(event){
         event.dataTransfer.setData("clientId", event.target.getAttribute("clientId"));
-    }
+        event.dataTransfer.setData("controllerAssignmentRestriction", event.target.getAttribute("controllerAssignmentRestriction"));
+}
 
 
 function assignedClientDragStart(event){
 
     event.dataTransfer.setData("clientId", event.target.getAttribute("clientId"));
     event.dataTransfer.setData("controllerId", event.target.getAttribute("controllerId"));
+    event.dataTransfer.setData("controllerAssignmentRestriction", event.target.getAttribute("controllerAssignmentRestriction"));
     event.dataTransfer.setData("port", event.target.getAttribute("port"));
 
     let deleteClientAssignmentArea = document.getElementById('deleteClientAssignmentArea');
@@ -211,20 +215,42 @@ function assignedClientDragEnd(event){
 async function assignedClientCardDrop(event){
 
     try{
-        if(isNaN(parseInt(event.dataTransfer.getData("clientId")))){
+
+        var clientId = parseInt(event.dataTransfer.getData("clientId"));
+        var origin_controllerId = parseInt(event.dataTransfer.getData("controllerId"));
+        var origin_port = parseInt(event.dataTransfer.getData("port"));
+        var destination_controllerId = parseInt(event.target.getAttribute("controllerId"));
+        var destination_port = parseInt(event.target.getAttribute("port"));
+
+        if(isNaN(clientId)){
             throw new Error("Invalid client ID");
         }
 
-        if(event.dataTransfer.getData("port") !=""){
-
-            if(isNaN(parseInt(event.dataTransfer.getData("controllerId")))){
-                throw new Error("Invalid controller ID");
-            }
-
-            deleteClientAssignment(parseInt(event.dataTransfer.getData("controllerId")), event.dataTransfer.getData("port"));
+        if(isNaN(destination_controllerId)){
+            throw new Error("Invalid destination controller ID");
         }
 
-        assignClientToPort(parseInt(event.target.getAttribute("controllerId")), event.target.getAttribute("port"), parseInt(event.dataTransfer.getData("clientId")));
+        if(isNaN(destination_port)){
+            throw new Error("Invalid destination controller port");
+        }
+
+        if(event.dataTransfer.getData("controllerAssignmentRestriction") != ""){           
+            if(parseInt(event.dataTransfer.getData("controllerAssignmentRestriction")) != destination_controllerId){
+                var controller = await db.controllers.where('id').equals(parseInt(event.dataTransfer.getData("controllerAssignmentRestriction"))).first();
+                throw new Error(`You must assign this client to a port on controller '${controller.name}' because it extends or is being extended by another client which is already assigned to '${controller.name}'.`)
+            }
+        }
+
+        if(!isNaN(origin_controllerId)){
+
+            if(isNaN(origin_port)){
+                throw new Error("Invalid origin port");
+            }
+
+            await deleteClientAssignment(origin_controllerId, origin_port);
+        }
+
+        assignClientToPort(destination_controllerId, destination_port, clientId);
 
     }catch (error){
         errorHandler(error);
@@ -247,7 +273,7 @@ async function assignedClientDrop(event){
             throw new Error("Invalid port");
         }
 
-        deleteClientAssignment(parseInt(event.dataTransfer.getData("controllerId")), event.dataTransfer.getData("port"));
+        deleteClientAssignment(parseInt(event.dataTransfer.getData("controllerId")), parseInt(event.dataTransfer.getData("port")));
 
     }catch (error){
         errorHandler(error);
@@ -260,7 +286,7 @@ async function assignedClientDrop(event){
 
 async function deleteClientAssignmentEvent(event){
 
-    await deleteClientAssignment(parseInt(event.target.getAttribute("controllerId")), event.target.getAttribute("port"));
+    await deleteClientAssignment(parseInt(event.dataTransfer.getData("controllerId")), parseInt(event.dataTransfer.getData("port")));
     await drawAvailableClients();
     await drawAllControllerInputs();
 }
@@ -305,6 +331,45 @@ async function getExtendedClients(){
             extendedClients.push(client.extends);
         }
     });
+}
+
+
+async function getControllerAssignmentRestriction(clientId){
+
+    var thisClient = await db.clients.where('id').equals(clientId).first();
+    
+    if(typeof thisClient.extends != "undefined"){
+        var controllers = await db.controllers.toArray();
+
+        for(var i = 0; i < controllers.length; i++){
+            for (const [key, value] of Object.entries(controllers[i].inputs)) {
+                if(value == thisClient.extends){
+                    return controllers[i].id;
+                }
+            }
+        }
+    }
+
+    var clients = await db.clients.toArray();
+
+    for(var i=0;i<clients.length; i++){ 
+
+        if(typeof clients[i].extends == "undefined"){
+            continue;
+        }
+
+        if(clients[i].extends == clientId){
+            var controllers = await db.controllers.toArray();
+            
+            for(var j = 0; j < controllers.length; j++){
+                for (const [key, value] of Object.entries(controllers[j].inputs)) {
+                    if(value == clients[i].id){
+                        return controllers[j].id;
+                    }
+                }
+            }
+        }
+    }
 }
 
     drawAvailableClients();
