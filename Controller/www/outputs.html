@@ -97,7 +97,7 @@
                     newOutputPort = `
                         <div class="col">
                             <div class="outputPort availableOutputPort" id="controller_${controller.id}_port_${i}" controllerId="${controller.id}" port="${i}" ondrop="assignedCircuitCardDrop(event);"  ondragover="{event.preventDefault();}">
-                                <div class="outputPortLabel">Port ${i}</div>
+                                <div class="outputPortLabel" controllerId="${controller.id}" port="${i}">Port ${i}</div>
                                 <div class="outputPortBody"></div>
                             </div>
                         </div>`

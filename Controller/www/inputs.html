@@ -100,7 +100,7 @@ async function drawAllControllerInputs(){
                 newInputPort = `
                     <div class="col">
                         <div class="inputPort availableInputPort" id="controller_${controllers[i].id}_port_${j}" controllerId="${controllers[i].id}" port="${j}" ondrop="assignedClientCardDrop(event);"  ondragover="{event.preventDefault();}">
-                            <div class="inputPortLabel">Port ${j}</div>
+                            <div class="inputPortLabel" controllerId="${controllers[i].id}" port="${j}">Port ${j}</div>
                             <div class="inputPortBody"></div>
                         </div>
                     </div>`
