@@ -411,6 +411,49 @@
                     hidLocation = getHIDLocation(51, i);
                 }
 
+                toolTipText = "";
+
+                combinedHIDList[i].actions.forEach((action) => {
+
+                    var change_state = "";
+                    var action_type = "";
+
+                    switch(action.change_state){
+                        case "SHORT":
+                            change_state = "Short Change";
+                            break;
+                        case "LONG":
+                            change_state = "Long Change";
+                            break;
+                        default:
+                            change_state = "Unknown Change State";
+                            break;
+                    }
+
+                    switch (action.action){
+                        case "INCREASE":
+                            action_type = "Increase"; 
+                            break;
+                        case "INCREASE_MAXIMUM":
+                            action_type = "Increase Maximum";
+                            break;
+                        case "DECREASE":
+                            action_type = "Decrease";
+                            break;
+                        case "DECREASE_MAXIMUM":
+                            action_type = "Decrease Maximum";
+                            break;
+                        case "TOGGLE":
+                            action_type = "Toggle";
+                            break;
+                        default:
+                            break;
+                    }
+                    toolTipText += `<b>${change_state}:</b> ${action_type} ${action.circuit.name} (${action.circuit.description}) in ${action.circuit.area.name}<hr>`;
+                });
+
+                toolTipText = toolTipText.replace(/<hr>$/, '');
+
                 switch(combinedHIDList[i].type){
 
                     case "BUTTON":
@@ -419,6 +462,9 @@
                         outterButton.setAttributeNS(null, "cy", hidLocation[1]);
                         outterButton.setAttributeNS(null, "r",  50);
                         outterButton.setAttributeNS(null, "fill", "url('#innerGradient')");
+                        outterButton.setAttributeNS(null, "data-bs-toggle", "tooltip");
+                        outterButton.setAttributeNS(null, "data-bs-html", "true");
+                        outterButton.setAttributeNS(null, "title", `${toolTipText}`);
                         svg.appendChild(outterButton);
 
                         var innerButton = document.createElementNS(svgns, "circle");
@@ -428,6 +474,9 @@
                         innerButton.setAttributeNS(null, "stroke", `${combinedHIDList[i]['color']['hex']}`);
                         innerButton.setAttributeNS(null, "stroke-width", "10px");
                         innerButton.setAttributeNS(null, "fill", "url('#innerGradient')");
+                        innerButton.setAttributeNS(null, "data-bs-toggle", "tooltip");
+                        innerButton.setAttributeNS(null, "data-bs-html", "true");
+                        innerButton.setAttributeNS(null, "title", `${toolTipText}`);                     
                         svg.appendChild(innerButton);
 
                         break;
@@ -439,6 +488,9 @@
                         outterSwitch.setAttributeNS(null, "height",  50);
                         outterSwitch.setAttributeNS(null, "width",  100);
                         outterSwitch.setAttributeNS(null, "fill", "#737373");
+                        outterSwitch.setAttributeNS(null, "data-bs-toggle", "tooltip");
+                        outterSwitch.setAttributeNS(null, "data-bs-html", "true");
+                        outterSwitch.setAttributeNS(null, "title", `${toolTipText}`);
                         svg.appendChild(outterSwitch);
 
                         var innerSwitch = document.createElementNS(svgns, "rect");
@@ -447,6 +499,9 @@
                         innerSwitch.setAttributeNS(null, "height",  50);
                         innerSwitch.setAttributeNS(null, "width",  30);
                         innerSwitch.setAttributeNS(null, "fill", "url('#innerGradient')");
+                        innerSwitch.setAttributeNS(null, "data-bs-toggle", "tooltip");
+                        innerSwitch.setAttributeNS(null, "data-bs-html", "true");
+                        innerSwitch.setAttributeNS(null, "title", `${toolTipText}`);
                         svg.appendChild(innerSwitch);
                         break;
 
@@ -455,6 +510,9 @@
                         break;
                 }
             }
+
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
    
         }catch(exception){
             errorHandler(exception);
@@ -536,7 +594,7 @@
                         break;
                 }
 
-                hidEntry += `<div>${change_state}: ${action_type} ${action.circuit.name}  ${action.circuit.area.name} ${action.circuit.description} <img src="./icons/delete_forever.svg" title="Delete" id="controllerAddButton" class="btn actionDeleteButton" role="button" onclick="deleteAction(${i},${j});"></div>`
+                hidEntry += `<div>${change_state}: ${action_type} ${action.circuit.name} (${action.circuit.description}) in ${action.circuit.area.name} <img src="./icons/delete_forever.svg" title="Delete" id="controllerAddButton" class="btn actionDeleteButton" role="button" onclick="deleteAction(${i},${j});"></div>`
 
                 j++;
 
