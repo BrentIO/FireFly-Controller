@@ -121,22 +121,25 @@
 
 
     async function addControllerToDatabase(){
+        try{
+            id = await db.controllers.add({
+                name: document.getElementById("addNewControllerName").value.trim().slice(0,20),
+                uuid: document.getElementById("addNewControllerUUID").value.trim().slice(0,36),
+                product: parseInt(document.getElementById("addNewControllerPID").value),
+                outputs: {},
+                inputs: {}
+            });
 
-        id = await db.controllers.add({
-            name: document.getElementById("addNewControllerName").value.trim().slice(0,20),
-            uuid: document.getElementById("addNewControllerUUID").value.trim().slice(0,36),
-            product: parseInt(document.getElementById("addNewControllerPID").value),
-            outputs: {},
-            inputs: {}
-        });
+            let controllerLS = new controllerLocalStorage(id);
 
-        let controllerLS = new controllerLocalStorage(id);
-
-        if(document.getElementById("addNewControllerIP").value != ""){
-            controllerLS.ip = document.getElementById("addNewControllerIP").value;
+            if(document.getElementById("addNewControllerIP").value != ""){
+                controllerLS.ip = document.getElementById("addNewControllerIP").value;
+            }
+            
+            controllerLS.save();
+        }catch (error) {
+            errorHandler(error);
         }
-        
-        controllerLS.save();
     }
 
 
@@ -156,16 +159,19 @@
 
 
     async function getControllerPIDs(){
-
-        let pidSelect = document.getElementById("addNewControllerPID");
-        
-        pids = await db.controller_products.orderBy('pid').toArray()
-        pids.forEach((element) =>{
-            var opt = document.createElement('option');
-            opt.value = element['id'];
-            opt.innerHTML = element['pid'];
-            pidSelect.appendChild(opt);
-        });
+        try{
+            let pidSelect = document.getElementById("addNewControllerPID");
+            
+            pids = await db.controller_products.orderBy('pid').toArray()
+            pids.forEach((element) =>{
+                var opt = document.createElement('option');
+                opt.value = element['id'];
+                opt.innerHTML = element['pid'];
+                pidSelect.appendChild(opt);
+            });
+        }catch (error) {
+                errorHandler(error);
+        }
     }
 
 
@@ -192,117 +198,124 @@
 
 
     async function drawManagedControllers(){
-        let managedControllerList = document.getElementById("managedControllerList");
-        managedControllerList.innerHTML = '';
+        try{
+            let managedControllerList = document.getElementById("managedControllerList");
+            managedControllerList.innerHTML = '';
 
-        controllers = await db.controllers.orderBy('name').toArray();
+            controllers = await db.controllers.orderBy('name').toArray();
 
-        await Promise.all(controllers.map(async controller => {
-            [controller.product] = await Promise.all([
-                db.controller_products.where('id').equals(controller.product).first()
-            ])
-        }));
+            await Promise.all(controllers.map(async controller => {
+                [controller.product] = await Promise.all([
+                    db.controller_products.where('id').equals(controller.product).first()
+                ])
+            }));
 
-        if(controllers.length == 0){
-            document.getElementById("managedControllerListEmpty").hidden = false;
-        }else{
-            document.getElementById("managedControllerListEmpty").hidden = true;
-        }
-
-        controllers.forEach((controller) => {
-
-            let controllerLS = new controllerLocalStorage(controller.id);
-
-            let certificateText = "";
-
-            controllerLS.certificates.forEach((certificate) =>{
-                certificateText = certificateText + certificate + "<br>";
-            })
-
-            if(controllerLS.certificates.length == 0){
-                certificateText = "Unknown";
+            if(controllers.length == 0){
+                document.getElementById("managedControllerListEmpty").hidden = false;
+            }else{
+                document.getElementById("managedControllerListEmpty").hidden = true;
             }
 
-            let newControllerCard = `
-            <div class="col">
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h4 class="card-title mb-3 text-center">${controller.name}</h4>
-                        <div class="card-text">
-                            <div class="alert alert-primary" role="alert">Authenticate to view details.</div>
-                        </div>
-                        <div class="card-text">
-                            <div class="alert alert-danger" role="alert"><a href="#">View</a> controller errors (3).</div>
-                        </div>
-                        <div class="d-grid gap-2">
-                            <div class="editableDetails">
-                                <div class="row">
-                                        <div class="col controllerDetailsLabel">UUID</div>
-                                        <div class="col"><span class="uuid" id="controllerUUID_${controller.id}" onInput="uuidEditFieldRealtimeValidation('controllerUUID_${controller.id}','innerHTML')";>${controller.uuid}</span>
-                                            <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editUUIDIcon_${controller.id}" onClick="startEditControllerUUID(${controller.id})";">
-                                            <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveUUIDIcon_${controller.id}" onClick="saveEditControllerUUID(${controller.id})"; hidden>
-                                            <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelUUIDIcon_${controller.id}" onClick="cancelEditControllerUUID(${controller.id})"; hidden>
-                                        </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col controllerDetailsLabel">IP Address</div>
-                                    <div class="col"><span id="controllerIP_${controller.id}">${controllerLS.ip??"Unknown"}</span>
-                                        <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editIPIcon_${controller.id}" onClick="startEditControllerIP(${controller.id})";>
-                                        <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveIPIcon_${controller.id}" onClick="saveEditControllerIP(${controller.id})"; hidden>
-                                        <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelIPIcon_${controller.id}" onClick="cancelEditControllerIP(${controller.id})"; hidden>
-                                        </div>
-                                </div>
-                                <div class="row">
-                                        <div class="col controllerDetailsLabel">Product ID</div>
-                                        <div class="col">${controller.product.pid??"Unknown"}</div>
-                                </div>
-                                <div class="row">
-                                    <div class="col controllerDetailsLabel">Firmware Version</div>
-                                    <div class="col">${controllerLS.firmwareVersion??"Unknown"}</div>
-                                </div>
-                                <div class="row">
-                                    <div class="col controllerDetailsLabel">UI Version</div>
-                                    <div class="col">${controllerLS.softwareVersion??"Unknown"}</div>
-                                </div>
-                                <div class="row">
-                                    <div class="col controllerDetailsLabel">Certificates</div>
-                                    <div class="col">${certificateText}</div>
-                                </div>                 
-                            </div>
-                            <button class="btn btn-primary">Authenticate</button>
-                            <button class="btn btn-outline-primary">Logout</button>
-                            <button class="btn btn-outline-warning">Deploy Configuration</button>
-                            <button class="btn btn-outline-warning">Pull Backup</button>
-                            <button class="btn btn-outline-danger" id="stopManagingAndDeleteButton${controller.id}" onclick="toggleConfirmDeleteController(${controller.id})">Stop Managing and Delete</button>
+            controllers.forEach((controller) => {
 
-                            <div class="input-group mb-3" id="confirmDeleteController${controller.id}" hidden>
-                                <input type="text" class="form-control" placeholder="type \'delete\'" id="confirmDeleteText${controller.id}" oninput="confirmDeleteControllerChallegeOnChange(${controller.id});">
-                                <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteController(${controller.id})">Cancel</button>
-                                <button class="btn btn-outline-danger" type="button" id="deleteControllerButton${controller.id}" onclick="deleteController(${controller.id});" disabled>Delete</button>
+                let controllerLS = new controllerLocalStorage(controller.id);
+
+                let certificateText = "";
+
+                controllerLS.certificates.forEach((certificate) =>{
+                    certificateText = certificateText + certificate + "<br>";
+                })
+
+                if(controllerLS.certificates.length == 0){
+                    certificateText = "Unknown";
+                }
+
+                let newControllerCard = `
+                <div class="col">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h4 class="card-title mb-3 text-center">${controller.name}</h4>
+                            <div class="card-text">
+                                <div class="alert alert-primary" role="alert">Authenticate to view details.</div>
+                            </div>
+                            <div class="card-text">
+                                <div class="alert alert-danger" role="alert"><a href="#">View</a> controller errors (3).</div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <div class="editableDetails">
+                                    <div class="row">
+                                            <div class="col controllerDetailsLabel">UUID</div>
+                                            <div class="col"><span class="uuid" id="controllerUUID_${controller.id}" onInput="uuidEditFieldRealtimeValidation('controllerUUID_${controller.id}','innerHTML')";>${controller.uuid}</span>
+                                                <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editUUIDIcon_${controller.id}" onClick="startEditControllerUUID(${controller.id})";">
+                                                <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveUUIDIcon_${controller.id}" onClick="saveEditControllerUUID(${controller.id})"; hidden>
+                                                <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelUUIDIcon_${controller.id}" onClick="cancelEditControllerUUID(${controller.id})"; hidden>
+                                            </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col controllerDetailsLabel">IP Address</div>
+                                        <div class="col"><span id="controllerIP_${controller.id}">${controllerLS.ip??"Unknown"}</span>
+                                            <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editIPIcon_${controller.id}" onClick="startEditControllerIP(${controller.id})";>
+                                            <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveIPIcon_${controller.id}" onClick="saveEditControllerIP(${controller.id})"; hidden>
+                                            <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelIPIcon_${controller.id}" onClick="cancelEditControllerIP(${controller.id})"; hidden>
+                                            </div>
+                                    </div>
+                                    <div class="row">
+                                            <div class="col controllerDetailsLabel">Product ID</div>
+                                            <div class="col">${controller.product.pid??"Unknown"}</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col controllerDetailsLabel">Firmware Version</div>
+                                        <div class="col">${controllerLS.firmwareVersion??"Unknown"}</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col controllerDetailsLabel">UI Version</div>
+                                        <div class="col">${controllerLS.softwareVersion??"Unknown"}</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col controllerDetailsLabel">Certificates</div>
+                                        <div class="col">${certificateText}</div>
+                                    </div>                 
+                                </div>
+                                <button class="btn btn-primary">Authenticate</button>
+                                <button class="btn btn-outline-primary">Logout</button>
+                                <button class="btn btn-outline-warning" onclick="buildControllerPOSTPayload(${controller.id})";>Deploy Configuration</button>
+                                <button class="btn btn-outline-warning">Pull Backup</button>
+                                <button class="btn btn-outline-danger" id="stopManagingAndDeleteButton${controller.id}" onclick="toggleConfirmDeleteController(${controller.id})">Stop Managing and Delete</button>
+
+                                <div class="input-group mb-3" id="confirmDeleteController${controller.id}" hidden>
+                                    <input type="text" class="form-control" placeholder="type \'delete\'" id="confirmDeleteText${controller.id}" oninput="confirmDeleteControllerChallegeOnChange(${controller.id});">
+                                    <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteController(${controller.id})">Cancel</button>
+                                    <button class="btn btn-outline-danger" type="button" id="deleteControllerButton${controller.id}" onclick="deleteController(${controller.id});" disabled>Delete</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>`
+                </div>`
 
-            document.getElementById('managedControllerList').insertAdjacentHTML('beforeend', newControllerCard);
-        });
+                document.getElementById('managedControllerList').insertAdjacentHTML('beforeend', newControllerCard);
+            });
+        } catch (error) {
+            errorHandler(error);
+        }
     }
 
 
     async function deleteController(id){
+        try{
+            if(await checkIfInUse_controller(id) == true){
+                warningHandler("Controller is in use and cannot be deleted.")
+                return;
+            }
 
-        if(await checkIfInUse_controller(id) == true){
-            warningHandler("Controller is in use and cannot be deleted.")
-            return;
+            await db.controllers.delete(id);
+            let controllerLS = new controllerLocalStorage(id);
+
+            controllerLS.delete();
+
+            await drawManagedControllers();
+        } catch (error) {
+            errorHandler(error);
         }
-
-        await db.controllers.delete(id);
-        let controllerLS = new controllerLocalStorage(id);
-
-        controllerLS.delete();
-
-        await drawManagedControllers();
     }
 
 
