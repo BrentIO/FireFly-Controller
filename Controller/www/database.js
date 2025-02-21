@@ -15,7 +15,7 @@ const initDB = () => {
         areas: "++id, name",
         circuit_icons: "++id, name",
         controller_products: "++id, pid",
-        tags: "++id, name",
+        tags: "++id, &name",
         certificates: "++id, &certificate",
         breakers: "++id, name",
         circuits: "++id, name, breaker, area, icon, relay_model",

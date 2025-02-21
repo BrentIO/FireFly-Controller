@@ -75,9 +75,17 @@
     var addNewTagModal = new bootstrap.Modal('#addNewTagModal');
 
     async function addTagToDatabase(){
-        await db.tags.add({
-            name: document.getElementById("addNewTagName").value
-        });
+        try{
+            await db.tags.add({
+                name: document.getElementById("addNewTagName").value
+            });
+        }catch(exception){
+            if(exception.name == "ConstraintError"){
+                errorHandler(new Error("Tag already exists."))
+                return;
+            }
+            errorHandler(exception);
+        }
     }
 
 
@@ -151,8 +159,13 @@
 
 
     async function deleteTag(id){
-        await db.tags.delete(id);
-        await drawTagList();
+        try{
+            await db.tags.delete(id);
+            await drawTagList();
+
+        }catch(exception){
+            errorHandler(exception);
+        }
     }
 
 
