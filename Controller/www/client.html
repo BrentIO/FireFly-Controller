@@ -286,7 +286,8 @@
                     [action.circuit.area] = await Promise.all([
                         db.areas.where('id').equals(action.circuit.area).first()
                     ])
-                }))
+                })),
+                    hid.actions.sort((a,b) => (a.change_state < b.change_state)? 1 : ((b.change_state < a.change_state) ? -1 : 0));
             }));
 
             document.getElementById("pageTitle").innerText = client.name;
