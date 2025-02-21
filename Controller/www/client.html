@@ -63,6 +63,7 @@
                                 <th scope="col">Color</th>
                                 <th scope="col">Switch Type</th>
                                 <th scope="col">Actions</th>
+                                <th scope="col">Tags</th>
                                 <th scope="col">Enabled</th>
                                 <th scope="col">Move</th>
                                 <th scope="col"></th>
@@ -201,6 +202,7 @@
     var combinedHIDList=[];
     var colorList=[];
     var circuitList=[];
+    var tagList=[];
 
 
     var addNewButtonModal = new bootstrap.Modal('#addNewButtonModal');
@@ -297,6 +299,7 @@
             }
 
             await getCircuitList();
+            tagList = await db.tags.orderBy('name').toArray()
             await drawHIDPicture();
             await drawHIDList();
 
@@ -602,7 +605,18 @@
 
             hidEntry += `
                 <div><button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleAddActionModal(${i});">Add</button></div>
-            </td>          
+            </td>
+            <td class="align-middle">`
+
+                tagList.forEach((tag)=>{
+                    if(checkHidHasTag(hid, tag.id)){
+                        hidEntry += `<button type="button" class="btn btn-success btn-sm" onclick="deleteTagFromHid(${i},${tag.id});">${tag.name}</button> `
+                    }else{
+                        hidEntry += `<button type="button" class="btn btn-outline-success btn-sm" onclick="addTagToHid(${i},${tag.id});">${tag.name}</button> `
+                    }
+                })
+
+            hidEntry += `</td>    
 
             <td class="align-middle">
                 <div class="editableDetails">
@@ -636,6 +650,36 @@
             i++;
 
         });
+    }
+
+
+    function checkHidHasTag(hid, tagId){
+
+        for(var j=0; j<hid.tags.length; j++){
+            if(hid.tags[j] == tagId){return true;}
+        }
+
+        return false;
+    }
+
+
+    async function addTagToHid(element, tagId){
+        combinedHIDList[element].tags.push(tagId);
+        await writeHIDsToDatabase();
+        await getClient();
+    }
+
+    async function deleteTagFromHid(element, tagId){
+
+        for(var i=0;i<combinedHIDList[element].tags.length; i++){
+            if(combinedHIDList[element].tags[i] == tagId){
+                combinedHIDList[element].tags.splice(i, 1);
+                break;
+            }
+        }
+
+        await writeHIDsToDatabase();
+        await getClient();
     }
 
 
@@ -732,6 +776,12 @@
                     combinedHIDList[i].actions[j].circuit = combinedHIDList[i].actions[j].circuit.id;
                 }
             }
+
+            for(j=0; j < combinedHIDList[i].tags.length; j++){
+                if(typeof combinedHIDList[i].tags[j].id != "undefined"){
+                    combinedHIDList[i].tags[j] = combinedHIDList[i].tags[j].id;
+                }
+            }
         }
 
         await db.clients.where('id').equals(client.id).modify(client =>
@@ -747,7 +797,7 @@
 
 
     async function addNewButtonToDatabase(){
-        combinedHIDList.push({"color": parseInt(document.getElementById('addNewButtonColor').value), "type":"BUTTON", "switch_type":document.getElementById('addNewButtonSwitchType').value, "enabled": true, "actions":[]});
+        combinedHIDList.push({"color": parseInt(document.getElementById('addNewButtonColor').value), "type":"BUTTON", "switch_type":document.getElementById('addNewButtonSwitchType').value, "enabled": true, "actions":[],"tags":[]});
         await writeHIDsToDatabase();
     }
 
