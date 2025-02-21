@@ -160,6 +160,10 @@
 
     async function deleteTag(id){
         try{
+            if(await checkIfInUse_tag(id) == true){
+                warningHandler("Tag is in use and cannot be deleted.")
+                return;
+            }
             await db.tags.delete(id);
             await drawTagList();
 

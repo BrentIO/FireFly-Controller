@@ -428,6 +428,26 @@ async function checkIfInUse_client(id){
 }
 
 
+async function checkIfInUse_tag(id){
+
+    var clients = await db.clients.toArray();
+    var found = false;
+
+    clients.forEach((client)=>{
+
+        client.hids.forEach((hid)=>{
+            hid.tags.forEach((tag)=>{
+                if(tag == id){
+                    found = true;
+                }
+            })
+        })
+    });
+
+    return found;
+}
+
+
 async function deleteUnusedCustomRelayModels(){
 
     relay_models = await db.relay_models.where("is_custom").equals("true").toArray();
