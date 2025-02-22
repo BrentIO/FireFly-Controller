@@ -1035,6 +1035,10 @@ components:
             description: A short ID for the input, used for addressing the device over MQTT.  When an input spans multiple input ports (such as a switch with 6 buttons), the same ID should be used across both input ports
             maxLength: 8 #Maximum length relates to hardware.h -> PORT_ID_MAX_LENGTH
             pattern: ^[A-Za-z0-9]+$
+          offset:
+            type: number
+            description: Offset to add to the channel number, used when an input spans multiple ports (such as a switch witih 6 buttons)
+            default: 0
           channels:
             type: object
             propertyNames: 
@@ -1084,10 +1088,6 @@ components:
           type: boolean
           description: Indicates if the channel is enabled
           default: true
-        offset:
-          type: number
-          description: Offset to add to the channel number, used when an input spans multiple ports (such as a switch witih 6 buttons)
-          default: 0
         actions:
             type: array
             items:
