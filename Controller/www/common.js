@@ -523,4 +523,22 @@ function move_array(theArray, from, to) {
 }
 
 
+async function getExtendedClients(){
+
+    var extendedClients = [];
+
+    clientList =  await db.clients.orderBy('name').toArray()
+
+    clientList.forEach((client)=>{
+
+        if(typeof client.extends != "undefined"){
+            extendedClients.push(client.extends);
+        }
+    });
+
+    return extendedClients;
+
+}
+
+
 }

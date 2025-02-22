@@ -168,7 +168,7 @@
 
         try{
             await getAreaList();
-            await getExtendedClients();
+            extendedClients = await getExtendedClients();
 
             let managedClientCards = document.getElementById("managedClientCards");
             managedClientCards.innerHTML = '';
@@ -519,22 +519,7 @@
         opt.innerHTML = `Select...`;
         areaSelect.prepend(opt);
     }
-    
-
-    async function getExtendedClients(){
-
-        extendedClients = [];
-
-        clientList =  await db.clients.orderBy('name').toArray()
-
-        clientList.forEach((client)=>{
-
-            if(typeof client.extends != "undefined"){
-                extendedClients.push(client.extends);
-            }
-        });
-    }
-    
+        
     drawManagedClients();
 
 </script>
