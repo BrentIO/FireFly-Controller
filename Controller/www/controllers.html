@@ -60,6 +60,14 @@
                             A name is required.
                         </div>
                     </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Area</span>
+                        <select class="form-select" aria-label="Area" id="addNewControllerArea" required >
+                        </select>
+                        <div class="invalid-feedback">
+                            Select an area where the controller is located.
+                        </div>
+                    </div>
                     <div class="input-group mb-3 has-validation">
                         <span class="input-group-text">UUID</span>
                         <input class="form-control uuid" id="addNewControllerUUID" placeholder="" aria-label="UUID" required onInput="uuidEditFieldRealtimeValidation('addNewControllerUUID','value')">
@@ -97,6 +105,8 @@
 
 <script>
 
+    var areaList=[];
+
     var addNewControllerModal = new bootstrap.Modal('#addNewControllerModal');
 
 
@@ -126,6 +136,7 @@
                 name: document.getElementById("addNewControllerName").value.trim().slice(0,20),
                 uuid: document.getElementById("addNewControllerUUID").value.trim().slice(0,36),
                 product: parseInt(document.getElementById("addNewControllerPID").value),
+                area: parseInt(document.getElementById("addNewControllerArea").value),
                 outputs: {},
                 inputs: {}
             });
@@ -199,6 +210,8 @@
 
     async function drawManagedControllers(){
         try{
+            await getAreaList();
+
             let managedControllerList = document.getElementById("managedControllerList");
             managedControllerList.innerHTML = '';
 
@@ -207,6 +220,9 @@
             await Promise.all(controllers.map(async controller => {
                 [controller.product] = await Promise.all([
                     db.controller_products.where('id').equals(controller.product).first()
+                ]),
+                [controller.area] = await Promise.all([
+                    db.areas.where('id').equals(controller.area).first()
                 ])
             }));
 
@@ -249,6 +265,12 @@
                                 <div class="alert alert-danger" role="alert"><a href="#">View</a> controller errors (3).</div>
                             </div>
                             <div class="d-grid gap-2">
+                                <div class="editableDetails">
+                                    <span class="col controllerDetailsLabel">Area:</span> <span id="Area_${controller.id}">${controller.area.name}</span>
+                                    <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editAreaIcon_${controller.id}" onClick="startEdit(${controller.id}, 'Area')";">
+                                    <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveAreaIcon_${controller.id}" onClick="saveEdit(${controller.id}, 'Area')"; hidden>
+                                    <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelAreaIcon_${controller.id}" onClick="cancelEdit(${controller.id}, 'Area')"; hidden>
+                                </div>
                                 <div class="editableDetails">
                                     <span class="col controllerDetailsLabel">UUID:</span> <span class="uuid" id="UUID_${controller.id}" onInput="editFieldRealtimeValidation(${controller.id}, 'UUID')";>${controller.uuid}</span>
                                     <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editUUIDIcon_${controller.id}" onClick="startEdit(${controller.id}, 'UUID')";">
@@ -297,6 +319,32 @@
     }
 
 
+    async function getAreaList(){
+
+        let areaSelect = document.getElementById("addNewControllerArea");
+
+        var i, L = areaSelect.options.length - 1;
+        for(i = L; i >= 0; i--) {
+            areaSelect.remove(i);
+        }
+
+        areaList = await db.areas.orderBy('name').toArray()
+
+        areaList.forEach((area) =>{
+            var opt = document.createElement('option');
+            opt.value = `${area['id']}`;
+            opt.innerHTML = `${area['name']}`;
+            areaSelect.appendChild(opt);
+        });
+
+        var opt = document.createElement('option');
+        opt.value = "";
+        opt.selected = true;
+        opt.innerHTML = `Select...`;
+        areaSelect.prepend(opt);
+    }
+
+
     function startEdit(id, fieldName){
         switch(fieldName){
 
@@ -306,6 +354,35 @@
                 element.contentEditable = "true";
                 element.classList.add("form-control");
                 editFieldRealtimeValidation(id, fieldName);
+                break;
+
+            case 'Area':
+                if(!document.getElementById("editAreaSelect_" + id)){
+                    element = document.getElementById("Area_" +id);
+                    var selectList = document.createElement("select");
+                    selectList.id = "editAreaSelect_" + id;
+                    element.setAttribute("previous-value", element.innerText);
+                    element.innerText = "";
+                    element.appendChild(selectList);
+                }
+
+                editAreaSelect = document.getElementById("editAreaSelect_" + id);
+                editAreaSelect.hidden = false;
+
+                var i, L = editAreaSelect.options.length - 1;
+                for(i = L; i >= 0; i--) {
+                    editAreaSelect.remove(i);
+                }
+
+                areaList.forEach((area) =>{
+                    var opt = document.createElement('option');
+                    opt.value = `${area['id']}`;
+                    opt.innerHTML = `${area['name']}`;
+                    if(opt.innerHTML == element.getAttribute("previous-value")){
+                        opt.selected = true;
+                    }
+                    editAreaSelect.appendChild(opt);
+                });
                 break;
 
             case 'IP':
@@ -360,6 +437,12 @@
                     warningHandler("An invalid UUID was input, reverting to the prior value.");
                     cancelEdit(id, fieldName);
                 }
+                break;
+            case 'Area':
+                element = document.getElementById("editAreaSelect_" +id);
+                await db.controllers.update(id, {area: parseInt(element.value)});
+                document.getElementById("editAreaSelect_" +id).hidden = true;
+                document.getElementById("Area_" +id).innerText = document.getElementById("editAreaSelect_" +id).options[document.getElementById("editAreaSelect_" +id).selectedIndex].text;
                 break;
             case 'IP':
                 if(isValidIPv4(value) || isValidDomainName(value)){
