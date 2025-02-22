@@ -200,7 +200,8 @@
             icon: parseInt(document.getElementById("addNewCircuitIcon").value),
             load_amperage: parseInt(document.getElementById("addNewCircuitAmperage").value),
             relay_model: relayModelId,
-            breaker: parseInt(document.getElementById("addNewCircuitBreaker").value)
+            breaker: parseInt(document.getElementById("addNewCircuitBreaker").value),
+            enabled: true
         });
     }
 
@@ -566,6 +567,38 @@
                 });
                 break;
 
+            case 'Enabled':
+
+                if(!document.getElementById("editEnabledSelect_" + id)){
+                    element = document.getElementById("Enabled_" +id);
+                    var selectList = document.createElement("select");
+                    selectList.id = "editEnabledSelect_" + id;
+                    element.setAttribute("previous-value", element.innerText);
+                    element.innerText = "";
+                    element.appendChild(selectList);
+                }
+
+                editEnabledSelect = document.getElementById("editEnabledSelect_" + id);
+                editEnabledSelect.hidden = false;
+
+                var i, L = editEnabledSelect.options.length - 1;
+                for(i = L; i >= 0; i--) {
+                    editEnabledSelect.remove(i);
+                }
+
+                options = [{"name":"Yes", "value":"true"},{"name":"No", "value":"false"}]
+
+                options.forEach((option) =>{
+                    var opt = document.createElement('option');
+                    opt.value = `${option['value']}`;
+                    opt.innerHTML = `${option['name']}`;
+                    if(opt.innerHTML == element.getAttribute("previous-value")){
+                        opt.selected = true;
+                    }
+                    editEnabledSelect.appendChild(opt);
+                });
+                break;
+
             default:
                 errorHandler("Field name " + fieldName + " is not known and cannot be edited");
                 break;
@@ -625,6 +658,12 @@
                 await db.circuits.update(id, {breaker: parseInt(element.value)});
                 document.getElementById("editBreakerSelect_" +id).hidden = true;
                 document.getElementById("Breaker_" +id).innerText = document.getElementById("editBreakerSelect_" +id).options[document.getElementById("editBreakerSelect_" +id).selectedIndex].text;
+                break;
+            case 'Enabled':
+                element = document.getElementById("editEnabledSelect_" +id);
+                await db.circuits.update(id, {enabled: (String(document.getElementById("editEnabledSelect_" +id).options[document.getElementById("editEnabledSelect_" +id).selectedIndex].value).toLowerCase() === 'true')});
+                document.getElementById("editEnabledSelect_" +id).hidden = true;
+                document.getElementById("Enabled_" +id).innerText = document.getElementById("editEnabledSelect_" +id).options[document.getElementById("editEnabledSelect_" +id).selectedIndex].text;
                 break;
             default:
                 errorHandler("Field name " + fieldName + " is not known and will not be updated");
