@@ -541,4 +541,139 @@ async function getExtendedClients(){
 }
 
 
+async function getControllerPOSTPayload(id){
+
+    const maximumLength_name = 20;
+    const maximumLength_area = 20;
+    const maximumLength_id = 8;
+    const maximumLength_icon = 64;
+
+    var extendedClients = await getExtendedClients();
+
+    var payload = await db.controllers.where("id").equals(id).toArray();
+
+    await Promise.all(payload.map(async controller => {
+        [controller.area] = await Promise.all([
+            db.areas.where('id').equals(controller.area).first()
+        ]), 
+
+        await Promise.all(Object.entries(controller.inputs).map(async client => {
+            [controller.inputs[client.at(0)]] = await Promise.all([
+                db.clients.where('id').equals(client.at(1)).first()
+            ])
+        })),
+        await Promise.all(Object.entries(controller.outputs).map(async circuit => {
+            [controller.outputs[circuit.at(0)]] = await Promise.all([
+                db.circuits.where('id').equals(circuit.at(1)).first()
+            ])
+        })),
+
+        await Promise.all(Object.entries(controller.outputs).map(async circuit => {
+            [controller.outputs[circuit.at(0)].area] = await Promise.all([
+                db.areas.where('id').equals(circuit.at(1).area).first()
+            ])
+        })),
+        await Promise.all(Object.entries(controller.outputs).map(async circuit => {
+            [controller.outputs[circuit.at(0)].relay_model] = await Promise.all([
+                db.relay_models.where('id').equals(circuit.at(1).relay_model).first()
+            ])
+        })),
+        await Promise.all(Object.entries(controller.outputs).map(async circuit => {
+            [controller.outputs[circuit.at(0)].icon] = await Promise.all([
+                db.circuit_icons.where('id').equals(circuit.at(1).icon).first()
+            ])
+        }))
+    }));
+
+    payload[0].name = payload[0].name.trim().substring(0,maximumLength_name);
+    payload[0].area = payload[0].area.name.trim().substring(0,maximumLength_area);
+    payload[0].ports = payload[0].inputs;
+
+    for(const [portNumber, client] of Object.entries(payload[0].ports)){
+
+        client.channels = {};
+
+        if(extendedClients.includes(client.id)){
+            client.offset = maximumHIDsPerInputPort;
+        }
+
+        for(var i=0; i<client.hids.length; i++){
+            client.channels[i+1] = {};
+
+            if(client.hids[i].switch_type != "NORMALLY_OPEN"){
+                client.channels[i+1]['type'] = client.hids[i].switch_type;
+            }
+
+
+            if(client.hids[i].enabled != true){
+                client.channels[i+1]['enabled'] = false;
+            }
+
+            client.hids[i].actions.forEach((action) =>{
+                for(const [outputPort, circuit] of Object.entries(payload[0].outputs)){
+                    if(circuit.id == action.circuit){
+                        if("actions" in client.channels[i+1] == false){
+                            client.channels[i+1]['actions'] = [];
+                        }
+
+                        if(action.change_state == "SHORT"){
+                            delete action.change_state;
+                        }
+
+                        action['output'] = parseInt(outputPort);
+
+                        for(const [field, value] of Object.entries(action)){
+                            const permittedFields = ["change_state","action","output"];
+                            if(permittedFields.includes(field) == false){
+                                delete action[field];
+                            }
+                        }
+
+                        client.channels[i+1]['actions'].push(action);
+                    }
+                }
+            });
+        }
+
+        client.id = client.name.trim().substring(0,maximumLength_id);
+        client.name = client.description.trim().substring(0,maximumLength_name);
+
+        for(const [field, value] of Object.entries(payload[0].ports[portNumber])){
+            const permittedFields = ["name","id","channels","offset"];
+            if(permittedFields.includes(field) == false){
+                delete payload[0].ports[portNumber][field];
+            }
+        }
+    }
+
+    for(const [outputNumber, circuit] of Object.entries(payload[0].outputs)){
+        circuit.id = circuit.name.trim().substring(0,maximumLength_id);
+        circuit.name = circuit.description.trim().substring(0,maximumLength_name);
+        circuit.area = circuit.area.name.trim().substring(0,maximumLength_area);
+        circuit.icon = circuit.icon.icon.trim().substring(0,maximumLength_icon);
+
+        if(circuit.relay_model.type != "BINARY"){
+            circuit.type = circuit.relay_model.type;
+        }
+
+        if(circuit.enabled == true){
+            delete circuit.enabled;
+        }
+        
+        for(const [field, value] of Object.entries(payload[0].outputs[outputNumber])){
+            const permittedFields = ["name","id","area","icon","type","enabled"];
+            if(permittedFields.includes(field) == false){
+                delete payload[0].outputs[outputNumber][field];
+            }
+        }
+    }
+
+    for(const [field, value] of Object.entries(payload[0])){
+        const permittedFields = ["name","area","ports","outputs"];
+        if(permittedFields.includes(field) == false){
+            delete payload[0][field];
+        }
+    }
+
+    return payload[0];
 }
