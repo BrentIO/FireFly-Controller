@@ -159,6 +159,9 @@ class controllerLocalStorage{
         return this.ip;
     }
 
+    /**
+     * @param {string} value
+     */
     set ip(value){
         this.ip = value;
     }
@@ -167,6 +170,9 @@ class controllerLocalStorage{
         return this.certificates;
     }
 
+    /**
+     * @param {any[]} value
+     */
     set certificates(value){
         this.certificates = value;
     }
@@ -175,6 +181,9 @@ class controllerLocalStorage{
         return this.firmwareVersion;
     }
 
+    /**
+     * @param {string} value
+     */
     set firmwareVersion(value){
         this.firmwareVersion = value;
     }
@@ -183,6 +192,9 @@ class controllerLocalStorage{
         return this.uuid;
     }
 
+    /**
+     * @param {string} value
+     */
     set uuid(value){
         this.uuid = value;
     }
@@ -191,6 +203,9 @@ class controllerLocalStorage{
         return this.uiVersion;
     }
 
+    /**
+     * @param {string} value
+     */
     set uiVersion(value){
         this.uiVersion = value;
     }
@@ -199,8 +214,44 @@ class controllerLocalStorage{
         return this.visualToken;
     }
 
+    /**
+     * @param {string} value
+     */
     set visualToken(value){
         this.visualToken = value;
+    }
+
+    get isAuthenticated(){
+        return this.isAuthenticated;
+    }
+
+    /**
+     * @param {boolean} value
+     */
+    set isAuthenticated(value){
+        this.isAuthenticated = value;
+    }
+
+    get eventLog(){
+        return this.eventLog;
+    }
+
+    /**
+     * @param {any[]} value
+     */
+    set eventLog(value){
+        this.eventLog = value;
+    }
+
+    get errorLog(){
+        return this.errorLog;
+    }
+
+    /**
+     * @param {any[]} value
+     */
+    set errorLog(value){
+        this.errorLog = value;
     }
 
     retrieve(){
