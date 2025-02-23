@@ -227,8 +227,6 @@
             if(document.getElementById("addNewControllerIP").value != ""){
                 controllerLS.ip = document.getElementById("addNewControllerIP").value;
             }
-            
-            controllerLS.save();
         }catch (error) {
             errorHandler(error);
         }
@@ -613,7 +611,6 @@
                 if(isValidIPv4(value) || isValidDomainName(value)){
                     var controllerLS = new controllerLocalStorage(id);
                     controllerLS.ip = value;
-                    controllerLS.save();
                 }else{
                     warningHandler("An invalid IP was input, reverting to the prior value.");
                     cancelEdit(id, fieldName);
