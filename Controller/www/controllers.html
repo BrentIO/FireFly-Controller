@@ -254,11 +254,15 @@
         controller = await db.controllers.where("id").equals(id).first();
 
         document.getElementById("eventLogModalLabel").innerText = `Event Log for ${controller.name}`;
-        var eventLogList = document.getElementById('eventLogList');
+        drawEventLog(id);
+        viewEventLogModal.show();
+    }
+
+
+    function drawEventLog(id){
         var controllerLS = new controllerLocalStorage(id);
-
+        var eventLogList = document.getElementById('eventLogList');
         eventLogList.innerHTML = "";
-
         controllerLS.eventLog.forEach((event)=>{
             var entry = `
                 <td>${new Date(event.time*1000).toLocaleString()}</td>
@@ -280,33 +284,29 @@
 
             entry += `</td>
                 <td>${event.text}</td>`
-
             eventLogList.insertAdjacentHTML('beforeend', entry);
 
         });
-
-        viewEventLogModal.show();
     }
 
 
     async function showErrorLogModal(id){
-
         controller = await db.controllers.where("id").equals(id).first();
-
-
         document.getElementById("errorLogModalLabel").innerText = `Error Log for ${controller.name}`;
-        var errorLogList = document.getElementById('errorLogList');
+        drawErrorLog(id);
+        viewErrorLogModal.show();
+    }
+
+
+    function drawErrorLog(id){
         var controllerLS = new controllerLocalStorage(id);
-
+        var errorLogList = document.getElementById('errorLogList');
         errorLogList.innerHTML = "";
-
         controllerLS.errorLog.forEach((event)=>{
             var entry = `<td>${event.text}</td>`
-
             errorLogList.insertAdjacentHTML('beforeend', entry);
-
         });
-        viewErrorLogModal.show();
+
     }
 
 
