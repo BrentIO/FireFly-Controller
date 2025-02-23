@@ -453,8 +453,8 @@
                                 <div>
                                     <span class="col controllerDetailsLabel">Certificates:</span> <span id="certificates_${controller.id}">${certificateText}</span>
                                 </div>
-                                <button class="btn btn-secondary" onclick="showErrorLogModal(${controller.id});" ${controllerLS.errorLog.length==0?"disabled":""}><img class="menuIcon" src="./icons/error.svg"> View Error Log (${controllerLS.errorLog.length})</button>
-                                <button class="btn btn-secondary" onclick="showEventLogModal(${controller.id});" ${controllerLS.eventLog.length==0?"disabled":""}><img class="menuIcon" src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})</button>
+                                <button class="btn btn-secondary" onclick="showErrorLogModal(${controller.id});"><img class="menuIcon" src="./icons/error.svg"> View Error Log (${controllerLS.errorLog.length})</button>
+                                <button class="btn btn-secondary" onclick="showEventLogModal(${controller.id});"><img class="menuIcon" src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})</button>
                                 <button class="btn btn-warning"><img src="./icons/download.svg"> Pull Backup</button>
                                 <button class="btn btn-warning" onclick="getControllerPOSTPayload(${controller.id})";><img src="./icons/upload.svg"> Deploy Configuration</button>
                                 <button class="btn btn-primary">Logout</button>`;
