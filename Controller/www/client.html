@@ -821,7 +821,7 @@
 
     async function addNewSwitchToDatabase(){
 
-        combinedHIDList.push({"type":"SWITCH", "switch_type":document.getElementById('addNewSwitchSwitchType').value, "enabled": true, "actions":[]});
+        combinedHIDList.push({"type":"SWITCH", "switch_type":document.getElementById('addNewSwitchSwitchType').value, "enabled": true, "actions":[],"tags":[]});
         await writeHIDsToDatabase();
     }
 
