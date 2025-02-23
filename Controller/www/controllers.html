@@ -235,9 +235,9 @@
 
             controllers.forEach((controller) => {
 
-                let controllerLS = new controllerLocalStorage(controller.id);
+                var controllerLS = new controllerLocalStorage(controller.id);
 
-                let certificateText = "";
+                var certificateText = "";
 
                 controllerLS.certificates.forEach((certificate) =>{
                     certificateText = certificateText + certificate + "<br>";
