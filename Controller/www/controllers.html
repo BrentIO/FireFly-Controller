@@ -158,6 +158,7 @@
         addNewControllerModal.toggle();
     }
 
+    
     document.getElementById("addNewControllerModal").addEventListener('show.bs.modal', () => {        
         form = document.getElementById("addNewControllerForm");
         form.reset();
@@ -538,6 +539,7 @@
         }
     }
 
+
     function isValidIPv4(value){
         var regex = /^((25[0-5]|2[0-4][0-9]|[0-1]?[0-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|[0-1]?[0-9]?[0-9])$/;
         return regex.test(value);
@@ -549,6 +551,7 @@
         return regex.test(value);
     }
 
+    
     drawManagedControllers();
     getControllerPIDs();
 
