@@ -154,6 +154,31 @@
             </div>
         </div>
     </div>
+
+    <!-- Visual Token Modal -->
+    <div class="modal fade" id="visualTokenModal" tabindex="-1" aria-labelledby="visualTokenModalLabel" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="visualTokenLabel">Visual Token</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="visualTokenForm">
+                        <input type="hidden" id="visualTokenModalControllerId" name="visualTokenModalControllerId" value="">
+
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Visual Token</span>
+                        <input class="form-control" id="visualToken" placeholder="" aria-label="Visual Token" required>
+                    </div>
+                    </form>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="button" data-bs-dismiss="modal">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 <script>
@@ -163,6 +188,7 @@
     var addNewControllerModal = new bootstrap.Modal('#addNewControllerModal');
     var viewErrorLogModal = new bootstrap.Modal('#errorLogModal');
     var viewEventLogModal = new bootstrap.Modal('#eventLogModal');
+    var visualTokenModal = new bootstrap.Modal('#visualTokenModal');
 
 
     document.getElementById("addNewControllerButtonAdd").addEventListener('click', () => {
@@ -285,7 +311,30 @@
         viewErrorLogModal.show();
     }
 
-    
+
+    async function showVisualTokenModal(id){
+
+        form = document.getElementById("visualTokenForm");
+        form.reset();
+
+        controller = await db.controllers.where("id").equals(id).first();
+        document.getElementById("visualTokenLabel").innerText = `Visual Token for ${controller.name}`;
+        document.getElementById("visualTokenModalControllerId").value = id;
+        visualTokenModal.show();
+    }
+
+    document.getElementById("visualTokenModal").addEventListener('hidden.bs.modal', () => {
+
+        if(document.getElementById("visualToken").value.trim() == ""){
+            return;
+        }
+
+        var controllerLS = new controllerLocalStorage(document.getElementById("visualTokenModalControllerId").value);
+        controllerLS.visualToken = document.getElementById("visualToken").value.trim();
+        authenticateController(controllerLS.id);
+    });
+
+
     async function getControllerPIDs(){
         try{
             let pidSelect = document.getElementById("addNewControllerPID");
