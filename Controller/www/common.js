@@ -1,5 +1,6 @@
 const maximumHIDsPerClient = 6;
 const maximumHIDsPerInputPort = 4;
+const apiTimeout = 5000;
 
 function eventHandler(e) {
     console.log(`Event: ${e}`);
