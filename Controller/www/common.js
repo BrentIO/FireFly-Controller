@@ -310,6 +310,54 @@ class controllerLocalStorage{
         localStorage.removeItem("controller_" + this._id);
     }
 
+    async authenticate(){
+
+        this.retrieve();
+
+        if(this.ip == ""){
+            throw new Error(`IP address not set.`);
+        }
+
+        if(this.visualToken == ""){
+            throw new Error(`Visual token not set.`);
+        }
+
+        var response = await fetch(`http://${this.ip}/auth`, {
+            signal: AbortSignal.timeout(apiTimeout), 
+            method: 'POST',
+            headers: {
+                "visual-token":this.visualToken
+            }
+        });
+
+        switch(response.status){
+            case 204:
+                this._isAuthenticated = true;
+                this.save();
+                break;
+
+            case 401:
+                this._isAuthenticated = false;
+                this.visualToken = "";
+                this.save();
+                throw new Error(`Authentication failure (${response.status})`);
+                break;
+
+            default:
+                this._isAuthenticated = false;
+                this.visualToken = "";
+                this.save();
+                throw new Error(`Authentication failure (${response.status})`);
+                break;
+        }
+    }
+
+    logout(){
+        this.retrieve();
+        this._isAuthenticated = false;
+        this.visualToken = "";
+        this.save();
+    }
 }
 
 
