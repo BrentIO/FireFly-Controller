@@ -144,52 +144,58 @@ async function resetDatabase(){
 
 
 class controllerLocalStorage{
-    ip;
-    certificates = [];
-    firmwareVersion;
-    uiVersion;
-    visualToken;
-    uuid;
-    isAuthenticated = false;
-    eventLog = [];
-    errorLog = [];
-
     constructor(id){
-        this.id = id;
+        this._id = parseInt(id);
+        this._ip = "";
+        this._certificates = [];
+        this._firmwareVersion = "";
+        this._uiVersion = "";
+        this._visualToken = "";
+        this._uuid;
+        this._isAuthenticated = false;
+        this._eventLog = [];
+        this._errorLog = [];
         this.retrieve();
     }
 
+    get id(){
+        return parseInt(this._id);
+    }
+
     get ip(){
-        return this.ip;
+        return this._ip;
     }
 
     /**
      * @param {string} value
      */
     set ip(value){
-        this.ip = value;
+        this._ip = value;
+        this.save();
     }
 
     get certificates(){
-        return this.certificates;
+        return this._certificates;
     }
 
     /**
      * @param {any[]} value
      */
     set certificates(value){
-        this.certificates = value;
+        this._certificates = value;
+        this.save();
     }
 
     get firmwareVersion(){
-        return this.firmwareVersion;
+        return this._firmwareVersion;
     }
 
     /**
      * @param {string} value
      */
     set firmwareVersion(value){
-        this.firmwareVersion = value;
+        this._firmwareVersion = value;
+        this.save();
     }
 
     get uuid(){
@@ -200,94 +206,108 @@ class controllerLocalStorage{
      * @param {string} value
      */
     set uuid(value){
-        this.uuid = value;
+        this._uuid = value;
+        this.save();
     }
 
     get uiVersion(){
-        return this.uiVersion;
+        return this._uiVersion;
     }
 
     /**
      * @param {string} value
      */
     set uiVersion(value){
-        this.uiVersion = value;
+        this._uiVersion = value;
+        this.save();
     }
 
     get visualToken(){
-        return this.visualToken;
+        return this._visualToken;
     }
 
     /**
      * @param {string} value
      */
     set visualToken(value){
-        this.visualToken = value;
+        this._visualToken = value.trim();
+        this.save();
     }
 
     get isAuthenticated(){
-        return this.isAuthenticated;
-    }
-
-    /**
-     * @param {boolean} value
-     */
-    set isAuthenticated(value){
-        this.isAuthenticated = value;
+        return this._isAuthenticated;
     }
 
     get eventLog(){
-        return this.eventLog;
+        return this._eventLog;
     }
 
     /**
      * @param {any[]} value
      */
     set eventLog(value){
-        this.eventLog = value;
+        this._eventLog = value;
+        this.save();
     }
 
     get errorLog(){
-        return this.errorLog;
+        return this._errorLog;
     }
 
     /**
      * @param {any[]} value
      */
     set errorLog(value){
-        this.errorLog = value;
+        this._errorLog = value;
+        this.save();
     }
 
     retrieve(){
-        const record = JSON.parse(localStorage.getItem("controller_" + this.id));
+        const record = JSON.parse(localStorage.getItem("controller_" + this._id));
 
         if(record == null){
             return;
         }
 
-        if("ip" in record){
-            this.ip = record.ip;
+        if("_ip" in record){
+            this._ip = record._ip;
         }
 
-        if("certificates" in record){
-            this.certificates = record.certificates;
+        if("_visualToken" in record){
+            this._visualToken = record._visualToken;
         }
 
-        if("firmwareVersion" in record){
-            this.firmwareVersion = record.firmwareVersion;
+        if("_errorLog" in record){
+            this._errorLog = record._errorLog;
         }
 
-        if("uiVersion" in record){
-            this.uiVersion = record.uiVersion;
+        if("_eventLog" in record){
+            this._eventLog = record._eventLog;
+        }
+
+        if("_isAuthenticated" in record){
+            this._isAuthenticated = record._isAuthenticated;
+        }
+
+        if("_certificates" in record){
+            this._certificates = record._certificates;
+        }
+
+        if("_firmwareVersion" in record){
+            this._firmwareVersion = record._firmwareVersion;
+        }
+
+        if("_uiVersion" in record){
+            this._uiVersion = record._uiVersion;
         }
     }
 
     save(){
-        localStorage.setItem("controller_" + this.id, JSON.stringify(this));
+        localStorage.setItem("controller_" + this._id, JSON.stringify(this));
     }
 
     delete(){
-        localStorage.removeItem("controller_" + this.id);
+        localStorage.removeItem("controller_" + this._id);
     }
 
 }
