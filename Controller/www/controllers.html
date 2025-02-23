@@ -333,6 +333,15 @@
     });
 
 
+    async function logoutController(id){
+
+        var controllerLS = new controllerLocalStorage(id);
+        controllerLS.logout();
+
+        await drawManagedControllers();
+    }
+
+
     async function getControllerPIDs(){
         try{
             let pidSelect = document.getElementById("addNewControllerPID");
@@ -457,7 +466,7 @@
                                 <button class="btn btn-secondary" onclick="showEventLogModal(${controller.id});"><img class="menuIcon" src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})</button>
                                 <button class="btn btn-warning"><img src="./icons/download.svg"> Pull Backup</button>
                                 <button class="btn btn-warning" onclick="getControllerPOSTPayload(${controller.id})";><img src="./icons/upload.svg"> Deploy Configuration</button>
-                                <button class="btn btn-primary">Logout</button>`;
+                                <button class="btn btn-primary" onclick="logoutController(${controller.id});">Logout</button>`;
                                 }else{
                                     newControllerCard += `<button class="btn btn-primary">Authenticate</button>`;
                                 }
