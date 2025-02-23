@@ -149,6 +149,9 @@ class controllerLocalStorage{
     uiVersion;
     visualToken;
     uuid;
+    isAuthenticated = false;
+    eventLog = [];
+    errorLog = [];
 
     constructor(id){
         this.id = id;
