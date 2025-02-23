@@ -333,6 +333,100 @@
     });
 
 
+    async function authenticateController(id){
+
+        try{
+            var controllerLS = new controllerLocalStorage(id);
+            authenticateButton = document.getElementById(`Authenticate_${id}`);
+            authenticateButton.innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
+            authenticateButton.disabled = true;
+
+            await controllerLS.authenticate();
+
+            getDetailsFromController(id);
+
+        }catch (exception){
+            authenticateButton.disabled = false;
+            authenticateButton.innerHTML = "Authenticate";
+            if(exception.name == "TimeoutError"){
+                exception = "Timeout"
+            }
+            errorHandler(exception);
+        }
+    }
+
+
+    async function getDetailsFromController(id){
+        await getErrorLogFromController(id);
+        await getEventLogFromController(id);
+        await drawManagedControllers();
+    }
+
+
+    async function getErrorLogFromController(id){
+        try{
+            var controllerLS = new controllerLocalStorage(id);
+
+            var response = await fetch(`http://${controllerLS.ip}/errors`, {
+                signal: AbortSignal.timeout(apiTimeout), 
+                method: 'GET',
+                headers: {
+                    "visual-token":controllerLS.visualToken
+                }
+            });
+
+            switch(response.status){
+                case 200:
+                    controllerLS.errorLog = await response.json();
+                    break;
+
+                case 401:
+                    controllerLS.logout();
+                    throw new Error(`Authentication required (${response.status})`);
+                    break;
+
+                default:
+                    throw new Error(`Unexpected error retrieving error log (${response.status})`);
+                    break;
+            }
+        }catch (exception){
+            errorHandler(exception);
+        }
+    }
+
+
+    async function getEventLogFromController(id){
+        try{
+            var controllerLS = new controllerLocalStorage(id);
+
+            var response = await fetch(`http://${controllerLS.ip}/events`, {
+                signal: AbortSignal.timeout(apiTimeout), 
+                method: 'GET',
+                headers: {
+                    "visual-token":controllerLS.visualToken
+                }
+            });
+
+            switch(response.status){
+                case 200:
+                    controllerLS.eventLog = await response.json();
+                    break;
+
+                case 401:
+                    controllerLS.logout();
+                    throw new Error(`Authentication required (${response.status})`);
+                    break;
+
+                default:
+                    throw new Error(`Unexpected error retrieving event log (${response.status})`);
+                    break;
+            }
+        }catch (exception){
+            errorHandler(exception);
+        }
+    }
+
+
     async function logoutController(id){
 
         var controllerLS = new controllerLocalStorage(id);
@@ -468,7 +562,7 @@
                                 <button class="btn btn-warning" onclick="getControllerPOSTPayload(${controller.id})";><img src="./icons/upload.svg"> Deploy Configuration</button>
                                 <button class="btn btn-primary" onclick="logoutController(${controller.id});">Logout</button>`;
                                 }else{
-                                    newControllerCard += `<button class="btn btn-primary">Authenticate</button>`;
+                                    newControllerCard += `<button class="btn btn-primary" id="Authenticate_${controller.id}" onclick="showVisualTokenModal(${controller.id});">Authenticate</button>`;
                                 }
 
                         newControllerCard += `
