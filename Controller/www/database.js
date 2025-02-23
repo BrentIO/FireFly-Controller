@@ -7,6 +7,7 @@ var controller_products = [{"pid":"FFC3232-2305","inputs":{"count":32},"outputs"
 var colors = [{"name":"Blue","hex":"#2a36e5"},{"name":"Green","hex":"#46a046"},{"name":"Red","hex":"#db1a1a"},{"name":"White","hex":"#ffffff"},{"name":"Yellow","hex":"#ffbc47"}];
 var relay_models = [{"type":"BINARY","manufacturer":"Crydom","model":"DR2260D20V","description":"Contactor"},{"type":"BINARY","manufacturer":"Crydom","model":"DR2220D20U","description":"Relay"},{"type":"VARIABLE","manufacturer":"Crydom","model":"PMP2425W","description":"Proportional Control"}];
 var circuit_icons = [{"name":"Chandelier","icon":"mdi:chandelier"},{"name":"Recessed Light","icon":"mdi:light-recessed"},{"name":"Floor Lamp","icon":"mdi:floor-lamp"},{"name":"Wall Sconce","icon":"mdi:wall-sconce"}]
+var areas = [{"name":"Living Room"},{"name":"Garage"},{"name":"Kitchen"},{"name":"Hallway"},{"name":"Primary Bedroom"},{"name":"Guest Bedroom"}];
 
 const initDB = () => {
     db.version(dbVersion).stores({
@@ -33,6 +34,7 @@ const initDB = () => {
         transaction.colors.bulkAdd(colors);
         transaction.relay_models.bulkAdd(relay_models);
         transaction.circuit_icons.bulkAdd(circuit_icons);
+        transaction.areas.bulkAdd(areas);
     });
 
     db.open();
