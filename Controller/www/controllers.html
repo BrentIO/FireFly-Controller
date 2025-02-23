@@ -101,6 +101,59 @@
         </div>
     </div>
 
+
+    <!-- Event Log Modal -->
+    <div class="modal fade" id="eventLogModal" tabindex="-1" aria-labelledby="eventLogModalLabel" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="eventLogModalLabel">Controller Event Log</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th scope="col">Local Time/Date</th>
+                                <th scope="col">Level</th>
+                                <th scope="col">Event</th>
+                            </tr>
+                            </thead>
+                        <tbody id="eventLogList"></tbody>
+                    </table>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Error Log Modal -->
+    <div class="modal fade" id="errorLogModal" tabindex="-1" aria-labelledby="errorLogModalLabel" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="errorLogModalLabel">Controller Error Log</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th scope="col">Error</th>
+                            </tr>
+                            </thead>
+                        <tbody id="errorLogList"></tbody>
+                    </table>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 <script>
@@ -108,6 +161,8 @@
     var areaList=[];
 
     var addNewControllerModal = new bootstrap.Modal('#addNewControllerModal');
+    var viewErrorLogModal = new bootstrap.Modal('#errorLogModal');
+    var viewEventLogModal = new bootstrap.Modal('#eventLogModal');
 
 
     document.getElementById("addNewControllerButtonAdd").addEventListener('click', () => {
@@ -158,7 +213,7 @@
         addNewControllerModal.toggle();
     }
 
-    
+
     document.getElementById("addNewControllerModal").addEventListener('show.bs.modal', () => {        
         form = document.getElementById("addNewControllerForm");
         form.reset();
@@ -170,6 +225,67 @@
     });
 
 
+    async function showEventLogModal(id){
+
+        controller = await db.controllers.where("id").equals(id).first();
+
+        document.getElementById("eventLogModalLabel").innerText = `Event Log for ${controller.name}`;
+        var eventLogList = document.getElementById('eventLogList');
+        var controllerLS = new controllerLocalStorage(id);
+
+        eventLogList.innerHTML = "";
+
+        controllerLS.eventLog.forEach((event)=>{
+            var entry = `
+                <td>${new Date(event.time*1000).toLocaleString()}</td>
+                <td>`
+                    switch(event.level){
+                        case "info":
+                            entry += `<span class="badge text-bg-info">Info</span>`;
+                            break;
+                        case "notify":
+                            entry += `<span class="badge text-bg-warning">Notification</span>`;
+                            break;
+                        case "error":
+                            entry += `<span class="badge text-bg-danger">Error</span>`;
+                            break;
+                        default:
+                            entry += `<span class="badge text-bg-dark">${event.level}</span>`;
+                            break;
+                    };
+
+            entry += `</td>
+                <td>${event.text}</td>`
+
+            eventLogList.insertAdjacentHTML('beforeend', entry);
+
+        });
+
+        viewEventLogModal.show();
+    }
+
+
+    async function showErrorLogModal(id){
+
+        controller = await db.controllers.where("id").equals(id).first();
+
+
+        document.getElementById("errorLogModalLabel").innerText = `Error Log for ${controller.name}`;
+        var errorLogList = document.getElementById('errorLogList');
+        var controllerLS = new controllerLocalStorage(id);
+
+        errorLogList.innerHTML = "";
+
+        controllerLS.errorLog.forEach((event)=>{
+            var entry = `<td>${event.text}</td>`
+
+            errorLogList.insertAdjacentHTML('beforeend', entry);
+
+        });
+        viewErrorLogModal.show();
+    }
+
+    
     async function getControllerPIDs(){
         try{
             let pidSelect = document.getElementById("addNewControllerPID");
@@ -278,7 +394,9 @@
                                 </div>
                                 <div>
                                     <span class="col controllerDetailsLabel">Product ID:</span> <span id="PID_${controller.id}">${controller.product.pid??"Unknown"}</span>
-                                </div>
+                                </div>`
+                                if(controllerLS.isAuthenticated == true){
+                                    newControllerCard += `
                                 <div>
                                     <span class="col controllerDetailsLabel">Firmware Version:</span> <span id="firmwareVersion_${controller.id}">${controllerLS.firmwareVersion??"Unknown"}</span>
                                 </div>
@@ -287,13 +405,18 @@
                                 </div>
                                 <div>
                                     <span class="col controllerDetailsLabel">Certificates:</span> <span id="certificates_${controller.id}">${certificateText}</span>
-                                </div>    
-                                <button class="btn btn-primary">Authenticate</button>
-                                <button class="btn btn-outline-primary">Logout</button>
-                                <button class="btn btn-outline-warning" onclick="getControllerPOSTPayload(${controller.id})";>Deploy Configuration</button>
-                                <button class="btn btn-outline-warning">Pull Backup</button>
-                                <button class="btn btn-outline-danger" id="stopManagingAndDeleteButton${controller.id}" onclick="toggleConfirmDeleteController(${controller.id})">Stop Managing and Delete</button>
+                                </div>
+                                <button class="btn btn-secondary" onclick="showErrorLogModal(${controller.id});" ${controllerLS.errorLog.length==0?"disabled":""}><img class="menuIcon" src="./icons/error.svg"> View Error Log (${controllerLS.errorLog.length})</button>
+                                <button class="btn btn-secondary" onclick="showEventLogModal(${controller.id});" ${controllerLS.eventLog.length==0?"disabled":""}><img class="menuIcon" src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})</button>
+                                <button class="btn btn-warning"><img src="./icons/download.svg"> Pull Backup</button>
+                                <button class="btn btn-warning" onclick="getControllerPOSTPayload(${controller.id})";><img src="./icons/upload.svg"> Deploy Configuration</button>
+                                <button class="btn btn-primary">Logout</button>`;
+                                }else{
+                                    newControllerCard += `<button class="btn btn-primary">Authenticate</button>`;
+                                }
 
+                        newControllerCard += `
+                                <button class="btn btn-outline-danger" id="stopManagingAndDeleteButton${controller.id}" onclick="toggleConfirmDeleteController(${controller.id})">Stop Managing and Delete</button>
                                 <div class="input-group mb-3" id="confirmDeleteController${controller.id}" hidden>
                                     <input type="text" class="form-control" placeholder="type \'delete\'" id="confirmDeleteText${controller.id}" oninput="confirmDeleteControllerChallegeOnChange(${controller.id});">
                                     <button class="btn btn-secondary" type="button" onclick="toggleConfirmDeleteController(${controller.id})">Cancel</button>
