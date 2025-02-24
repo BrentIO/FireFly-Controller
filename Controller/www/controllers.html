@@ -122,6 +122,7 @@
                         <tbody id="eventLogList"></tbody>
                     </table>
                     <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" id="eventLogModalRefreshButton">Refresh</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
@@ -148,6 +149,7 @@
                         <tbody id="errorLogList"></tbody>
                     </table>
                     <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" id="errorLogModalRefreshButton">Refresh</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
@@ -254,6 +256,7 @@
         controller = await db.controllers.where("id").equals(id).first();
 
         document.getElementById("eventLogModalLabel").innerText = `Event Log for ${controller.name}`;
+        document.getElementById("eventLogModalRefreshButton").setAttribute("onclick", `refreshEventLog(${id});`);
         drawEventLog(id);
         viewEventLogModal.show();
     }
@@ -290,9 +293,23 @@
     }
 
 
+    async function refreshEventLog(id){
+        await getEventLogFromController(id);
+        drawEventLog(id);
+    }
+
+
+    async function refreshErrorLog(id){
+        await getErrorLogFromController(id);
+        drawErrorLog(id);
+    }
+
+
     async function showErrorLogModal(id){
         controller = await db.controllers.where("id").equals(id).first();
         document.getElementById("errorLogModalLabel").innerText = `Error Log for ${controller.name}`;
+        document.getElementById("errorLogModalRefreshButton").setAttribute("onclick", `refreshErrorLog(${id});`);
+        
         drawErrorLog(id);
         viewErrorLogModal.show();
     }
@@ -321,6 +338,7 @@
         visualTokenModal.show();
     }
 
+    
     document.getElementById("visualTokenModal").addEventListener('hidden.bs.modal', () => {
 
         if(document.getElementById("visualToken").value.trim() == ""){
@@ -357,15 +375,17 @@
 
 
     async function getDetailsFromController(id){
-        await getErrorLogFromController(id);
-        await getEventLogFromController(id);
         await drawManagedControllers();
+        getErrorLogFromController(id);
+        getEventLogFromController(id);
     }
 
 
     async function getErrorLogFromController(id){
         try{
             var controllerLS = new controllerLocalStorage(id);
+            document.getElementById("errorLogModalRefreshButton").innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
+            document.getElementById(`ViewErrorLogButton_${id}`).innerHTML = document.getElementById("errorLogModalRefreshButton").innerHTML;
 
             var response = await fetch(`http://${controllerLS.ip}/errors`, {
                 signal: AbortSignal.timeout(apiTimeout), 
@@ -391,6 +411,9 @@
             }
         }catch (exception){
             errorHandler(exception);
+        }finally{
+            document.getElementById("errorLogModalRefreshButton").innerHTML = "Refresh";
+            document.getElementById(`ViewErrorLogButton_${id}`).innerHTML = `<img class="menuIcon" src="./icons/description.svg"> View Error Log (${controllerLS.errorLog.length})`;
         }
     }
 
@@ -398,6 +421,8 @@
     async function getEventLogFromController(id){
         try{
             var controllerLS = new controllerLocalStorage(id);
+            document.getElementById("eventLogModalRefreshButton").innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
+            document.getElementById(`ViewEventLogButton_${id}`).innerHTML = document.getElementById("eventLogModalRefreshButton").innerHTML;
 
             var response = await fetch(`http://${controllerLS.ip}/events`, {
                 signal: AbortSignal.timeout(apiTimeout), 
@@ -423,6 +448,9 @@
             }
         }catch (exception){
             errorHandler(exception);
+        }finally{
+            document.getElementById("eventLogModalRefreshButton").innerHTML = "Refresh";
+            document.getElementById(`ViewEventLogButton_${id}`).innerHTML = `<img class="menuIcon" src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})`;
         }
     }
 
@@ -556,8 +584,8 @@
                                 <div>
                                     <span class="col controllerDetailsLabel">Certificates:</span> <span id="certificates_${controller.id}">${certificateText}</span>
                                 </div>
-                                <button class="btn btn-secondary" onclick="showErrorLogModal(${controller.id});"><img class="menuIcon" src="./icons/error.svg"> View Error Log (${controllerLS.errorLog.length})</button>
-                                <button class="btn btn-secondary" onclick="showEventLogModal(${controller.id});"><img class="menuIcon" src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})</button>
+                                <button class="btn btn-secondary" id="ViewErrorLogButton_${controller.id}" onclick="showErrorLogModal(${controller.id});"><img class="menuIcon" src="./icons/error.svg"> View Error Log (${controllerLS.errorLog.length})</button>
+                                <button class="btn btn-secondary" id="ViewEventLogButton_${controller.id}" onclick="showEventLogModal(${controller.id});"><img class="menuIcon" src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})</button>
                                 <button class="btn btn-warning"><img src="./icons/download.svg"> Pull Backup</button>
                                 <button class="btn btn-warning" onclick="getControllerPOSTPayload(${controller.id})";><img src="./icons/upload.svg"> Deploy Configuration</button>
                                 <button class="btn btn-primary" onclick="logoutController(${controller.id});">Logout</button>`;
