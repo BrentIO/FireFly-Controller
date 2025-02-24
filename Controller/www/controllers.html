@@ -411,6 +411,7 @@
             }
         }catch (exception){
             errorHandler(exception);
+            drawManagedControllers();
         }finally{
             document.getElementById("errorLogModalRefreshButton").innerHTML = "Refresh";
             document.getElementById(`ViewErrorLogButton_${id}`).innerHTML = `<img class="menuIcon" src="./icons/error.svg"> View Error Log (${controllerLS.errorLog.length})`;
@@ -448,6 +449,7 @@
             }
         }catch (exception){
             errorHandler(exception);
+            drawManagedControllers();
         }finally{
             document.getElementById("eventLogModalRefreshButton").innerHTML = "Refresh";
             document.getElementById(`ViewEventLogButton_${id}`).innerHTML = `<img class="menuIcon" src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})`;
