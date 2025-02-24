@@ -387,7 +387,7 @@
             document.getElementById("errorLogModalRefreshButton").innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
             document.getElementById(`ViewErrorLogButton_${id}`).innerHTML = document.getElementById("errorLogModalRefreshButton").innerHTML;
 
-            var response = await fetch(`http://${controllerLS.ip}/errors`, {
+            var response = await fetch(`http://${controllerLS.ip}/api/errors`, {
                 signal: AbortSignal.timeout(apiTimeout), 
                 method: 'GET',
                 headers: {
@@ -424,7 +424,7 @@
             document.getElementById("eventLogModalRefreshButton").innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
             document.getElementById(`ViewEventLogButton_${id}`).innerHTML = document.getElementById("eventLogModalRefreshButton").innerHTML;
 
-            var response = await fetch(`http://${controllerLS.ip}/events`, {
+            var response = await fetch(`http://${controllerLS.ip}/api/events`, {
                 signal: AbortSignal.timeout(apiTimeout), 
                 method: 'GET',
                 headers: {
