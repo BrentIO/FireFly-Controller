@@ -54,6 +54,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/applicationVersionInfo'
+        '401':
+          description: Unauthorized
   /ui/version:
     get:
       tags:
@@ -69,6 +71,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/uiVersionInfo'
+        '401':
+          description: Unauthorized
         '404':
           description: File system failure
 
@@ -97,6 +101,9 @@ paths:
                   $ref: '#/components/examples/errorLog'
                 No log entries:
                   $ref: '#/components/examples/emptyArray'
+        '401':
+          description: Unauthorized
+
   /api/events:
     get:
       tags:
@@ -117,6 +124,8 @@ paths:
                   $ref: '#/components/examples/eventLog'
                 No log entries:
                   $ref: '#/components/examples/emptyArray'
+        '401':
+          description: Unauthorized
 
 
 ##########################################################
@@ -195,6 +204,8 @@ paths:
                   $ref: '#/components/examples/ota_http'
                 https:
                   $ref: '#/components/examples/ota_https'
+        '401':
+          description: Unauthorized
         '404':
           description: No configuration exists
         '500':
@@ -316,6 +327,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/certificateList'
+        '401':
+          description: Unauthorized
         '500':
           description: Internal Server Error
           content:
