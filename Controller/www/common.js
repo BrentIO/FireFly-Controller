@@ -354,8 +354,14 @@ class controllerLocalStorage{
 
     logout(){
         this.retrieve();
+        this._certificates = [];
+        this._firmwareVersion = "";
+        this._uiVersion = "";
+        this._visualToken = "";
+        this._uuid;
         this._isAuthenticated = false;
-        this.visualToken = "";
+        this._eventLog = [];
+        this._errorLog = [];
         this.save();
     }
 }
