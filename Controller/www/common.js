@@ -170,6 +170,7 @@ class controllerLocalStorage{
      * @param {string} value
      */
     set ip(value){
+        this.retrieve();
         this._ip = value;
         this.save();
     }
@@ -182,6 +183,7 @@ class controllerLocalStorage{
      * @param {any[]} value
      */
     set certificates(value){
+        this.retrieve();
         this._certificates = value;
         this.save();
     }
@@ -194,7 +196,8 @@ class controllerLocalStorage{
      * @param {string} value
      */
     set firmwareVersion(value){
-        this._firmwareVersion = value;
+        this.retrieve();
+        this._firmwareVersion = value.trim();
         this.save();
     }
 
@@ -206,6 +209,7 @@ class controllerLocalStorage{
      * @param {string} value
      */
     set uuid(value){
+        this.retrieve();
         this._uuid = value;
         this.save();
     }
@@ -218,7 +222,8 @@ class controllerLocalStorage{
      * @param {string} value
      */
     set uiVersion(value){
-        this._uiVersion = value;
+        this.retrieve();
+        this._uiVersion = value.trim();
         this.save();
     }
 
@@ -230,6 +235,7 @@ class controllerLocalStorage{
      * @param {string} value
      */
     set visualToken(value){
+        this.retrieve();
         this._visualToken = value.trim();
         this.save();
     }
@@ -246,6 +252,7 @@ class controllerLocalStorage{
      * @param {any[]} value
      */
     set eventLog(value){
+        this.retrieve();
         this._eventLog = value;
         this.save();
     }
@@ -258,6 +265,7 @@ class controllerLocalStorage{
      * @param {any[]} value
      */
     set errorLog(value){
+        this.retrieve();
         this._errorLog = value;
         this.save();
     }
