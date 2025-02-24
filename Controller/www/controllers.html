@@ -413,7 +413,7 @@
             errorHandler(exception);
         }finally{
             document.getElementById("errorLogModalRefreshButton").innerHTML = "Refresh";
-            document.getElementById(`ViewErrorLogButton_${id}`).innerHTML = `<img class="menuIcon" src="./icons/description.svg"> View Error Log (${controllerLS.errorLog.length})`;
+            document.getElementById(`ViewErrorLogButton_${id}`).innerHTML = `<img class="menuIcon" src="./icons/error.svg"> View Error Log (${controllerLS.errorLog.length})`;
         }
     }
 
