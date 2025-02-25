@@ -186,6 +186,7 @@
 <script>
 
     var areaList=[];
+    var currentlyDrawingControllers = false;
 
     var addNewControllerModal = new bootstrap.Modal('#addNewControllerModal');
     var viewErrorLogModal = new bootstrap.Modal('#errorLogModal');
@@ -577,7 +578,14 @@
 
 
     async function drawManagedControllers(){
+        if(currentlyDrawingControllers == true){
+            return;
+        }
+
         try{
+
+            currentlyDrawingControllers = true;
+            
             await getAreaList();
 
             let managedControllerList = document.getElementById("managedControllerList");
@@ -674,6 +682,8 @@
             });
         } catch (error) {
             errorHandler(error);
+        }finally{
+            currentlyDrawingControllers = false;
         }
     }
 
