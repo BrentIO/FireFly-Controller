@@ -412,6 +412,7 @@
                             controllerLS.firmwareVersion = payload.application;
                         }
 
+                        validateUUIDMatches(id);
                         break;
 
                     case 401:
@@ -749,22 +750,13 @@
                                     <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveAreaIcon_${controller.id}" onClick="saveEdit(${controller.id}, 'Area')"; hidden>
                                     <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelAreaIcon_${controller.id}" onClick="cancelEdit(${controller.id}, 'Area')"; hidden>
                                 </div>
-                                <div class="editableDetails">
+                                <div class="editableDetails" id="uuidRow_${controller.id}">
                                     <span class="col controllerDetailsLabel">UUID:</span> <span class="uuid" id="UUID_${controller.id}" onInput="editFieldRealtimeValidation(${controller.id}, 'UUID')";>${controller.uuid}</span>
                                     <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editUUIDIcon_${controller.id}" onClick="startEdit(${controller.id}, 'UUID')";">
                                     <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveUUIDIcon_${controller.id}" onClick="saveEdit(${controller.id}, 'UUID')"; hidden>
                                     <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelUUIDIcon_${controller.id}" onClick="cancelEdit(${controller.id}, 'UUID')"; hidden>
-                                </div>`;
-
-                                if(controllerLS.uuid != "" && controllerLS.uuid != controller.uuid){
-                                    newControllerCard += `
-                                    <div class="alert alert-danger" role="alert" id="uuidMismatch_${controller.id}">
-                                        <h5>UUID Mismatch</h5>
-                                            <span class="col controllerDetailsLabel">Hardware UUID: </span><span class="uuid">${controllerLS.uuid}</span>
-                                    </div>`;
-                                }
-
-                                newControllerCard += `<div class="editableDetails">
+                                </div>
+                                <div class="editableDetails">
                                     <span class="col controllerDetailsLabel">IP Address:</span> <span id="IP_${controller.id}" onInput="editFieldRealtimeValidation(${controller.id}, 'IP')";>${controllerLS.ip??"Unknown"}</span>
                                     <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editIPIcon_${controller.id}" onClick="startEdit(${controller.id}, 'IP')";">
                                     <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveIPIcon_${controller.id}" onClick="saveEdit(${controller.id}, 'IP')"; hidden>
@@ -808,6 +800,7 @@
                 document.getElementById('managedControllerList').insertAdjacentHTML('beforeend', newControllerCard);
 
                 drawCertificates(controller.id);
+                validateUUIDMatches(controller.id);
             });
         } catch (error) {
             errorHandler(error);
@@ -931,14 +924,7 @@
             case 'UUID':
                 if(isValidUUID(value)){
                     await db.controllers.update(id, {uuid: value});
-                    var controllerLS = new controllerLocalStorage(id);
-                    if(controllerLS.uuid == value){
-                        if(document.getElementById(`uuidMismatch_${id}`)){
-                            document.getElementById(`uuidMismatch_${id}`).hidden = true;
-                        }
-                    }else{
-                        await drawManagedControllers();
-                    }
+                    validateUUIDMatches(id);
                 }else{
                     warningHandler("An invalid UUID was input, reverting to the prior value.");
                     cancelEdit(id, fieldName);
@@ -1003,6 +989,31 @@
                 uuidEditFieldRealtimeValidation(fieldName + "_" +id,'innerText');
                 break;
         }
+    }
+
+
+    async function validateUUIDMatches(id){
+
+        if(!document.getElementById(`uuidRow_${id}`)){
+            return;
+        }
+
+        controller = await db.controllers.where("id").equals(id).first();
+
+        var controllerLS = new controllerLocalStorage(id);
+
+        if(document.getElementById(`uuidMismatch_${id}`)){
+                document.getElementById(`uuidMismatch_${id}`).remove();
+        }
+
+        if(controllerLS.uuid != "" && controllerLS.uuid != controller.uuid){
+            var mismatchDiv = `
+                <div class="alert alert-danger" role="alert" id="uuidMismatch_${id}">
+                    <h5>UUID Mismatch</h5>
+                        <span class="col controllerDetailsLabel">Hardware UUID: </span><span class="uuid">${controllerLS.uuid}</span>
+                </div>`
+            document.getElementById(`uuidRow_${id}`).insertAdjacentHTML('afterend', mismatchDiv);
+        }     
     }
 
 
