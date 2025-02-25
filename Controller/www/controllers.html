@@ -362,7 +362,12 @@
 
             await controllerLS.authenticate();
 
-            getDetailsFromController(id);
+            await drawManagedControllers();
+            getErrorLogFromController(id);
+            getEventLogFromController(id);
+            getFirmwareVersionFromController(id);
+            getUIVersionFromController(id);
+            getCertificatesFromController(id);
 
         }catch (exception){
             authenticateButton.disabled = false;
@@ -371,14 +376,110 @@
                 exception = "Timeout while attempting to authenticate to controller."
             }
             errorHandler(exception);
+            await drawManagedControllers();
         }
     }
 
 
-    async function getDetailsFromController(id){
-        await drawManagedControllers();
-        getErrorLogFromController(id);
-        getEventLogFromController(id);
+    async function getFirmwareVersionFromController(id){
+
+        try{
+
+            var controllerLS = new controllerLocalStorage(id);
+
+            document.getElementById(`firmwareVersion_${id}`).innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
+
+            var response = await fetch(`http://${controllerLS.ip}/api/version`, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'GET',
+                    headers: {
+                        "visual-token":controllerLS.visualToken
+                    }
+                });
+
+                switch(response.status){
+                    case 200:
+                        var payload = await response.json();
+
+                        if("uuid" in payload){
+                            controllerLS.uuid = payload.uuid;
+                        }else{
+                            throw new Error(`Response from controller did not include a UUID field.`);
+                        }
+
+                        if("application" in payload){
+                            controllerLS.firmwareVersion = payload.application;
+                        }
+
+                        break;
+
+                    case 401:
+                        controllerLS.logout();
+                        throw new Error(`Authentication required (${response.status})`);
+                        break;
+
+                    default:
+                        throw new Error(`Unexpected error retrieving firmware version (${response.status})`);
+                        break;
+                }
+
+        }catch(exception){
+            if(exception.name == "TimeoutError"){
+                exception = "Timeout attempting to retrieve firmware version from controller."
+            }
+            errorHandler(exception);
+            await drawManagedControllers();
+        }finally{
+            document.getElementById(`firmwareVersion_${id}`).innerHTML = controllerLS.firmwareVersion;
+        }
+    }
+
+
+    async function getUIVersionFromController(id){
+
+        try{
+
+            var controllerLS = new controllerLocalStorage(id);
+
+            document.getElementById(`uiVersion_${id}`).innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
+
+            var response = await fetch(`http://${controllerLS.ip}/ui/version`, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'GET',
+                    headers: {
+                        "visual-token":controllerLS.visualToken
+                    }
+                });
+
+                switch(response.status){
+                    case 200:
+                        var payload = await response.json();
+
+                        if("ui" in payload){
+                            controllerLS.uiVersion = payload.ui;
+                        }
+
+                        break;
+
+                    case 401:
+                        controllerLS.logout();
+                        throw new Error(`Authentication required (${response.status})`);
+                        break;
+
+                    default:
+                        throw new Error(`Unexpected error retrieving UI version (${response.status})`);
+                        break;
+                }
+
+        }catch(exception){
+            if(exception.name == "TimeoutError"){
+                exception = "Timeout attempting to retrieve UI version from controller."
+            }
+            errorHandler(exception);
+            await drawManagedControllers();
+        }finally{
+            document.getElementById(`uiVersion_${id}`).innerHTML = controllerLS.uiVersion;
+        }
     }
 
 
