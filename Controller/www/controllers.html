@@ -754,8 +754,17 @@
                                     <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editUUIDIcon_${controller.id}" onClick="startEdit(${controller.id}, 'UUID')";">
                                     <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveUUIDIcon_${controller.id}" onClick="saveEdit(${controller.id}, 'UUID')"; hidden>
                                     <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelUUIDIcon_${controller.id}" onClick="cancelEdit(${controller.id}, 'UUID')"; hidden>
-                                </div>
-                                <div class="editableDetails">
+                                </div>`;
+
+                                if(controllerLS.uuid != "" && controllerLS.uuid != controller.uuid){
+                                    newControllerCard += `
+                                    <div class="alert alert-danger" role="alert" id="uuidMismatch_${controller.id}">
+                                        <h5>UUID Mismatch</h5>
+                                            <span class="col controllerDetailsLabel">Hardware UUID: </span><span class="uuid">${controllerLS.uuid}</span>
+                                    </div>`;
+                                }
+
+                                newControllerCard += `<div class="editableDetails">
                                     <span class="col controllerDetailsLabel">IP Address:</span> <span id="IP_${controller.id}" onInput="editFieldRealtimeValidation(${controller.id}, 'IP')";>${controllerLS.ip??"Unknown"}</span>
                                     <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editIPIcon_${controller.id}" onClick="startEdit(${controller.id}, 'IP')";">
                                     <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveIPIcon_${controller.id}" onClick="saveEdit(${controller.id}, 'IP')"; hidden>
@@ -922,6 +931,14 @@
             case 'UUID':
                 if(isValidUUID(value)){
                     await db.controllers.update(id, {uuid: value});
+                    var controllerLS = new controllerLocalStorage(id);
+                    if(controllerLS.uuid == value){
+                        if(document.getElementById(`uuidMismatch_${id}`)){
+                            document.getElementById(`uuidMismatch_${id}`).hidden = true;
+                        }
+                    }else{
+                        await drawManagedControllers();
+                    }
                 }else{
                     warningHandler("An invalid UUID was input, reverting to the prior value.");
                     cancelEdit(id, fieldName);
