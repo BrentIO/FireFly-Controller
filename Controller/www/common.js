@@ -152,7 +152,7 @@ class controllerLocalStorage{
         this._firmwareVersion = "";
         this._uiVersion = "";
         this._visualToken = "";
-        this._uuid;
+        this._uuid = "";
         this._isAuthenticated = false;
         this._eventLog = [];
         this._errorLog = [];
@@ -204,7 +204,7 @@ class controllerLocalStorage{
     }
 
     get uuid(){
-        return this.uuid;
+        return this._uuid;
     }
 
     /**
@@ -279,6 +279,10 @@ class controllerLocalStorage{
             return;
         }
 
+        if("_uuid" in record){
+            this._uuid = record._uuid;
+        }
+
         if("_ip" in record){
             this._ip = record._ip;
         }
@@ -322,7 +326,7 @@ class controllerLocalStorage{
                 this._firmwareVersion = "";
                 this._uiVersion = "";
                 this._visualToken = "";
-                this._uuid;
+                this._uuid = "";
                 this._isAuthenticated = false;
                 this._authenticationTime = null;
                 this._eventLog = [];
