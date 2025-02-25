@@ -386,8 +386,9 @@
         try{
 
             var controllerLS = new controllerLocalStorage(id);
+            var element = document.getElementById(`firmwareVersion_${id}`);
 
-            document.getElementById(`firmwareVersion_${id}`).innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
+            element.innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
 
             var response = await fetch(`http://${controllerLS.ip}/api/version`, {
                     signal: AbortSignal.timeout(apiTimeout), 
@@ -430,7 +431,9 @@
             errorHandler(exception);
             await drawManagedControllers();
         }finally{
-            document.getElementById(`firmwareVersion_${id}`).innerHTML = controllerLS.firmwareVersion;
+            if(element){
+                element.innerHTML = controllerLS.firmwareVersion;
+            }
         }
     }
 
@@ -438,10 +441,11 @@
     async function getUIVersionFromController(id){
 
         try{
+            var element = document.getElementById(`uiVersion_${id}`);
 
             var controllerLS = new controllerLocalStorage(id);
 
-            document.getElementById(`uiVersion_${id}`).innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
+            element.innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
 
             var response = await fetch(`http://${controllerLS.ip}/ui/version`, {
                     signal: AbortSignal.timeout(apiTimeout), 
@@ -478,7 +482,9 @@
             errorHandler(exception);
             await drawManagedControllers();
         }finally{
-            document.getElementById(`uiVersion_${id}`).innerHTML = controllerLS.uiVersion;
+            if(element){
+                element.innerHTML = controllerLS.uiVersion;
+            }
         }
     }
 
@@ -486,8 +492,9 @@
     async function getErrorLogFromController(id){
         try{
             var controllerLS = new controllerLocalStorage(id);
+            var element = document.getElementById(`ViewErrorLogButton_${id}`)
             document.getElementById("errorLogModalRefreshButton").innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
-            document.getElementById(`ViewErrorLogButton_${id}`).innerHTML = document.getElementById("errorLogModalRefreshButton").innerHTML;
+            element.innerHTML = document.getElementById("errorLogModalRefreshButton").innerHTML;
 
             var response = await fetch(`http://${controllerLS.ip}/api/errors`, {
                 signal: AbortSignal.timeout(apiTimeout), 
@@ -519,7 +526,9 @@
             await drawManagedControllers();
         }finally{
             document.getElementById("errorLogModalRefreshButton").innerHTML = "Refresh";
-            document.getElementById(`ViewErrorLogButton_${id}`).innerHTML = `<img class="menuIcon" src="./icons/error.svg"> View Error Log (${controllerLS.errorLog.length})`;
+            if(element){
+                element.innerHTML = `<img class="menuIcon" src="./icons/error.svg"> View Error Log (${controllerLS.errorLog.length})`;
+            }
         }
     }
 
@@ -527,8 +536,9 @@
     async function getEventLogFromController(id){
         try{
             var controllerLS = new controllerLocalStorage(id);
+            var element = document.getElementById(`ViewEventLogButton_${id}`);
             document.getElementById("eventLogModalRefreshButton").innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
-            document.getElementById(`ViewEventLogButton_${id}`).innerHTML = document.getElementById("eventLogModalRefreshButton").innerHTML;
+            element.innerHTML = document.getElementById("eventLogModalRefreshButton").innerHTML;
 
             var response = await fetch(`http://${controllerLS.ip}/api/events`, {
                 signal: AbortSignal.timeout(apiTimeout), 
@@ -560,7 +570,9 @@
             await drawManagedControllers();
         }finally{
             document.getElementById("eventLogModalRefreshButton").innerHTML = "Refresh";
-            document.getElementById(`ViewEventLogButton_${id}`).innerHTML = `<img class="menuIcon" src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})`;
+            if(element){
+                element.innerHTML = `<img class="menuIcon" src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})`;
+            }
         }
     }
 
@@ -615,13 +627,14 @@
 
 
     function drawCertificates(id){
-        var controllerLS = new controllerLocalStorage(id);
 
-        if(!document.getElementById(`certificates_${id}`)){
+        var element = document.getElementById(`certificates_${id}`);
+
+        if(!element){
             return;
         }
 
-        var element = document.getElementById(`certificates_${id}`);
+        var controllerLS = new controllerLocalStorage(id);
 
         if(controllerLS.certificates.length == 0){
             element.innerHTML = "Unknown";
