@@ -1,6 +1,7 @@
 const maximumHIDsPerClient = 6;
 const maximumHIDsPerInputPort = 4;
 const apiTimeout = 5000;
+const controllerLoginMaxDurationMS = (30*60000);
 
 function eventHandler(e) {
     console.log(`Event: ${e}`);
@@ -155,6 +156,7 @@ class controllerLocalStorage{
         this._isAuthenticated = false;
         this._eventLog = [];
         this._errorLog = [];
+        this._authenticationTime = null;
         this.retrieve();
     }
 
@@ -308,6 +310,26 @@ class controllerLocalStorage{
         if("_uiVersion" in record){
             this._uiVersion = record._uiVersion;
         }
+
+        if("_authenticationTime" in record){
+            this._authenticationTime = record._authenticationTime;
+        }
+
+        if(this._isAuthenticated){
+
+            if(controllerLoginMaxDurationMS - (new Date() - new Date(this._authenticationTime).getTime()) < 0){
+                this._certificates = [];
+                this._firmwareVersion = "";
+                this._uiVersion = "";
+                this._visualToken = "";
+                this._uuid;
+                this._isAuthenticated = false;
+                this._authenticationTime = null;
+                this._eventLog = [];
+                this._errorLog = [];
+                this.save();
+            }
+        }
     }
 
     save(){
@@ -341,6 +363,7 @@ class controllerLocalStorage{
         switch(response.status){
             case 204:
                 this._isAuthenticated = true;
+                this._authenticationTime = new Date().getTime();
                 this.save();
                 break;
 
@@ -368,6 +391,7 @@ class controllerLocalStorage{
         this._visualToken = "";
         this._uuid;
         this._isAuthenticated = false;
+        this._authenticationTime = null;
         this._eventLog = [];
         this._errorLog = [];
         this.save();
