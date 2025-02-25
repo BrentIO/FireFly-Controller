@@ -368,7 +368,7 @@
             authenticateButton.disabled = false;
             authenticateButton.innerHTML = "Authenticate";
             if(exception.name == "TimeoutError"){
-                exception = "Timeout"
+                exception = "Timeout while attempting to authenticate to controller."
             }
             errorHandler(exception);
         }
@@ -411,8 +411,11 @@
                     break;
             }
         }catch (exception){
+            if(exception.name == "TimeoutError"){
+                exception = "Timeout attempting to retrieve error log from controller."
+            }
             errorHandler(exception);
-            drawManagedControllers();
+            await drawManagedControllers();
         }finally{
             document.getElementById("errorLogModalRefreshButton").innerHTML = "Refresh";
             document.getElementById(`ViewErrorLogButton_${id}`).innerHTML = `<img class="menuIcon" src="./icons/error.svg"> View Error Log (${controllerLS.errorLog.length})`;
@@ -449,8 +452,11 @@
                     break;
             }
         }catch (exception){
+            if(exception.name == "TimeoutError"){
+                exception = "Timeout attempting to retrieve event log from controller."
+            }
             errorHandler(exception);
-            drawManagedControllers();
+            await drawManagedControllers();
         }finally{
             document.getElementById("eventLogModalRefreshButton").innerHTML = "Refresh";
             document.getElementById(`ViewEventLogButton_${id}`).innerHTML = `<img class="menuIcon" src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})`;
