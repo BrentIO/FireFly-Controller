@@ -457,6 +457,77 @@
     }
 
 
+    async function getCertificatesFromController(id){
+
+        try{
+
+            var controllerLS = new controllerLocalStorage(id);
+
+            document.getElementById(`certificates_${id}`).innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
+
+            var response = await fetch(`http://${controllerLS.ip}/certs`, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'GET',
+                    headers: {
+                        "visual-token":controllerLS.visualToken
+                    }
+                });
+
+                switch(response.status){
+                    case 200:
+                        var payload = await response.json();
+                        controllerLS.certificates = payload;
+                        break;
+
+                    case 401:
+                        controllerLS.logout();
+                        throw new Error(`Authentication required (${response.status})`);
+                        break;
+
+                    case 500:
+                        controllerLS.logout();
+                        throw new Error(`File system error (${response.status})`);
+                        break;
+
+                    default:
+                        throw new Error(`Unexpected error retrieving certificates (${response.status})`);
+                        break;
+                }
+
+        }catch(exception){
+            if(exception.name == "TimeoutError"){
+                exception = "Timeout attempting to retrieve certificates from controller."
+            }
+            errorHandler(exception);
+            await drawManagedControllers();
+        }finally{
+            drawCertificates();
+        }
+    }
+
+
+    function drawCertificates(id){
+        var controllerLS = new controllerLocalStorage(id);
+
+        if(!document.getElementById(`certificates_${id}`)){
+            return;
+        }
+
+        var element = document.getElementById(`certificates_${id}`);
+
+        if(controllerLS.certificates.length == 0){
+            element.innerHTML = "Unknown";
+            return;
+        }
+
+        element.innerHTML = "";
+
+        controllerLS.certificates.forEach((certificate) =>{
+            element.innerHTML += certificate.file + "<br>";
+        });
+    }
+
+
     async function logoutController(id){
 
         var controllerLS = new controllerLocalStorage(id);
@@ -533,16 +604,6 @@
 
                 var controllerLS = new controllerLocalStorage(controller.id);
 
-                var certificateText = "";
-
-                controllerLS.certificates.forEach((certificate) =>{
-                    certificateText = certificateText + certificate + "<br>";
-                })
-
-                if(controllerLS.certificates.length == 0){
-                    certificateText = "Unknown";
-                }
-
                 var newControllerCard = `
                 <div class="col">
                     <div class="card mb-3">
@@ -584,7 +645,7 @@
                                     <span class="col controllerDetailsLabel">UI Version:</span> <span id="uiVersion_${controller.id}">${controllerLS.uiVersion??"Unknown"}</span>
                                 </div>
                                 <div>
-                                    <span class="col controllerDetailsLabel">Certificates:</span> <span id="certificates_${controller.id}">${certificateText}</span>
+                                    <span class="col controllerDetailsLabel">Certificates:</span> <div class="mx-4" id="certificates_${controller.id}"></div>
                                 </div>
                                 <button class="btn btn-secondary" id="ViewErrorLogButton_${controller.id}" onclick="showErrorLogModal(${controller.id});"><img class="menuIcon" src="./icons/error.svg"> View Error Log (${controllerLS.errorLog.length})</button>
                                 <button class="btn btn-secondary" id="ViewEventLogButton_${controller.id}" onclick="showEventLogModal(${controller.id});"><img class="menuIcon" src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})</button>
@@ -608,6 +669,8 @@
                 </div>`
 
                 document.getElementById('managedControllerList').insertAdjacentHTML('beforeend', newControllerCard);
+
+                drawCertificates(controller.id);
             });
         } catch (error) {
             errorHandler(error);
