@@ -777,7 +777,7 @@
                                 </div>
                                 <button class="btn btn-secondary" id="ViewErrorLogButton_${controller.id}" onclick="showErrorLogModal(${controller.id});"><img class="menuIcon" src="./icons/error.svg"> View Error Log (${controllerLS.errorLog.length})</button>
                                 <button class="btn btn-secondary" id="ViewEventLogButton_${controller.id}" onclick="showEventLogModal(${controller.id});"><img class="menuIcon" src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})</button>
-                                <button class="btn btn-warning"><img src="./icons/download.svg"> Pull Backup</button>
+                                <button class="btn btn-warning" id="PullBackupButton_${controller.id}" onclick="pullBackupFromController(${controller.id});"><img src="./icons/download.svg"> Pull Backup</button>
                                 <button class="btn btn-warning" onclick="getControllerPOSTPayload(${controller.id})";><img src="./icons/upload.svg"> Deploy Configuration</button>
                                 <button class="btn btn-primary" onclick="logoutController(${controller.id});">Logout</button>`;
                                 }else{
@@ -1071,6 +1071,64 @@
     function isValidDomainName(value){
         var regex =/^((www\.([a-zA-Z0-9\-]{2,63}\.)+[a-zA-Z]{2,63})|(([a-zA-Z0-9\-]{2,63}\.)+[a-zA-Z]{2,63}))(\.[a-zA-Z]{2,63})(?::\d{0,4})??$/;
         return regex.test(value);
+    }
+
+    async function pullBackupFromController(id){
+
+        var elementPriorContent = "";
+
+        try{
+
+            var controllerLS = new controllerLocalStorage(id);
+
+            element = document.getElementById(`PullBackupButton_${id}`);
+            elementPriorContent = element.innerHTML;
+
+            element.innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
+
+            var response = await fetch(`http://${controllerLS.ip}/backup`, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'GET',
+                    headers: {
+                        "visual-token":controllerLS.visualToken
+                    }
+                });
+
+                switch(response.status){
+                    case 200:
+                        download(await response.text(), `FireFlyConfig_${controllerLS.uuid}.json`, "application/json");                       
+                        break;
+
+                    case 401:
+                        controllerLS.logout();
+                        throw new Error(`Authentication required (${response.status})`);
+                        break;
+
+                    case 404:
+                        throw new Error(`Controller does not have a backup file to pull (${response.status})`);
+                        break;
+
+                    case 500:
+                        throw new Error(`File system error (${response.status})`);
+                        break;
+
+                    default:
+                        throw new Error(`Unexpected error retrieving backup (${response.status})`);
+                        break;
+                }
+
+        }catch(exception){
+            if(exception.name == "TimeoutError"){
+                exception = "Timeout attempting to pull backup from controller."
+            }
+            errorHandler(exception);
+            await drawManagedControllers();
+        }finally{
+            if(element){
+                element.innerHTML = elementPriorContent;
+            }
+        }
+
     }
 
     
