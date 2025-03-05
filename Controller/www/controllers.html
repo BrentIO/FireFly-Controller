@@ -205,7 +205,10 @@
 
                     <div class="input-group mb-3">
                         <span class="input-group-text">Visual Token</span>
-                        <input class="form-control" id="visualToken" placeholder="" aria-label="Visual Token" required>
+                        <input class="form-control" id="visualToken" placeholder="" aria-label="Visual Token" oninput="addNewControllerRealtimeValidateVisualToken(this)" required>
+                        <div class="invalid-feedback">
+                            A valid visual token is required.
+                        </div>
                     </div>
                     </form>
                     <div class="modal-footer">
