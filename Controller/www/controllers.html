@@ -212,7 +212,7 @@
                     </div>
                     </form>
                     <div class="modal-footer">
-                        <button class="btn btn-primary" type="button" data-bs-dismiss="modal">Save</button>
+                        <button class="btn btn-primary" type="button" onclick="attemptAuthenticate();">Save</button>
                     </div>
                 </div>
             </div>
@@ -395,16 +395,18 @@
     }
 
     
-    document.getElementById("visualTokenModal").addEventListener('hidden.bs.modal', () => {
+    function attemptAuthenticate(){
 
-        if(document.getElementById("visualToken").value.trim() == ""){
+        if(!isValidVisualToken(document.getElementById("visualToken").value.trim())){
             return;
         }
+
+        visualTokenModal.toggle();
 
         var controllerLS = new controllerLocalStorage(document.getElementById("visualTokenModalControllerId").value);
         controllerLS.visualToken = document.getElementById("visualToken").value.trim();
         authenticateController(controllerLS.id);
-    });
+    }
 
 
     async function authenticateController(id){
@@ -1139,7 +1141,7 @@
         return regex.test(value);
     }
 
-    
+
     async function pullBackupFromController(id){
         var elementPriorContent = "";
 
