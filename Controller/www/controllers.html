@@ -966,46 +966,51 @@
 
 
     async function saveEdit(id, fieldName){
-        element = document.getElementById(fieldName + "_" +id);
-        value = element.innerText.trim();
-        switch(fieldName){
-            case 'Name':
-                await db.controllers.update(id, {name: value});
-                break;
-            case 'UUID':
-                if(isValidUUID(value)){
-                    await db.controllers.update(id, {uuid: value});
-                    validateUUIDMatches(id);
-                }else{
-                    warningHandler("An invalid UUID was input, reverting to the prior value.");
-                    cancelEdit(id, fieldName);
-                }
-                break;
-            case 'Area':
-                element = document.getElementById("editAreaSelect_" +id);
-                await db.controllers.update(id, {area: parseInt(element.value)});
-                document.getElementById("editAreaSelect_" +id).hidden = true;
-                document.getElementById("Area_" +id).innerText = document.getElementById("editAreaSelect_" +id).options[document.getElementById("editAreaSelect_" +id).selectedIndex].text;
-                break;
-            case 'IP':
-                if(isValidIPv4(value) || isValidDomainName(value)){
-                    var controllerLS = new controllerLocalStorage(id);
-                    controllerLS.ip = value;
-                }else{
-                    warningHandler("An invalid IP was input, reverting to the prior value.");
-                    cancelEdit(id, fieldName);
-                }
-                break;
-            default:
-                errorHandler("Field name " + fieldName + " is not known and will not be updated");
-                break;
-        }
+        try{
+            element = document.getElementById(fieldName + "_" +id);
+            value = element.innerText.trim();
+            switch(fieldName){
+                case 'Name':
+                    await db.controllers.update(id, {name: value});
+                    break;
+                case 'UUID':
+                    if(isValidUUID(value)){
+                        await db.controllers.update(id, {uuid: value});
+                        validateUUIDMatches(id);
+                    }else{
+                        warningHandler("An invalid UUID was input, reverting to the prior value.");
+                        cancelEdit(id, fieldName);
+                    }
+                    break;
+                case 'Area':
+                    element = document.getElementById("editAreaSelect_" +id);
+                    await db.controllers.update(id, {area: parseInt(element.value)});
+                    document.getElementById("editAreaSelect_" +id).hidden = true;
+                    document.getElementById("Area_" +id).innerText = document.getElementById("editAreaSelect_" +id).options[document.getElementById("editAreaSelect_" +id).selectedIndex].text;
+                    break;
+                case 'IP':
+                    if(isValidIPv4(value) || isValidDomainName(value)){
+                        var controllerLS = new controllerLocalStorage(id);
+                        controllerLS.ip = value;
+                    }else{
+                        warningHandler("An invalid IP was input, reverting to the prior value.");
+                        cancelEdit(id, fieldName);
+                    }
+                    break;
+                default:
+                    errorHandler("Field name " + fieldName + " is not known and will not be updated");
+                    break;
+            }
 
-        element.contentEditable = "false";
-        element.classList.remove("form-control");
-        document.getElementById('edit'+ fieldName + 'Icon_'+id).hidden = false;
-        document.getElementById('save'+ fieldName + 'Icon_'+id).hidden = true;
-        document.getElementById('cancel'+ fieldName + 'Icon_'+id).hidden = true;
+            element.contentEditable = "false";
+            element.classList.remove("form-control");
+            document.getElementById('edit'+ fieldName + 'Icon_'+id).hidden = false;
+            document.getElementById('save'+ fieldName + 'Icon_'+id).hidden = true;
+            document.getElementById('cancel'+ fieldName + 'Icon_'+id).hidden = true;
+        }
+        catch(exception){
+            errorHandler(exception);
+        }
     }
 
 
