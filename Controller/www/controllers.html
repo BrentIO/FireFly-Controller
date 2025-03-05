@@ -844,7 +844,7 @@
                                 </div>
                                 <button class="btn btn-secondary" id="ViewErrorLogButton_${controller.id}" onclick="showErrorLogModal(${controller.id});"><img class="menuIcon" src="./icons/error.svg"> View Error Log (${controllerLS.errorLog.length})</button>
                                 <button class="btn btn-secondary" id="ViewEventLogButton_${controller.id}" onclick="showEventLogModal(${controller.id});"><img class="menuIcon" src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})</button>
-                                <button class="btn btn-warning" id="PullBackupButton_${controller.id}" onclick="pullBackupFromController(${controller.id});"><img src="./icons/download.svg"> Pull Backup</button>
+                                <button class="btn btn-secondary" id="PullBackupButton_${controller.id}" onclick="pullBackupFromController(${controller.id});"><img class="menuIcon" src="./icons/download.svg"> Pull Backup</button>
                                 <button class="btn btn-warning" onclick="getControllerPOSTPayload(${controller.id})";><img src="./icons/upload.svg"> Deploy Configuration</button>
                                 <button class="btn btn-primary" onclick="logoutController(${controller.id});">Logout</button>`;
                                 }else{
