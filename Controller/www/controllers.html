@@ -33,7 +33,7 @@
                     <img src="./icons/add.svg" title="Add" id="controllerAddButton" class="btn dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" onclick="toggleModalAddController();">Add New Controller</a></li>
-                        <li><a class="dropdown-item" href="#">Manage Existing by IP Address <span class="badge text-bg-secondary">Coming Soon</span></a></li>
+                        <li><a class="dropdown-item" onclick="toggleModalAddControllerByIP();">Add Controller by IP Address</a></li>
                       </ul>
                 </div>
 
@@ -88,7 +88,7 @@
                     <div class="input-group mb-3">
                         <span class="input-group-text">IP Address</span>
                         <div class="input-group-text">
-                            <input class="form-check-input mt-0" type="checkbox" value="" aria-label="Checkbox for following text input" id="addNewControllerCheckboxIP" onchange="toggleAddNewControllerIPInputField(this);">
+                            <input class="form-check-input mt-0" type="checkbox" value="" aria-label="Checkbox for following text input" id="addNewControllerCheckboxIP" >
                         </div>
                         <input class="form-control" id="addNewControllerIP" placeholder="" aria-label="IP address" disabled>
                     </div>
@@ -97,6 +97,40 @@
                     <button class="btn btn-primary" type="button" id="addNewControllerButtonAdd">Add</button>
                 </div>
             </form>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Add New Controller by IP Modal -->
+    <div class="modal fade" id="addNewControllerByIPModal" tabindex="-1" aria-labelledby="addNewControllerByIPModalLabel" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="addNewControllerByIPModalLabel">Add New Controller by IP Address</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form class="needs-validation" novalidate id="addNewControllerByIPForm">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">IP Address</span>
+                        <input class="form-control" id="addNewControllerByIPIP" placeholder="" aria-label="IP address" onInput="addNewControllerRealtimeValidateIP(this);" required>
+                        <div class="invalid-feedback">
+                            A valid IP Address or domain name is required.
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Visual Token</span>
+                        <input class="form-control" id="addNewControllerByIPVisualToken" placeholder="" aria-label="Visual Token" onInput="addNewControllerRealtimeValidateVisualToken(this);" required>
+                        <div class="invalid-feedback">
+                            A valid visual token is required.
+                        </div>
+                    </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="button" id="addNewControllerByIPAddButton" onclick="addControllerByIPAdd();">Add</button>
+                </div>
             </div>
         </div>
     </div>
@@ -189,6 +223,7 @@
     var currentlyDrawingControllers = false;
 
     var addNewControllerModal = new bootstrap.Modal('#addNewControllerModal');
+    var addNewControllerByIPModal = new bootstrap.Modal('#addNewControllerByIPModal');
     var viewErrorLogModal = new bootstrap.Modal('#errorLogModal');
     var viewEventLogModal = new bootstrap.Modal('#eventLogModal');
     var visualTokenModal = new bootstrap.Modal('#visualTokenModal');
@@ -241,6 +276,11 @@
     }
 
 
+    function toggleModalAddControllerByIP(){
+        addNewControllerByIPModal.toggle();
+    }
+
+
     document.getElementById("addNewControllerModal").addEventListener('show.bs.modal', () => {        
         form = document.getElementById("addNewControllerForm");
         form.reset();
@@ -249,6 +289,18 @@
         uuidField = document.getElementById("addNewControllerUUID");
         uuidField.classList.remove("is-valid");
         uuidField.classList.remove("is-invalid");
+    });
+
+
+    document.getElementById("addNewControllerByIPModal").addEventListener('show.bs.modal', () => {        
+        form = document.getElementById("addNewControllerByIPForm");
+        form.reset();
+        form.classList.remove('was-validated');
+
+        document.getElementById("addNewControllerByIPIP").classList.remove("is-invalid");
+        document.getElementById("addNewControllerByIPIP").classList.remove("is-valid");
+        document.getElementById("addNewControllerByIPVisualToken").classList.remove("is-invalid");
+        document.getElementById("addNewControllerByIPVisualToken").classList.remove("is-valid");
     });
 
 
@@ -1128,9 +1180,192 @@
                 element.innerHTML = elementPriorContent;
             }
         }
-
     }
 
+
+    async function addControllerByIPAdd(){
+
+        try{
+            var elementIP = document.getElementById("addNewControllerByIPIP");
+            elementIP.value = elementIP.value.trim();
+            var elementVisualToken = document.getElementById("addNewControllerByIPVisualToken");
+            elementVisualToken.value = elementVisualToken.value.trim();
+
+            var addButton = document.getElementById("addNewControllerByIPAddButton");
+
+            addNewControllerRealtimeValidateIP(elementIP);
+            addNewControllerRealtimeValidateVisualToken(elementVisualToken);
+
+            if(!addNewControllerRealtimeValidateIP(elementIP) || !addNewControllerRealtimeValidateVisualToken(elementVisualToken)){
+                form.classList.remove('was-validated');
+                return;
+            };
+
+            let form = document.getElementById("addNewControllerByIPForm");
+            form.checkValidity();
+            form.classList.add('was-validated');
+
+            if(!form.checkValidity()){
+                return;
+            }
+
+            addButton.innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
+            addButton.disabled = true;
+
+            var response = await fetch(`http://${elementIP.value}/auth`, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'POST',
+                    headers: {
+                        "visual-token":elementVisualToken.value
+                    }
+                });
+
+            if(response.status != 204){
+                throw new Error(`Authentication failure (${response.status})`);
+            }
+
+            var response = await fetch(`http://${elementIP.value}/api/version`, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'GET',
+                    headers: {
+                        "visual-token":elementVisualToken.value
+                    }
+                });
+
+            switch(response.status){
+                case 200:
+                    var versionPayload = await response.json();
+
+                    if("uuid" in versionPayload == false){
+                        throw new Error(`Response from controller did not include a UUID field.`);
+                    }
+
+                    if("product_id" in versionPayload == false){
+                        throw new Error(`Response from controller did not include a Product ID field.`);
+                    }
+                    break;
+
+                case 401:
+                    throw new Error(`Authentication required (${response.status})`);
+                    break;
+
+                default:
+                    throw new Error(`Unexpected error retrieving firmware version (${response.status})`);
+                    break;
+            }
+
+            var controllers = await db.controllers.where("uuid").equals(versionPayload.uuid).toArray();
+
+            if(controllers.length > 0){
+                throw new Error(`Controller with UUID ${versionPayload.uuid} already exists.`);
+            }
+
+            var product_id = await db.controller_products.where("pid").equals(versionPayload.product_id).first();
+
+            if(typeof product_id == "undefined"){
+                throw new Error(`Controller has an unknown/unsupported product ID (${versionPayload.product_id}) and cannot be added.`);
+            }
+
+            var response = await fetch(`http://${elementIP.value}/api/controllers/${versionPayload.uuid}`, {
+                signal: AbortSignal.timeout(apiTimeout), 
+                method: 'GET',
+                headers: {
+                    "visual-token":elementVisualToken.value
+                }
+            });
+
+            var controllerName = "New Controller";
+            var controllerAreaId = 0;
+
+            if(response.status == 200){
+
+                var controllerPayload = await response.json();
+
+                if("name" in controllerPayload){
+                    controllerName = controllerPayload.name;
+                }
+
+                if("area" in controllerPayload){
+                    var controllerArea = await db.areas.where("name").equals(controllerPayload.area).first();
+                    
+                    if(typeof controllerArea == "undefined"){
+                        throw new Error(`You must first add an area named "${controllerPayload.area}" before you can add this controller by IP address.`)
+                    }
+                    controllerAreaId = controllerArea.id;
+                }
+            }
+
+            if(controllerAreaId == 0){
+                var areas = await db.areas.toArray();
+
+                if(areas.length == 0){
+                    throw new Error("You must add an area before you can add a controller by IP address.");
+                }
+
+                warningHandler("The controller does not have an area assigned.  An area was automatically assigned and must be verified.");
+                controllerAreaId = areas[0].id;
+            }
+
+            id = await db.controllers.add({
+                name: controllerName.trim().slice(0,20),
+                uuid: versionPayload.uuid.trim().slice(0,36),
+                product: product_id.id,
+                area: controllerAreaId,
+                outputs: {},
+                inputs: {}
+            });
+
+            var controllerLS = new controllerLocalStorage(id);
+
+            controllerLS.ip = elementIP.value;
+            controllerLS.uuid = versionPayload.uuid;
+
+            drawManagedControllers();
+            toggleModalAddControllerByIP();
+
+        }catch(exception){
+            if(exception.name == "TimeoutError"){
+                exception = "Timeout while attempting to retrieve controller by IP."
+            }
+            errorHandler(exception);
+        }
+        finally{
+
+            addButton.innerHTML = `Add`;
+            addButton.disabled = false;
+        }
+    }
+
+
+    function addNewControllerRealtimeValidateIP(element){
+
+        if(isValidIPv4(element.value.trim()) || isValidDomainName(element.value.trim())){
+            element.classList.remove("is-invalid");
+            element.classList.add("is-valid");
+            return true;
+        }else{
+            element.classList.add("is-invalid");
+            element.classList.remove("is-valid");
+        }
+
+        return false;
+    }
+
+
+    function addNewControllerRealtimeValidateVisualToken(element){
+
+        if(element.value.trim().length == 8){
+            element.classList.remove("is-invalid");
+            element.classList.add("is-valid");
+            return true;
+        }else{
+            element.classList.add("is-invalid");
+            element.classList.remove("is-valid");
+        }
+
+        return false;
+    }
+    
     
     drawManagedControllers();
     getControllerPIDs();
