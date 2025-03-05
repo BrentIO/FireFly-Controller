@@ -863,11 +863,11 @@
 
     async function getAreaList(){
 
-        let areaSelect = document.getElementById("addNewControllerArea");
+        let addNewControllerArea = document.getElementById("addNewControllerArea");
 
-        var i, L = areaSelect.options.length - 1;
+        var i, L = addNewControllerArea.options.length - 1;
         for(i = L; i >= 0; i--) {
-            areaSelect.remove(i);
+            addNewControllerArea.remove(i);
         }
 
         areaList = await db.areas.orderBy('name').toArray()
@@ -876,14 +876,14 @@
             var opt = document.createElement('option');
             opt.value = `${area['id']}`;
             opt.innerHTML = `${area['name']}`;
-            areaSelect.appendChild(opt);
+            addNewControllerArea.appendChild(opt);
         });
 
         var opt = document.createElement('option');
         opt.value = "";
         opt.selected = true;
         opt.innerHTML = `Select...`;
-        areaSelect.prepend(opt);
+        addNewControllerArea.prepend(opt);
     }
 
 
