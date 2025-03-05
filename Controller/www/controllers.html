@@ -307,6 +307,16 @@
     });
 
 
+    document.getElementById("visualTokenModal").addEventListener('show.bs.modal', () => {        
+        form = document.getElementById("visualTokenForm");
+        form.reset();
+        form.classList.remove('was-validated');
+
+        document.getElementById("visualToken").classList.remove("is-invalid");
+        document.getElementById("visualToken").classList.remove("is-valid");
+    });
+
+
     async function showEventLogModal(id){
 
         controller = await db.controllers.where("id").equals(id).first();
