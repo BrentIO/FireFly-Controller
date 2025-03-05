@@ -11,11 +11,15 @@
         #define AUTH_TOKEN_TTL 3600000 //Number of milliseconds the token should live, 60 minutes
     #endif
 
+    #ifndef AUTH_TOKEN_LENGTH
+        #define AUTH_TOKEN_LENGTH 9 //Length of the token, including null terminator
+    #endif
+
     class authorizationToken{
 
         public:
             struct token{
-                char code[9] = "";
+                char code[AUTH_TOKEN_LENGTH] = "";
                 uint64_t issuedAt = 0; //Time the token was issued
                 uint64_t expiresAt = 0; //Time the token will expire
 
