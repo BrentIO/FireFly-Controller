@@ -1130,6 +1130,13 @@
         return regex.test(value);
     }
 
+
+    function isValidVisualToken(value){
+        var regex = /^.{8}$/;
+        return regex.test(value);
+    }
+
+    
     async function pullBackupFromController(id){
         var elementPriorContent = "";
 
@@ -1358,7 +1365,7 @@
 
     function addNewControllerRealtimeValidateVisualToken(element){
 
-        if(element.value.trim().length == 8){
+        if(isValidVisualToken(element.value.trim())){
             element.classList.remove("is-invalid");
             element.classList.add("is-valid");
             return true;

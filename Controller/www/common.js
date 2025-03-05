@@ -2,7 +2,6 @@ const maximumHIDsPerClient = 6;
 const maximumHIDsPerInputPort = 4;
 const apiTimeout = 5000;
 const controllerLoginMaxDurationMS = (30*60000);
-const visualTokenLength = 8;
 
 function eventHandler(e) {
     console.log(`Event: ${e}`);
