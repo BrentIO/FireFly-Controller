@@ -17,7 +17,7 @@ const initDB = () => {
         circuit_icons: "++id, name",
         controller_products: "++id, pid",
         tags: "++id, &name",
-        certificates: "++id, &certificate",
+        certificates: "++id, &certificate, commonName",
         breakers: "++id, name",
         circuits: "++id, name, breaker, area, icon, relay_model",
         relay_models: "++id, [manufacturer+model], is_custom",

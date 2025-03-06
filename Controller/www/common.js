@@ -612,6 +612,19 @@ async function checkIfInUse_tag(id){
 }
 
 
+async function checkIfInUse_certificate(id){
+
+    const ota_updates = await db.ota_updates.where('certificate').equals(id).toArray();
+
+    if(ota_updates.length == 0){
+        return false;
+    }
+
+    return true;
+
+}
+
+
 async function deleteUnusedCustomRelayModels(){
 
     relay_models = await db.relay_models.where("is_custom").equals("true").toArray();

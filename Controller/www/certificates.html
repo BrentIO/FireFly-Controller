@@ -173,8 +173,18 @@
 
 
     async function deleteCertificate(id){
-        await db.certificates.delete(id);
-        await drawCertificateList();
+        try{
+            if(await checkIfInUse_certificate(id) == true){
+                warningHandler("Certificate is in use and cannot be deleted.")
+                return;
+            }
+
+            await db.certificates.delete(id);
+            await drawCertificateList();
+
+        }catch (error) {
+            errorHandler(error);
+        }
     }
 
 
