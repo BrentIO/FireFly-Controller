@@ -50,8 +50,6 @@
                         <span class="input-group-text">Certificate</span>
                         <select class="form-select" id="controllerCertificate" disabled required>
                             <option selected disabled value="">Select...</option>
-                            <option value="14">mycert.cer</option>
-                            <option value="3">mycert2.cer</option>
                         </select>
                         <div class="invalid-feedback">
                             You must select a certificate when HTTPS is used.
@@ -65,6 +63,36 @@
                 <hr class="border border-secondary border-1 mt-3 opacity-75">
                 <div>
                     <div class="sectionHeader mb-3">Clients</div>
+                    <form id="clients">
+                        <div class="input-group mb-3">
+                            <div class="input-group-text">
+                                <input class="form-check-input mt-0" type="checkbox" value="" id="clientDisabled" aria-label="Checkbox to enable or disable OTA for clients">
+                              </div>
+                            <span class="input-group-text">OTA Disabled</span>
+                        </div>
+                        <div class="input-group mb-3">
+                                <select class="form-select input-group-text" id="clientProtocol">
+                                    <option value="http">http://</option>
+                                    <option value="https">https://</option>
+                                </select>
+                            <input class="form-control has-validation" id="clientURL" placeholder="ex: www.somewhere.com/firmware.json"  aria-label="URL" required>
+                            <div class="invalid-feedback">
+                                A valid URL is required.
+                            </div>
+                        </div>
+                        <div class="input-group mb-3 has-validation">
+                            <span class="input-group-text">Certificate</span>
+                            <select class="form-select" id="clientCertificate" disabled required>
+                                <option selected disabled value="">Select...</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                You must select a certificate when HTTPS is used.
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" type="button" id="clientSaveButton">Save</button>
+                        </div>
+                        </form>
                 </div>
             </div> 
         </div>
@@ -87,8 +115,24 @@ document.getElementById("controllerProtocol").addEventListener('change', () => {
 });
 
 
+document.getElementById("clientProtocol").addEventListener('change', () => {
+
+    if(document.getElementById("clientProtocol").value == "https"){
+        document.getElementById("clientCertificate").disabled = false;
+    }else{
+        document.getElementById("clientCertificate").value = "";
+        document.getElementById("clientCertificate").disabled = true;
+    }
+});
+
+
 document.getElementById("controllerSaveButton").addEventListener('click', () => {
     validateAndSubmitController();
+});
+
+
+document.getElementById("clientSaveButton").addEventListener('click', () => {
+    validateAndSubmitClient();
 });
 
 
@@ -106,8 +150,27 @@ document.getElementById("controllerURL").addEventListener('input', () => {
 });
 
 
+document.getElementById("clientURL").addEventListener('input', () => {
+
+    var element = document.getElementById("clientURL");
+
+    if(isValidURL(element.value)){
+        element.classList.remove("is-invalid");
+        element.classList.add("is-valid");
+    }else{
+        element.classList.add("is-invalid");
+        element.classList.remove("is-valid");
+    }
+});
+
+
 document.getElementById("controllerDisabled").addEventListener('change', () => {
     setControllerFieldsOnDisabledChange()
+});
+
+
+document.getElementById("clientDisabled").addEventListener('change', () => {
+    setClientFieldsOnDisabledChange()
 });
 
 
@@ -123,6 +186,23 @@ function setControllerFieldsOnDisabledChange(){
     }else{
         if(document.getElementById("controllerProtocol").value == "https"){
             document.getElementById("controllerCertificate").disabled = false;
+        }
+    }
+}
+
+
+function setClientFieldsOnDisabledChange(){
+
+    var checkmark = document.getElementById("clientDisabled").checked;
+
+    document.getElementById("clientProtocol").disabled = checkmark;
+    document.getElementById("clientURL").disabled = checkmark;
+
+    if(document.getElementById("clientProtocol").disabled == true){
+        document.getElementById("clientCertificate").disabled = true;
+    }else{
+        if(document.getElementById("clientProtocol").value == "https"){
+            document.getElementById("clientCertificate").disabled = false;
         }
     }
 }
@@ -146,9 +226,9 @@ async function validateAndSubmitController(){
         saveButton.disabled = true;
 
         if(document.getElementById("controllerDisabled").checked == true){
-            await putControllerConfiguration(document.getElementById("controllerProtocol").value, document.getElementById("controllerURL").value, document.getElementById("controllerCertificate").value, false); 
+            await putConfiguration('controller', document.getElementById("controllerProtocol").value, document.getElementById("controllerURL").value, document.getElementById("controllerCertificate").value, false); 
         }else{
-            await putControllerConfiguration(document.getElementById("controllerProtocol").value, document.getElementById("controllerURL").value, document.getElementById("controllerCertificate").value);
+            await putConfiguration('controller', document.getElementById("controllerProtocol").value, document.getElementById("controllerURL").value, document.getElementById("controllerCertificate").value);
         }
         
         eventHandler("Controller configuration saved.");
@@ -162,10 +242,44 @@ async function validateAndSubmitController(){
 }
 
 
-async function putControllerConfiguration(protocol, url, certificate_id, enabled=true){
+async function validateAndSubmitClient(){
+
+    document.getElementById("clientURL").value = document.getElementById("clientURL").value.trim();
+
+    let form = document.getElementById("clients");
+    form.checkValidity();
+    form.classList.add('was-validated');
+    if(!form.checkValidity()){
+        return;
+    }
+
+    let saveButton = document.getElementById("clientSaveButton");
+
+    try{
+        saveButton.innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
+        saveButton.disabled = true;
+
+        if(document.getElementById("clientDisabled").checked == true){
+            await putConfiguration('client', document.getElementById("clientProtocol").value, document.getElementById("clientURL").value, document.getElementById("clientCertificate").value, false); 
+        }else{
+            await putConfiguration('client', document.getElementById("clientProtocol").value, document.getElementById("clientURL").value, document.getElementById("clientCertificate").value);
+        }
+        
+        eventHandler("Client configuration saved.");
+
+    }catch(error){
+        errorHandler(error);
+    }finally{
+        saveButton.innerHTML = "Save";
+        saveButton.disabled = false;
+    }
+}
+
+
+async function putConfiguration(device_type, protocol, url, certificate_id, enabled=true){
 
     putRequest = {
-        device_type: 'controller',
+        device_type: device_type,
         protocol: protocol,
         url: url,
         enabled: enabled
@@ -230,10 +344,59 @@ async function drawControllerConfig(){
 }
 
 
+async function drawClientConfig(){
+
+    var clientCertificate = document.getElementById("clientCertificate");
+
+    var i, L = clientCertificate.options.length - 1;
+
+    for(i = L; i >= 0; i--) {
+        clientCertificate.remove(i);
+    }
+
+    certificateList.forEach((certificate) =>{
+        var opt = document.createElement('option');
+        opt.value = `${certificate['id']}`;
+        opt.innerHTML = `${certificate['commonName']}`;
+        clientCertificate.appendChild(opt);
+    });
+
+    var opt = document.createElement('option');
+    opt.value = "";
+    opt.selected = true;
+    opt.innerHTML = `Select...`;
+    clientCertificate.prepend(opt);
+
+    client = await db.ota_updates.where("device_type").equals("client").first();
+
+    if(typeof client == "undefined"){
+        document.getElementById("clientDisabled").checked = true;
+        setClientFieldsOnDisabledChange();
+        return;
+    }
+
+    if(typeof client.enabled =="undefined"){
+        document.getElementById("clientDisabled").checked = true;
+    }else{
+        document.getElementById("clientDisabled").checked = !client.enabled
+    }
+
+    document.getElementById("clientProtocol").value = client.protocol;
+    document.getElementById("clientURL").value = client.url;
+
+    if(typeof client.certificate != "undefined"){
+        document.getElementById("clientCertificate").value = client.certificate;
+    }
+
+    setClientFieldsOnDisabledChange();
+}
+
+
 async function getCertificateList(){
     certificateList = await db.certificates.orderBy('commonName').toArray()
 }
 
 drawControllerConfig();
+drawClientConfig();
 
 </script>
