@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu("submenuConfiguration", "menuItemOTAConfiguration");
+        initDB();
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark"></div>
+            <div class="col py-3">
+                <div class="pageTitle">OTA Updates</div>
+                <div class="pageDescription">Configures how the devices will retrieve over-the-air updates.</div>
+                <div>
+                    <div class="sectionHeader mt-5 mb-3">Controllers</div>
+                    <form id="controllers">
+                    <div class="input-group mb-3">
+                        <div class="input-group-text">
+                            <input class="form-check-input mt-0" type="checkbox" value="" id="controllerDisabled" aria-label="Checkbox to enable or disable OTA for controllers">
+                          </div>
+                        <span class="input-group-text">OTA Disabled</span>
+                    </div>
+                    <div class="input-group mb-3">
+                            <select class="form-select input-group-text" id="controllerProtocol">
+                                <option value="http">http://</option>
+                                <option value="https">https://</option>
+                            </select>
+                        <input class="form-control has-validation" id="controllerURL" placeholder="ex: www.somewhere.com/firmware.json"  aria-label="URL" required>
+                        <div class="invalid-feedback">
+                            A valid URL is required.
+                        </div>
+                    </div>
+                    <div class="input-group mb-3 has-validation">
+                        <span class="input-group-text">Certificate</span>
+                        <select class="form-select" id="controllerCertificate" disabled required>
+                            <option selected disabled value="">Select...</option>
+                            <option value="14">mycert.cer</option>
+                            <option value="3">mycert2.cer</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            You must select a certificate when HTTPS is used.
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" type="button" id="controllerSaveButton">Save</button>
+                    </div>
+                    </form>
+                </div>
+                <hr class="border border-secondary border-1 mt-3 opacity-75">
+                <div>
+                    <div class="sectionHeader mb-3">Clients</div>
+                </div>
+            </div> 
+        </div>
+    </div>
+</body>
+</html>
+
+<script>
+
+    var certificateList = [];
+
+document.getElementById("controllerProtocol").addEventListener('change', () => {
+
+    if(document.getElementById("controllerProtocol").value == "https"){
+        document.getElementById("controllerCertificate").disabled = false;
+    }else{
+        document.getElementById("controllerCertificate").value = "";
+        document.getElementById("controllerCertificate").disabled = true;
+    }
+});
+
+
+document.getElementById("controllerSaveButton").addEventListener('click', () => {
+    validateAndSubmitController();
+});
+
+
+document.getElementById("controllerURL").addEventListener('input', () => {
+
+    var element = document.getElementById("controllerURL");
+
+    if(isValidURL(element.value)){
+        element.classList.remove("is-invalid");
+        element.classList.add("is-valid");
+    }else{
+        element.classList.add("is-invalid");
+        element.classList.remove("is-valid");
+    }
+});
+
+
+document.getElementById("controllerDisabled").addEventListener('change', () => {
+    setControllerFieldsOnDisabledChange()
+});
+
+
+function setControllerFieldsOnDisabledChange(){
+
+    var checkmark = document.getElementById("controllerDisabled").checked;
+
+    document.getElementById("controllerProtocol").disabled = checkmark;
+    document.getElementById("controllerURL").disabled = checkmark;
+
+    if(document.getElementById("controllerProtocol").disabled == true){
+        document.getElementById("controllerCertificate").disabled = true;
+    }else{
+        if(document.getElementById("controllerProtocol").value == "https"){
+            document.getElementById("controllerCertificate").disabled = false;
+        }
+    }
+}
+
+
+async function validateAndSubmitController(){
+
+    document.getElementById("controllerURL").value = document.getElementById("controllerURL").value.trim();
+
+    let form = document.getElementById("controllers");
+    form.checkValidity();
+    form.classList.add('was-validated');
+    if(!form.checkValidity()){
+        return;
+    }
+
+    let saveButton = document.getElementById("controllerSaveButton");
+
+    try{
+        saveButton.innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
+        saveButton.disabled = true;
+
+        if(document.getElementById("controllerDisabled").checked == true){
+            await putControllerConfiguration(document.getElementById("controllerProtocol").value, document.getElementById("controllerURL").value, document.getElementById("controllerCertificate").value, false); 
+        }else{
+            await putControllerConfiguration(document.getElementById("controllerProtocol").value, document.getElementById("controllerURL").value, document.getElementById("controllerCertificate").value);
+        }
+        
+        eventHandler("Controller configuration saved.");
+
+    }catch(error){
+        errorHandler(error);
+    }finally{
+        saveButton.innerHTML = "Save";
+        saveButton.disabled = false;
+    }
+}
+
+
+async function putControllerConfiguration(protocol, url, certificate_id, enabled=true){
+
+    putRequest = {
+        device_type: 'controller',
+        protocol: protocol,
+        url: url,
+        enabled: enabled
+    };
+
+    if(certificate_id != ""){
+        putRequest.certificate = parseInt(certificate_id);
+    }
+
+    await db.ota_updates.put(putRequest);
+}
+
+
+
+async function drawControllerConfig(){
+
+    await getCertificateList();
+
+    var controllerCertificate = document.getElementById("controllerCertificate");
+
+    var i, L = controllerCertificate.options.length - 1;
+
+    for(i = L; i >= 0; i--) {
+        controllerCertificate.remove(i);
+    }
+
+    certificateList.forEach((certificate) =>{
+        var opt = document.createElement('option');
+        opt.value = `${certificate['id']}`;
+        opt.innerHTML = `${certificate['commonName']}`;
+        controllerCertificate.appendChild(opt);
+    });
+
+    var opt = document.createElement('option');
+    opt.value = "";
+    opt.selected = true;
+    opt.innerHTML = `Select...`;
+    controllerCertificate.prepend(opt);
+
+    controller = await db.ota_updates.where("device_type").equals("controller").first();
+
+    if(typeof controller == "undefined"){
+        document.getElementById("controllerDisabled").checked = true;
+        setControllerFieldsOnDisabledChange();
+        return;
+    }
+
+    if(typeof controller.enabled =="undefined"){
+        document.getElementById("controllerDisabled").checked = true;
+    }else{
+        document.getElementById("controllerDisabled").checked = !controller.enabled
+    }
+
+    document.getElementById("controllerProtocol").value = controller.protocol;
+    document.getElementById("controllerURL").value = controller.url;
+
+    if(typeof controller.certificate != "undefined"){
+        document.getElementById("controllerCertificate").value = controller.certificate;
+    }
+
+    setControllerFieldsOnDisabledChange();
+}
+
+
+async function getCertificateList(){
+    certificateList = await db.certificates.orderBy('commonName').toArray()
+}
+
+drawControllerConfig();
+
+</script>
