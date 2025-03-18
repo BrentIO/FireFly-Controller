@@ -693,6 +693,55 @@
     }
 
 
+    async function downloadCertificateFromController(id, filename){
+
+        var element = document.getElementById(`certDownload_${id}_${filename}`);
+        originalContent = element.innerHTML;
+
+        try{
+
+            var controllerLS = new controllerLocalStorage(id);
+            
+            element.innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
+
+            var response = await fetch(`http://${controllerLS.ip}/certs/${filename}`, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'GET',
+                    headers: {
+                        "visual-token":controllerLS.visualToken
+                    }
+                });
+
+                switch(response.status){
+                    case 200:
+                        download(await response.text(), filename, "application/x-x509-ca-cert");                       
+                        break;
+
+                    case 401:
+                        controllerLS.logout();
+                        throw new Error(`Authentication required (${response.status})`);
+                        break;
+
+                    case 500:
+                        throw new Error(`File system error (${response.status})`);
+                        break;
+
+                    default:
+                        throw new Error(`Unexpected error retrieving certificate (${response.status})`);
+                        break;
+                }
+
+        }catch(exception){
+            if(exception.name == "TimeoutError"){
+                exception = "Timeout attempting to retrieve certificate from controller."
+            }
+            errorHandler(exception);
+        }finally{
+            element.innerHTML = originalContent;
+        }
+}
+
+
     function drawCertificates(id){
 
         var element = document.getElementById(`certificates_${id}`);
@@ -711,7 +760,7 @@
         element.innerHTML = "";
 
         controllerLS.certificates.forEach((certificate) =>{
-            element.innerHTML += certificate.file + "<br>";
+            element.innerHTML += certificate.file + ` <span id="certDownload_${id}_${certificate.file}"><img src="./icons/download.svg" onclick=downloadCertificateFromController(${id},'${certificate.file}');></span><br>`;
         });
     }
 
