@@ -55,6 +55,11 @@ function showToast(message, type='notification', options = {}) {
             options['delay'] = 5000;
             break;
 
+        case 'success':
+            toastInstance.classList.add("text-bg-success");
+            options['delay'] = 5000;
+            break;
+
         default:
             toastInstance.classList.add("text-bg-primary");
             options['delay'] = 2500;
