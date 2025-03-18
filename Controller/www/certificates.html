@@ -137,32 +137,41 @@
 
     async function uploadCertificate(){
 
-        fileSelector = document.getElementById("certificate-upload-file-selector");
+        try{
 
-        if(fileSelector.files.length == 0){
-            return;
-        }
+            fileSelector = document.getElementById("certificate-upload-file-selector");
 
-        if(fileSelector.files[0].type != "application/x-x509-ca-cert"){
-            handleWarning("The file selected is not a x509 certificate.");
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.readAsText(fileSelector.files[0]);
-        const result = await new Promise((resolve, reject) => {
-            reader.onload = function(event) {
-            resolve(reader.result)
+            if(fileSelector.files.length == 0){
+                return;
             }
-        });
 
-        await storeCertificate(fileSelector.files[0].name, result);
-        await toggleAddCertificateModal();
-        await drawCertificateList();
+            if(fileSelector.files[0].type != "application/x-x509-ca-cert"){
+                throw new Error("The file selected is not a x509 certificate.");
+            }
 
-        form = document.getElementById("addNewCertificateForm");
-        form.reset();
-        form.classList.remove('was-validated');
+            if(fileSelector.files[0].name.length > 31){
+                throw new Error("File name must be less than 32 characters.");
+            }
+
+            const reader = new FileReader();
+            reader.readAsText(fileSelector.files[0]);
+            const result = await new Promise((resolve, reject) => {
+                reader.onload = function(event) {
+                resolve(reader.result)
+                }
+            });
+
+            await storeCertificate(fileSelector.files[0].name, result);
+            await toggleAddCertificateModal();
+            await drawCertificateList();
+
+            form = document.getElementById("addNewCertificateForm");
+            form.reset();
+            form.classList.remove('was-validated');
+
+        }catch (error) {
+            errorHandler(error);
+        }
     }
 
 
