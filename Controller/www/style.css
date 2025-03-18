@@ -273,6 +273,17 @@
     filter: brightness(0) saturate(100%) invert(32%) sepia(96%) saturate(7130%) hue-rotate(355deg) brightness(100%) contrast(119%);
 }
 
+#certificateDragDrop{
+    height: 10em;
+    background-color: var(--bs-secondary-bg);
+    border-radius:1em;
+}
+
+#certificateDragDropText{
+    color: var(--bs-tertiary-color);
+    font-size: xx-large;
+}
+
 @media screen and (max-width: 575px) {
     .applicationName {
         display: none !important;
