@@ -244,6 +244,48 @@
             </div>
         </div>
     </div>
+
+
+    <!-- Force Update Modal -->
+    <div class="modal fade" id="forceUpdateModal" tabindex="-1" aria-labelledby="forceUpdateLabel" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="forceUpdateLabel">Force Update</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="forceUpdateForm">
+                        <input type="hidden" id="forceUpdateModalControllerId" name="forceUpdateModalControllerId" value="">
+                        <input type="hidden" id="forceUpdateModalType" name="forceUpdateModalType" value="">
+
+                        <div class="input-group mb-3">
+                            <select class="form-select input-group-text" id="forceUpdateProtocol">
+                                <option value="http" selected>http://</option>
+                                <option value="https">https://</option>
+                            </select>
+                        <input class="form-control has-validation" id="forceUpdateURL" placeholder="ex: www.somewhere.com/firmware.json"  aria-label="URL" required>
+                        <div class="invalid-feedback">
+                            A valid URL is required.
+                        </div>
+                    </div>
+                    <div class="input-group mb-3 has-validation">
+                        <span class="input-group-text">Certificate</span>
+                        <select class="form-select" id="forceUpdateCertificate" disabled required>
+                            <option selected disabled value="">Select...</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            You must select a certificate when HTTPS is used.
+                        </div>
+                    </div>
+                    </form>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="button" id="forceUpdateButton">Force Update</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 <script>
@@ -257,6 +299,7 @@
     var viewEventLogModal = new bootstrap.Modal('#eventLogModal');
     var visualTokenModal = new bootstrap.Modal('#visualTokenModal');
     var statusModal = new bootstrap.Modal('#statusModal');
+    var forceUpdateModal = new bootstrap.Modal('#forceUpdateModal');
 
 
     document.getElementById("addNewControllerButtonAdd").addEventListener('click', () => {
@@ -356,6 +399,64 @@
 
         stepProgressText.innerText = "";
         currentStepText.innerText = "";
+    });
+
+
+    document.getElementById("forceUpdateModal").addEventListener('show.bs.modal', () => {
+        form = document.getElementById("forceUpdateForm");
+        form.reset();
+        form.classList.remove('was-validated');
+
+        document.getElementById("forceUpdateURL").classList.remove("is-invalid");
+
+        document.getElementById("forceUpdateProtocol").value = "http";
+        document.getElementById("forceUpdateCertificate").disabled = true;
+    });
+
+
+    document.getElementById("forceUpdateProtocol").addEventListener('change', () => {
+
+        if(document.getElementById("forceUpdateProtocol").value == "https"){
+            document.getElementById("forceUpdateCertificate").disabled = false;
+        }else{
+            document.getElementById("forceUpdateCertificate").value = "";
+            document.getElementById("forceUpdateCertificate").disabled = true;
+        }
+    });
+
+
+    document.getElementById("forceUpdateURL").addEventListener('input', () => {
+
+        var element = document.getElementById("forceUpdateURL");
+
+        if(isValidURL(element.value)){
+            element.classList.remove("is-invalid");
+            element.classList.add("is-valid");
+        }else{
+            element.classList.add("is-invalid");
+            element.classList.remove("is-valid");
+        }
+    });
+
+
+    document.getElementById("forceUpdateButton").addEventListener('click', () => {
+
+        document.getElementById("forceUpdateURL").value = document.getElementById("forceUpdateURL").value.trim();
+
+        let form = document.getElementById("forceUpdateForm");
+        form.checkValidity();
+        form.classList.add('was-validated');
+
+        if(!form.checkValidity()){
+            return;
+        }
+
+        var type = document.getElementById("forceUpdateModalType").value;
+        var id = document.getElementById("forceUpdateModalControllerId").value;
+        var url = document.getElementById("forceUpdateProtocol").value + "://" + document.getElementById("forceUpdateURL").value;
+        var certificate = document.getElementById("forceUpdateCertificate").value;
+
+        forceUpdate(id, url, certificate, type);
     });
 
 
@@ -941,6 +1042,8 @@
                                 <button class="warning btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><img class="menuIcon" src="./icons/system_update_alt.svg"> Firmware and Certificates</button>
                                     <ul class="dropdown-menu warning">
                                         <li><a class="dropdown-item" href="#" onclick=deployCertificates(${controller.id});><img src="./icons/certificate.svg"> Push Certificates</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick=showForceUpdateModal(${controller.id},'Application');><img src="./icons/cloud_download.svg"> Force Application Update</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick=showForceUpdateModal(${controller.id},'SPIFFs');><img src="./icons/hard_disk.svg"> Force SPIFFs Update</a></li>
                                     </ul>
                                 <button class="btn btn-secondary" id="PullBackupButton_${controller.id}" onclick="pullBackupFromController(${controller.id});"><img class="menuIcon" src="./icons/download.svg"> Pull Backup</button>
                                 <button class="btn btn-warning" onclick="getControllerPOSTPayload(${controller.id})";><img src="./icons/upload.svg"> Deploy Configuration</button>
@@ -1625,7 +1728,140 @@
         element.innerText = `${percentage}%`
         element.style.width = percentage + "%"
     }
-   
+
+
+    function showForceUpdateModal(id, type){
+
+        modalLabel =  document.getElementById("forceUpdateLabel");
+        forceUpdateButton =  document.getElementById("forceUpdateButton");
+        forceUpdateCertificate =  document.getElementById("forceUpdateCertificate");
+
+        try{
+
+            var controllerLS = new controllerLocalStorage(id);
+            document.getElementById("forceUpdateModalType").value = type;
+            document.getElementById("forceUpdateModalControllerId").value = id;
+
+            switch(type){
+                case "Application":
+                    modalLabel.innerText = "Force Application Update";
+                    forceUpdateButton.innerText = modalLabel.innerText;
+                    break;
+
+                case "SPIFFs":
+                    modalLabel.innerText = "Force SPIFFs Update";
+                    forceUpdateButton.innerText = modalLabel.innerText;
+                    break;
+
+                default:
+                    throw new Error(`Force update type "${type}" unknown.`);
+            }
+
+            var i, L = forceUpdateCertificate.options.length - 1;
+            for(i = L; i >= 0; i--) {
+                if(forceUpdateCertificate.options[i].innerText != "Select..."){
+                    forceUpdateCertificate.remove(i);
+                }
+            }
+
+            controllerLS.certificates.sort((a,b) => (a.file > b.file)? 1 : ((b.file > a.file) ? -1 : 0)).forEach((certificate)=>{
+                var opt = document.createElement('option');
+                opt.value = `${certificate.file}`;
+                opt.innerHTML = `${certificate.file}`;
+                forceUpdateCertificate.appendChild(opt);
+            });
+
+        forceUpdateModal.show();
+
+        }catch(exception){
+            errorHandler(exception);
+        }finally{
+            forceUpdateModal.hide();
+        }
+    }
+
+
+    async function forceUpdate(id, url, certificate, type){
+
+        var payload = {"url" : url};
+
+        if(url.startsWith("https")){
+            payload.certificate = certificate;
+        }
+
+        try{
+
+            var controllerLS = new controllerLocalStorage(id);
+
+            if(controllerLS.isAuthenticated == false){
+                throw new Error("Authentication required.")
+            }
+
+            var requestURL = "";
+
+            switch(type){
+                case "Application":
+                    requestURL = `http://${controllerLS.ip}/api/ota/app`;
+                    break;
+
+                case "SPIFFs":
+                    requestURL = `http://${controllerLS.ip}/api/ota/spiffs`;
+                    break;
+
+                default:
+                    throw new Error(`Force update type "${type}" unknown.`);
+            }
+
+            var forceUpdateButton = document.getElementById("forceUpdateButton");
+            forceUpdateButton.disabled = true;
+            originalContent = forceUpdateButton.innerHTML;
+            forceUpdateButton.innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
+
+            var response = await fetch(requestURL, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                    headers: {
+                        "visual-token":controllerLS.visualToken
+                    }
+                });
+
+                switch(response.status){
+                    case 202:
+                        showToast(`${type} forced update request successful; Monitor device display.`, type="success");
+                        break;
+
+                    case 400:
+                        throw new Error(`Bad request (${response.status})`);
+                        break;
+
+                    case 401:
+                        controllerLS.logout();
+                        throw new Error(`Authentication required (${response.status})`);
+                        break;
+
+                    default:
+                        throw new Error(`Unexpected error forcing ${type} update (${response.status})`);
+                        break;
+                }
+
+                controllerLS.logout();
+                forceUpdateModal.hide();
+        }
+        catch(exception){
+            if(exception.name == "TimeoutError"){
+                exception = "Timeout attempting to force application update."
+            }
+            errorHandler(exception);
+        }
+        finally{
+            forceUpdateButton.disabled = false;
+            forceUpdateButton.innerHTML = originalContent;
+            await drawManagedControllers();
+        } 
+    }
+
+
     drawManagedControllers();
     getControllerPIDs();
 
