@@ -595,7 +595,7 @@
         }finally{
             document.getElementById("errorLogModalRefreshButton").innerHTML = "Refresh";
             if(element){
-                element.innerHTML = `<img class="menuIcon" src="./icons/error.svg"> View Error Log (${controllerLS.errorLog.length})`;
+                element.innerHTML = `<img src="./icons/error.svg"> View Error Log (${controllerLS.errorLog.length})`;
             }
         }
     }
@@ -639,7 +639,7 @@
         }finally{
             document.getElementById("eventLogModalRefreshButton").innerHTML = "Refresh";
             if(element){
-                element.innerHTML = `<img class="menuIcon" src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})`;
+                element.innerHTML = `<img src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})`;
             }
         }
     }
