@@ -66,6 +66,9 @@
                 <div class="modal-body">
                     <div>
                         <input type="file" class="form-control" aria-label="Upload" name="file" id="certificate-upload-file-selector" onchange="uploadCertificate();">
+                        <div id="certificateDragDrop" class="d-flex mt-3 align-items-center justify-content-center" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">
+                            <div class="" id="certificateDragDropText">Drag and Drop File</div>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -80,6 +83,50 @@
     var addNewCertificateModal = new bootstrap.Modal('#addNewCertificateModal');
 
 
+    async function dropHandler(event){
+
+        event.preventDefault();
+
+        try{
+            if(event.dataTransfer.items.length > 1){
+                throw new Error("Only one file can be dropped at a time.")
+            }
+
+            if(event.dataTransfer.items[0].kind != "file"){
+                throw new Error("Only file drops are permitted.");
+            }
+
+            if(event.dataTransfer.items[0].type != "application/x-x509-ca-cert"){
+                throw new Error("The file selected is not a x509 certificate.");
+            }
+
+            const file = event.dataTransfer.items[0].getAsFile();
+
+            if(file.name.length > 31){
+                throw new Error("File name must be less than 32 characters.");
+            }
+
+            const reader = new FileReader();
+            reader.readAsText(file);
+            const result = await new Promise((resolve, reject) => {
+                reader.onload = function(event) {
+                resolve(reader.result)
+                }
+            });
+
+            await storeCertificate(file.name, result);
+            await toggleAddCertificateModal();
+            await drawCertificateList();
+
+        }catch (error) {
+            errorHandler(error);
+        }
+    }
+
+
+    function dragOverHandler(event){
+        event.stopPropagation();
+        event.preventDefault();
     }
 
 
