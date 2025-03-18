@@ -1375,6 +1375,16 @@ void http_handleCerts(AsyncWebServerRequest *request){
 */
 void http_handleCerts_GET(AsyncWebServerRequest *request){
 
+  if(!request->hasHeader("visual-token")){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
+    http_unauthorized(request);
+    return;
+  }
+
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<768> doc;
   JsonArray array = doc.to<JsonArray>();
@@ -1493,6 +1503,16 @@ void http_handleCert(AsyncWebServerRequest *request){
 */
 void http_handleCert_GET(AsyncWebServerRequest *request){
 
+  if(!request->hasHeader("visual-token")){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
+    http_unauthorized(request);
+    return;
+  }
+
   if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0))){
 
     AsyncWebServerResponse *response = request->beginResponse(configFS, CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0), "text/plain");
@@ -1509,6 +1529,16 @@ void http_handleCert_GET(AsyncWebServerRequest *request){
  * Handles deleting a specific certificate
 */
 void http_handleCert_DELETE(AsyncWebServerRequest *request){
+
+  if(!request->hasHeader("visual-token")){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
+    http_unauthorized(request);
+    return;
+  }
 
   if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0))){
     configFS.remove(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0));
