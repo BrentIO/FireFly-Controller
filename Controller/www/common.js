@@ -271,6 +271,21 @@ class controllerLocalStorage{
         this.save();
     }
 
+
+    deleteCertificate(filename){
+        this.retrieve();
+        this._certificates = this._certificates.filter(certificate => certificate.file !== filename);
+        this.save();
+    }
+
+
+    appendCertificate(filename, size){
+        this.retrieve();
+        this._certificates.push({"file":filename,"size":size});
+        this.save();
+    }
+
+
     retrieve(){
         const record = JSON.parse(localStorage.getItem("controller_" + this._id));
 

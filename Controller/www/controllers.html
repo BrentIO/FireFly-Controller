@@ -191,6 +191,7 @@
         </div>
     </div>
 
+
     <!-- Visual Token Modal -->
     <div class="modal fade" id="visualTokenModal" tabindex="-1" aria-labelledby="visualTokenModalLabel" data-bs-backdrop="static">
         <div class="modal-dialog modal-lg">
@@ -218,6 +219,31 @@
             </div>
         </div>
     </div>
+
+
+    <!-- Status Modal -->
+    <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="statusModalLabel">Deployment Status</h1>
+                    <button type="button" class="btn-close visually-hidden" data-bs-dismiss="modal" id="statusModalCloseButton" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div>Overall Progress</div>
+                    <div class="progress" role="progressbar" aria-label="overall progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" id="overallProgressBar" style="width: 0%"></div>
+                    </div>
+                    <div id="stepProgressText" class="mt-3"></div>
+                    <div class="progress" role="progressbar" aria-label="step progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" id="stepProgressBar" style="width: 0%"></div>
+                    </div>
+                    <hr>
+                    <div id="currentStepText" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 <script>
@@ -230,6 +256,7 @@
     var viewErrorLogModal = new bootstrap.Modal('#errorLogModal');
     var viewEventLogModal = new bootstrap.Modal('#eventLogModal');
     var visualTokenModal = new bootstrap.Modal('#visualTokenModal');
+    var statusModal = new bootstrap.Modal('#statusModal');
 
 
     document.getElementById("addNewControllerButtonAdd").addEventListener('click', () => {
@@ -314,6 +341,21 @@
 
         document.getElementById("visualToken").classList.remove("is-invalid");
         document.getElementById("visualToken").classList.remove("is-valid");
+    });
+
+
+    document.getElementById("statusModal").addEventListener('show.bs.modal', () => {
+        document.getElementById("statusModalCloseButton").classList.add("visually-hidden");
+        var overallProgressBar = document.getElementById("overallProgressBar");
+        var stepProgressBar = document.getElementById("stepProgressBar");
+        var stepProgressText = document.getElementById("stepProgressText");
+        var currentStepText = document.getElementById("currentStepText");
+
+        updateStatusBar(overallProgressBar,0);
+        updateStatusBar(stepProgressBar,0);
+
+        stepProgressText.innerText = "";
+        currentStepText.innerText = "";
     });
 
 
@@ -753,7 +795,7 @@
         var controllerLS = new controllerLocalStorage(id);
 
         if(controllerLS.certificates.length == 0){
-            element.innerHTML = "Unknown";
+            element.innerHTML = "None";
             return;
         }
 
@@ -895,6 +937,10 @@
                                     <ul class="dropdown-menu">
                                         <li><a class="dropdown-item" href="#" id="ViewErrorLogButton_${controller.id}" onclick="showErrorLogModal(${controller.id});"><img src="./icons/error.svg"> View Error Log (${controllerLS.errorLog.length})</a></li>
                                         <li><a class="dropdown-item" href="#" id="ViewEventLogButton_${controller.id}" onclick="showEventLogModal(${controller.id});"><img src="./icons/description.svg"> View Event Log (${controllerLS.eventLog.length})</a></li>
+                                    </ul>
+                                <button class="warning btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><img class="menuIcon" src="./icons/system_update_alt.svg"> Firmware and Certificates</button>
+                                    <ul class="dropdown-menu warning">
+                                        <li><a class="dropdown-item" href="#" onclick=deployCertificates(${controller.id});><img src="./icons/certificate.svg"> Push Certificates</a></li>
                                     </ul>
                                 <button class="btn btn-secondary" id="PullBackupButton_${controller.id}" onclick="pullBackupFromController(${controller.id});"><img class="menuIcon" src="./icons/download.svg"> Pull Backup</button>
                                 <button class="btn btn-warning" onclick="getControllerPOSTPayload(${controller.id})";><img src="./icons/upload.svg"> Deploy Configuration</button>
@@ -1431,8 +1477,155 @@
 
         return false;
     }
-    
-    
+
+    async function deployCertificates(id){
+        var overallProgressBar = document.getElementById("overallProgressBar");
+        var stepProgressBar = document.getElementById("stepProgressBar");
+        var stepProgressText = document.getElementById("stepProgressText");
+        var currentStepText = document.getElementById("currentStepText");
+
+        var overallStepsComplete = 0;
+        const overallStepsTotal = 2;
+
+        updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
+
+        try{
+
+            var controllerLS = new controllerLocalStorage(id);
+            var certificatesToPush = await db.certificates.toArray();
+
+            if(controllerLS.isAuthenticated == false){
+                throw new Error("Authentication required.")
+            }
+
+            if(controllerLS.certificates.length == 0 && certificatesToPush.length == 0){
+                return;
+            }
+
+            statusModal.show();
+
+            stepProgressText.innerText = `Deleting existing certificates...`;
+
+            certificates = controllerLS.certificates;
+
+            for(var i = 0; i < certificates.length; i++){
+
+                updateStatusBar(stepProgressBar,parseInt((i/certificates.length)*100));
+
+                currentStepText.innerText = `Deleting ${certificates[i].file}...`;
+
+                var response = await fetch(`http://${controllerLS.ip}/certs/${certificates[i].file}`, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'DELETE',
+                    headers: {
+                        "visual-token":controllerLS.visualToken
+                    }
+                });
+
+                switch(response.status){
+                    case 204:
+                        controllerLS.deleteCertificate(certificates[i].file);
+                        break;
+
+                    case 401:
+                        controllerLS.logout();
+                        throw new Error(`Authentication required (${response.status})`);
+                        break;
+
+                    case 404:
+                        throw new Error(`Controller does not have a certificate file named "${certificates[i].file}" (${response.status})`);
+                        break;
+
+                    case 500:
+                        throw new Error(`File system error (${response.status})`);
+                        break;
+
+                    default:
+                        throw new Error(`Unexpected error deleting certificate (${response.status})`);
+                        break;
+                }
+            }
+
+            overallStepsComplete++;
+
+            updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
+
+            stepProgressText.innerText = `Pushing certificates...`;
+
+            for(var i = 0; i < certificatesToPush.length; i++){
+
+                updateStatusBar(stepProgressBar,parseInt((i/certificatesToPush.length)*100));
+
+                const file = new File([certificatesToPush[i].certificate], certificatesToPush[i].fileName, {
+                    type: "application/x-x509-ca-cert",
+                });
+
+                currentStepText.innerText = `Pushing ${certificatesToPush[i].fileName}...`;
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                var response = await fetch(`http://${controllerLS.ip}/certs`, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        "visual-token":controllerLS.visualToken
+                    }
+                });
+
+                switch(response.status){
+                    case 201:
+                        controllerLS.appendCertificate(file.name, file.size);
+                        break;
+
+                    case 400:
+                        throw new Error(`Bad request (${response.status})`);
+                        break;
+
+                    case 401:
+                        controllerLS.logout();
+                        throw new Error(`Authentication required (${response.status})`);
+                        break;
+
+                    case 403:
+                        controllerLS.logout();
+                        throw new Error(`File already exists (${response.status})`);
+                        break;
+
+                    case 500:
+                        throw new Error(`File system error (${response.status})`);
+                        break;
+
+                    default:
+                        throw new Error(`Unexpected error pushing certificate (${response.status})`);
+                        break;
+                }
+            }
+
+            overallStepsComplete++;
+            updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
+
+        }
+        catch(exception){
+            if(exception.name == "TimeoutError"){
+                exception = "Timeout attempting to deploy certificates to controller."
+            }
+            errorHandler(exception);
+        }
+        finally{
+            document.getElementById("statusModalCloseButton").classList.remove("visually-hidden");
+            statusModal.hide();
+            await drawManagedControllers();
+        }
+    }
+
+
+    function updateStatusBar(element, percentage){
+        element.innerText = `${percentage}%`
+        element.style.width = percentage + "%"
+    }
+   
     drawManagedControllers();
     getControllerPIDs();
 

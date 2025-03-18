@@ -273,6 +273,16 @@
     filter: brightness(0) saturate(100%) invert(32%) sepia(96%) saturate(7130%) hue-rotate(355deg) brightness(100%) contrast(119%);
 }
 
+.dropdown-menu.warning > li > a:hover {
+    background-color: var(--bs-warning);
+}
+
+.dropdown-menu.warning > li > a:active {
+    img{
+        filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(152deg) brightness(103%) contrast(103%);
+    }
+}
+
 #certificateDragDrop{
     height: 10em;
     background-color: var(--bs-secondary-bg);
