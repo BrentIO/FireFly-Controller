@@ -136,6 +136,7 @@ async function importConfig(file){
 async function resetDatabase(){
     try {
         await db.delete();
+        localStorage.clear();
         eventHandler("Reset complete!");
     } catch (error) {
         errorHandler(error);
