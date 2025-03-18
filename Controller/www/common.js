@@ -676,6 +676,12 @@ function isValidDomainName(value){
 }
 
 
+function isValidURL(value){
+    var regex = /^[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/;
+    return regex.test(value);
+}
+
+
 function uuidEditFieldRealtimeValidation(element, type){
     uuidElement = document.getElementById(element);
 
