@@ -1206,6 +1206,24 @@ components:
             - aVery$3cretPassw0r[)
 
 
+    wifi:
+      type: object
+      properties:
+        ssid:
+          type: string
+          description: Network SSID to connect
+          minLength: 1
+          maxLength: 32
+          examples:
+            - MyWiFiNet
+        password:
+          type: string
+          description: Pre-shared WiFi password/key
+          minLength: 8
+          maxLength: 63
+          examples:
+            - aVery$3cretPassw0r[)
+
 
     ##########################################################
     ## General                                              ##
