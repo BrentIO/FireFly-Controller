@@ -145,6 +145,8 @@ async function validateAndPut(){
 
         await db.settings.put(putRequest);
 
+        showToast("MQTT settings were saved successfully.", type="success");
+
     } catch(error){
         errorHandler(error);
     }
@@ -166,6 +168,5 @@ async function getSetting(){
 
 
 getSetting();
-
 
 </script>
