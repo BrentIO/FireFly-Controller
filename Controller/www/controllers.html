@@ -1601,8 +1601,8 @@
                 throw new Error("Authentication required.")
             }
 
-            if(controllerLS.certificates.length == 0 && certificatesToPush.length == 0){
-                return;
+            if(certificatesToPush.length == 0){
+                throw new Error("You must add a certificate to the Configuration before you can push certificates.")
             }
 
             statusModal.show();
