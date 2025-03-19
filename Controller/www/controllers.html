@@ -903,7 +903,7 @@
         element.innerHTML = "";
 
         controllerLS.certificates.forEach((certificate) =>{
-            element.innerHTML += certificate.file + ` <span id="certDownload_${id}_${certificate.file}"><img src="./icons/download.svg" onclick=downloadCertificateFromController(${id},'${certificate.file}');></span><br>`;
+            element.innerHTML += certificate.file + ` <span id="certDownload_${id}_${certificate.file}"><a href="#"><img src="./icons/download.svg" onclick=downloadCertificateFromController(${id},'${certificate.file}');></a></span><br>`;
         });
     }
 
