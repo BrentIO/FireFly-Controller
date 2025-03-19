@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu("submenuConfiguration","menuItemMQTT");
+        initDB();
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark"></div>
+            <div class="col py-3">
+                <div class="pageTitle">MQTT</div>
+                <div class="pageDescription">Configure the MQTT broker that controllers and clients will connect to.  All devices will use the same configuration.</div>
+                <div class="alert alert-info" role="alert">
+                    <h3>Wildcards</h3>
+                    You can configure the username and password to use case-sensitive wildcards based on the devices' hardware:
+                    <table class="table table-info">
+                        <tr>
+                            <th>Wildcard</th>
+                            <th>Example Value</th>
+                        </tr>
+                        <tbody>
+                            <tr>
+                                <td><code>$$mac$$</code></td>
+                                <td><pre class="text-wrap">DEADBEEFFEED</pre></td>
+                            </tr>
+                            <tr>
+                                <td><code>$$mac_dashes$$</code></td>
+                                <td><pre class="text-wrap">DE-AD-BE-EF-FE-ED</pre></td>
+                            </tr>
+                            <tr>
+                                <td><code>$$mac_colons$$</code></td>
+                                <td><pre class="text-wrap">DE:AD:BE:EF:FE:ED</pre></td>
+                            </tr>
+                            <tr>
+                                <td><code>$$uuid$$</code></td>
+                                <td><pre class="text-wrap">b113d8ff-51ef-4fd8-82c0-7dac74d73ef3</pre></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4">
+                    <form id="mqtt">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">Broker DNS or IP</span>
+                            <input class="form-control has-validation" id="host" placeholder="ex: 192.50.1.24"  aria-label="Host" maxlength="64" required>
+                            <div class="invalid-feedback">
+                                A valid host is required.
+                            </div>
+                        </div>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">Username</span>
+                            <input class="form-control has-validation" id="username" placeholder="ex: $$mac$$"  aria-label="Username" maxlength="64" required>
+                            <div class="invalid-feedback">
+                                A username is required.
+                            </div>
+                        </div>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">Password</span>
+                            <input type="password" class="form-control has-validation" id="password" placeholder="ex: $$uuid$$" aria-label="Password" maxlength="64" required>
+                            <button class="btn btn-outline-primary" type="button" id="showPassword">Show</button>
+                            <div class="invalid-feedback">
+                                A password is required.
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" type="button" id="saveButton">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div> 
+        </div>
+    </div>
+</body>
+</html>
+
+<script>
+
+document.getElementById("saveButton").addEventListener('click', () => {
+    validateAndPut();
+});
+
+
+document.getElementById("showPassword").addEventListener('click', () => {
+    if(document.getElementById("password").getAttribute("type") == "password"){
+        document.getElementById("password").setAttribute("type", "text");
+    }else{
+        document.getElementById("password").setAttribute("type", "password");
+    }
+});
+
+
+document.getElementById("host").addEventListener('input', () => {
+
+    var element = document.getElementById("host");
+
+    if(isValidURL(element.value)){
+        element.classList.remove("is-invalid");
+        element.classList.add("is-valid");
+    }else{
+        element.classList.add("is-invalid");
+        element.classList.remove("is-valid");
+    }
+});
+
+
+async function validateAndPut(){
+
+    document.getElementById("host").value = document.getElementById("host").value.trim();
+    document.getElementById("username").value = document.getElementById("username").value.trim();
+    document.getElementById("password").value = document.getElementById("password").value.trim();
+
+    let form = document.getElementById("mqtt");
+    form.checkValidity();
+    form.classList.add('was-validated');
+    if(!form.checkValidity()){
+        return;
+    }
+
+    try{
+        putRequest = {
+            setting: "mqtt",
+            value: {
+                host: document.getElementById("host").value,
+                username: document.getElementById("username").value,
+                password: document.getElementById("password").value
+            }
+        };
+
+        await db.settings.put(putRequest);
+
+    } catch(error){
+        errorHandler(error);
+    }
+}
+
+
+async function getSetting(){
+
+    setting = await db.settings.where({'setting':'mqtt'}).first();
+
+    if(typeof setting == "undefined"){
+        return;
+    }
+
+    document.getElementById("host").value = setting.value.host;
+    document.getElementById("username").value = setting.value.username;
+    document.getElementById("password").value = setting.value.password;
+}
+
+
+getSetting();
+
+
+</script>
