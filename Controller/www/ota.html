@@ -231,7 +231,7 @@ async function validateAndSubmitController(){
             await putConfiguration('controller', document.getElementById("controllerProtocol").value, document.getElementById("controllerURL").value, document.getElementById("controllerCertificate").value);
         }
         
-        eventHandler("Controller configuration saved.");
+        showToast("Controller OTA configuration saved successfully.", type="success");
 
     }catch(error){
         errorHandler(error);
@@ -265,7 +265,7 @@ async function validateAndSubmitClient(){
             await putConfiguration('client', document.getElementById("clientProtocol").value, document.getElementById("clientURL").value, document.getElementById("clientCertificate").value);
         }
         
-        eventHandler("Client configuration saved.");
+        showToast("Client OTA configuration saved successfully.", type="success");
 
     }catch(error){
         errorHandler(error);
