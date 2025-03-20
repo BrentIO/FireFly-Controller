@@ -1,4 +1,4 @@
-let dbVersion = 9;
+let dbVersion = 10;
 
 const dbName = "FireFly-Controller";
 let db = new Dexie(dbName);
@@ -22,7 +22,6 @@ const initDB = () => {
         circuits: "++id, name, breaker, area, icon, relay_model",
         relay_models: "++id, [manufacturer+model], is_custom",
         clients: "++id, name, &uuid",
-        ota_updates: "&device_type, certificate",
         settings: "&setting, value"
     });
 

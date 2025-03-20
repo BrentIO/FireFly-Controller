@@ -652,7 +652,7 @@ async function checkIfInUse_tag(id){
 
 async function checkIfInUse_certificate(id){
 
-    const ota_updates = await db.ota_updates.where('certificate').equals(id).toArray();
+    const ota_updates = await db.settings.where("setting").anyOf(["ota_controller","ota_client"]).and(entry=> entry.value.certificate == id).toArray();
 
     if(ota_updates.length == 0){
         return false;

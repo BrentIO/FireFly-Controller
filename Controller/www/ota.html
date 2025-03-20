@@ -279,17 +279,19 @@ async function validateAndSubmitClient(){
 async function putConfiguration(device_type, protocol, url, certificate_id, enabled=true){
 
     putRequest = {
-        device_type: device_type,
-        protocol: protocol,
-        url: url,
-        enabled: enabled
+        setting: `ota_${device_type}`,
+        value: {
+            protocol: protocol,
+            url: url,
+            enabled: enabled
+        }
     };
 
     if(certificate_id != ""){
-        putRequest.certificate = parseInt(certificate_id);
+        putRequest.value.certificate = parseInt(certificate_id);
     }
 
-    await db.ota_updates.put(putRequest);
+    await db.settings.put(putRequest);
 }
 
 
@@ -366,26 +368,25 @@ async function drawClientConfig(){
     opt.selected = true;
     opt.innerHTML = `Select...`;
     clientCertificate.prepend(opt);
+    setting = await db.settings.where({'setting':`ota_${device_type}`}).first();
 
-    client = await db.ota_updates.where("device_type").equals("client").first();
-
-    if(typeof client == "undefined"){
-        document.getElementById("clientDisabled").checked = true;
-        setClientFieldsOnDisabledChange();
+    if(typeof setting == "undefined"){
+        document.getElementById(`${device_type}Disabled`).checked = true;
+        setFieldsOnDisabledChange(device_type);
         return;
     }
 
-    if(typeof client.enabled =="undefined"){
-        document.getElementById("clientDisabled").checked = true;
+    if(typeof setting.value.enabled =="undefined"){
+        document.getElementById(`${device_type}Disabled`).checked = true;
     }else{
-        document.getElementById("clientDisabled").checked = !client.enabled
+        document.getElementById(`${device_type}Disabled`).checked = !setting.value.enabled
     }
 
-    document.getElementById("clientProtocol").value = client.protocol;
-    document.getElementById("clientURL").value = client.url;
+    document.getElementById(`${device_type}Protocol`).value = setting.value.protocol;
+    document.getElementById(`${device_type}URL`).value = setting.value.url;
 
-    if(typeof client.certificate != "undefined"){
-        document.getElementById("clientCertificate").value = client.certificate;
+    if(typeof setting.value.certificate != "undefined"){
+        document.getElementById(`${device_type}Certificate`).value = setting.value.certificate;
     }
 
     setClientFieldsOnDisabledChange();
