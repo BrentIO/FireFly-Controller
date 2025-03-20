@@ -130,7 +130,6 @@ function loadMenu(menu=null, menuItem=null){
         }
     })
     .catch(error => {
-        errorHandler("Cannot load UI version \n" + error);
     });
 }
 
