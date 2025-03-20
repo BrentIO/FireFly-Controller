@@ -583,6 +583,141 @@ paths:
 
 
   ##########################################################
+  ## Clients                                              ##
+  ##########################################################
+  /api/clients:
+    get:
+      tags:
+        - Clients
+      summary: Retrieve the list of defined client UUIDs
+      description: Retrieve the list of defined client UUIDs
+      security:
+        - visualToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/uuid'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: File system not mounted
+
+  /api/clients/{uuid}:
+    get:
+      tags:
+        - Clients
+      summary: Retrieve a client
+      description: Retrieve a client
+      security:
+        - visualToken: []
+      parameters:
+        - in: path
+          name: uuid
+          schema:
+            $ref: '#/components/schemas/uuid'
+          required: true
+          description: Client UUID
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/client'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: File system not mounted
+    put:
+      tags:
+        - Clients
+      summary: Create or update a client
+      description: Create or update a client.  Note that contents are not validated and are immediately stored to the file system.
+      security:
+        - visualToken: []
+      parameters:
+        - in: path
+          name: uuid
+          schema:
+            $ref: '#/components/schemas/uuid'
+          required: true
+          description: Client UUID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/client'
+      responses:
+        '204':
+          description: Success
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: File system not mounted
+    delete:
+      tags:
+        - Clients
+      summary: Delete a client
+      description: Delete a client
+      security:
+        - visualToken: []
+      parameters:
+        - in: path
+          name: uuid
+          schema:
+            $ref: '#/components/schemas/uuid'
+          required: true
+          description: Client UUID
+      responses:
+        '204':
+          description: File Deleted Successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: File system not mounted
+
+
+  ##########################################################
   ## General                                              ##
   ##########################################################
   
@@ -1069,12 +1204,62 @@ components:
           - output
 
 
+    ##########################################################
+    ## Client                                           ##
+    ##########################################################
+
+    client:
       type: object
       properties:
+        name:
           type: string
+          description: Human-friendly name of the client
+          examples: 
+            - First floor
+          maxLength: 20 #Maximum length relates to hardware.h -> CLIENT_NAME_MAX_LENGTH
+        area:
           type: string
+          description: Area where the client is located
           examples:
+            - Tech Room
+          maxLength: 20 #Maximum length relates to hardware.h -> CLIENT_AREA_MAX_LENGTH
+        hids:
+          $ref: '#/components/schemas/hid'
+        ota:
+          $ref: '#/components/schemas/otaConfiguration'
+        mqtt:
+          $ref: '#/components/schemas/mqtt'
+        wifi:
+          $ref: '#/components/schemas/wifi'
+      required:
+        - name
 
+    hid:
+      type: object
+      description: Human Interface Device
+      propertyNames:
+        pattern: ^[0-5]$
+      additionalProperties:
+        type: object
+        properties:
+          color:
+            $ref: '#/components/schemas/color_name'
+          tags:
+            type: array
+            items:
+              $ref: '#/components/schemas/tag'
+      examples:
+        - 1:
+            color: Blue
+            tags:
+              - Holiday
+          2:
+            color: Yellow
+            tags:
+              - Security
+              - Holiday
+          4:
+            color: Yellow
 
     wifi:
       type: object
@@ -1176,6 +1361,25 @@ components:
           maxLength: 64
           examples:
             - aVery$3cretPassw0r[)
+
+    tag:
+      type: string
+      description: An arbitrary piece of associated data
+      minLength: 1
+      maxLength: 20
+      examples:
+        - Security
+        - Holiday
+
+    color_name:
+      type: string
+      description: Human-friendly name of a color
+      minLength: 1
+      maxLength: 20
+      examples:
+        - Blue
+        - Red
+
 
 ##########################################################
 ##########################################################
