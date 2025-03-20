@@ -1078,6 +1078,7 @@ components:
 
     wifi:
       type: object
+      description: WiFi configuration settings
       properties:
         ssid:
           type: string
