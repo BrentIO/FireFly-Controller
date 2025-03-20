@@ -207,9 +207,17 @@ async function validateAndSubmit(device_type){
         }else{
             await putConfiguration(device_type, document.getElementById(`${device_type}Protocol`).value, document.getElementById(`${device_type}URL`).value, document.getElementById(`${device_type}Certificate`).value);
         }
-        
-        showToast("OTA configuration saved successfully.", type="success");
 
+        switch(device_type){
+            case "controller":
+                showToast("Controller OTA configuration saved successfully.", type="success");
+                break;
+
+            case "client":
+                showToast("Client OTA configuration saved successfully.", type="success");
+                break;
+        }
+        
     }catch(error){
         errorHandler(error);
     }finally{
