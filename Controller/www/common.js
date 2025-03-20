@@ -114,6 +114,24 @@ function loadMenu(menu=null, menuItem=null){
     .catch(error => {
         errorHandler("Cannot load menu \n" + error);
     });
+
+    fetch("./version.json")
+    .then((response) => {
+        if (response.ok)
+            return response.json();
+        else {
+            throw new Error(response.statusText);
+        }
+    })
+    .then((content) => {
+
+        if("ui" in content){
+            document.getElementById('uiversion').innerText = content.ui;
+        }
+    })
+    .catch(error => {
+        errorHandler("Cannot load UI version \n" + error);
+    });
 }
 
 
