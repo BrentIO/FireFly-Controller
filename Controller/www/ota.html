@@ -29,7 +29,7 @@
                 <div class="pageDescription">Configures how the devices will retrieve over-the-air updates.</div>
                 <div>
                     <div class="sectionHeader mt-5 mb-3">Controllers</div>
-                    <form id="controllers">
+                    <form id="controller">
                     <div class="input-group mb-3">
                         <div class="input-group-text">
                             <input class="form-check-input mt-0" type="checkbox" value="" id="controllerDisabled" aria-label="Checkbox to enable or disable OTA for controllers">
@@ -63,7 +63,7 @@
                 <hr class="border border-secondary border-1 mt-3 opacity-75">
                 <div>
                     <div class="sectionHeader mb-3">Clients</div>
-                    <form id="clients">
+                    <form id="client">
                         <div class="input-group mb-3">
                             <div class="input-group-text">
                                 <input class="form-check-input mt-0" type="checkbox" value="" id="clientDisabled" aria-label="Checkbox to enable or disable OTA for clients">
@@ -105,54 +105,48 @@
     var certificateList = [];
 
 document.getElementById("controllerProtocol").addEventListener('change', () => {
-
-    if(document.getElementById("controllerProtocol").value == "https"){
-        document.getElementById("controllerCertificate").disabled = false;
-    }else{
-        document.getElementById("controllerCertificate").value = "";
-        document.getElementById("controllerCertificate").disabled = true;
-    }
+    protocolChanged("controller");
 });
 
 
 document.getElementById("clientProtocol").addEventListener('change', () => {
-
-    if(document.getElementById("clientProtocol").value == "https"){
-        document.getElementById("clientCertificate").disabled = false;
-    }else{
-        document.getElementById("clientCertificate").value = "";
-        document.getElementById("clientCertificate").disabled = true;
-    }
+    protocolChanged("client");
 });
 
 
+function protocolChanged(device_type){
+
+    if(document.getElementById(`${device_type}Protocol`).value == "https"){
+        document.getElementById(`${device_type}Certificate`).disabled = false;
+    }else{
+        document.getElementById(`${device_type}Certificate`).value = "";
+        document.getElementById(`${device_type}Certificate`).disabled = true;
+    }
+}
+
+
 document.getElementById("controllerSaveButton").addEventListener('click', () => {
-    validateAndSubmitController();
+    validateAndSubmit("controller");
 });
 
 
 document.getElementById("clientSaveButton").addEventListener('click', () => {
-    validateAndSubmitClient();
+    validateAndSubmit("client");
 });
 
 
 document.getElementById("controllerURL").addEventListener('input', () => {
-
-    var element = document.getElementById("controllerURL");
-
-    if(isValidURL(element.value)){
-        element.classList.remove("is-invalid");
-        element.classList.add("is-valid");
-    }else{
-        element.classList.add("is-invalid");
-        element.classList.remove("is-valid");
-    }
+    validateFieldURL("controller");
 });
 
 
 document.getElementById("clientURL").addEventListener('input', () => {
+    validateFieldURL("client");
+});
 
-    var element = document.getElementById("clientURL");
+
+function validateFieldURL(device_type){
+    var element = document.getElementById(`${device_type}URL`);
 
     if(isValidURL(element.value)){
         element.classList.remove("is-invalid");
@@ -161,111 +155,60 @@ document.getElementById("clientURL").addEventListener('input', () => {
         element.classList.add("is-invalid");
         element.classList.remove("is-valid");
     }
-});
+}
 
 
 document.getElementById("controllerDisabled").addEventListener('change', () => {
-    setControllerFieldsOnDisabledChange()
+    setFieldsOnDisabledChange("controller");
 });
 
 
 document.getElementById("clientDisabled").addEventListener('change', () => {
-    setClientFieldsOnDisabledChange()
+    setFieldsOnDisabledChange("client");
 });
 
 
-function setControllerFieldsOnDisabledChange(){
+function setFieldsOnDisabledChange(device_type){
 
-    var checkmark = document.getElementById("controllerDisabled").checked;
+    var checkmark = document.getElementById(`${device_type}Disabled`).checked;
 
-    document.getElementById("controllerProtocol").disabled = checkmark;
-    document.getElementById("controllerURL").disabled = checkmark;
+    document.getElementById(`${device_type}Protocol`).disabled = checkmark;
+    document.getElementById(`${device_type}URL`).disabled = checkmark;
 
-    if(document.getElementById("controllerProtocol").disabled == true){
-        document.getElementById("controllerCertificate").disabled = true;
+    if(document.getElementById(`${device_type}Protocol`).disabled == true){
+        document.getElementById(`${device_type}Certificate`).disabled = true;
     }else{
-        if(document.getElementById("controllerProtocol").value == "https"){
-            document.getElementById("controllerCertificate").disabled = false;
+        if(document.getElementById(`${device_type}Protocol`).value == "https"){
+            document.getElementById(`${device_type}Certificate`).disabled = false;
         }
     }
 }
 
 
-function setClientFieldsOnDisabledChange(){
+async function validateAndSubmit(device_type){
 
-    var checkmark = document.getElementById("clientDisabled").checked;
+    document.getElementById(`${device_type}URL`).value = document.getElementById(`${device_type}URL`).value.trim();
 
-    document.getElementById("clientProtocol").disabled = checkmark;
-    document.getElementById("clientURL").disabled = checkmark;
-
-    if(document.getElementById("clientProtocol").disabled == true){
-        document.getElementById("clientCertificate").disabled = true;
-    }else{
-        if(document.getElementById("clientProtocol").value == "https"){
-            document.getElementById("clientCertificate").disabled = false;
-        }
-    }
-}
-
-
-async function validateAndSubmitController(){
-
-    document.getElementById("controllerURL").value = document.getElementById("controllerURL").value.trim();
-
-    let form = document.getElementById("controllers");
+    let form = document.getElementById(`${device_type}`);
     form.checkValidity();
     form.classList.add('was-validated');
     if(!form.checkValidity()){
         return;
     }
 
-    let saveButton = document.getElementById("controllerSaveButton");
+    let saveButton = document.getElementById(`${device_type}SaveButton`);
 
     try{
         saveButton.innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
         saveButton.disabled = true;
 
-        if(document.getElementById("controllerDisabled").checked == true){
-            await putConfiguration('controller', document.getElementById("controllerProtocol").value, document.getElementById("controllerURL").value, document.getElementById("controllerCertificate").value, false); 
+        if(document.getElementById(`${device_type}Disabled`).checked == true){
+            await putConfiguration(device_type, document.getElementById(`${device_type}Protocol`).value, document.getElementById(`${device_type}URL`).value, document.getElementById(`${device_type}Certificate`).value, false); 
         }else{
-            await putConfiguration('controller', document.getElementById("controllerProtocol").value, document.getElementById("controllerURL").value, document.getElementById("controllerCertificate").value);
+            await putConfiguration(device_type, document.getElementById(`${device_type}Protocol`).value, document.getElementById(`${device_type}URL`).value, document.getElementById(`${device_type}Certificate`).value);
         }
         
-        showToast("Controller OTA configuration saved successfully.", type="success");
-
-    }catch(error){
-        errorHandler(error);
-    }finally{
-        saveButton.innerHTML = "Save";
-        saveButton.disabled = false;
-    }
-}
-
-
-async function validateAndSubmitClient(){
-
-    document.getElementById("clientURL").value = document.getElementById("clientURL").value.trim();
-
-    let form = document.getElementById("clients");
-    form.checkValidity();
-    form.classList.add('was-validated');
-    if(!form.checkValidity()){
-        return;
-    }
-
-    let saveButton = document.getElementById("clientSaveButton");
-
-    try{
-        saveButton.innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>`;
-        saveButton.disabled = true;
-
-        if(document.getElementById("clientDisabled").checked == true){
-            await putConfiguration('client', document.getElementById("clientProtocol").value, document.getElementById("clientURL").value, document.getElementById("clientCertificate").value, false); 
-        }else{
-            await putConfiguration('client', document.getElementById("clientProtocol").value, document.getElementById("clientURL").value, document.getElementById("clientCertificate").value);
-        }
-        
-        showToast("Client OTA configuration saved successfully.", type="success");
+        showToast("OTA configuration saved successfully.", type="success");
 
     }catch(error){
         errorHandler(error);
@@ -295,79 +238,27 @@ async function putConfiguration(device_type, protocol, url, certificate_id, enab
 }
 
 
-
-async function drawControllerConfig(){
+async function drawOTAConfig(device_type){
 
     await getCertificateList();
 
-    var controllerCertificate = document.getElementById("controllerCertificate");
+    var certificateSelector = document.getElementById(`${device_type}Certificate`);
 
-    var i, L = controllerCertificate.options.length - 1;
+    var i, L = certificateSelector.options.length - 1;
 
     for(i = L; i >= 0; i--) {
-        controllerCertificate.remove(i);
+        if(certificateSelector.options[i].innerText != "Select..."){
+            certificateSelector.remove(i);
+        }
     }
 
     certificateList.forEach((certificate) =>{
         var opt = document.createElement('option');
         opt.value = `${certificate['id']}`;
         opt.innerHTML = `${certificate['commonName']}`;
-        controllerCertificate.appendChild(opt);
+        certificateSelector.appendChild(opt);
     });
 
-    var opt = document.createElement('option');
-    opt.value = "";
-    opt.selected = true;
-    opt.innerHTML = `Select...`;
-    controllerCertificate.prepend(opt);
-
-    controller = await db.ota_updates.where("device_type").equals("controller").first();
-
-    if(typeof controller == "undefined"){
-        document.getElementById("controllerDisabled").checked = true;
-        setControllerFieldsOnDisabledChange();
-        return;
-    }
-
-    if(typeof controller.enabled =="undefined"){
-        document.getElementById("controllerDisabled").checked = true;
-    }else{
-        document.getElementById("controllerDisabled").checked = !controller.enabled
-    }
-
-    document.getElementById("controllerProtocol").value = controller.protocol;
-    document.getElementById("controllerURL").value = controller.url;
-
-    if(typeof controller.certificate != "undefined"){
-        document.getElementById("controllerCertificate").value = controller.certificate;
-    }
-
-    setControllerFieldsOnDisabledChange();
-}
-
-
-async function drawClientConfig(){
-
-    var clientCertificate = document.getElementById("clientCertificate");
-
-    var i, L = clientCertificate.options.length - 1;
-
-    for(i = L; i >= 0; i--) {
-        clientCertificate.remove(i);
-    }
-
-    certificateList.forEach((certificate) =>{
-        var opt = document.createElement('option');
-        opt.value = `${certificate['id']}`;
-        opt.innerHTML = `${certificate['commonName']}`;
-        clientCertificate.appendChild(opt);
-    });
-
-    var opt = document.createElement('option');
-    opt.value = "";
-    opt.selected = true;
-    opt.innerHTML = `Select...`;
-    clientCertificate.prepend(opt);
     setting = await db.settings.where({'setting':`ota_${device_type}`}).first();
 
     if(typeof setting == "undefined"){
@@ -389,7 +280,7 @@ async function drawClientConfig(){
         document.getElementById(`${device_type}Certificate`).value = setting.value.certificate;
     }
 
-    setClientFieldsOnDisabledChange();
+    setFieldsOnDisabledChange(device_type);
 }
 
 
@@ -397,7 +288,8 @@ async function getCertificateList(){
     certificateList = await db.certificates.orderBy('commonName').toArray()
 }
 
-drawControllerConfig();
-drawClientConfig();
+
+drawOTAConfig("controller");
+drawOTAConfig("client");
 
 </script>
