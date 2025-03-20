@@ -18,8 +18,6 @@ tags:
     description: Operations for the hardware and firmware versions
   - name: Certificates
     description: Operations for the storage, retrieval, and management of certificates
-  - name: Configuration
-    description: Operations for configuring various services on both controllers and clients
   - name: Controllers
     description: Manage controllers
   - name: Clients
@@ -242,7 +240,8 @@ paths:
   /api/ota/app:
     post:
       tags:
-        - Configuration
+        - Clients
+        - Controllers
       summary: Force application OTA update
       description: Forces an over-the-air (OTA) application firmware retrieval with the URL provided
       security:
@@ -276,7 +275,8 @@ paths:
   /api/ota/spiffs:
     post:
       tags:
-        - Configuration
+        - Clients
+        - Controllers
       summary: Force SPIFFs OTA update
       description: Forces an over-the-air (OTA) SPIFFs retrieval with the URL provided
       security:
@@ -475,7 +475,7 @@ paths:
   /api/provisioning:
     get:
       tags:
-        - Configuration
+        - Controllers
       summary: Retrieve the status of provisioning mode on this controller
       description: Retrieve the status of provisioning mode on this controller
       security:
@@ -501,7 +501,7 @@ paths:
                 $ref: '#/components/schemas/error_message'
     put:
       tags:
-        - Configuration
+        - Controllers
       summary: Enable provisioning mode on this controller
       description: Enable provisioning mode on this controller
       security:
@@ -527,7 +527,7 @@ paths:
                 $ref: '#/components/schemas/error_message'
     delete:
       tags:
-        - Configuration
+        - Controllers
       summary: Disable provisioning mode on this controller
       description: Disable provisioning mode on this controller
       security:
