@@ -1173,37 +1173,12 @@ components:
           - action
           - output
 
-    uuid:
-      type: string
-      description: Unique identifier
-      format: uuid
-      minLength: 36
-      maxLength: 36
 
-    mqtt:
       type: object
       properties:
-        host:
           type: string
-          description: The hostname for the MQTT server
-          minLength: 1
-          maxLength: 64
-          examples:
-            - mymqtt.host.com
-        username:
           type: string
-          description: Authentication username
-          minLength: 1
-          maxLength: 64
           examples:
-            - controller1
-        password:
-          type: string
-          description: Authentication password
-          minLength: 1
-          maxLength: 64
-          examples:
-            - aVery$3cretPassw0r[)
 
 
     wifi:
@@ -1272,7 +1247,39 @@ components:
 
     dexieFormat:
       type: object
-        
+
+    uuid:
+      type: string
+      description: Unique identifier
+      format: uuid
+      minLength: 36
+      maxLength: 36
+
+    mqtt:
+      type: object
+      description: MQTT configuration settings
+      properties:
+        host:
+          type: string
+          description: The hostname for the MQTT server
+          minLength: 1
+          maxLength: 64
+          examples:
+            - mymqtt.host.com
+        username:
+          type: string
+          description: Authentication username
+          minLength: 1
+          maxLength: 64
+          examples:
+            - controller1
+        password:
+          type: string
+          description: Authentication password
+          minLength: 1
+          maxLength: 64
+          examples:
+            - aVery$3cretPassw0r[)
 
 ##########################################################
 ##########################################################
