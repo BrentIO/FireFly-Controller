@@ -54,7 +54,7 @@
                     <div class="modal-body">
                         <div class="input-group mb-3 has-validation">
                             <span class="input-group-text">Name</span>
-                            <input class="form-control" id="addNewTagName" placeholder="ex: Security" aria-label="Name" required>
+                            <input class="form-control" id="addNewTagName" placeholder="ex: Security" aria-label="Name" maxlength="20" required>
                             <div class="invalid-feedback">
                                 A name is required.
                             </div>
@@ -91,7 +91,7 @@
 
     document.getElementById("addNewTagButtonAdd").addEventListener('click', () => {
 
-        document.getElementById("addNewTagName").value = document.getElementById("addNewTagName").value.trim();
+        document.getElementById("addNewTagName").value = document.getElementById("addNewTagName").value.trim().slice(0,20);
 
         let form = document.getElementById("addNewTagForm");
         form.checkValidity();

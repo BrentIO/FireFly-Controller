@@ -54,7 +54,7 @@
                 <div class="modal-body">
                     <div class="input-group mb-3 has-validation">
                         <span class="input-group-text">Name</span>
-                        <input class="form-control" id="addNewColorName" placeholder="ex: Magenta"  aria-label="Name" required>
+                        <input class="form-control" id="addNewColorName" placeholder="ex: Magenta"  aria-label="Name" maxlength="20" required>
                         <div class="invalid-feedback">
                             A name is required.
                         </div>
@@ -88,7 +88,7 @@
 
     document.getElementById("addNewColorButtonAdd").addEventListener('click', () => {
 
-        document.getElementById("addNewColorName").value = document.getElementById("addNewColorName").value.trim();
+        document.getElementById("addNewColorName").value = document.getElementById("addNewColorName").value.trim().slice(0,20);
 
         let form = document.getElementById("addNewColorForm");
         form.checkValidity();
