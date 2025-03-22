@@ -264,7 +264,7 @@
                                 <option value="http" selected>http://</option>
                                 <option value="https">https://</option>
                             </select>
-                        <input class="form-control has-validation" id="forceUpdateURL" placeholder="ex: www.somewhere.com/firmware.json"  aria-label="URL" required>
+                        <input class="form-control has-validation" id="forceUpdateURL" placeholder="ex: www.somewhere.com/firmware.json"  aria-label="URL" maxlength="120" required>
                         <div class="invalid-feedback">
                             A valid URL is required.
                         </div>
@@ -1790,6 +1790,14 @@
         }
 
         try{
+
+            if(payload.url.length > 128){
+                throw new Error("URL must be less than 128 characters in length");
+            }
+
+            if(payload.certificate.length > 31){
+                throw new Error("Certificate must be less than 31 characters in length");
+            }
 
             var controllerLS = new controllerLocalStorage(id);
 

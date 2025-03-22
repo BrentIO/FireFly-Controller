@@ -992,6 +992,8 @@ components:
           type: string
           format: url
           description: URL for the firmware update server
+          minLength: 1
+          maxLength: 128
           examples: 
             - http://www.somewhere.com/firmware.json
         certificate:
@@ -1008,10 +1010,14 @@ components:
         url:
           type: string
           format: url
+          minLength: 1
+          maxLength: 128
           description: URL for the binary file to flash
         certificate:
           type: string
           description: File name for the certificate that should be used when https is specified
+          minLength: 1
+          maxLength: 31
           examples: 
             - mycert.pem
       required:
