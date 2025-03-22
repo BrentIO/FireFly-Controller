@@ -1042,12 +1042,12 @@
                                     </ul>
                                 <button class="warning btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><img class="menuIcon" src="./icons/system_update_alt.svg"> Firmware and Certificates</button>
                                     <ul class="dropdown-menu warning">
-                                        <li><a class="dropdown-item" href="#" onclick=deployCertificates(${controller.id});><img src="./icons/certificate.svg"> Push Certificates</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="deployConfigurationToController(${controller.id}, true)";><img src="./icons/certificate.svg"> Push Certificates</a></li>
                                         <li><a class="dropdown-item" href="#" onclick=showForceUpdateModal(${controller.id},'Application');><img src="./icons/cloud_download.svg"> Force Application Update</a></li>
                                         <li><a class="dropdown-item" href="#" onclick=showForceUpdateModal(${controller.id},'SPIFFs');><img src="./icons/hard_disk.svg"> Force SPIFFs Update</a></li>
                                     </ul>
                                 <button class="btn btn-secondary" id="PullBackupButton_${controller.id}" onclick="pullBackupFromController(${controller.id});"><img class="menuIcon" src="./icons/download.svg"> Pull Backup</button>
-                                <button class="btn btn-warning" onclick="getControllerPOSTPayload(${controller.id})";><img src="./icons/upload.svg"> Deploy Configuration</button>
+                                <button class="btn btn-warning" onclick="deployConfigurationToController(${controller.id})";><img src="./icons/upload.svg"> Deploy Configuration</button>
                                 <button class="btn btn-primary" onclick="logoutController(${controller.id});">Logout</button>`;
                                 }else{
                                     newControllerCard += `<button class="btn btn-primary" id="Authenticate_${controller.id}" onclick="showVisualTokenModal(${controller.id});">Authenticate</button>`;
@@ -1586,14 +1586,22 @@
         return false;
     }
 
-    async function deployCertificates(id){
+
+    async function deployConfigurationToController(id, certificatesOnly=false){
+
         var overallProgressBar = document.getElementById("overallProgressBar");
         var stepProgressBar = document.getElementById("stepProgressBar");
         var stepProgressText = document.getElementById("stepProgressText");
         var currentStepText = document.getElementById("currentStepText");
 
         var overallStepsComplete = 0;
-        const overallStepsTotal = 2;
+        var overallStepsTotal = 0;
+
+        if(certificatesOnly){
+            overallStepsTotal  = 2;
+        }else{
+            overallStepsTotal = 7;
+        }
 
         updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
 
@@ -1610,9 +1618,12 @@
                 throw new Error("You must add a certificate to the Configuration before you can push certificates.")
             }
 
+            controllerLS.lastDeploymentTime = 0;
+
             statusModal.show();
 
             stepProgressText.innerText = `Deleting existing certificates...`;
+            updateStatusBar(stepProgressBar,0);
 
             certificates = controllerLS.certificates;
 
@@ -1620,7 +1631,7 @@
 
                 updateStatusBar(stepProgressBar,parseInt((i/certificates.length)*100));
 
-                currentStepText.innerText = `Deleting ${certificates[i].file}...`;
+                currentStepText.innerText = `Deleting certificate ${certificates[i].file}...`;
 
                 var response = await fetch(`http://${controllerLS.ip}/certs/${certificates[i].file}`, {
                     signal: AbortSignal.timeout(apiTimeout), 
@@ -1655,10 +1666,10 @@
             }
 
             overallStepsComplete++;
-
             updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
 
             stepProgressText.innerText = `Pushing certificates...`;
+            updateStatusBar(stepProgressBar,0);
 
             for(var i = 0; i < certificatesToPush.length; i++){
 
@@ -1668,7 +1679,7 @@
                     type: "application/x-x509-ca-cert",
                 });
 
-                currentStepText.innerText = `Pushing ${certificatesToPush[i].fileName}...`;
+                currentStepText.innerText = `Pushing certificate ${certificatesToPush[i].fileName}...`;
 
                 const formData = new FormData();
                 formData.append('file', file);
@@ -1714,10 +1725,284 @@
             overallStepsComplete++;
             updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
 
-        }
-        catch(exception){
+            if(certificatesOnly){
+                showToast("Certificates deployed successfully!", type="success");
+                document.getElementById("statusModalCloseButton").classList.remove("visually-hidden");
+                statusModal.hide();
+                await drawManagedControllers();
+                return;
+            }
+
+            stepProgressText.innerText = `Deleting existing controllers...`;
+            updateStatusBar(stepProgressBar,0);
+            currentStepText.innerText = `Getting controller list...`;
+
+            var response = await fetch(`http://${controllerLS.ip}/api/controllers`, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'GET',
+                    headers: {
+                        "visual-token":controllerLS.visualToken
+                    }
+                });
+
+            switch(response.status){
+                case 200:
+                    var controllersToDelete = await response.json();
+                    break;
+
+                case 401:
+                    controllerLS.logout();
+                    throw new Error(`Authentication required (${response.status})`);
+                    break;
+
+                case 500:
+                    throw new Error(`File system error (${response.status})`);
+                    break;
+
+                default:
+                    throw new Error(`Unexpected error retrieving controller list (${response.status})`);
+                    break;
+            }
+
+            for(var i = 0; i < controllersToDelete.length; i++){
+
+                updateStatusBar(stepProgressBar,parseInt((i/controllersToDelete.length)*100));
+                currentStepText.innerText = `Deleting controller ${controllersToDelete[i]}...`;
+
+                var response = await fetch(`http://${controllerLS.ip}/api/controllers/${controllersToDelete[i]}`, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'DELETE',
+                    headers: {
+                        "visual-token":controllerLS.visualToken
+                    }
+                });
+
+                switch(response.status){
+                    case 204:
+                        break;
+
+                    case 401:
+                        controllerLS.logout();
+                        throw new Error(`Authentication required (${response.status})`);
+                        break;
+
+                    case 404:
+                        throw new Error(`Controller does not have a controller file named "${controllersToDelete[i]}" (${response.status})`);
+                        break;
+
+                    case 500:
+                        throw new Error(`File system error (${response.status})`);
+                        break;
+
+                    default:
+                        throw new Error(`Unexpected error deleting controller (${response.status})`);
+                        break;
+                }
+            }
+
+            overallStepsComplete++;
+            updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
+
+            var controllersToPush = await db.controllers.toArray();
+            stepProgressText.innerText = `Pushing controllers...`;
+            updateStatusBar(stepProgressBar,0);
+
+            for(var i = 0; i < controllersToPush.length; i++){
+
+                updateStatusBar(stepProgressBar,parseInt((i/controllersToPush.length)*100));
+
+                currentStepText.innerText = `Pushing controller ${controllersToPush[i].uuid}...`;
+
+                var response = await fetch(`http://${controllerLS.ip}/api/controllers/${controllersToPush[i].uuid}`, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'PUT',
+                    body: JSON.stringify(await getControllerPOSTPayload(controllersToPush[i].id)),
+                    headers: {
+                        "visual-token":controllerLS.visualToken
+                    }
+                });
+
+                switch(response.status){
+                    case 204:
+                        break;
+
+                    case 400:
+                        throw new Error(`Bad request (${response.status})`);
+                        break;
+
+                    case 401:
+                        controllerLS.logout();
+                        throw new Error(`Authentication required (${response.status})`);
+                        break;
+
+                    case 500:
+                        throw new Error(`File system error (${response.status})`);
+                        break;
+
+                    default:
+                        throw new Error(`Unexpected error pushing controller (${response.status})`);
+                        break;
+                }
+            }
+
+            overallStepsComplete++;
+            updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
+
+            stepProgressText.innerText = `Deleting existing clients...`;
+            updateStatusBar(stepProgressBar,0);
+            currentStepText.innerText = `Getting client list...`;
+
+            var response = await fetch(`http://${controllerLS.ip}/api/clients`, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'GET',
+                    headers: {
+                        "visual-token":controllerLS.visualToken
+                    }
+                });
+
+            switch(response.status){
+                case 200:
+                    var clientsToDelete = await response.json();
+                    break;
+
+                case 401:
+                    controllerLS.logout();
+                    throw new Error(`Authentication required (${response.status})`);
+                    break;
+
+                case 500:
+                    throw new Error(`File system error (${response.status})`);
+                    break;
+
+                default:
+                    throw new Error(`Unexpected error retrieving controller list (${response.status})`);
+                    break;
+            }
+
+            for(var i = 0; i < clientsToDelete.length; i++){
+
+                updateStatusBar(stepProgressBar,parseInt((i/clientsToDelete.length)*100));
+                currentStepText.innerText = `Deleting client ${clientsToDelete[i]}...`;
+
+                var response = await fetch(`http://${controllerLS.ip}/api/clients/${clientsToDelete[i]}`, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'DELETE',
+                    headers: {
+                        "visual-token":controllerLS.visualToken
+                    }
+                });
+
+                switch(response.status){
+                    case 204:
+                        break;
+
+                    case 401:
+                        controllerLS.logout();
+                        throw new Error(`Authentication required (${response.status})`);
+                        break;
+
+                    case 404:
+                        throw new Error(`Controller does not have a client file named "${clientsToDelete[i]}" (${response.status})`);
+                        break;
+
+                    case 500:
+                        throw new Error(`File system error (${response.status})`);
+                        break;
+
+                    default:
+                        throw new Error(`Unexpected error deleting client (${response.status})`);
+                        break;
+                }
+            }
+
+            overallStepsComplete++;
+            updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
+
+            var clientsToPush = await db.clients.toArray();
+
+            stepProgressText.innerText = `Pushing clients...`;
+            updateStatusBar(stepProgressBar,0);
+
+            for(var i = 0; i < clientsToPush.length; i++){
+
+                updateStatusBar(stepProgressBar,parseInt((i/clientsToPush.length)*100));
+
+                currentStepText.innerText = `Pushing client ${clientsToPush[i].uuid}...`;
+
+                var response = await fetch(`http://${controllerLS.ip}/api/clients/${clientsToPush[i].uuid}`, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'PUT',
+                    body: JSON.stringify(await getClientPOSTPayload(clientsToPush[i].id)),
+                    headers: {
+                        "visual-token":controllerLS.visualToken
+                    }
+                });
+
+                switch(response.status){
+                    case 204:
+                        break;
+
+                    case 400:
+                        throw new Error(`Bad request (${response.status})`);
+                        break;
+
+                    case 401:
+                        controllerLS.logout();
+                        throw new Error(`Authentication required (${response.status})`);
+                        break;
+
+                    case 500:
+                        throw new Error(`File system error (${response.status})`);
+                        break;
+
+                    default:
+                        throw new Error(`Unexpected error pushing client (${response.status})`);
+                        break;
+                }
+            }
+
+            overallStepsComplete++;
+            updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
+
+            stepProgressText.innerText = `Pushing backup...`;
+            updateStatusBar(stepProgressBar,0);
+
+            var response = await fetch(`http://${controllerLS.ip}/backup`, {
+                    signal: AbortSignal.timeout(apiTimeout), 
+                    method: 'PUT',
+                    body: await db.export(),
+                    headers: {
+                        "visual-token":controllerLS.visualToken
+                    }
+                });
+
+            switch(response.status){
+                case 204:
+                    break;
+
+                case 401:
+                    controllerLS.logout();
+                    throw new Error(`Authentication required (${response.status})`);
+                    break;
+
+                case 500:
+                    throw new Error(`File system error (${response.status})`);
+                    break;
+
+                default:
+                    throw new Error(`Unexpected error pushing backup (${response.status})`);
+                    break;
+            }
+            overallStepsComplete++;
+            updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
+
+            controllerLS.lastDeploymentTime = Date.now();
+
+            showToast("Deployment successful!", type="success");
+
+        } catch(exception){
             if(exception.name == "TimeoutError"){
-                exception = "Timeout attempting to deploy certificates to controller."
+                exception = "Timeout attempting to deploy configuration to controller."
             }
             errorHandler(exception);
         }
@@ -1726,8 +2011,7 @@
             statusModal.hide();
             await drawManagedControllers();
         }
-    }
-
+}
 
     function updateStatusBar(element, percentage){
         element.innerText = `${percentage}%`
