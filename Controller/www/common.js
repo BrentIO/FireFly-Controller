@@ -179,6 +179,7 @@ class controllerLocalStorage{
         this._eventLog = [];
         this._errorLog = [];
         this._authenticationTime = null;
+        this._lastDeploymentTime = null;
         this.retrieve();
     }
 
@@ -295,6 +296,20 @@ class controllerLocalStorage{
     }
 
 
+    get lastDeploymentTime(){
+        return this._lastDeploymentTime;
+    }
+
+    /**
+     * @param {BigInt} value
+     */
+    set lastDeploymentTime(value){
+        this.retrieve();
+        this._lastDeploymentTime = value;
+        this.save();
+    }
+
+
     deleteCertificate(filename){
         this.retrieve();
         this._certificates = this._certificates.filter(certificate => certificate.file !== filename);
@@ -354,6 +369,12 @@ class controllerLocalStorage{
 
         if("_authenticationTime" in record){
             this._authenticationTime = record._authenticationTime;
+        }
+
+        if("_lastDeploymentTime" in record){
+            this._lastDeploymentTime = record._lastDeploymentTime;
+        }else{
+            this._lastDeploymentTime = 0;
         }
 
         if(this._isAuthenticated){

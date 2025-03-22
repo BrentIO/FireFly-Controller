@@ -996,6 +996,7 @@
                     <div class="card mb-3">
                         <div class="card-body">
                             <div class="d-grid gap-2">
+                                <span id="recentlyDeployedBadge_${controller.id}" class="badge rounded-pill text-bg-success mb-3 visually-hidden">Configuration Recently Deployed</span>
                                 <div class="editableDetails">
                                     <span class="card-title mb-3 h3" id="Name_${controller.id}" onInput="editFieldRealtimeValidation(${controller.id}, 'Name')";>${controller.name}</span>
                                     <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editNameIcon_${controller.id}" onClick="startEdit(${controller.id}, 'Name')";">
@@ -1065,6 +1066,10 @@
                 </div>`
 
                 document.getElementById('managedControllerList').insertAdjacentHTML('beforeend', newControllerCard);
+
+                if(Date.now() - controllerLS.lastDeploymentTime < 300000){
+                    document.getElementById(`recentlyDeployedBadge_${controller.id}`).classList.remove("visually-hidden");
+                }
 
                 drawCertificates(controller.id);
                 validateUUIDMatches(controller.id);
