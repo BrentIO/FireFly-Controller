@@ -901,12 +901,69 @@ async function getControllerPOSTPayload(id){
         }
     }
 
+    mqtt = await db.settings.where({'setting':'mqtt'}).first();
+    
+    if(typeof mqtt == "undefined"){
+        throw new Error("MQTT has not been configured.")
+    }
+
+    payload[0].mqtt = mqtt.value;
+
+    for(const [field, value] of Object.entries(payload[0].mqtt)){
+        const permittedFields = ["host","username","password"];
+        if(permittedFields.includes(field) == false){
+            delete payload[0].mqtt[field];
+        }
+    }
+
+    ota = await getOTAConfiguration("controller");
+
+    if(Object.keys(ota).length > 0){
+        payload[0].ota = ota;
+    }
+
+    for(const [field, value] of Object.entries(payload[0].ota)){
+        const permittedFields = ["certificate","url"];
+        if(permittedFields.includes(field) == false){
+            delete payload[0].ota[field];
+        }
+    }
+
     for(const [field, value] of Object.entries(payload[0])){
-        const permittedFields = ["name","area","ports","outputs"];
+        const permittedFields = ["name","area","ports","outputs", "ota", "mqtt"];
         if(permittedFields.includes(field) == false){
             delete payload[0][field];
         }
     }
 
     return payload[0];
+async function getOTAConfiguration(device_type){
+
+    const maximumLength_url = 128;
+    const maximumLength_certificate = 31;
+
+    returnValue = {};
+
+    ota = await db.settings.where({'setting':`ota_${device_type}`}).first();
+    
+    if(typeof ota.value == "undefined"){
+        return returnValue;
+    }
+
+    if(ota.value.enabled == false){
+        return returnValue;
+    }
+
+    if(ota.value.protocol == "https"){
+        certificate = await db.certificates.where('id').equals(ota.value.certificate).first();
+
+        if(typeof certificate == "undefined"){
+            throw new Error(`Unknown certificate ID ${ota.value.certificate} in OTA configuration.`);
+        }
+        returnValue.certificate = certificate.fileName;
+    }
+
+    returnValue.url = `${ota.value.protocol}://${ota.value.url}`
+
+    return returnValue;
 }
