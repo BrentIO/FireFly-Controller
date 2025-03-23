@@ -2214,6 +2214,7 @@
 
                     case 401:
                         controllerLS.logout();
+                        await drawManagedControllers();
                         throw new Error(`Authentication required (${response.status})`);
                         break;
 
