@@ -8,9 +8,9 @@
 }
 
 .menuItem:hover{
-    color:#e6e37f;
+    color: #20c997; 
     .menuIcon {
-        filter: invert(89%) sepia(5%) saturate(3662%) hue-rotate(8deg) brightness(109%) contrast(80%);
+        filter: invert(54%) sepia(95%) saturate(371%) hue-rotate(111deg) brightness(101%) contrast(86%);
     }
 }
 
@@ -104,10 +104,10 @@
 }
 
 .activeMenuItem{
-    color: #807d19;
+    color: #0d6dfd;
     font-weight:bold;
     .menuIcon {
-        filter: invert(51%) sepia(58%) saturate(4149%) hue-rotate(38deg) brightness(87%) contrast(80%);
+        filter: invert(29%) sepia(69%) saturate(3849%) hue-rotate(211deg) brightness(102%) contrast(98%);
     }
 }
 
