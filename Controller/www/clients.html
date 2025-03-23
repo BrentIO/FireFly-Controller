@@ -77,6 +77,14 @@
                             UUID is required.  If you don't know the UUID, click "Generate".  You can change the client's UUID assignment later.
                         </div>
                     </div>
+                    <div class="input-group mb-3 has-validation">
+                        <span class="input-group-text">MAC Address</span>
+                        <input class="form-control" id="addNewClientMAC" placeholder="ex: 00:1A:2B:3C:4D:5E" aria-label="MAC Address" required onInput="macEditFieldRealtimeValidation('addNewClientMAC','value')">
+                        <button class="btn btn-outline-primary" type="button" onclick="addNewClientGenerateMAC();">Generate</button>
+                        <div class="invalid-feedback">
+                            A MAC address is required.  If you don't know the MAC address, click "Generate".  You can change the client's MAC address assignment later.
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-primary" type="button" id="addNewClientButtonAdd" onclick="addNewClientButtonAdd_click();">Add</button>
@@ -147,6 +155,18 @@
     }
 
 
+    function addNewClientGenerateMAC(){
+
+        let addNewClientMAC = document.getElementById("addNewClientMAC");
+
+        if(addNewClientMAC.value == ""){
+            addNewClientMAC.value = "FF:FF:FF:FF:FF:FF";
+        }
+
+        macEditFieldRealtimeValidation('addNewClientMAC','value')
+    }
+
+
     async function addClientToDatabase(){
 
         try{
@@ -154,6 +174,7 @@
                 name: document.getElementById("addNewClientName").value.trim().slice(0,8),
                 description: document.getElementById("addNewClientDescription").value.trim().slice(0,20),
                 uuid: document.getElementById("addNewClientUUID").value.trim().slice(0,36),
+                mac: document.getElementById("addNewClientMAC").value.trim().replaceAll("-",":").toLowerCase().slice(0,17),
                 area: parseInt(document.getElementById("addNewClientArea").value),
                 hids:[]
             });
@@ -241,6 +262,12 @@
                                             <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editUUIDIcon_${client.id}" onClick="startEdit(${client.id}, 'UUID')";">
                                             <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveUUIDIcon_${client.id}" onClick="saveEdit(${client.id}, 'UUID')"; hidden>
                                             <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelUUIDIcon_${client.id}" onClick="cancelEdit(${client.id}, 'UUID')"; hidden>
+                                        </div>
+                                        <div class="editableDetails">
+                                            <span class="col clientDetailsLabel">MAC Address:</span> <span class="uuid" id="MAC_${client.id}" onInput="editFieldRealtimeValidation(${client.id}, 'MAC')";>${client.mac}</span>
+                                            <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editMACIcon_${client.id}" onClick="startEdit(${client.id}, 'MAC')";">
+                                            <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveMACIcon_${client.id}" onClick="saveEdit(${client.id}, 'MAC')"; hidden>
+                                            <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelMACIcon_${client.id}" onClick="cancelEdit(${client.id}, 'MAC')"; hidden>
                                         </div>
                                         <button class="btn btn-primary" onClick="window.location.href = './client.html?id=${client.id}';">Edit Buttons/Switches</button>
                                         <button type="button" class="btn btn-outline-danger" id="deleteClientButtonChallenge_${client.id}" onclick="toggleConfirmDeleteClient(${client.id});">Delete</button>
@@ -402,6 +429,14 @@
                 uuidEditFieldRealtimeValidation(fieldName + "_" +id,'innerText');
                 break;
 
+            case 'MAC':
+                element = document.getElementById(fieldName + "_" +id);
+                element.setAttribute("previous-value", element.innerText);
+                element.contentEditable = "true";
+                element.classList.add("form-control");
+                macEditFieldRealtimeValidation(fieldName + "_" +id,'innerText');
+                break;
+
             default:
                 errorHandler("Field name " + fieldName + " is not known and cannot be edited");
                 break;
@@ -431,6 +466,9 @@
                 break;
             case 'UUID':
                 uuidEditFieldRealtimeValidation(fieldName + "_" +id,'innerText');
+                break;
+            case 'MAC':
+                macEditFieldRealtimeValidation(fieldName + "_" +id,'innerText');
                 break;
         }
     }
@@ -479,6 +517,14 @@
                     await db.clients.update(id, {uuid: value});
                 }else{
                     warningHandler("An invalid UUID was input, reverting to the prior value.");
+                    cancelEdit(id, fieldName);
+                }
+                break;
+            case 'MAC':
+                if(isValidMacAddress(value)){
+                    await db.clients.update(id, {mac: value.replaceAll("-",":").toLowerCase().slice(0,17)});
+                }else{
+                    warningHandler("An invalid MAC address was input, reverting to the prior value.");
                     cancelEdit(id, fieldName);
                 }
                 break;

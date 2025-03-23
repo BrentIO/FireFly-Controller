@@ -764,6 +764,12 @@ function isValidURL(value){
 }
 
 
+function isValidMacAddress(value){
+    var regex = /^(?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2})$/;
+    return regex.test(value);
+}
+
+
 function uuidEditFieldRealtimeValidation(element, type){
     uuidElement = document.getElementById(element);
 
@@ -784,6 +790,30 @@ function uuidEditFieldRealtimeValidation(element, type){
     }else{
         uuidElement.classList.add("is-invalid");
         uuidElement.classList.remove("is-valid");
+    }
+}
+
+
+function macEditFieldRealtimeValidation(element, type){
+    macElement = document.getElementById(element);
+
+    switch(type){
+        case "innerHTML":
+            value = macElement.innerHTML;
+            break;
+        case "innerText":
+            value = macElement.innerText;
+            break;
+        case "value":
+            value = macElement.value;
+    }
+
+    if(isValidMacAddress(value)){
+        macElement.classList.remove("is-invalid");
+        macElement.classList.add("is-valid");
+    }else{
+        macElement.classList.add("is-invalid");
+        macElement.classList.remove("is-valid");
     }
 }
 
@@ -1073,7 +1103,7 @@ async function getClientPOSTPayload(id){
     }
 
     for(const [field, value] of Object.entries(client)){
-        const permittedFields = ["name","area","hids","ota", "mqtt", "wifi"];
+        const permittedFields = ["name","area","hids","mac","ota", "mqtt", "wifi"];
         if(permittedFields.includes(field) == false){
             delete client[field];
         }

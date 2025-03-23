@@ -1223,6 +1223,8 @@ components:
           examples: 
             - First floor
           maxLength: 20 #Maximum length relates to hardware.h -> CLIENT_NAME_MAX_LENGTH
+        mac:
+          $ref: '#/components/schemas/macAddress'
         area:
           type: string
           description: Area where the client is located
@@ -1285,6 +1287,11 @@ components:
           maxLength: 63
           examples:
             - aVery$3cretPassw0r[)
+
+    macAddress:
+      type: string
+      description: Hardware MAC address
+      pattern: ^(?:[0-9a-f]{2}[:]){5}(?:[0-9a-f]{2})$
 
 
     ##########################################################
