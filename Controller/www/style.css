@@ -305,6 +305,12 @@
     }
 }
 
+#controlCircuitTableBody{
+    .beginOfBreaker{
+        border-top-width: 2px;
+    }
+}
+
 @media print {
     .card, .availableOutputPort, .assignedOutputPort, .availableCircuit, .availableInputPort, .assignedInputPort {
         break-inside: avoid;
@@ -312,6 +318,28 @@
 
     .btn, .editableContent, .pageDescription, .sectionHeader, .toast-container {
         display: none !important;
+    }
+    #controlCircuitTable {    
+        th {
+            padding-top: 0px;
+            padding-bottom: 0px;
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+    }
+    
+    #controlCircuitTableBody{
+        td {
+            font-size: small;
+            padding-top: 0px;
+            padding-bottom: 0px;
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+    
+        .beginOfBreaker{
+            border-top-width: 2px;
+        }
     }
 }
 
