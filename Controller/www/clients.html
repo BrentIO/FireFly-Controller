@@ -285,6 +285,7 @@
                     </div>`
 
                 managedClientCards.insertAdjacentHTML('beforeend', newClientCard);
+                highlightMacAddressInvalid(client.id, client.mac);        
             });
         }
         catch (exception){
