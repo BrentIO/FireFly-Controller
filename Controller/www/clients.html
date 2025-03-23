@@ -264,7 +264,7 @@
                                             <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelUUIDIcon_${client.id}" onClick="cancelEdit(${client.id}, 'UUID')"; hidden>
                                         </div>
                                         <div class="editableDetails">
-                                            <span class="col clientDetailsLabel">MAC Address:</span> <span class="uuid" id="MAC_${client.id}" onInput="editFieldRealtimeValidation(${client.id}, 'MAC')";>${client.mac}</span>
+                                            <span class="col clientDetailsLabel">MAC Address:</span> <span class="macAddress" id="MAC_${client.id}" onInput="editFieldRealtimeValidation(${client.id}, 'MAC')";>${client.mac}</span>
                                             <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editMACIcon_${client.id}" onClick="startEdit(${client.id}, 'MAC')";">
                                             <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveMACIcon_${client.id}" onClick="saveEdit(${client.id}, 'MAC')"; hidden>
                                             <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelMACIcon_${client.id}" onClick="cancelEdit(${client.id}, 'MAC')"; hidden>
@@ -523,6 +523,7 @@
             case 'MAC':
                 if(isValidMacAddress(value)){
                     await db.clients.update(id, {mac: value.replaceAll("-",":").toLowerCase().slice(0,17)});
+                    highlightMacAddressInvalid(id, value); 
                 }else{
                     warningHandler("An invalid MAC address was input, reverting to the prior value.");
                     cancelEdit(id, fieldName);
@@ -564,6 +565,22 @@
         opt.selected = true;
         opt.innerHTML = `Select...`;
         areaSelect.prepend(opt);
+    }
+
+
+    function highlightMacAddressInvalid(id, value){
+
+        if(value == null){
+            return;
+        }
+
+        var macAddressField = document.getElementById(`MAC_${id}`);
+
+        if(value.trim().replaceAll("-",":").toLowerCase() == "ff:ff:ff:ff:ff:ff"){
+            macAddressField.classList.add("bg-warning-subtle");
+        }else{
+            macAddressField.classList.remove("bg-warning-subtle");
+        }
     }
         
     drawManagedClients();

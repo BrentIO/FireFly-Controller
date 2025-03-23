@@ -1959,6 +1959,10 @@
                     continue;
                 }
 
+                if(clientsToPush[i].mac == "ff:ff:ff:ff:ff:ff"){
+                    showToast(`Client "${clientsToPush[i].name}" has an invalid MAC address and will not be able to be provisioned.`, type="warning", options={'autohide':false});
+                }
+
                 currentStepText.innerText = `Pushing client ${clientsToPush[i].uuid}...`;
 
                 var response = await fetch(`http://${controllerLS.ip}/api/clients/${clientsToPush[i].uuid}`, {

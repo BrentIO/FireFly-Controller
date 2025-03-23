@@ -59,6 +59,10 @@
     font-family: 'Courier New', Courier, monospace;
 }
 
+.macAddress{
+    font-family: 'Courier New', Courier, monospace;
+}
+
 .editableDetails{
     .row:hover{
         background-color: #adb5bd2f;
