@@ -289,6 +289,18 @@
     font-size: xx-large;
 }
 
+.btn-outline-success{
+    img{
+        filter: invert(39%) sepia(99%) saturate(356%) hue-rotate(100deg) brightness(87%) contrast(90%);
+    }
+}
+
+.btn-outline-success:hover{
+    img{
+        filter: brightness(0) saturate(100%) invert(100%) sepia(3%) saturate(7500%) hue-rotate(312deg) brightness(118%) contrast(119%);
+    }
+}
+
 @media screen and (max-width: 575px) {
     .applicationName {
         display: none !important;

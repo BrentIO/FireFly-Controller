@@ -180,6 +180,7 @@ class controllerLocalStorage{
         this._errorLog = [];
         this._authenticationTime = null;
         this._lastDeploymentTime = null;
+        this._provisioningModeEnabled = false;
         this.retrieve();
     }
 
@@ -310,6 +311,21 @@ class controllerLocalStorage{
     }
 
 
+    /**
+     * @param {Boolean} value
+     */
+    set provisioningModeEnabled(value){
+        this.retrieve();
+        this._provisioningModeEnabled = value;
+        this.save();
+    }
+
+
+    get provisioningModeEnabled(){
+        return this._provisioningModeEnabled;
+    }
+
+
     deleteCertificate(filename){
         this.retrieve();
         this._certificates = this._certificates.filter(certificate => certificate.file !== filename);
@@ -377,6 +393,12 @@ class controllerLocalStorage{
             this._lastDeploymentTime = 0;
         }
 
+        if("_provisioningModeEnabled" in record){
+            this._provisioningModeEnabled = record._provisioningModeEnabled;
+        }else{
+            this._provisioningModeEnabled = false;
+        }
+
         if(this._isAuthenticated){
 
             if(controllerLoginMaxDurationMS - (new Date() - new Date(this._authenticationTime).getTime()) < 0){
@@ -389,6 +411,7 @@ class controllerLocalStorage{
                 this._authenticationTime = null;
                 this._eventLog = [];
                 this._errorLog = [];
+                this._provisioningModeEnabled = false;
                 this.save();
             }
         }
