@@ -997,7 +997,7 @@
                     <div class="card mb-3">
                         <div class="card-body">
                             <div class="d-grid gap-2">
-                                <span id="recentlyDeployedBadge_${controller.id}" class="badge rounded-pill text-bg-success mb-3 visually-hidden">Configuration Recently Deployed</span>
+                                <span id="recentlyDeployedBadge_${controller.id}" class="badge rounded-pill text-bg-success mb-3 visually-hidden d-print-none">Configuration Recently Deployed</span>
                                 <div class="editableDetails">
                                     <span class="card-title mb-3 h3" id="Name_${controller.id}" onInput="editFieldRealtimeValidation(${controller.id}, 'Name')";>${controller.name}</span>
                                     <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editNameIcon_${controller.id}" onClick="startEdit(${controller.id}, 'Name')";">
@@ -1016,7 +1016,7 @@
                                     <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveUUIDIcon_${controller.id}" onClick="saveEdit(${controller.id}, 'UUID')"; hidden>
                                     <img src="./icons/cancel.svg" class="editableContent-cancel" title="Cancel" id="cancelUUIDIcon_${controller.id}" onClick="cancelEdit(${controller.id}, 'UUID')"; hidden>
                                 </div>
-                                <div class="editableDetails">
+                                <div class="editableDetails d-print-none">
                                     <span class="col controllerDetailsLabel">IP Address:</span> <span id="IP_${controller.id}" onInput="editFieldRealtimeValidation(${controller.id}, 'IP')";>${controllerLS.ip??"Unknown"}</span>
                                     <img src="./icons/edit.svg" class="editableContent" title="Edit" id="editIPIcon_${controller.id}" onClick="startEdit(${controller.id}, 'IP')";">
                                     <img src="./icons/check.svg" class="editableContent-save" title="Save" id="saveIPIcon_${controller.id}" onClick="saveEdit(${controller.id}, 'IP')"; hidden>
@@ -1027,13 +1027,13 @@
                                 </div>`
                                 if(controllerLS.isAuthenticated == true){
                                     newControllerCard += `
-                                <div>
+                                <div class="d-print-none">
                                     <span class="col controllerDetailsLabel">Firmware Version:</span> <span id="firmwareVersion_${controller.id}">${controllerLS.firmwareVersion??"Unknown"}</span>
                                 </div>
-                                <div>
+                                <div class="d-print-none">
                                     <span class="col controllerDetailsLabel">UI Version:</span> <span id="uiVersion_${controller.id}">${controllerLS.uiVersion??"Unknown"}</span>
                                 </div>
-                                <div>
+                                <div class="d-print-none">
                                     <span class="col controllerDetailsLabel">Certificates:</span> <div class="mx-4" id="certificates_${controller.id}"></div>
                                 </div>
                                  <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><img class="menuIcon" src="./icons/monitoring.svg"> Errors and Events</button>

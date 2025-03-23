@@ -305,6 +305,16 @@
     }
 }
 
+@media print {
+    .card, .availableOutputPort, .assignedOutputPort, .availableCircuit, .availableInputPort, .assignedInputPort {
+        break-inside: avoid;
+    }
+
+    .btn, .editableContent, .pageDescription, .sectionHeader, .toast-container {
+        display: none !important;
+    }
+}
+
 @media screen and (max-width: 575px) {
     .applicationName {
         display: none !important;
