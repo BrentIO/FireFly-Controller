@@ -1610,6 +1610,30 @@
 
         try{
 
+            var breakers = await db.breakers.toArray();
+
+            await Promise.all(breakers.map(async breaker => {
+                [breaker.circuits] = await Promise.all([
+                    db.circuits.where('breaker').equals(breaker.id).toArray()
+                ])
+            }));
+
+            breakers.forEach((breaker) => {
+
+                breaker.load_amperage = 0;
+
+                breaker.circuits.forEach((circuit) => {
+                    breaker.load_amperage = parseInt(breaker.load_amperage) + parseInt(circuit.load_amperage);
+                });
+
+                breaker.utilization = Math.round((breaker.load_amperage / breaker.amperage) * 100);
+
+                if(breaker.utilization > 80){
+                    showToast(`Breaker "${breaker.name}" has a utilization of ${breaker.utilization}%, which may not be safe.`, type='warning', options={'autohide':false});
+                }
+
+            });
+
             var controllerLS = new controllerLocalStorage(id);
             var certificatesToPush = await db.certificates.toArray();
 
