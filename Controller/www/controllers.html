@@ -1753,7 +1753,7 @@
             updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
 
             if(certificatesOnly){
-                showToast("Certificates deployed successfully!", type="success");
+                showToast("Certificates deployed successfully.", type="success");
                 document.getElementById("statusModalCloseButton").classList.remove("visually-hidden");
                 statusModal.hide();
                 await drawManagedControllers();
@@ -2034,7 +2034,7 @@
 
             controllerLS.lastDeploymentTime = Date.now();
 
-            showToast("Deployment successful!", type="success");
+            showToast("Deployment was successful.", type="success");
 
         } catch(exception){
             if(exception.name == "TimeoutError"){
