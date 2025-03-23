@@ -941,12 +941,12 @@ async function getControllerPOSTPayload(id){
 
     if(Object.keys(ota).length > 0){
         payload[0].ota = ota;
-    }
 
-    for(const [field, value] of Object.entries(payload[0].ota)){
-        const permittedFields = ["certificate","url"];
-        if(permittedFields.includes(field) == false){
-            delete payload[0].ota[field];
+        for(const [field, value] of Object.entries(payload[0].ota)){
+            const permittedFields = ["certificate","url"];
+            if(permittedFields.includes(field) == false){
+                delete payload[0].ota[field];
+            }
         }
     }
 
