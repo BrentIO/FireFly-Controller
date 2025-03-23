@@ -958,6 +958,108 @@ async function getControllerPOSTPayload(id){
     }
 
     return payload[0];
+}
+
+
+async function getClientPOSTPayload(id){
+
+    const maximumLength_area = 20;
+    const maximumLength_id = 8;
+    const maximumLength_color = 20;
+    const maximumLength_tag = 20;
+
+    var client = await db.clients.where("id").equals(id).first();
+
+    if(typeof client.extends != "undefined"){
+        var extendedClient = await db.clients.where("id").equals(client.extends).first();
+
+        for(var i = 0; i < extendedClient.hids.length; i++){
+            client.hids.push(extendedClient.hids[i]);
+        }
+    }
+
+    client.id = client.name.trim().substring(0, maximumLength_id);
+
+    client.area = await db.areas.where("id").equals(client.area).first();
+    client.area = client.area.name.trim().substring(0, maximumLength_area);
+
+    await Promise.all(client.hids.map(async hid => {
+        [hid.color] = await Promise.all([
+            db.colors.where('id').equals(hid.color).first()
+        ])
+    }));
+
+    hids = client.hids;
+    client.hids = {};
+    
+    for(var i=0; i < hids.length; i++){
+        client.hids[i+1] = {};
+        client.hids[i+1]['color'] = hids[i].color.name.trim().substring(0, maximumLength_color);
+
+        if(hids[i].tags.length > 0){
+            client.hids[i+1]['tags'] = [];
+
+            for(var j=0; j<hids[i].tags.length; j++){
+                const tag = await db.tags.where('id').equals(hids[i].tags[j]).first();
+                client.hids[i+1]['tags'].push(tag.name.trim().substring(0, maximumLength_tag));
+            }
+        }
+    }
+
+    wifi = await db.settings.where({'setting':'wifi'}).first();
+   
+    if(typeof wifi == "undefined"){
+        throw new Error("WiFi has not been configured.")
+    }
+
+    client.wifi = wifi.value;
+
+    for(const [field, value] of Object.entries(client.wifi)){
+        const permittedFields = ["ssid","password"];
+        if(permittedFields.includes(field) == false){
+            delete client.wifi[field];
+        }
+    }
+
+    mqtt = await db.settings.where({'setting':'mqtt'}).first();
+    
+    if(typeof mqtt == "undefined"){
+        throw new Error("MQTT has not been configured.")
+    }
+
+    client.mqtt = mqtt.value;
+
+    for(const [field, value] of Object.entries(client.mqtt)){
+        const permittedFields = ["host","username","password"];
+        if(permittedFields.includes(field) == false){
+            delete client.mqtt[field];
+        }
+    }
+
+    ota = await getOTAConfiguration("client");
+
+    if(Object.keys(ota).length > 0){
+        client.ota = ota;
+
+        for(const [field, value] of Object.entries(client.ota)){
+            const permittedFields = ["certificate","url"];
+            if(permittedFields.includes(field) == false){
+                delete client.ota[field];
+            }
+        }
+    }
+
+    for(const [field, value] of Object.entries(client)){
+        const permittedFields = ["name","area","hids","ota", "mqtt", "wifi"];
+        if(permittedFields.includes(field) == false){
+            delete client[field];
+        }
+    }
+
+    return client;
+}
+
+
 async function getOTAConfiguration(device_type){
 
     const maximumLength_url = 128;

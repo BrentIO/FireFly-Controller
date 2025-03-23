@@ -1919,6 +1919,7 @@
             updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
 
             var clientsToPush = await db.clients.toArray();
+            var extendedClientIds = await getExtendedClients();
 
             stepProgressText.innerText = `Pushing clients...`;
             updateStatusBar(stepProgressBar,0);
@@ -1926,6 +1927,10 @@
             for(var i = 0; i < clientsToPush.length; i++){
 
                 updateStatusBar(stepProgressBar,parseInt((i/clientsToPush.length)*100));
+
+                if(extendedClientIds.includes(clientsToPush[i].id)){
+                    continue;
+                }
 
                 currentStepText.innerText = `Pushing client ${clientsToPush[i].uuid}...`;
 
