@@ -319,6 +319,12 @@
     .btn, .editableContent, .pageDescription, .sectionHeader, .toast-container {
         display: none !important;
     }
+
+    .pageTitle{
+        font-size: 2em;
+        text-align: center;
+    }
+
     #controlCircuitTable {    
         th {
             padding-top: 0px;
