@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FireFly Controller</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="./common.js"></script>
+    <script type="text/javascript" src="./dexie/dexie.min.js"></script>
+    <script type="text/javascript" src="./dexie/dexie-export-import.js"></script>
+    <script type="text/javascript" src="./database.js"></script>
+    <script type="text/javascript" src="./download/download.min.js"></script>
+</head>
+
+<body>
+    <script>
+        loadMenu("submenuReports", "menuItemBOM");
+        initDB();
+    </script>
+
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <div id="menubar" class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-dark d-print-none"></div>
+            <div class="col py-3">
+                <div class="pageTitle">Bill of Materials</div>
+                <div class="pageDescription">Displays the quantity of each material required to fulfill the intended design.</div>
+                <div>
+                    <div class="bomChart">
+                        <h3>Controllers</h3>
+                        <table class="table table-striped" id="controllersTable">
+                            <thead>
+                                <tr>
+                                <th scope="col" class="text-wrap">Product ID</th>
+                                <th scope="col" class="text-wrap text-center">Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="controllersTableBody"></tbody>
+                        </table>
+
+                        <hr>
+                    </div>
+
+                    <div class="bomChart">
+                        <h3>Clients</h3>
+                        <table class="table table-striped" id="clientsTable">
+                            <thead>
+                                <tr>
+                                <th scope="col" class="text-wrap">Input Count</th>
+                                <th scope="col" class="text-wrap text-center">Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clientsTableBody"></tbody>
+                        </table>
+                        <hr>
+                    </div>
+                    <div class="bomChart">
+                        <h3>Faceplates</h3>
+                        <table class="table table-striped" id="faceplatesTable">
+                            <thead>
+                                <tr>
+                                <th scope="col" class="text-wrap">Inputs</th>
+                                <th scope="col" class="text-wrap text-center">Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="faceplatesTableBody"></tbody>
+                        </table>
+                        <hr>
+                    </div>
+                    <div class="bomChart">
+                        <h3>Buttons and Switches</h3>
+                        <table class="table table-striped" id="hidsTable">
+                            <thead>
+                                <tr>
+                                <th scope="col" class="text-wrap">Input Type</th>
+                                <th scope="col" class="text-wrap text-center">Contact Type</th>
+                                <th scope="col" class="text-wrap text-center">Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="hidsTableBody"></tbody>
+                        </table>
+                        <hr>
+                    </div>
+                    <div class="bomChart">
+                        <h3>Relays</h3>
+                        <table class="table table-striped" id="relaysTable">
+                            <thead>
+                                <tr>
+                                <th scope="col" class="text-wrap">Description</th>
+                                <th scope="col" class="text-wrap text-center">Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="relaysTableBody"></tbody>
+                        </table>
+                        <hr>
+                    </div>
+                </div>
+            </div> 
+        </div>
+    </div>
+</body>
+</html>
+<script>
+
+    async function drawControllers(){
+
+        controller_products = await db.controller_products.toArray();
+
+        await Promise.all(controller_products.map(async product => {
+            [product.quantity] = await Promise.all([
+                db.controllers.where('product').equals(product.id).count()
+            ])
+        }));
+
+        controllersTableBody = document.getElementById("controllersTableBody");
+
+        controller_products.sort((a,b) => (a.quantity < b.quantity)? 1 : ((b.quantity < a.quantity) ? -1 : 0));
+
+        controller_products.forEach((product) =>{
+            var newLine = `
+            <tr>
+                <td class="text-wrap">${product.pid}<div class="subtext">Inputs: ${product.inputs.count} / Outputs: ${product.outputs.count}</div></td>
+                <td class="text-wrap text-center">${product.quantity}</td>
+            </tr>`;
+
+            controllersTableBody.insertAdjacentHTML('beforeend', newLine);
+        });
+    }
+
+
+    async function drawClients(){
+
+        var extendedClientIds = await getExtendedClients();
+        var clients = await db.clients.where('id').noneOf(extendedClientIds).toArray();
+
+        await Promise.all(clients.map(async client => {
+
+            if(typeof client.extends != "undefined"){
+                var extendedClient = await db.clients.where("id").equals(client.extends).first();
+
+                for(var i = 0; i < extendedClient.hids.length; i++){
+                    client.hids.push(extendedClient.hids[i]);
+                }
+            }
+        }));
+
+        var counts = [];
+
+        clients.forEach((client) => {
+            var incremented = false;
+            counts.forEach((entry) =>{
+                if(entry.inputCount == client.hids.length){
+                    entry.quantity++;
+                    incremented = true;
+                }
+            })
+
+            if(incremented == false){
+                counts.push({'inputCount':client.hids.length, 'quantity':1});
+            }
+        });
+
+        clientsTableBody = document.getElementById("clientsTableBody");
+
+        counts.sort((a,b) => (a.inputCount > b.inputCount)? 1 : ((b.inputCount > a.inputCount) ? -1 : 0));
+
+        counts.forEach((count) =>{
+            var newLine = `
+            <tr>
+                <td class="text-wrap">${count.inputCount} Input`;
+                    
+                if(count.inputCount != 1){newLine = newLine + "s"};                               
+                newLine = newLine + `</td>
+                <td class="text-wrap text-center">${count.quantity}</td>
+            </tr>`;
+
+            clientsTableBody.insertAdjacentHTML('beforeend', newLine);
+        });
+    }
+
+
+    async function drawFaceplates(){
+
+        var extendedClientIds = await getExtendedClients();
+        var clients = await db.clients.where('id').noneOf(extendedClientIds).toArray();
+
+        await Promise.all(clients.map(async client => {
+
+            if(typeof client.extends != "undefined"){
+                var extendedClient = await db.clients.where("id").equals(client.extends).first();
+
+                for(var i = 0; i < extendedClient.hids.length; i++){
+                    client.hids.push(extendedClient.hids[i]);
+                }
+            }
+        }));
+
+        var counts = [];
+
+        clients.forEach((client) => {
+
+            client.buttonCount = 0;
+            client.switchCount = 0;
+            var incremented = false;
+
+            client.hids.forEach((hid) => {
+
+                switch(hid.type){
+                    case 'BUTTON':
+                        client.buttonCount++;
+                        break;
+
+                    case 'SWITCH':
+                        client.switchCount++;
+                        break;
+
+                    default:
+                        showToast(`${client.name} has an unknown HID type of ${hid.type}`, type="warning");
+                        break;
+                }
+            });
+
+            counts.forEach((entry) =>{
+                if(entry.buttonCount == client.buttonCount && entry.switchCount == client.switchCount){
+                    entry.quantity++;
+                    incremented = true;
+                }
+            })
+
+            if(incremented == false){
+                counts.push({'buttonCount':client.buttonCount, 'switchCount':client.switchCount,  'quantity':1});
+            }
+        });
+
+        faceplatesTableBody = document.getElementById("faceplatesTableBody");
+
+        counts.sort((a,b) => (a.buttonCount > b.buttonCount)? 1 : ((b.buttonCount > a.buttonCount) ? -1 : 0));
+
+        counts.forEach((count) =>{
+            var newLine = `
+            <tr>
+                <td class="text-wrap">${count.buttonCount} Button`;
+            
+                if(count.buttonCount != 1){newLine = newLine + "s"};
+                
+                newLine = newLine + `, ${count.switchCount} Switch`;
+
+                if(count.switchCount != 1){newLine = newLine + "es"};
+                
+                newLine = newLine + `</td>
+                <td class="text-wrap text-center">${count.quantity}</td>
+            </tr>`;
+
+            faceplatesTableBody.insertAdjacentHTML('beforeend', newLine);
+        });
+    }
+
+
+    async function drawButtonsAndSwitches(){
+
+        var extendedClientIds = await getExtendedClients();
+        var clients = await db.clients.where('id').noneOf(extendedClientIds).toArray();
+
+        await Promise.all(clients.map(async client => {
+
+            if(typeof client.extends != "undefined"){
+                var extendedClient = await db.clients.where("id").equals(client.extends).first();
+
+                for(var i = 0; i < extendedClient.hids.length; i++){
+                    client.hids.push(extendedClient.hids[i]);
+                }
+            }
+            
+            await Promise.all(client.hids.map(async hid => {
+                if(hid.type != "BUTTON"){
+                    return;
+                }
+
+                [hid.color] = await Promise.all([
+                    db.colors.where('id').equals(hid.color).first()
+                ])
+            }))
+        }));
+
+        var counts = [];
+
+        clients.forEach((client) => {
+            
+
+            client.hids.forEach((hid) => {
+                var incremented = false;
+
+                var newEntry = {'type': '', 'switchType': hid.switch_type, quantity:1};
+
+                switch(hid.type){
+                    case 'BUTTON':
+                        newEntry.type = `${hid.type.replace("BUTTON", "Button")} (${hid.color.name})`;
+                        break;
+
+                    case 'SWITCH':
+                        newEntry.type = `${hid.type.replace("SWITCH", "Switch")}`;
+                        break;
+
+                    default:
+                        showToast(`${client.name} has an unknown HID type of ${hid.type}`, type="warning");
+                        break;
+                }
+
+                counts.forEach((entry) =>{
+                    if(newEntry.type == entry.type && newEntry.switchType == entry.switchType){
+                        entry.quantity++;
+                        incremented = true;
+                    }
+                })
+
+                if(incremented == false){
+                    counts.push(newEntry);
+                }
+            });
+        });
+
+        hidsTableBody = document.getElementById("hidsTableBody");
+        counts.sort((a,b) => (a.type > b.type)? 1 : ((b.type > a.type) ? -1 : 0));
+
+        counts.forEach((count) =>{
+            var newLine = `
+            <tr>
+                <td class="text-wrap">${count.type}</td>
+                <td class="text-wrap text-center">${count.switchType.replace("NORMALLY_OPEN", "Normally Open").replace("NORMALLY_CLOSED", "Normally Closed")}</td>
+                <td class="text-wrap text-center">${count.quantity}</td>
+            </tr>`;
+
+            hidsTableBody.insertAdjacentHTML('beforeend', newLine);
+        });
+    }
+
+
+    async function drawRelays(){
+
+        relayModels = await db.relay_models.toArray();
+
+        await Promise.all(relayModels.map(async model => {
+            [model.quantity] = await Promise.all([
+                db.circuits.where('relay_model').equals(model.id).count()
+            ])
+        }));
+
+        relaysTableBody = document.getElementById("relaysTableBody");
+
+        relayModels.sort((a,b) => (a.quantity < b.quantity)? 1 : ((b.quantity < a.quantity) ? -1 : 0));
+
+        relayModels.forEach((model)=>{
+
+            var newLine = `
+            <tr>
+                <td class="text-wrap">${model.manufacturer} ${model.model} (${model.description})</td>
+                <td class="text-wrap text-center">${model.quantity}</td>
+            </tr>`;
+
+            relaysTableBody.insertAdjacentHTML('beforeend', newLine);
+
+        })
+    }
+
+
+    drawControllers();
+    drawClients();
+    drawFaceplates();
+    drawButtonsAndSwitches();
+    drawRelays();
+
+</script>

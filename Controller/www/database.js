@@ -1,4 +1,4 @@
-let dbVersion = 10;
+let dbVersion = 11;
 
 const dbName = "FireFly-Controller";
 let db = new Dexie(dbName);
@@ -12,7 +12,7 @@ var areas = [{"name":"Living Room"},{"name":"Garage"},{"name":"Kitchen"},{"name"
 const initDB = () => {
     db.version(dbVersion).stores({
         colors: "++id, name", 
-        controllers: "++id, &uuid, name",
+        controllers: "++id, &uuid, name, product",
         areas: "++id, name",
         circuit_icons: "++id, name",
         controller_products: "++id, pid",

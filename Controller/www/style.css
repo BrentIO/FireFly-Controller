@@ -322,7 +322,7 @@
 }
 
 @media print {
-    .card, .availableOutputPort, .assignedOutputPort, .availableCircuit, .availableInputPort, .assignedInputPort {
+    .card, .availableOutputPort, .assignedOutputPort, .availableCircuit, .availableInputPort, .assignedInputPort, .bomChart {
         break-inside: avoid;
     }
 
@@ -335,7 +335,7 @@
         text-align: center;
     }
 
-    #controlCircuitTable {    
+    #controlCircuitTable, .bomChart {    
         th {
             padding-top: 0px;
             padding-bottom: 0px;
@@ -344,7 +344,7 @@
         }
     }
     
-    #controlCircuitTableBody{
+    #controlCircuitTableBody, .bomChart{
         td {
             font-size: small;
             padding-top: 0px;
