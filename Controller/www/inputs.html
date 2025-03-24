@@ -76,14 +76,14 @@ async function drawAllControllerInputs(){
     var controllerCardList = document.getElementById("controllerCardList");
     controllerCardList.innerHTML = '';
 
-    for(var i=0; i < controllers.length; i++){
+    controllers.forEach(async (controller) => {
         
         var newControllerCard = `
                 <div class="card mb-3">
                     <div class="card-body">
                         <div class="card-title mb-3 h3">${controllers[i].name}</div>
                         <div class="container">
-                            <div class="row" id="controller_${controllers[i].id}_inputPorts">
+                            <div class="row  collapse show" id="controller_${controller.id}_inputPorts">
                             </div>
                         </div>
                     </div>
@@ -91,42 +91,42 @@ async function drawAllControllerInputs(){
 
         controllerCardList.insertAdjacentHTML('beforeend', newControllerCard);
 
-        var inputPorts = document.getElementById(`controller_${controllers[i].id}_inputPorts`);
+        var inputPorts = document.getElementById(`controller_${controller.id}_inputPorts`);
         inputPorts.innerHTML = '';
 
-        for (var j = 1; j <= controllers[i].product.inputs.count; j++) {
+        for (var j = 1; j <= controller.product.inputs.count; j++) {
 
-            if(controllers[i].inputs[j] == undefined){
+            if(controller.inputs[j] == undefined){
                 newInputPort = `
                     <div class="col">
-                        <div class="inputPort availableInputPort" id="controller_${controllers[i].id}_port_${j}" controllerId="${controllers[i].id}" port="${j}" ondrop="assignedClientCardDrop(event);"  ondragover="{event.preventDefault();}">
-                            <div class="inputPortLabel" controllerId="${controllers[i].id}" port="${j}">Port ${j}</div>
+                        <div class="inputPort availableInputPort" id="controller_${controller.id}_port_${j}" controllerId="${controller.id}" port="${j}" ondrop="assignedClientCardDrop(event);"  ondragover="{event.preventDefault();}">
+                            <div class="inputPortLabel" controllerId="${controller.id}" port="${j}">Port ${j}</div>
                             <div class="inputPortBody"></div>
                         </div>
                     </div>`
             }else{
 
-                controllerAssignmentRestriction = await getControllerAssignmentRestriction(controllers[i].inputs[j].id);
+                controllerAssignmentRestriction = await getControllerAssignmentRestriction(controller.inputs[j].id);
 
                 newInputPort = `
                     <div class="col">
-                        <div class="inputPort assignedInputPort" id="controller_${controllers[i].id}_port_${j}" draggable="true" controllerId="${controllers[i].id}" port="${j}" clientId="${controllers[i].inputs[j].id}" controllerAssignmentRestriction="${controllerAssignmentRestriction??""}" ondragstart="assignedClientDragStart(event);" ondragover="{event.preventDefault();}" ondragend="assignedClientDragEnd(event);">
+                        <div class="inputPort assignedInputPort" id="controller_${controller.id}_port_${j}" draggable="true" controllerId="${controller.id}" port="${j}" clientId="${controller.inputs[j].id}" controllerAssignmentRestriction="${controllerAssignmentRestriction??""}" ondragstart="assignedClientDragStart(event);" ondragover="{event.preventDefault();}" ondragend="assignedClientDragEnd(event);">
                             <div class="inputPortLabel">Port ${j}</div>
-                            <div class="inputPortBody h3" >${controllers[i].inputs[j].name}</div>
-                            <div class="additionalDetail">${controllers[i].inputs[j].area.name}</div>
-                            <div class="additionalDetail">${controllers[i].inputs[j].description}</div>
+                            <div class="inputPortBody h3" >${controller.inputs[j].name}</div>
+                            <div class="additionalDetail">${controller.inputs[j].area.name}</div>
+                            <div class="additionalDetail">${controller.inputs[j].description}</div>
                         </div>
                     </div>`
             }
             inputPorts.insertAdjacentHTML('beforeend', newInputPort);
 
-            if(controllers[i].inputs[j] != undefined){
-                if(extendedClients.includes(controllers[i].inputs[j].id)){
-                    document.getElementById(`controller_${controllers[i].id}_port_${j}`).classList.add("extendedClient");
+            if(controller.inputs[j] != undefined){
+                if(extendedClients.includes(controller.inputs[j].id)){
+                    document.getElementById(`controller_${controller.id}_port_${j}`).classList.add("extendedClient");
                 }
             }
         }
-    }
+    });
 }
 
 
