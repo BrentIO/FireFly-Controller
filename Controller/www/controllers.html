@@ -1945,9 +1945,9 @@
             overallStepsComplete++;
             updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
 
-            var clientsToPush = await db.clients.toArray();
             var extendedClientIds = await getExtendedClients();
-
+            var clientsToPush = await db.clients.where('id').noneOf(extendedClientIds).toArray();
+            
             stepProgressText.innerText = `Pushing clients...`;
             updateStatusBar(stepProgressBar,0);
 
@@ -1955,12 +1955,12 @@
 
                 updateStatusBar(stepProgressBar,parseInt((i/clientsToPush.length)*100));
 
-                if(extendedClientIds.includes(clientsToPush[i].id)){
-                    continue;
-                }
-
                 if(clientsToPush[i].mac == "ff:ff:ff:ff:ff:ff"){
                     showToast(`Client "${clientsToPush[i].name}" has an invalid MAC address and will not be able to be provisioned.`, type="warning", options={'autohide':false});
+                }
+
+                if(clientsToPush[i].hids.length == 0){
+                    showToast(`Client "${clientsToPush[i].name}" does not have any buttons or switches defined.`, type="warning", options={'autohide':false});
                 }
 
                 currentStepText.innerText = `Pushing client ${clientsToPush[i].uuid}...`;
