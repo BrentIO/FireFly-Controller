@@ -78,15 +78,23 @@
             let newControllerCard = `
                     <div class="card mb-3">
                         <div class="card-body">
-                            <div class="card-title mb-3 h3">${controller.name}</div>
+                            <div class="card-title mb-3 h3">${controller.name} <button class="btn btn-outline-dark btn-sm" id="showHide_${controller.id}_outputPorts" type="button" data-bs-toggle="collapse" data-bs-target="#controller_${controller.id}_outputPorts" aria-expanded="true" aria-controls="controller_${controller.id}_outputPorts">Hide</button></div>
                             <div class="container">
-                                <div class="row" id="controller_${controller.id}_outputPorts">
+                                <div class="row collapse show" id="controller_${controller.id}_outputPorts">
                                 </div>
                             </div>
                         </div>
                     </div>`;
 
             controllerCardList.insertAdjacentHTML('beforeend', newControllerCard);
+
+            document.getElementById(`controller_${controller.id}_outputPorts`).addEventListener('hide.bs.collapse', event => {
+                document.getElementById(`showHide_${controller.id}_outputPorts`).innerText = "Show";
+            });
+
+            document.getElementById(`controller_${controller.id}_outputPorts`).addEventListener('show.bs.collapse', event => {
+                document.getElementById(`showHide_${controller.id}_outputPorts`).innerText = "Hide";
+            });
 
             let outputPorts = document.getElementById(`controller_${controller.id}_outputPorts`);
             outputPorts.innerHTML = '';
