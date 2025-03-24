@@ -229,13 +229,18 @@
 #deleteCircuitAssignmentArea{
     min-height: 130px;
     line-height: 130px;
-    min-width: 100%;
+    z-index: 99 !important;
+    position:fixed;
+    top:0;
+    left:0;
+    width: 100%;
     background-color: lightgray;
     font-size:3em;
     border-width: 3px;
     border-radius: 10px;
     border-color: darkgray;
     color: darkgray;
+    opacity: 98%;
     border-style:dotted;
     text-align: center;
 }
@@ -243,13 +248,18 @@
 #deleteClientAssignmentArea{
     min-height: 130px;
     line-height: 130px;
-    min-width: 100%;
+    z-index: 99 !important;
+    position:fixed;
+    top:0;
+    left:0;
+    width: 100%;
     background-color: lightgray;
     font-size:3em;
     border-width: 3px;
     border-radius: 10px;
     border-color: darkgray;
     color: darkgray;
+    opacity: 98%;
     border-style:dotted;
     text-align: center;
 }
