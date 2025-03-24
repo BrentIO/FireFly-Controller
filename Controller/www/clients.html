@@ -111,10 +111,14 @@
 
         form = document.getElementById("addNewClientForm");
         form.reset();
-        document.getElementById("addNewClientName").value = "";
-        document.getElementById("addNewClientDescription").value = "";
-        document.getElementById("addNewClientUUID").value = "";
         form.classList.remove('was-validated');
+
+        uuidField = document.getElementById("addNewClientUUID");
+        uuidField.classList.remove("is-valid");
+        uuidField.classList.remove("is-invalid");
+        macAddressField = document.getElementById("addNewClientMAC");
+        macAddressField.classList.remove("is-valid");
+        macAddressField.classList.remove("is-invalid");
     });
 
 
