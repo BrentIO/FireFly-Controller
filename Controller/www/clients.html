@@ -582,6 +582,10 @@
 
         var macAddressField = document.getElementById(`MAC_${id}`);
 
+        if(macAddressField == null){
+            return;
+        };
+
         if(value.trim().replaceAll("-",":").toLowerCase() == "ff:ff:ff:ff:ff:ff"){
             macAddressField.classList.add("bg-warning-subtle");
         }else{
