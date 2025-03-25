@@ -454,7 +454,7 @@
                         default:
                             break;
                     }
-                    toolTipText += `<b>${change_state}:</b> ${action_type} ${action.circuit.name} (${action.circuit.description}) in ${action.circuit.area.name}<hr>`;
+                    toolTipText += `<b>${change_state}:</b> ${action_type} ${action.circuit.area.name} ${action.circuit.description} (${action.circuit.name})<hr>`;
                 });
 
                 toolTipText = toolTipText.replace(/<hr>$/, '');
@@ -599,7 +599,7 @@
                         break;
                 }
 
-                hidEntry += `<div>${change_state}: ${action_type} ${action.circuit.name} (${action.circuit.description}) in ${action.circuit.area.name} <img src="./icons/delete_forever.svg" title="Delete" id="controllerAddButton" class="btn actionDeleteButton" role="button" onclick="deleteAction(${i},${j});"></div>`
+                hidEntry += `<div>${change_state}: ${action_type} ${action.circuit.area.name} ${action.circuit.description} (${action.circuit.name}) <img src="./icons/delete_forever.svg" title="Delete" id="controllerAddButton" class="btn actionDeleteButton" role="button" onclick="deleteAction(${i},${j});"></div>`
 
                 j++;
 
