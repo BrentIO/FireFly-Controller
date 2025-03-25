@@ -260,6 +260,7 @@
 
         try{
             client = await db.clients.where('id').equals(parseInt(urlParams.get('id'))).first();
+            client.area = await db.areas.where('id').equals(client.area).first();
 
             if(typeof client == "undefined"){
                 throw new Error("Invalid ID.");
@@ -291,7 +292,7 @@
             }));
 
             document.getElementById("pageTitle").innerText = client.name;
-            document.getElementById("pageDescription").innerHTML = client.description;
+            document.getElementById("pageDescription").innerHTML = `${client.area.name} ${client.description}`;
 
             if(combinedHIDList.length == 5){
                 document.getElementById("invertButton").hidden = false;
