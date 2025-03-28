@@ -288,6 +288,7 @@ void setup() {
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced));
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota", http_handleOTA_POST));
     httpServer.on("^\/api\/ota$", http_handleOTA);
+    httpServer.on("/ui/version", http_handleUIVersion);
     setup_OtaFirmware();
   }else{
     log_e("configFS is not mounted");
@@ -297,11 +298,11 @@ void setup() {
     httpServer.on("/api/controllers", http_configFSNotMunted);
     httpServer.on("/api/clients", http_configFSNotMunted);
     httpServer.on("/backup", http_configFSNotMunted);
+    httpServer.on("/ui/version", http_configFSNotMunted);
   }
 
   if(wwwFS_isMounted){
     httpServer.serveStatic("/", wwwFS, "/");
-    httpServer.rewrite("/ui/version", "/version.json");
     httpServer.rewrite("/", "/index.html");
   }
 
@@ -1470,6 +1471,52 @@ void http_handleBackup_DELETE(AsyncWebServerRequest *request){
   }else{
     http_error(request, F("Failed when trying to delete file"));
   }
+}
+
+
+/**
+ * Generic handler for /ui/version
+ */
+void http_handleUIVersion(AsyncWebServerRequest *request){
+  switch(request->method()){
+
+    case ASYNC_HTTP_OPTIONS:
+      http_options(request);
+      break;
+
+    case ASYNC_HTTP_GET:
+      http_handleUIVersion_GET(request);
+      break;
+
+    default:
+      http_methodNotAllowed(request);
+      break;
+  }
+}
+
+
+/**
+ * Handles UI Version GETs
+*/
+void http_handleUIVersion_GET(AsyncWebServerRequest *request){
+
+  if(!request->hasHeader(F("visual-token"))){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(!wwwFS.exists(F("/version.json"))){
+    http_notFound(request);
+    return;
+  }
+
+  AsyncWebServerResponse *response = request->beginResponse(wwwFS, F("/version.json"), F("application/json"));
+  request->send(response);
 }
 
 
