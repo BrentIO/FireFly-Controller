@@ -1369,7 +1369,7 @@ void http_handleListClients(AsyncWebServerRequest *request){
   }
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
-  DynamicJsonDocument doc(1536);
+  DynamicJsonDocument doc(8192);  //Supports 128 UUID's
   JsonArray array = doc.to<JsonArray>();
 
   File root = configFS.open(CONFIGFS_PATH_DEVICES_CLIENTS + (String)"/");
@@ -1601,7 +1601,7 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
   }
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
-  DynamicJsonDocument doc(1536);
+  DynamicJsonDocument doc(49152);  //Supports approx 128 controllers, 128 clients, and 64 files in www
   JsonObject root = doc.to<JsonObject>();
   JsonObject configObject = root.createNestedObject("config");
   JsonObject wwwObject = root.createNestedObject("www");
