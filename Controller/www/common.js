@@ -1122,7 +1122,7 @@ async function getOTAConfiguration(device_type){
 
     ota = await db.settings.where({'setting':`ota_${device_type}`}).first();
     
-    if(typeof ota.value == "undefined"){
+    if(typeof ota == "undefined"){
         return returnValue;
     }
 
