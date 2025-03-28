@@ -1753,6 +1753,8 @@
             updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
 
             if(certificatesOnly){
+                stepProgressText.innerText = `All certificates deployed`;
+                currentStepText.innerText = ``;
                 showToast("Certificates deployed successfully.", type="success");
                 document.getElementById("statusModalCloseButton").classList.remove("visually-hidden");
                 statusModal.hide();
