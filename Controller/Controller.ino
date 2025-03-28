@@ -309,6 +309,8 @@ void setup() {
   httpServer.onNotFound(http_notFound);
 
   DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Origin"), F("*")); //Ignore CORS
+  DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Headers"), F("visual-token, Content-Type")); //Ignore CORS
+  DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Methods"), F("GET, POST, OPTIONS, PUT, DELETE")); //Ignore CORS
 
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
@@ -823,6 +825,11 @@ void http_configFSNotMunted(AsyncWebServerRequest *request){
 */
 void http_handleVersion(AsyncWebServerRequest *request){
 
+  if(request->method() == ASYNC_HTTP_OPTIONS){
+    http_options(request);
+    return;
+  }
+
   if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
@@ -867,6 +874,11 @@ void http_handleVersion(AsyncWebServerRequest *request){
  * Handle http requests for the event log
 */
 void http_handleEventLog(AsyncWebServerRequest *request){
+
+  if(request->method() == ASYNC_HTTP_OPTIONS){
+    http_options(request);
+    return;
+  }
 
   if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
@@ -926,6 +938,11 @@ void http_handleEventLog(AsyncWebServerRequest *request){
 */
 void http_handleErrorLog(AsyncWebServerRequest *request){
 
+  if(request->method() == ASYNC_HTTP_OPTIONS){
+    http_options(request);
+    return;
+  }
+
   if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
@@ -964,23 +981,31 @@ void http_handleErrorLog(AsyncWebServerRequest *request){
  * Creates a long-term authorization with the given visual token
 */
 void http_handleAuth(AsyncWebServerRequest *request){
-  
-  if(request->method() != ASYNC_HTTP_POST){
-    http_methodNotAllowed(request);
-    return;
-  }
 
-  if(!request->hasHeader(F("visual-token"))){
-    http_unauthorized(request);
-    return;
-  }
+  switch(request->method()){
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str(), true)){
-    http_unauthorized(request);
-    return;
-  }
+    case ASYNC_HTTP_OPTIONS:
+      http_options(request);
+      break;
 
-  request->send(204);
+    case ASYNC_HTTP_POST:
+      if(!request->hasHeader(F("visual-token"))){
+        http_unauthorized(request);
+        return;
+      }
+    
+      if(!authToken.authenticate(request->header(F("visual-token")).c_str(), true)){
+        http_unauthorized(request);
+        return;
+      }
+    
+      request->send(204);
+      break;
+
+    default:
+      http_methodNotAllowed(request);
+      break;
+  } 
 }
 
 
@@ -1073,6 +1098,11 @@ void http_handleControllers_DELETE(AsyncWebServerRequest *request){
  * Handles Controller PUTs
 */
 void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc){
+
+  if(request->method() == ASYNC_HTTP_OPTIONS){
+    http_options(request);
+    return;
+  }
 
   if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
@@ -1552,6 +1582,11 @@ void listDirToJsonArray(fs::FS &fs, const char *dirname, JsonArray &array) {
  */
 void http_handleFileList_GET(AsyncWebServerRequest *request){
 
+  if(request->method() == ASYNC_HTTP_OPTIONS){
+    http_options(request);
+    return;
+  }
+
   if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
@@ -1664,6 +1699,11 @@ void http_handleCerts_GET(AsyncWebServerRequest *request){
  * Handles certificate uploads.  If the certificate already exists, a 403 is returned to the client
 */
 void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
+
+  if(request->method() == ASYNC_HTTP_OPTIONS){
+    http_options(request);
+    return;
+  }
 
   if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
@@ -1860,6 +1900,11 @@ void http_handleOTA(AsyncWebServerRequest *request){
 */
 void http_handleOTA_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
+  if(request->method() == ASYNC_HTTP_OPTIONS){
+    http_options(request);
+    return;
+  }
+
   if(!request->hasHeader("visual-token")){
       http_unauthorized(request);
       return;
@@ -1975,6 +2020,11 @@ void http_handleOTA_DELETE(AsyncWebServerRequest *request){
  * Handles force OTA force update requests using the payload provided
 */
 void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
+
+  if(request->method() == ASYNC_HTTP_OPTIONS){
+    http_options(request);
+    return;
+  }
 
   if(!request->hasHeader("visual-token")){
       http_unauthorized(request);
