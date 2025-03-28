@@ -1400,12 +1400,10 @@ void http_handleBackup(AsyncWebServerRequest *request){
       break;
 
     case ASYNC_HTTP_GET:
-
       http_handleBackup_GET(request);
       break;
 
     case ASYNC_HTTP_DELETE:
-
       http_handleBackup_DELETE(request);
       break;
 
