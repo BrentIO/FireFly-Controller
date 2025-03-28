@@ -2003,6 +2003,7 @@
             updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
 
             stepProgressText.innerText = `Pushing backup...`;
+            currentStepText.innerText = ``;
             updateStatusBar(stepProgressBar,0);
 
             var response = await fetch(`http://${controllerLS.ip}/backup`, {
@@ -2036,6 +2037,8 @@
             updateStatusBar(overallProgressBar,parseInt((overallStepsComplete/overallStepsTotal)*100));
 
             controllerLS.lastDeploymentTime = Date.now();
+
+            stepProgressText.innerText = `Deployment complete`;
 
             showToast("Deployment was successful.", type="success");
 
