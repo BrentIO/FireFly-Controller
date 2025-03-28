@@ -3,11 +3,11 @@
 *
 * Create software-defined lighting.
 *
-* (C) 2019-2024, P5 Software, LLC
+* (C) 2019-2025, P5 Software, LLC
 *
 */
 
-#define VERSION "2024.8.1"
+#define VERSION "2025.4.1"
 #define APPLICATION_NAME "FireFly Controller"
 
 #include "common/hardware.h"
