@@ -60,7 +60,7 @@ fs::LittleFSFS configFS;
 bool wwwFS_isMounted = false;
 bool configFS_isMounted = false;
 
-#define CONFIGFS_PATH_CERTS "/certs/"
+#define CONFIGFS_PATH_CERTS "/certs"
 #define CONFIGFS_PATH_DEVICES "/devices"
 #define CONFIGFS_PATH_DEVICES_CONTROLLERS "/devices/controllers"
 
@@ -1094,8 +1094,8 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
     };
   }
 
-  if(!configFS.exists(F(CONFIGFS_PATH_DEVICES_CONTROLLERS))){
-    if(!configFS.mkdir(F(CONFIGFS_PATH_DEVICES_CONTROLLERS))){
+  if(!configFS.exists(CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/")){
+    if(!configFS.mkdir(CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/")){
       http_error(request, F("Unable to create CONFIGFS_PATH_DEVICES_CONTROLLERS directory"));
       return;
     };
@@ -1135,7 +1135,7 @@ void http_handleListControllers(AsyncWebServerRequest *request){
   DynamicJsonDocument doc(1536);
   JsonArray array = doc.to<JsonArray>();
 
-  File root = configFS.open(F(CONFIGFS_PATH_DEVICES_CONTROLLERS));
+  File root = configFS.open(CONFIGFS_PATH_DEVICES_CLIENTS + (String)"/");
 
   File file = root.openNextFile();
 
@@ -1389,7 +1389,7 @@ void http_handleCerts_GET(AsyncWebServerRequest *request){
   StaticJsonDocument<768> doc;
   JsonArray array = doc.to<JsonArray>();
 
-  File root = configFS.open(CONFIGFS_PATH_CERTS);
+  File root = configFS.open(CONFIGFS_PATH_CERTS + (String)"/");
 
   File file = root.openNextFile();
   while(file){
