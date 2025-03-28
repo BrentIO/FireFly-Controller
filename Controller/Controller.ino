@@ -275,7 +275,7 @@ void setup() {
 
   if(configFS_isMounted){
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers_PUT, 65536,65535));
-    httpServer.on("^\/api/controllers$", ASYNC_HTTP_GET, http_handleListControllers);
+    httpServer.on("^\/api/controllers$", ASYNC_HTTP_ANY, http_handleListControllers);
     httpServer.on("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/clients\/([0-9a-f-]+)$", http_handleClients_PUT, 65536,65535));
     httpServer.on("^\/api/clients$", ASYNC_HTTP_ANY, http_handleListClients);
@@ -1126,6 +1126,47 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
  * Handles List Controllers
 */
 void http_handleListControllers(AsyncWebServerRequest *request){
+
+  if(request->method() == ASYNC_HTTP_OPTIONS){
+    http_options(request);
+    return;
+  }
+
+  if(!request->hasHeader(F("visual-token"))){
+        http_unauthorized(request);
+        return;
+  }
+
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(request->method() != ASYNC_HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  DynamicJsonDocument doc(8192);  //Supports 128 UUID's
+  JsonArray array = doc.to<JsonArray>();
+
+  File root = configFS.open(CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/");
+
+  File file = root.openNextFile();
+
+  while(file){
+      if(!file.isDirectory()){
+        array.add((String)file.name());
+      }
+      file = root.openNextFile();
+  }
+
+  serializeJson(doc, *response);
+  request->send(response);
+
+}
+
 
 /**
  * Generic handler for /api/clients
