@@ -1845,7 +1845,8 @@
                     method: 'PUT',
                     body: JSON.stringify(await getControllerPOSTPayload(controllersToPush[i].id)),
                     headers: {
-                        "visual-token":controllerLS.visualToken
+                        "visual-token":controllerLS.visualToken,
+                        "Content-Type": "application/json"
                     }
                 });
 
@@ -1970,7 +1971,8 @@
                     method: 'PUT',
                     body: JSON.stringify(await getClientPOSTPayload(clientsToPush[i].id)),
                     headers: {
-                        "visual-token":controllerLS.visualToken
+                        "visual-token":controllerLS.visualToken,
+                        "Content-Type": "application/json"
                     }
                 });
 
@@ -2008,7 +2010,8 @@
                     method: 'PUT',
                     body: await db.export(),
                     headers: {
-                        "visual-token":controllerLS.visualToken
+                        "visual-token":controllerLS.visualToken,
+                        "Content-Type": "application/json"
                     }
                 });
 
