@@ -900,17 +900,16 @@ async function getControllerPOSTPayload(id){
 
         client.channels = {};
 
-        if(extendedClients.includes(client.id)){
-            client.offset = maximumHIDsPerInputPort;
-        }
-
         for(var i=0; i<client.hids.length; i++){
             client.channels[i+1] = {};
+
+            if(extendedClients.includes(client.id)){
+                client.channels[i+1]['offset'] = maximumHIDsPerInputPort;
+            }
 
             if(client.hids[i].switch_type != "NORMALLY_OPEN"){
                 client.channels[i+1]['type'] = client.hids[i].switch_type;
             }
-
 
             if(client.hids[i].enabled != true){
                 client.channels[i+1]['enabled'] = false;
@@ -946,7 +945,7 @@ async function getControllerPOSTPayload(id){
         client.name = client.description.trim().substring(0,maximumLength_name);
 
         for(const [field, value] of Object.entries(payload[0].ports[portNumber])){
-            const permittedFields = ["name","id","channels","offset"];
+            const permittedFields = ["name","id","channels"];
             if(permittedFields.includes(field) == false){
                 delete payload[0].ports[portNumber][field];
             }
@@ -1040,7 +1039,7 @@ async function getClientPOSTPayload(id){
         if(typeof hid.color == "undefined"){
             return;
         }
-        
+
         [hid.color] = await Promise.all([
             db.colors.where('id').equals(hid.color).first()
         ])
