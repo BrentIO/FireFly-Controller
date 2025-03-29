@@ -434,11 +434,10 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
           }
           break;
       }
-
-      log_i("[Simulated MQTT Message] A %i input change on port %i channel %i", changeState, portChannel.port, portChannel.channel);
       break;
     }
   }
+  log_i("[Simulated MQTT Message] A %i input change on port %i channel %i", changeState, portChannel.port, portChannel.channel);
 }
 
 
