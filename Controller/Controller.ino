@@ -110,6 +110,8 @@ struct inputChannel{
 struct inputPort{
   /// @brief The human-readable ID of the input port
   char id[PORT_ID_MAX_LENGTH + 1];
+
+  /// @brief Reference to the channels on this input port
   inputChannel channels[IO_EXTENDER_COUNT_CHANNELS_PER_PORT];
 };
 
