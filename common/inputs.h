@@ -39,6 +39,7 @@ class managerInputs{
         struct portChannel{
             uint8_t port; /* Human-readable RJ-45 port */
             uint8_t channel; /* Wire within the RJ-45 port */
+            uint8_t offset = 0; /* Offset for the channel, if any */
         };
 
 

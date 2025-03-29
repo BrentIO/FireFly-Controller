@@ -437,7 +437,8 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
       break;
     }
   }
-  log_i("[Simulated MQTT Message] A %i input change on port %i channel %i", changeState, portChannel.port, portChannel.channel);
+
+  log_i("[Simulated MQTT Message] A %i input change on port %i channel %i (offset = %i)", changeState, portChannel.port, portChannel.channel, portChannel.offset);
 }
 
 
@@ -2362,6 +2363,7 @@ bool setup_inputs(String filename){
   JsonObject filter_ports_channels = filter_ports["channels"].createNestedObject("*");
   filter_ports_channels["type"] = true;
   filter_ports_channels["enabled"] = true;
+  filter_ports_channels["offset"] = true;
   filter_ports_channels["actions"] = true;
 
   DynamicJsonDocument doc(32768); //Supports up to 32 ports
@@ -2429,6 +2431,10 @@ bool setup_inputs(String filename){
 
       if(port_value_channel.value()["enabled"]){
         inputs.enablePortChannel(portChannel, port_value_channel.value()["enabled"].as<boolean>());
+      }
+
+      if(port_value_channel.value()["offset"]){
+        portChannel.offset = port_value_channel.value()["offset"].as<uint8_t>();
       }
 
       for (JsonObject port_value_channel_value_action : port_value_channel.value()["actions"].as<JsonArray>()) {
