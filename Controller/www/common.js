@@ -1037,6 +1037,10 @@ async function getClientPOSTPayload(id){
     client.area = client.area.name.trim().substring(0, maximumLength_area);
 
     await Promise.all(client.hids.map(async hid => {
+        if(typeof hid.color == "undefined"){
+            return;
+        }
+        
         [hid.color] = await Promise.all([
             db.colors.where('id').equals(hid.color).first()
         ])
@@ -1047,8 +1051,10 @@ async function getClientPOSTPayload(id){
     
     for(var i=0; i < hids.length; i++){
         client.hids[i+1] = {};
-        client.hids[i+1]['color'] = hids[i].color.name.trim().substring(0, maximumLength_color);
-
+        if(typeof hids[i].color != "undefined"){
+            client.hids[i+1]['color'] = hids[i].color.name.trim().substring(0, maximumLength_color);
+        }
+        
         if(hids[i].tags.length > 0){
             client.hids[i+1]['tags'] = [];
 
