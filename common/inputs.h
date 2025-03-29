@@ -567,4 +567,20 @@ class managerInputs{
                 }
             }
         }
+
+
+        /** Sets the port channel's offset
+         * @param portChannel as the human-readable port and channel to set
+         * @param type the type of input that the input channel should observe
+        */
+       void setOffset(portChannel portChannel, uint8_t offset){
+
+        for(int i = 0; i < IO_EXTENDER_COUNT; i++){
+            for(int j = 0; j < IO_EXTENDER_COUNT_PINS; j++){
+                if(this->inputControllers[i].inputs[j].port_channel.port == portChannel.port && this->inputControllers[i].inputs[j].port_channel.channel == portChannel.channel){
+                    this->inputControllers[i].inputs[j].port_channel.offset = offset;
+                }
+            }
+        }
+    }
 };

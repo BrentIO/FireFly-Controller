@@ -438,7 +438,7 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
     }
   }
 
-  log_i("[Simulated MQTT Message] A %i input change on port %i channel %i (offset = %i)", changeState, portChannel.port, portChannel.channel, portChannel.offset);
+  log_i("[Simulated MQTT Message] A %i input change from client %s (port %i channel %i)", changeState, inputPorts[portChannel.port-1].id , portChannel.port, (portChannel.channel+portChannel.offset));
 }
 
 
@@ -2434,7 +2434,7 @@ bool setup_inputs(String filename){
       }
 
       if(port_value_channel.value()["offset"]){
-        portChannel.offset = port_value_channel.value()["offset"].as<uint8_t>();
+        inputs.setOffset(portChannel, port_value_channel.value()["offset"].as<uint8_t>());
       }
 
       for (JsonObject port_value_channel_value_action : port_value_channel.value()["actions"].as<JsonArray>()) {
