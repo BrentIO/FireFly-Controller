@@ -100,9 +100,6 @@ struct inputChannel{
   /// @brief The physical channel number, typically 1, 2, 3, or 6
   uint8_t channel;
 
-  /// @brief Offset to the channel port, used when outputting to MQTT
-  uint8_t offset = 0;
-
   /// @brief List of actions to take when the channel state changes from its normal position
   LinkedList<inputAction> actions;
 };
@@ -2366,7 +2363,6 @@ bool setup_inputs(String filename){
   JsonObject filter_ports_channels = filter_ports["channels"].createNestedObject("*");
   filter_ports_channels["type"] = true;
   filter_ports_channels["enabled"] = true;
-  filter_ports_channels["offset"] = true;
   filter_ports_channels["actions"] = true;
 
   DynamicJsonDocument doc(32768); //Supports up to 32 ports
@@ -2434,10 +2430,6 @@ bool setup_inputs(String filename){
 
       if(port_value_channel.value()["enabled"]){
         inputs.enablePortChannel(portChannel, port_value_channel.value()["enabled"].as<boolean>());
-      }
-
-      if(port_value_channel.value()["offset"]){
-        inputPorts[atoi(port.key().c_str())-1].channels[i].offset = port_value_channel.value()["offset"].as<uint8_t>();
       }
 
       for (JsonObject port_value_channel_value_action : port_value_channel.value()["actions"].as<JsonArray>()) {
