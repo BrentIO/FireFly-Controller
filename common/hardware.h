@@ -125,7 +125,7 @@
         #define OUTPUT_CONTROLLER_COUNT 1 /* The number of output controllers */
         #define OUTPUT_CONTROLLER_COUNT_PINS 6 /* Special for this model */
         #define OUTPUT_CONTROLLER_ADDRESSES {0x40} /* I2C addresses for the output controllers */
-        #define OUTPUT_CONTROLLER_PORTS {2,1,3,4,6,5} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
+        #define OUTPUT_CONTROLLER_PORTS {1,2,4,3,5,6} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
 
         /* External EEPROM */
         #define EEPROM_EXTERNAL_MODEL ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX /* External EEPROM controller model */
