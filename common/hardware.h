@@ -300,7 +300,9 @@
         #include <WiFi.h>
 
         #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
-            #include <ESPAsyncWebServer.h>
+            #ifndef _AsyncWebServer_ESP32_W5500_H_
+                #include <ESPAsyncWebServer.h>
+            #endif
             #include <AsyncTCP.h>
             #include <LittleFS.h>
             #include <Regexp.h>
