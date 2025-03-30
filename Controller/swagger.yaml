@@ -400,8 +400,8 @@ paths:
       security:
         - visualToken: []
       responses:
-        '204':
-          description: Success
+        '202':
+          description: Request accepted
         '400':
           description: Bad Request
           content:
