@@ -150,6 +150,9 @@
         #define ETHERNET_PIN_INTERRUPT 19 /* Ethernet hardware interrupt pin */
         #define ETH_SPI_HOST SPI2_HOST /* Set W5000 async library to use SPI2 */
 
+        /* WiFi */
+        #define WIFI_MODEL ENUM_WIFI_MODEL_ESP32
+
         /* SPI Configuration */
         #define SPI_SCK_PIN 14 /* SPI clock interface pin */
         #define SPI_MISO_PIN 12 /* SPI MISO pin */
@@ -267,7 +270,6 @@
         #include <LittleFS.h>
         #include <Regexp.h>
 
-        #define WIFI_MODEL ENUM_WIFI_MODEL_NONE     /* Disable WiFi when Ethernet is present */
         #define _ETHERNET_WEBSERVER_LOGLEVEL_ CORE_DEBUG_LEVEL /* Match the Ethernet debug level to the core debug level */
        
         #ifndef SPI_SCK_PIN
@@ -296,8 +298,6 @@
 
     #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
         #include <WiFi.h>
-
-        #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_NONE /* Disable Ethernet when WiFi is present */
 
         #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
             #include <ESPAsyncWebServer.h>
