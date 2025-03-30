@@ -54,7 +54,7 @@
             char* _productId;
             char* _uuid;
 
-            #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
+            #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
                 WiFiClass *_wifiInfo;
             #endif
 
@@ -646,6 +646,15 @@
                     return;
                 }
 
+                #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+
+                    if(this->_wifiInfo->getMode() == wifi_mode_t::WIFI_MODE_NULL){
+                        _showPage_Ethernet();
+                        return;
+                    }
+
+                #endif
+
                 this->_activePage = PAGE_WIFI;
                 this->_clear();
 
@@ -726,7 +735,7 @@
                             case wifi_mode_t::WIFI_MODE_NULL:
                                 this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
                                 this->hardware.setCursor(LOGO_WIDTH + 10, (OLED_DISPLAY_HEIGHT/2)-3);
-                                this->hardware.println(F("Not Initialized"));
+                                this->hardware.println(F("WiFi Off"));
                                 break;
 
                             default:
@@ -1019,16 +1028,11 @@
 
             #endif
 
-            #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
+            #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
                 void setWiFiInfo(WiFiClass *value){
 
                     this->_wifiInfo = value;
-
-                    if(this->_wifiInfo->getMode() == wifi_mode_t::WIFI_MODE_NULL){
-                        log_e("Attempted to set WiFi it has not been initialized (WIFI_MODE_NULL)");
-                        return;
-                    }
 
                 }
 
