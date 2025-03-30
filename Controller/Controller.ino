@@ -161,14 +161,8 @@ void setup() {
   #endif
 
 
-  /* Start networking */
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
-
-    WiFi.softAP(hostname);
-    log_d("Started SoftAP %s", WiFi.softAPSSID());
-  
     oled.setWiFiInfo(&WiFi);
-
   #endif
 
 
@@ -311,21 +305,8 @@ void setup() {
   DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Headers"), F("visual-token, Content-Type")); //Ignore CORS
   DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Methods"), F("GET, POST, OPTIONS, PUT, DELETE")); //Ignore CORS
 
-  #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
-    if(WiFi.getMode() == wifi_mode_t::WIFI_MODE_NULL){
-
-      log_w("HTTP server will not be started because WiFi it has not been initialized (WIFI_MODE_NULL)");
-    
-    }else{
-      httpServer.begin();
-      eventLog.createEvent(F("Web server started"));
-
-      log_d("HTTP server ready");
-    }
-  #endif
-
-  #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+  #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
     httpServer.begin();
     eventLog.createEvent(F("Web server started"));
