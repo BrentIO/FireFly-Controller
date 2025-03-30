@@ -166,7 +166,7 @@
     /* Include hardware-specific libraries */
 
     #ifndef DEBOUNCE_DELAY
-        #define DEBOUNCE_DELAY 150 /* Milliseconds between changes for debouncing on the front panel button. */
+        #define DEBOUNCE_DELAY 350 /* Milliseconds between changes for debouncing on the front panel button. */
     #endif
 
 
