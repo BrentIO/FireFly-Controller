@@ -355,6 +355,7 @@ void loop() {
   frontPanel.loop();
   inputs.loop();
   temperatureSensors.loop();
+  provisioningMode.loop();
 
   if(!mqttClient.loop()){
     mqtt_reconnect();
