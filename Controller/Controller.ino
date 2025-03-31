@@ -1482,7 +1482,7 @@ void http_handleProvisioning_GET(AsyncWebServerRequest *request){
 void http_handleProvisioning_PUT(AsyncWebServerRequest *request){
 
   if(!configFS_isMounted){
-    http_error(request, "File system not mounted");
+    http_error(request, F("File system not mounted"));
     return;
   }
 
@@ -1756,7 +1756,7 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
   if(configFS_isMounted){
     configObject["total"] = configFS.totalBytes();
     configObject["used"] = configFS.usedBytes();
-    JsonArray fileList = configObject.createNestedArray("files");
+    JsonArray fileList = configObject.createNestedArray(F("files"));
     listDirToJsonArray(configFS, "/", fileList);
   }else{
     configObject["error"] = F("File system not mounted");
@@ -1765,7 +1765,7 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
   if(wwwFS_isMounted){
     wwwObject["total"] = wwwFS.totalBytes();
     wwwObject["used"] = wwwFS.usedBytes();
-    JsonArray fileList = wwwObject.createNestedArray("files");
+    JsonArray fileList = wwwObject.createNestedArray(F("files"));
     listDirToJsonArray(wwwFS, "/", fileList);
   }else{
     wwwObject["error"] = F("File system not mounted");
@@ -1808,12 +1808,12 @@ void http_handleCerts(AsyncWebServerRequest *request){
 */
 void http_handleCerts_GET(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader("visual-token")){
+  if(!request->hasHeader(F("visual-token"))){
     http_unauthorized(request);
     return;
   }
 
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
   }
@@ -1850,12 +1850,12 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
     return;
   }
 
-  if(!request->hasHeader("visual-token")){
+  if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
   }
@@ -1900,12 +1900,12 @@ void http_handleCert(AsyncWebServerRequest *request){
 
     case ASYNC_HTTP_GET:
 
-        if(!request->hasHeader("visual-token")){
+        if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
       }
 
-      if(!authToken.authenticate(request->header("visual-token").c_str())){
+      if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
         http_unauthorized(request);
         return;
       }
@@ -1915,12 +1915,12 @@ void http_handleCert(AsyncWebServerRequest *request){
 
     case ASYNC_HTTP_DELETE:
 
-      if(!request->hasHeader("visual-token")){
+      if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
       }
 
-      if(!authToken.authenticate(request->header("visual-token").c_str())){
+      if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
         http_unauthorized(request);
         return;
       }
@@ -1941,19 +1941,19 @@ void http_handleCert(AsyncWebServerRequest *request){
 */
 void http_handleCert_GET(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader("visual-token")){
+  if(!request->hasHeader(F("visual-token"))){
     http_unauthorized(request);
     return;
   }
 
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
   }
 
   if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0))){
 
-    AsyncWebServerResponse *response = request->beginResponse(configFS, CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0), "text/plain");
+    AsyncWebServerResponse *response = request->beginResponse(configFS, CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0), F("text/plain"));
     response->setCode(200);
     request->send(response);
 
@@ -1968,12 +1968,12 @@ void http_handleCert_GET(AsyncWebServerRequest *request){
 */
 void http_handleCert_DELETE(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader("visual-token")){
+  if(!request->hasHeader(F("visual-token"))){
     http_unauthorized(request);
     return;
   }
 
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
   }
@@ -2000,12 +2000,12 @@ void http_handleOTA(AsyncWebServerRequest *request){
 
     case ASYNC_HTTP_POST:
 
-      if(!request->hasHeader("visual-token")){
+      if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
       }
 
-      if(!authToken.authenticate(request->header("visual-token").c_str())){
+      if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
         http_unauthorized(request);
         return;
       }
@@ -2020,12 +2020,12 @@ void http_handleOTA(AsyncWebServerRequest *request){
 
     case ASYNC_HTTP_DELETE:
 
-      if(!request->hasHeader("visual-token")){
+      if(!request->hasHeader(F("visual-token"))){
         http_unauthorized(request);
         return;
       }
 
-      if(!authToken.authenticate(request->header("visual-token").c_str())){
+      if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
         http_unauthorized(request);
         return;
       }
@@ -2050,12 +2050,12 @@ void http_handleOTA_POST(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  if(!request->hasHeader("visual-token")){
+  if(!request->hasHeader(F("visual-token"))){
       http_unauthorized(request);
       return;
   }
 
-  if(!authToken.authenticate(request->header("visual-token").c_str(), true)){
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str(), true)){
     http_unauthorized(request);
     return;
   }
@@ -2171,12 +2171,12 @@ void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  if(!request->hasHeader("visual-token")){
+  if(!request->hasHeader(F("visual-token"))){
       http_unauthorized(request);
       return;
   }
 
-  if(!authToken.authenticate(request->header("visual-token").c_str(), true)){
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str(), true)){
     http_unauthorized(request);
     return;
   }
@@ -2468,7 +2468,7 @@ bool setup_outputs(String filename){
       continue;
     }
 
-    if(!output.value().containsKey("id")){
+    if(!output.value().containsKey(F("id"))){
       char *text = new char[OLED_CHARACTERS_PER_LINE+1];
       snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out prt %s no id", output.key().c_str());
       log_e("%s", text);
@@ -2479,13 +2479,13 @@ bool setup_outputs(String filename){
 
     outputs.setPortId(outputPortNumber, output.value()["id"]);
 
-    if(output.value().containsKey("type")){
+    if(output.value().containsKey(F("type"))){
       if(strcmp(output.value()["type"], "VARIABLE") == 0){
         outputs.setPortType(outputPortNumber, nsOutputs::outputPin::VARIABLE);
       }
     }
 
-    if(output.value().containsKey("enabled")){
+    if(output.value().containsKey(F("enabled"))){
       outputs.enablePort(outputPortNumber, output.value()["enabled"].as<boolean>());
     }
 
@@ -2593,7 +2593,7 @@ bool setup_inputs(String filename){
 
         inputAction newInputAction;
 
-        if(port_value_channel_value_action.containsKey("action")){
+        if(port_value_channel_value_action.containsKey(F("action"))){
         
           if(strcmp(port_value_channel_value_action["action"], "INCREASE") == 0){
             newInputAction.action = INCREASE;
@@ -2621,7 +2621,7 @@ bool setup_inputs(String filename){
           }
         }
 
-        if(!port_value_channel_value_action.containsKey("change_state")){
+        if(!port_value_channel_value_action.containsKey(F("change_state"))){
           newInputAction.changeState = managerInputs::changeState::CHANGE_STATE_SHORT_DURATION;
         }else{
           if(strcmp(port_value_channel_value_action["change_state"], "LONG") == 0){
@@ -2853,7 +2853,7 @@ void mqtt_autoDiscovery_temperature(){
     doc["unit_of_measurement"] = "°C";
 
     JsonObject device = doc.createNestedObject("device");
-    JsonArray identifiers = device.createNestedArray("identifiers");
+    JsonArray identifiers = device.createNestedArray(F("identifiers"));
     identifiers.add(externalEEPROM.data.uuid);
 
     if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -2942,14 +2942,14 @@ void mqtt_autoDiscovery_outputs(){
       continue;
     }
 
-    if(!output.value().containsKey("id")){
+    if(!output.value().containsKey(F("id"))){
       continue;
     }
 
     char* devicePlatform = new char[WORD_LENGTH_INTEGRATION+1];
     strcpy(devicePlatform,"switch"); //Default
 
-    if(output.value().containsKey("icon")){
+    if(output.value().containsKey(F("icon"))){
 
       if(output.value()["icon"].as<String>().indexOf("light") != -1){
         strcpy(devicePlatform,"light");
@@ -2970,7 +2970,7 @@ void mqtt_autoDiscovery_outputs(){
 
     bool isVariableOutput = false;
 
-    if(output.value().containsKey("type")){
+    if(output.value().containsKey(F("type"))){
       if(strcmp(output.value()["type"].as<const char*>(), "VARIABLE") == 0){
         isVariableOutput = true;
       }
@@ -2990,13 +2990,13 @@ void mqtt_autoDiscovery_outputs(){
     char* command_topic = new char[MQTT_TOPIC_OUTPUT_SET_LENGTH+1];
     snprintf(command_topic, MQTT_TOPIC_OUTPUT_SET_LENGTH+1, MQTT_TOPIC_OUTPUT_SET_PATTERN, output.value()["id"].as<const char*>());
 
-    if(output.value().containsKey("name")){
+    if(output.value().containsKey(F("name"))){
       mqttDoc["name"] = output.value()["name"].as<const char*>();
     }
     mqttDoc["unique_id"] = unique_id;
     mqttDoc["object_id"] = unique_id;
 
-    if(output.value().containsKey("icon")){
+    if(output.value().containsKey(F("icon"))){
         mqttDoc["icon"] = output.value()["icon"].as<const char*>();
     }
 
@@ -3010,12 +3010,12 @@ void mqtt_autoDiscovery_outputs(){
     mqttDoc["state_value_template"] = "{% if value|int > 0 %}ON{% else %}OFF{% endif %}";
 
     JsonObject device = mqttDoc.createNestedObject("device");
-    JsonArray identifiers = device.createNestedArray("identifiers");
+    JsonArray identifiers = device.createNestedArray(F("identifiers"));
     identifiers.add(unique_id);
 
     char* deviceName = new char[MQTT_OUTPUT_DEVICE_NAME_LENGTH+1];
 
-    if(output.value().containsKey("name")){
+    if(output.value().containsKey(F("name"))){
       snprintf(deviceName, MQTT_OUTPUT_DEVICE_NAME_LENGTH+1, MQTT_OUTPUT_DEVICE_NAME_PATTERN,  output.value()["name"].as<const char*>(), output.value()["id"].as<const char*>());
     }
     else{
@@ -3025,7 +3025,7 @@ void mqtt_autoDiscovery_outputs(){
     device["name"] =  deviceName;
     device["via_device"] = externalEEPROM.data.uuid;
 
-    if(output.value().containsKey("area")){
+    if(output.value().containsKey(F("area"))){
       device["suggested_area"] =  output.value()["area"].as<const char*>();
     }
     mqttDoc["state_topic"] = state_topic;
@@ -3068,7 +3068,7 @@ void mqtt_autoDiscovery_start_time(){
   doc["entity_category"] = "diagnostic";
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
+  JsonArray identifiers = device.createNestedArray(F("identifiers"));
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3134,7 +3134,7 @@ void mqtt_autoDiscovery_mac_address(){
   doc["entity_category"] = "diagnostic";
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
+  JsonArray identifiers = device.createNestedArray(F("identifiers"));
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3201,7 +3201,7 @@ void mqtt_autoDiscovery_ip_address(){
   doc["entity_category"] = "diagnostic";
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
+  JsonArray identifiers = device.createNestedArray(F("identifiers"));
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3256,14 +3256,14 @@ void mqtt_autoDiscovery_count_errors(){
   char* state_topic = new char[MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN, externalEEPROM.data.uuid);
 
-  doc["name"] = "Error Count";
+  doc["name"] = F("Error Count");
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = "mdi:alert";
-  doc["entity_category"] = "diagnostic";
+  doc["icon"] = F("mdi:alert");
+  doc["entity_category"] = F("diagnostic");
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
+  JsonArray identifiers = device.createNestedArray(F("identifiers"));
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3327,13 +3327,13 @@ void mqtt_autoDiscovery_update(){
 
   DynamicJsonDocument doc(1024);
 
-  doc["name"] = "Firmware";
+  doc["name"] = F("Firmware");
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = "mdi:update";
+  doc["icon"] = F("mdi:update");
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
+  JsonArray identifiers = device.createNestedArray(F("identifiers"));
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3349,16 +3349,16 @@ void mqtt_autoDiscovery_update(){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
   }
 
-  JsonArray availability = doc.createNestedArray("availability"); //Note, this is different from others
+  JsonArray availability = doc.createNestedArray(F("availability")); //Note, this is different from others
   JsonObject update_specific = availability.createNestedObject();
   JsonObject controller_level = availability.createNestedObject();
   update_specific["topic"] = availability_topic;
   controller_level["topic"] = mqttClient.topic_availability;
-  doc["availability_mode"] = "all";
+  doc["availability_mode"] = F("all");
 
   doc["state_topic"] = state_topic;
   doc["command_topic"] = command_topic;
-  doc["payload_install"] = "do-update";
+  doc["payload_install"] = F("do-update");
 
   mqttClient.beginPublish(topic, measureJson(doc), true);
   BufferingPrint bufferedClient(mqttClient, 32);
@@ -3380,15 +3380,15 @@ void mqtt_publishUpdateAvailable(JsonVariant &updateDoc){
   mqttDoc["installed_version"] = VERSION;
   mqttDoc["latest_version"] = updateDoc["version"].as<const char*>();
 
-  if(updateDoc.containsKey("title")){
+  if(updateDoc.containsKey(F("title"))){
     mqttDoc["title"] = updateDoc["title"].as<const char*>();
   }
 
-  if(updateDoc.containsKey("release_summary")){
+  if(updateDoc.containsKey(F("release_summary"))){
     mqttDoc["release_summary"] = updateDoc["release_summary"].as<const char*>();
   }
 
-  if(updateDoc.containsKey("release_url")){
+  if(updateDoc.containsKey(F("release_url"))){
     mqttDoc["release_url"] = updateDoc["release_url"].as<const char*>();
   }
 
