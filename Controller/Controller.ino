@@ -26,6 +26,7 @@
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include "common/extendedPubSubClient.h"
+#include "common/provisioningMode.h"
 
 unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
 AsyncWebServer httpServer(80);
@@ -36,6 +37,7 @@ managerInputs inputs; /* Inputs collection */
 nsOutputs::managerOutputs outputs; /* Outputs collection */
 managerTemperatureSensors temperatureSensors; /* Temperature sensors */
 authorizationToken authToken;
+managerProvisioningMode provisioningMode;
 
 #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
   WiFiClient ethClient;
@@ -152,6 +154,12 @@ void setup() {
   frontPanel.begin();
 
 
+  /* Set callbacks for provisioning mode */
+  provisioningMode.setCallback_active(&eventHandler_provisioningModeActive);
+  provisioningMode.setCallback_inactive(&eventHandler_provisioningModeInactive);
+  provisioningMode.setCallback_rogueClient(&eventHandler_rogueClient);
+
+
   /* Determine hostname */
   #ifdef ESP32
     uint8_t baseMac[6];
@@ -163,6 +171,7 @@ void setup() {
 
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
     oled.setWiFiInfo(&WiFi);
+    provisioningMode.setWiFI(&WiFi);
   #endif
 
 
@@ -275,6 +284,7 @@ void setup() {
     httpServer.on("^\/api/clients\/([0-9a-f-]+)$", http_handleClients);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/backup", http_handleBackup_PUT, 65536,65535));
     httpServer.on("/backup", http_handleBackup);
+    httpServer.on("/api/provisioning", http_handleProvisioning);
     httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
@@ -1365,6 +1375,114 @@ void http_handleListClients(AsyncWebServerRequest *request){
   request->send(response);
 
 }
+
+
+/**
+ * Generic handler for /provisioning
+ */
+void http_handleProvisioning(AsyncWebServerRequest *request){
+
+  if(request->method() == ASYNC_HTTP_OPTIONS){
+    http_options(request);
+    return;
+  }
+
+  if(!request->hasHeader(F("visual-token"))){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+    http_unauthorized(request);
+    return;
+  }
+  
+  switch(request->method()){
+
+    case ASYNC_HTTP_PUT:
+      http_handleProvisioning_PUT(request);
+      break;
+
+    case ASYNC_HTTP_GET:
+      http_handleProvisioning_GET(request);
+      break;
+
+    case ASYNC_HTTP_DELETE:
+      http_handleProvisioning_DELETE(request);
+      break;
+
+    default:
+      http_methodNotAllowed(request);
+      break;
+  }
+}
+
+
+void http_handleProvisioning_GET(AsyncWebServerRequest *request){
+  StaticJsonDocument<16> doc;
+  doc["enabled"] = provisioningMode.getStatus();
+  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  serializeJson(doc, *response);
+
+  request->send(response);
+}
+
+
+void http_handleProvisioning_PUT(AsyncWebServerRequest *request){
+
+  if(!configFS_isMounted){
+    http_error(request, "File system not mounted");
+    return;
+  }
+
+  request->send(202);
+
+  StaticJsonDocument<256> doc;
+  StaticJsonDocument<16> filter;
+  filter["mac"] = true;
+
+  File root = configFS.open(CONFIGFS_PATH_DEVICES_CLIENTS + (String)"/");
+  File file = root.openNextFile();
+
+  while(file){
+
+      if(!file.isDirectory()){
+        DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
+
+        if (error) {
+          log_e("deserializeJson() failed: %s", error.c_str());
+          continue;
+        }
+        provisioningMode.addAllowedMac(doc["mac"].as<std::string>());
+      }
+
+      file = root.openNextFile();
+  }
+
+  provisioningMode.setActive();
+}
+
+void http_handleProvisioning_DELETE(AsyncWebServerRequest *request){
+  request->send(202);
+  provisioningMode.setInactive();
+}
+
+
+void eventHandler_provisioningModeActive(){
+  eventLog.createEvent(F("Provisioning active"), EventLog::LOG_LEVEL_NOTIFICATION);
+}
+
+
+void eventHandler_provisioningModeInactive(){
+  eventLog.createEvent(F("Provisioning inactive"));
+}
+
+
+void eventHandler_rogueClient(const char* macAddress){
+  char *oledText = new char[OLED_CHARACTERS_PER_LINE+1];
+  snprintf(oledText, OLED_CHARACTERS_PER_LINE+1, "!RC %s", macAddress);
+  eventLog.createEvent(oledText, EventLog::LOG_LEVEL_NOTIFICATION);
+};
 
 
 /**
