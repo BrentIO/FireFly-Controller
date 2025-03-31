@@ -1219,14 +1219,29 @@ void http_handleClients(AsyncWebServerRequest *request){
 */
 void http_handleClients_GET(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader(F("visual-token"))){
-        http_unauthorized(request);
-        return;
+  if(!request->hasHeader(F("visual-token")) && !request->hasHeader(F("mac-address"))){
+      http_unauthorized(request);
+      return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
-    http_unauthorized(request);
-    return;
+  if(request->hasHeader(F("visual-token"))){
+    if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+      http_unauthorized(request);
+      return;
+    }
+  }
+
+  if(request->hasHeader(F("mac-address"))){
+
+    if(provisioningMode.getStatus() != true){
+      http_badRequest(request, F("Provisioning mode inactive"));
+      return;
+    }
+
+    if(!authClientWithMacAddress(request->pathArg(0).c_str(), request->header(F("mac-address")).c_str())){
+      http_forbiddenRequest(request, F("Request will not be fulfilled"));
+      return;
+    }
   }
   
   String filename = CONFIGFS_PATH_DEVICES_CLIENTS + (String)"/" + request->pathArg(0);
@@ -1239,6 +1254,42 @@ void http_handleClients_GET(AsyncWebServerRequest *request){
   AsyncWebServerResponse *response = request->beginResponse(configFS, filename, F("application/json"));
   request->send(response);
 
+}
+
+
+/// @brief Authorizes a call using just a MAC address
+/// @param macAddress 
+/// @return true if authorized, false if not authorized
+boolean authClientWithMacAddress(const char* uuid, const char* macAddress){
+
+    String filename = CONFIGFS_PATH_DEVICES_CLIENTS + (String)"/" + uuid;
+
+    if(!configFS.exists(filename)){
+      return false;
+    }
+
+    StaticJsonDocument<256> doc;
+    StaticJsonDocument<16> filter;
+    filter["mac"] = true;
+
+    File file = configFS.open(filename);
+
+    DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
+
+    if (error) {
+      return false;
+    }
+
+    file.close();
+
+    if(strcmp(doc["mac"].as<std::string>().c_str(), macAddress) != 0){
+      log_i("Rogue client detected Header: %s != document: %s", macAddress, doc["mac"].as<std::string>().c_str());
+      eventHandler_rogueClient(macAddress);
+      provisioningMode.setInactive();
+      return false;
+    }
+
+    return true;
 }
 
 

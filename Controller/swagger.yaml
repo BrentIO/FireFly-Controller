@@ -621,6 +621,7 @@ paths:
       description: Retrieve a client
       security:
         - visualToken: []
+        - macAddress: []
       parameters:
         - in: path
           name: uuid
@@ -635,8 +636,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/client'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Provisioning mode inactive
         '401':
           description: Unauthorized
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Request will not be fulfilled
         '404':
           description: Not Found
         '500':
@@ -835,6 +852,12 @@ components:
       in: header
       name: visual-token
       description: A security token visually displayed on the device which changes on a regular basis
+
+    macAddress:
+      type: apiKey
+      in: header
+      name: mac-address
+      description: A client MAC address that matches the resource being requested, valid only while in provisoining mode
 
  
   schemas:
