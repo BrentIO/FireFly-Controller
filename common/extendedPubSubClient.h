@@ -12,6 +12,8 @@
     #define WORD_LENGTH_INTEGRATION 20        //The longest MQTT integration allowed in Home Assistant is len("/alarm_control_panel"), see https://www.home-assistant.io/integrations/mqtt/
     #define WORD_LENGTH_AUTODISCOVERY_ROOT 24 //len(this->auto_discovery_root)
     #define UUID_LENGTH 36                  //len(uuidv4)
+    #define MQTT_USERNAME_MAX_LENGTH 64
+    #define MQTT_PASSWORD_MAX_LENGTH 64
 
 
     /***************** I/O TOPICS *****************/
@@ -102,6 +104,10 @@
             const char* topic_availability; /* Topic name for availability, which will be used as the last will topic name as well */
             int64_t lastReconnectAttemptTime = 0; /* The time (millis() or equivalent) when the last reconnection was be attempted */
             LinkedList<const char*> subscriptions; /* List of MQTT subscriptions */
+            char username[MQTT_USERNAME_MAX_LENGTH + 1]; /* MQTT username to use when authenticating */
+            char password[MQTT_PASSWORD_MAX_LENGTH + 1]; /* MQTT password to use when authenticating */
+            bool enabled = false; /* Enabled only if credentials and configuration exists */
+
             
             struct autoDiscovery{
                 bool sent = false;
@@ -113,15 +119,15 @@
                  * Changes the Home Assistant auto discovery root path from the default of "homeassistant" to the value specified
                  * @param value the new root name to use, without a trailing slash
                  */
-                void setHomeAssistantRoot(char* value){
+                void setHomeAssistantRoot(const char* value){
                     strcpy(homeAssistantRoot, value);
                 }
 
-                void setDeviceName(char* value){
+                void setDeviceName(const char* value){
                     strcpy(deviceName, value);
                 }
 
-                void setSuggestedArea(char* value){
+                void setSuggestedArea(const char* value){
                     strcpy(suggestedArea, value);
                 }
             } autoDiscovery;
@@ -145,7 +151,18 @@
                         log_e("FAILED to subscribe to %s", this->subscriptions.get(i));
                     }
                 }
-            } 
+            }
+
+
+            void setUsername(const char* value){
+                strcpy(username, value);
+            }
+
+
+            void setPassword(const char* value){
+                strcpy(password, value);
+            }
+
     };
 
 #endif

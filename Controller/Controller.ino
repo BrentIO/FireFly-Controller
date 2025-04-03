@@ -357,9 +357,17 @@ void loop() {
   temperatureSensors.loop();
   provisioningMode.loop();
 
-  if(!mqttClient.loop()){
-    mqtt_reconnect();
-  };
+  #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+    if(ESP32_W5500_isConnected){
+      if(!mqttClient.loop() && mqttClient.enabled == true){
+        mqtt_reconnect();
+      };
+    }
+  #endif
+
+  #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_W5500
+    #error MQTT will not automatically reconnect with this ethernet model
+  #endif
 
 }
 
@@ -2660,14 +2668,15 @@ bool setup_inputs(String filename){
  */
 void mqtt_reconnect(){
 
-  //TO DO: GET CREDENTIALS FROM SOMEWHERE
+  if(!mqttClient.enabled){
+    return;
+  }
 
   if((esp_timer_get_time() - mqttClient.lastReconnectAttemptTime) / 1000  > MQTT_RECONNECT_WAIT_MILLISECONDS || mqttClient.lastReconnectAttemptTime == 0){
 
     if(!mqttClient.connected()){
-      mqttClient.setServer("svkorl019.lan.monorailyellow.com", 1883);   //DEBUG ONLY
 
-      if(mqttClient.connect(externalEEPROM.data.uuid, "debug", "debug", mqttClient.topic_availability, 2, true, "offline")){     
+      if(mqttClient.connect(externalEEPROM.data.uuid, mqttClient.username, mqttClient.password, mqttClient.topic_availability, 2, true, "offline")){
         mqttClient.lastReconnectAttemptTime = 0;
         return;
       }
@@ -2690,9 +2699,104 @@ void setupMQTT(){
   mqttClient.setCallback_Connect(eventHandler_mqttConnect);
   mqttClient.setCallback_Disconnect(eventHandler_mqttDisconnect);
 
-  //mqttClient.autoDiscovery.setHomeAssistantRoot("abcdefghijklmnopqrstuvwx");   //TODO: Set if it is defined in the config file
-  //mqttClient.autoDiscovery.setDeviceName("First Floor");      //TODO: Set if it is defined in the config file
-  //mqttClient.autoDiscovery.setSuggestedArea("Basement");      //TODO: Set if it is defined in the config file
+  String filename = CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
+  File file = configFS.open(filename, "r");
+
+  StaticJsonDocument<48> filter;
+  filter["name"] = true;
+  filter["area"] = true;
+  filter["mqtt"] = true;
+
+  DynamicJsonDocument doc(512);
+
+  DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
+
+  file.close();
+
+  if (error) {
+    char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT parse err %s", error.c_str());
+    log_e("%s", text);
+    eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
+    return;
+  }
+
+  if(doc.containsKey(F("name"))){
+    mqttClient.autoDiscovery.setDeviceName(doc["name"].as<String>().c_str());
+  }
+
+  if(doc.containsKey(F("area"))){
+    mqttClient.autoDiscovery.setSuggestedArea(doc["area"].as<String>().c_str());
+  }
+
+  if(!doc.containsKey(F("mqtt"))){
+    char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT obj missing");
+    log_e("%s", text);
+    eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
+    return;
+  }
+
+  JsonObject mqtt = doc["mqtt"];
+  uint16_t port = 1883;
+
+  if(!mqtt.containsKey(F("host"))){
+    char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT host missing");
+    log_e("%s", text);
+    eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
+    return;
+  }
+
+  if(!mqtt.containsKey(F("username"))){
+    char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT user missing");
+    log_e("%s", text);
+    eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
+    return;
+  }
+
+  if(!mqtt.containsKey(F("password"))){
+    char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT pass missing");
+    log_e("%s", text);
+    eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
+    return;
+  }
+
+  if(mqtt.containsKey(F("port"))){
+    port = mqtt["port"];
+  }
+
+  mqttClient.setServer(mqtt["host"].as<const char*>(), port);
+
+  uint8_t baseMac[6];
+  esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
+
+  char macOnly[13] = {0};
+  sprintf(macOnly, "%02X%02X%02X%02X%02X%02X", baseMac[0],baseMac[1],baseMac[2],baseMac[3], baseMac[4], baseMac[5]);
+  
+  char macDashes[18] = {0};
+  sprintf(macDashes, "%02X-%02X-%02X-%02X-%02X-%02X", baseMac[0],baseMac[1],baseMac[2],baseMac[3], baseMac[4], baseMac[5]);
+
+  char macColons[18] = {0};
+  sprintf(macColons, "%02X:%02X:%02X:%02X:%02X:%02X", baseMac[0],baseMac[1],baseMac[2],baseMac[3], baseMac[4], baseMac[5]);
+
+  String username = mqtt["username"].as<String>();
+  username.replace("$$mac$$", macOnly);
+  username.replace("$$mac_dashes$$", macDashes);
+  username.replace("$$mac_colons$$", macColons);
+  username.replace("$$uuid$$", externalEEPROM.data.uuid);
+  mqttClient.setUsername(username.c_str());
+
+  String password = mqtt["password"].as<String>();
+  password.replace("$$mac$$", macOnly);
+  password.replace("$$mac_dashes$$", macDashes);
+  password.replace("$$mac_colons$$", macColons);
+  password.replace("$$uuid$$", externalEEPROM.data.uuid);
+  mqttClient.setPassword(password.c_str());
+
+  mqttClient.enabled = true;
 }
 
 
