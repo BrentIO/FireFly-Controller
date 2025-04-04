@@ -2981,7 +2981,8 @@ void mqtt_autoDiscovery_temperature(){
     }
 
     device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-    device["model"] = externalEEPROM.data.product_id;
+    device["model"] = APPLICATION_NAME;
+    device["model_id"] = externalEEPROM.data.product_id;
     device["serial_number"] = externalEEPROM.data.uuid;
     device["sw_version"] = VERSION;
 
@@ -3190,7 +3191,8 @@ void mqtt_autoDiscovery_start_time(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = externalEEPROM.data.product_id;
+  device["model"] = APPLICATION_NAME;
+  device["model_id"] = externalEEPROM.data.product_id;
   device["serial_number"] = externalEEPROM.data.uuid;
   device["sw_version"] = VERSION;
 
@@ -3256,7 +3258,8 @@ void mqtt_autoDiscovery_mac_address(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = externalEEPROM.data.product_id;
+  device["model"] = APPLICATION_NAME;
+  device["model_id"] = externalEEPROM.data.product_id;
   device["serial_number"] = externalEEPROM.data.uuid;
   device["sw_version"] = VERSION;
 
@@ -3323,7 +3326,8 @@ void mqtt_autoDiscovery_ip_address(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = externalEEPROM.data.product_id;
+  device["model"] = APPLICATION_NAME;
+  device["model_id"] = externalEEPROM.data.product_id;
   device["serial_number"] = externalEEPROM.data.uuid;
   device["sw_version"] = VERSION;
 
@@ -3385,7 +3389,8 @@ void mqtt_autoDiscovery_count_errors(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = externalEEPROM.data.product_id;
+  device["model"] = APPLICATION_NAME;
+  device["model_id"] = externalEEPROM.data.product_id;
   device["serial_number"] = externalEEPROM.data.uuid;
   device["sw_version"] = VERSION;
 
@@ -3455,7 +3460,8 @@ void mqtt_autoDiscovery_update(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = externalEEPROM.data.product_id;
+  device["model"] = APPLICATION_NAME;
+  device["model_id"] = externalEEPROM.data.product_id;
   device["serial_number"] = externalEEPROM.data.uuid;
   device["sw_version"] = VERSION;
 
