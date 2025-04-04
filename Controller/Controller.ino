@@ -2823,7 +2823,7 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
 
   log_i("\n=======================\nMQTT message arrived!\nTopic: [%s]\nPayload: [%s]\n=======================", topic, payload.c_str());
 
-  if(ms.Match("^FireFly\/([A-Za-z0-9]+)\/set$")){ //This is an output command request
+  if(ms.Match(MQTT_TOPIC_OUTPUT_SET_REGEX)){ //This is an output command request
 
     payload.toUpperCase();
 
@@ -2835,7 +2835,7 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
     return;
   }
 
-  if(ms.Match("^FireFly\/[0-9a-f-]+\/update\/set$")){ //This is an update command request
+  if(ms.Match(MQTT_TOPIC_UPDATE_SET_REGEX)){ //This is an update command request
     log_i("I will find queue the update!");
     return;
   } 
