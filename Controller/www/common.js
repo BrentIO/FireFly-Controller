@@ -983,7 +983,7 @@ async function getControllerPOSTPayload(id){
     payload[0].mqtt = mqtt.value;
 
     for(const [field, value] of Object.entries(payload[0].mqtt)){
-        const permittedFields = ["host","username","password"];
+        const permittedFields = ["host","port", "username","password"];
         if(permittedFields.includes(field) == false){
             delete payload[0].mqtt[field];
         }

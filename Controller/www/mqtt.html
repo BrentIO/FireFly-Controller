@@ -63,6 +63,11 @@
                             <div class="invalid-feedback">
                                 A valid host is required.
                             </div>
+                            <span class="input-group-text">Port</span>
+                            <input class="form-control has-validation" id="port" value="1883"  aria-label="Port" maxlength="5" required>
+                            <div class="invalid-feedback">
+                                A valid port is required.
+                            </div>
                         </div>
                         <div class="input-group mb-3">
                             <span class="input-group-text">Username</span>
@@ -123,6 +128,7 @@ document.getElementById("host").addEventListener('input', () => {
 async function validateAndPut(){
 
     document.getElementById("host").value = document.getElementById("host").value.trim();
+    document.getElementById("port").value = document.getElementById("port").value.trim();
     document.getElementById("username").value = document.getElementById("username").value.trim();
     document.getElementById("password").value = document.getElementById("password").value.trim();
 
@@ -138,6 +144,7 @@ async function validateAndPut(){
             setting: "mqtt",
             value: {
                 host: document.getElementById("host").value,
+                port: parseInt(document.getElementById("port").value),
                 username: document.getElementById("username").value,
                 password: document.getElementById("password").value
             }
@@ -162,6 +169,12 @@ async function getSetting(){
     }
 
     document.getElementById("host").value = setting.value.host;
+
+    if(typeof setting.value.port == "undefined"){
+        setting.value.port = 1883;
+    }
+    
+    document.getElementById("port").value = setting.value.port;
     document.getElementById("username").value = setting.value.username;
     document.getElementById("password").value = setting.value.password;
 }
