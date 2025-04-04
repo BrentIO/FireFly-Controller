@@ -770,6 +770,18 @@ function isValidMacAddress(value){
 }
 
 
+function isValidClientName(value){
+    var regex = /^[A-Za-z0-9~!@#$%^&*()_\+-=|]{1,8}$/;
+    return regex.test(value);
+}
+
+
+function isValidCircuitName(value){
+    var regex = /^[A-Za-z0-9~!@#$%^&*()_\+-=|]{1,8}$/;
+    return regex.test(value);
+}
+
+
 function uuidEditFieldRealtimeValidation(element, type){
     uuidElement = document.getElementById(element);
 

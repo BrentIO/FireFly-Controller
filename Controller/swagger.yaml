@@ -1092,7 +1092,10 @@ components:
             type: string
             description: A short ID for the input, used for addressing the device over MQTT.  When an input spans multiple input ports (such as a switch with 6 buttons), the same ID should be used across both input ports
             maxLength: 8 #Maximum length relates to hardware.h -> PORT_ID_MAX_LENGTH
-            pattern: ^[A-Za-z0-9~!@#$%^&*()_+-=|]+$
+            minLength: 1
+            pattern: ^[A-Za-z0-9~!@#$%^&*()_+-=|]{1,8}+$
+            examples:
+              - S16
           offset:
             type: number
             description: Offset to add to the channel number, used when an input spans multiple ports (such as a switch witih 6 buttons)
@@ -1191,7 +1194,10 @@ components:
             type: string
             description: A unique short ID for the output, used for addressing the device over MQTT
             maxLength: 8    #Maximum length relates to hardware.h -> OUTPUT_ID_MAX_LENGTH
-            pattern: ^[A-Za-z0-9~!@#$%^&*()_+-=|]+$
+            minLength: 1
+            pattern: ^[A-Za-z0-9~!@#$%^&*()_+-=|]{1,8}+$
+            examples:
+              - C7
           area:
             type: string
             description: Area where the output fixture is located

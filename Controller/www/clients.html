@@ -51,7 +51,7 @@
                         <span class="input-group-text">Name</span>
                         <input class="form-control" id="addNewClientName" placeholder="ex: S12" aria-label="Name" maxlength="8" required>
                         <div class="invalid-feedback">
-                            A name is required.
+                            A name is required (allowed special characters: <code>~!@#$%^&*()_+-=|</code>).
                         </div>
                     </div>
                     <div class="input-group mb-3 has-validation">
@@ -128,6 +128,14 @@
         document.getElementById("addNewClientDescription").value = document.getElementById("addNewClientDescription").value.trim();
         document.getElementById("addNewClientUUID").value = document.getElementById("addNewClientUUID").value.trim();
         document.getElementById("addNewClientMAC").value = document.getElementById("addNewClientMAC").value.trim();
+
+        if(isValidClientName(document.getElementById("addNewClientName").value)){
+            document.getElementById("addNewClientName").classList.remove("is-invalid");
+            document.getElementById("addNewClientName").classList.add("is-valid");
+        }else{
+            document.getElementById("addNewClientName").classList.add("is-invalid");
+            document.getElementById("addNewClientName").classList.remove("is-valid");
+        }
 
         let form = document.getElementById("addNewClientForm");
         form.checkValidity();
@@ -342,6 +350,14 @@
         switch(fieldName){
 
             case 'Name':
+                element = document.getElementById(fieldName + "_" +id);
+                element.setAttribute("previous-value", element.innerText);
+                element.contentEditable = "true";
+                element.classList.add("form-control");
+                element.addEventListener("input", (event) => {
+                    clientNameEditFieldRealTimeValidation(element);
+                })
+                break;
             case 'Description':
                 element = document.getElementById(fieldName + "_" +id);
                 element.setAttribute("previous-value", element.innerText);
@@ -590,6 +606,22 @@
             macAddressField.classList.add("bg-warning-subtle");
         }else{
             macAddressField.classList.remove("bg-warning-subtle");
+        }
+    }
+
+
+    function clientNameEditFieldRealTimeValidation(element){
+        var id = element.id.replace("Name_", "");
+
+        if(isValidClientName(element.innerText)){
+            element.classList.remove("is-invalid");
+            element.classList.add("is-valid");
+            document.getElementById('saveNameIcon_'+id).hidden = false;
+            
+        }else{
+            element.classList.add("is-invalid");
+            element.classList.remove("is-valid");
+            document.getElementById('saveNameIcon_'+id).hidden = true;
         }
     }
         

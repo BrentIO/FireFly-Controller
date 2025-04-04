@@ -24,6 +24,7 @@
     #define MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + WORD_LENGTH_INPUTS + PORT_ID_MAX_LENGTH + 1 + 1 + WORD_LENGTH_STATE
     
     #define MQTT_TOPIC_OUTPUT_SET_PATTERN WORD_FIREFLY_SLASH "circuits/%s/set"              //%s = Output ID
+    #define MQTT_TOPIC_OUTPUT_SET_REGEX "^FireFly\/circuits\/([A-Za-z0-9~!@#$%^&*()_+-=|]+)\/set$"
     #define MQTT_TOPIC_OUTPUT_SET_LENGTH WORD_LENGTH_FIREFLY + WORD_LENGTH_CIRCUITS + OUTPUT_ID_MAX_LENGTH + WORD_LENGTH_SET    // "FireFly/" + output ID + "/set"
     #define MQTT_TOPIC_OUTPUT_STATE_PATTERN WORD_FIREFLY_SLASH "circuits/%s/state"          //%s = Output ID
     #define MQTT_TOPIC_OUTPUT_STATE_LENGTH WORD_LENGTH_FIREFLY + WORD_LENGTH_CIRCUITS + OUTPUT_ID_MAX_LENGTH + WORD_LENGTH_STATE // "FireFly/" + output ID + "/state"
@@ -79,6 +80,7 @@
     #define MQTT_TOPIC_UPDATE_STATE_PATTERN WORD_FIREFLY_SLASH "%s/update/state"       //%s = Controller UUID
     #define MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 6 + WORD_LENGTH_STATE  //len("/update")
     #define MQTT_TOPIC_UPDATE_SET_PATTERN WORD_FIREFLY_SLASH "%s/update/set"       //%s = Controller UUID
+    #define MQTT_TOPIC_UPDATE_SET_REGEX "^FireFly\/[0-9a-f-]+\/update\/set$"
     #define MQTT_TOPIC_UPDATE_SET_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 6 + WORD_LENGTH_SET //len("/update")
     #define MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN "%s/update/FireFly-%s-update/config"     //%s = Home Assistant root topic (defaults to "homeassistant"), %s = Controller UUID
     #define MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN_LENGTH WORD_LENGTH_AUTODISCOVERY_ROOT + 1 + WORD_LENGTH_INTEGRATION + 7 + 1 + UUID_LENGTH + 1 + 6 + WORD_LENGTH_CONFIG
