@@ -33,9 +33,6 @@
     #define MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s"       //%s = output ID
     #define MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + OUTPUT_ID_MAX_LENGTH
 
-    #define MQTT_OUTPUT_DEVICE_NAME_PATTERN "%s %s"     //%s = Output name, %s = Output ID.  If the output has no name field, the function will change this to only %s = Output ID
-    #define MQTT_OUTPUT_DEVICE_NAME_LENGTH OUTPUT_NAME_MAX_LENGTH + 1 + OUTPUT_ID_MAX_LENGTH
-
 
     /***************** PERIPHERAL TOPICS *****************/
 

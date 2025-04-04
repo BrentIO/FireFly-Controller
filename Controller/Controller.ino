@@ -3114,7 +3114,11 @@ void mqtt_autoDiscovery_outputs(){
 
     if(output.value().containsKey(F("name"))){
       mqttDoc["name"] = output.value()["name"].as<const char*>();
+    }else{
+      mqttDoc["name"] = output.value()["id"].as<const char*>();
     }
+
+    mqttDoc["name"] = (char*)NULL;
     mqttDoc["unique_id"] = unique_id;
     mqttDoc["object_id"] = unique_id;
 
@@ -3135,16 +3139,7 @@ void mqtt_autoDiscovery_outputs(){
     JsonArray identifiers = device.createNestedArray(F("identifiers"));
     identifiers.add(unique_id);
 
-    char* deviceName = new char[MQTT_OUTPUT_DEVICE_NAME_LENGTH+1];
-
-    if(output.value().containsKey(F("name"))){
-      snprintf(deviceName, MQTT_OUTPUT_DEVICE_NAME_LENGTH+1, MQTT_OUTPUT_DEVICE_NAME_PATTERN,  output.value()["name"].as<const char*>(), output.value()["id"].as<const char*>());
-    }
-    else{
-      snprintf(deviceName, MQTT_OUTPUT_DEVICE_NAME_LENGTH+1, "%s",  output.value()["id"].as<const char*>());
-    }
-
-    device["name"] =  deviceName;
+    device["name"] =  mqttDoc["name"];
     device["via_device"] = externalEEPROM.data.uuid;
 
     if(output.value().containsKey(F("area"))){
