@@ -415,6 +415,21 @@ void failureHandler_temperatureSensors(uint8_t address, managerTemperatureSensor
 */
 void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::changeState changeState){
 
+  char* state_topic = new char[MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_INPUT_STATE_PATTERN, inputPorts[portChannel.port-1].id, (portChannel.channel+portChannel.offset));
+
+  switch(changeState){
+    case managerInputs::changeState::CHANGE_STATE_NORMAL:
+      mqttClient.publish(state_topic, "NORMAL");
+    break;
+    case managerInputs::changeState::CHANGE_STATE_LONG_DURATION:
+      mqttClient.publish(state_topic, "LONG");
+    break;
+    case managerInputs::changeState::CHANGE_STATE_SHORT_DURATION:
+      mqttClient.publish(state_topic, "SHORT");
+    break;
+  }
+
   for(int i=0; i < IO_EXTENDER_COUNT_CHANNELS_PER_PORT; i++){
 
     if(inputPorts[portChannel.port-1].channels[i].channel == portChannel.channel){
@@ -429,7 +444,11 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
        
           for(int j=0; j < inputPorts[portChannel.port-1].channels[i].actions.size(); j++){
             if(inputPorts[portChannel.port-1].channels[i].actions.get(j).changeState == changeState){
-              actionOutputPort(inputPorts[portChannel.port-1].channels[i].actions.get(j).output, inputPorts[portChannel.port-1].channels[i].actions.get(j).action);
+              nsOutputs::set_result result = actionOutputPort(inputPorts[portChannel.port-1].channels[i].actions.get(j).output, inputPorts[portChannel.port-1].channels[i].actions.get(j).action);
+              
+              if(result == nsOutputs::set_result::EXCESSIVE){
+                mqttClient.publish(state_topic, "EXCESSIVE");
+              }
             }
           }
           break;
@@ -437,8 +456,6 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
       break;
     }
   }
-
-  log_i("[Simulated MQTT Message] A %i input change from client %s (port %i channel %i)", changeState, inputPorts[portChannel.port-1].id , portChannel.port, (portChannel.channel+portChannel.offset));
 }
 
 
