@@ -2838,8 +2838,6 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
   MatchState ms;
   ms.Target(topic);
 
-  log_i("\n=======================\nMQTT message arrived!\nTopic: [%s]\nPayload: [%s]\n=======================", topic, payload.c_str());
-
   if(ms.Match(MQTT_TOPIC_OUTPUT_SET_REGEX)){ //This is an output command request
 
     payload.toUpperCase();
