@@ -387,7 +387,7 @@ void eventHandler_temperature(char* location, float value){
   char* topic = new char[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
   snprintf(topic, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, externalEEPROM.data.uuid, location);
 
-  mqttClient.publish(topic, temperature);
+  mqttClient.publish(topic, temperature, true);
 };
 
 
