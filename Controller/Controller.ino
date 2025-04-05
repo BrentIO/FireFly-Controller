@@ -289,15 +289,12 @@ void setup() {
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced));
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota", http_handleOTA_POST));
-    httpServer.on("^\/api\/ota$", http_handleOTA);
     httpServer.on("/ui/version", http_handleUIVersion);
     setup_OtaFirmware();
   }else{
     log_e("configFS is not mounted");
     httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_configFSNotMunted);
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_configFSNotMunted);
-    httpServer.on("/api/ota", http_configFSNotMunted);
     httpServer.on("/api/controllers", http_configFSNotMunted);
     httpServer.on("/api/clients", http_configFSNotMunted);
     httpServer.on("/backup", http_configFSNotMunted);
@@ -2014,180 +2011,6 @@ void http_handleCert_DELETE(AsyncWebServerRequest *request){
 
 
 /**
- * Handles /ota requests
-*/
-void http_handleOTA(AsyncWebServerRequest *request){
-
-  switch(request->method()){
-
-    case ASYNC_HTTP_OPTIONS:
-      http_options(request);
-      break;
-
-    case ASYNC_HTTP_POST:
-
-      if(!request->hasHeader(F("visual-token"))){
-        http_unauthorized(request);
-        return;
-      }
-
-      if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
-        http_unauthorized(request);
-        return;
-      }
-
-      http_badRequest(request, F("Request requires a body")); //If there is no body in the request, it lands here
-      break;
-
-    case ASYNC_HTTP_GET:
-
-      http_handleOTA_GET(request);
-      break;
-
-    case ASYNC_HTTP_DELETE:
-
-      if(!request->hasHeader(F("visual-token"))){
-        http_unauthorized(request);
-        return;
-      }
-
-      if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
-        http_unauthorized(request);
-        return;
-      }
-
-      http_handleOTA_DELETE(request);
-      break;
-
-    default:
-      http_methodNotAllowed(request);
-      break;
-  }
-}
-
-
-/**
- * Handles OTA configuration POSTs
-*/
-void http_handleOTA_POST(AsyncWebServerRequest *request, JsonVariant doc){
-
-  if(request->method() == ASYNC_HTTP_OPTIONS){
-    http_options(request);
-    return;
-  }
-
-  if(!request->hasHeader(F("visual-token"))){
-      http_unauthorized(request);
-      return;
-  }
-
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str(), true)){
-    http_unauthorized(request);
-    return;
-  }
-
-  if(!doc.containsKey(F("url"))){
-    http_badRequest(request, F("Field url is required"));
-    return;
-  }
-
-  otaConfig otaConfig(configFS);
-
-  otaConfig.url = (const char*)doc["url"];
-  otaConfig.certificate = (const char*)doc["certificate"];
-
-  if(otaConfig.url.startsWith("https") == true && otaConfig.certificate == ""){
-    http_badRequest(request, F("https requires certificate"));
-    return;
-  }
-
-  switch(otaConfig.create()){
-
-    case otaConfig::SUCCESS_NO_ERROR:
-      setup_OtaFirmware();
-      eventLog.createEvent(F("OTA config created"));
-      request->send(201);
-      return;
-
-    case otaConfig::FILE_EXISTS:
-      http_badRequest(request, F("Configuration already exists"));
-      return;
-
-    case otaConfig::IO_ERROR:
-      http_error(request, F("I/O error"));
-      return;
-
-    default:
-      http_error(request, F("Unknown error"));
-      break;
-  }
-}
-
-
-/**
- * Handles OTA configuration GETs
-*/
-void http_handleOTA_GET(AsyncWebServerRequest *request){
-
-  otaConfig otaConfig(configFS);
-
-  switch(otaConfig.get()){
-
-    case otaConfig::FILE_NOT_EXISTS:
-      http_notFound(request);
-      return;
-
-    case otaConfig::IO_ERROR:
-      http_error(request, F("I/O error"));
-      return;
-
-    default:
-      break;
-  }
-
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
-  StaticJsonDocument<192> doc;
-
-  doc["url"] = otaConfig.url;
-
-  if(!otaConfig.certificate.isEmpty()){
-      doc["certificate"] = otaConfig.certificate;
-  }
-
-  serializeJson(doc, *response);
-
-  request->send(response);
-
-}
-
-
-/**
- * Handles OTA configuration DELETEs
-*/
-void http_handleOTA_DELETE(AsyncWebServerRequest *request){
-
-  otaConfig otaConfig(configFS);
-
-  switch(otaConfig.destroy()){
-
-    case otaConfig::FILE_NOT_EXISTS:
-      http_notFound(request);
-      break;
-
-    case otaConfig::IO_ERROR:
-      http_error(request, F("I/O error"));
-      break;
-
-    default:
-      otaFirmware.enabled = false;
-      eventLog.createEvent(F("OTA config deleted"));
-      request->send(204);
-      break;
-  }
-}
-
-
-/**
  * Handles force OTA force update requests using the payload provided
 */
 void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
@@ -2261,6 +2084,20 @@ void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
 */
 void setup_OtaFirmware(){
 
+  if(strcmp(externalEEPROM.data.uuid, "") == 0){
+    return;
+  }
+
+  if(configFS_isMounted == false){
+    return;
+  }
+
+  String filename = CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
+
+  if(!configFS.exists(filename)){
+    return;
+  }
+
   otaFirmware.setSPIFFsPartitionLabel("www");
   otaFirmware.setCertFileSystem(nullptr);
 
@@ -2269,22 +2106,43 @@ void setup_OtaFirmware(){
     otaFirmware.setExtraHTTPHeader(F("product_id"), externalEEPROM.data.product_id);
   }
 
-  otaConfig otaConfig(configFS);
+  StaticJsonDocument<16> filter;
+  filter["ota"] = true;
 
-  if(otaConfig.get() != otaConfig::SUCCESS_NO_ERROR){
+  StaticJsonDocument<256> doc;
+
+  File file = configFS.open(filename, "r");
+
+  DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
+
+  if (error) {
+    char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, OLED_CHARACTERS_PER_LINE+1, "OTA parse err %s", error.c_str());
+    log_e("%s", text);
+    eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return;
   }
 
-  otaFirmware.setManifestURL(otaConfig.url.c_str());
-  otaConfig.certificate = CONFIGFS_PATH_CERTS + (String)"/" + otaConfig.certificate;
+  String url = doc["ota"]["url"];
+  const char* certificate = doc["ota"]["certificate"];
 
-  if(otaConfig.url.startsWith(F("https"))){
-    if(!configFS.exists(otaConfig.certificate)){
+  if(!doc.containsKey(F("ota"))){
+    return;
+  }
+
+  if(!doc["ota"].containsKey(F("url"))){
+    return;
+  }
+
+  otaFirmware.setManifestURL(url.c_str());
+
+  if(url.startsWith(F("https"))){
+    if(!configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + certificate)){
       eventLog.createEvent(F("OTA cert missing"), EventLog::LOG_LEVEL_ERROR);
       return;
     }
 
-    otaFirmware.setRootCA(new CryptoFileAsset(otaConfig.certificate.c_str(), &configFS));
+    otaFirmware.setRootCA(new CryptoFileAsset((CONFIGFS_PATH_CERTS + (String)"/" + certificate).c_str(), &configFS));
 
   }
 
@@ -2342,20 +2200,7 @@ void otaFirmware_checkPending(){
     otaFirmware.pending.remove(i);
   }
 
-  otaConfig otaConfig(configFS);
-
-  if(otaConfig.get() != otaConfig::SUCCESS_NO_ERROR){
-    eventLog.createEvent(F("OTA cert not restored"), EventLog::LOG_LEVEL_ERROR);
-    otaFirmware.enabled = false;
-    eventLog.createEvent(F("OTA update disabled"));
-    return;
-  }
-
-  otaConfig.certificate = CONFIGFS_PATH_CERTS + (String)"/" + otaConfig.certificate;
-
-  if(otaConfig.url.startsWith("https")){
-      otaFirmware.setRootCA(new CryptoFileAsset(otaConfig.certificate.c_str(), &configFS));
-  }
+  setup_OtaFirmware();
 
 }
 

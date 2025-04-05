@@ -1024,6 +1024,7 @@ components:
           description: File name for the certificate that should be used when https is specified.  The existence of the certificate will not be checked until the OTA config is reloaded (typically on reboot)
           examples: 
             - mycert.pem
+          maxLength: 31
       required:
         - url
 
