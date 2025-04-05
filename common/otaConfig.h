@@ -33,6 +33,7 @@
             using esp32FOTA::esp32FOTA; /* Inherit the base esp32FOTA */
             uint64_t lastCheckedTime = 0; /* The time (millis() or equivalent) when the firmware was last checked against the remote system */
             bool enabled = false; /* Determines if the OTA firmware automation should be run */
+            bool updateInProcess = false;
             LinkedList<forcedOtaUpdateConfig> pending; /* List of pending updates */
     };
 

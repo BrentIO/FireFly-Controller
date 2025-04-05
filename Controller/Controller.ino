@@ -342,7 +342,9 @@ void loop() {
   if(otaFirmware.enabled && esp_timer_get_time() > 30000000){ //Wait 30 seconds after booting before checking the firmware
 
     if((esp_timer_get_time() - otaFirmware.lastCheckedTime) / 1000000 > FIRMWARE_CHECK_SECONDS || otaFirmware.lastCheckedTime == 0){
-      otaFirmware.execHTTPcheck();
+      if(otaFirmware.updateInProcess == false){
+        otaFirmware.execHTTPcheck();
+      }
       otaFirmware.lastCheckedTime = esp_timer_get_time();
     }
   }
@@ -2189,6 +2191,10 @@ void otaFirmware_checkPending(){
     return;
   }
 
+  if(otaFirmware.updateInProcess == true){
+    return;
+  }
+
   for(int i=0; i < otaFirmware.pending.size(); i++){
 
     exEsp32FOTA::esp32FOTA forceFirmwareUpdate;
@@ -2234,6 +2240,8 @@ void otaFirmware_checkPending(){
 */
 void eventHandler_otaFirmwareProgress(size_t progress, size_t size){
 
+  otaFirmware.updateInProcess = true;
+
   if(progress == 0){
     eventLog.createEvent("OTA firmware started", EventLog::LOG_LEVEL_NOTIFICATION);
     oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
@@ -2266,6 +2274,8 @@ void eventHandler_otaFirmwareFinished(int partition, bool needs_restart){
       eventLog.createEvent(F("Rebooting..."), EventLog::LOG_LEVEL_NOTIFICATION);
       delay(5000);
   }
+
+  otaFirmware.updateInProcess = false;
 }
 
 
