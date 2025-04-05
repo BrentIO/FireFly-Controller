@@ -2191,24 +2191,29 @@ void otaFirmware_checkPending(){
 
   for(int i=0; i < otaFirmware.pending.size(); i++){
 
+    exEsp32FOTA::esp32FOTA forceFirmwareUpdate;
+    forceFirmwareUpdate.setProgressCb(eventHandler_otaFirmwareProgress);
+    forceFirmwareUpdate.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
+    forceFirmwareUpdate.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
+
     bool updateSuccess = false;
 
     if(otaFirmware.pending.get(i).url.startsWith("https:")){
       otaFirmware.pending.get(i).certificate = CONFIGFS_PATH_CERTS + (String)"/" + otaFirmware.pending.get(i).certificate;
-      otaFirmware.setRootCA(new CryptoFileAsset(otaFirmware.pending.get(i).certificate.c_str(), &configFS));
+      forceFirmwareUpdate.setRootCA(new CryptoFileAsset(otaFirmware.pending.get(i).certificate.c_str(), &configFS));
     }
 
     switch(otaFirmware.pending.get(i).type){
 
       case OTA_UPDATE_APP:
         eventLog.createEvent(F("OTA app forced"));
-        updateSuccess = otaFirmware.forceUpdate(otaFirmware.pending.get(i).url.c_str(), false);
+        updateSuccess = forceFirmwareUpdate.forceUpdate(otaFirmware.pending.get(i).url.c_str(), false);
         break;
 
 
       case OTA_UPDATE_SPIFFS:
         eventLog.createEvent(F("OTA SPIFFS forced"));
-        updateSuccess = otaFirmware.forceUpdateSPIFFS(otaFirmware.pending.get(i).url.c_str(), false);
+        updateSuccess = forceFirmwareUpdate.forceUpdateSPIFFS(otaFirmware.pending.get(i).url.c_str(), false);
         break;
     }
 
@@ -2218,8 +2223,6 @@ void otaFirmware_checkPending(){
 
     otaFirmware.pending.remove(i);
   }
-
-  setup_OtaFirmware();
 
 }
 
