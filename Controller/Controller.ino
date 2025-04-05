@@ -2041,7 +2041,7 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
   newFirmwareRequest.url = doc["url"].as<String>();
   newFirmwareRequest.certificate = doc["certificate"].as<String>();
 
-  if(!newFirmwareRequest.url.startsWith("http")){
+  if(!newFirmwareRequest.url.startsWith("http:") && !newFirmwareRequest.url.startsWith("https:")){
     http_badRequest(request, F("Bad url; http or https required"));
     return;
   }
