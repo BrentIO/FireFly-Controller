@@ -2039,7 +2039,6 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
 
   forcedOtaUpdateConfig newFirmwareRequest;
   newFirmwareRequest.url = doc["url"].as<String>();
-  newFirmwareRequest.certificate = doc["certificate"].as<String>();
 
   if(!newFirmwareRequest.url.startsWith("http:") && !newFirmwareRequest.url.startsWith("https:")){
     http_badRequest(request, F("Bad url; http or https required"));
@@ -2051,6 +2050,8 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
       http_badRequest(request, F("https requires certificate"));
       return;
     }
+
+    newFirmwareRequest.certificate = doc["certificate"].as<String>();
 
     if(newFirmwareRequest.certificate == ""){
       http_badRequest(request, F("Certificate cannot be empty"));
@@ -2125,20 +2126,31 @@ void setup_OtaFirmware(){
     return;
   }
 
-  String url = doc["ota"]["url"];
-  const char* certificate = doc["ota"]["certificate"];
-
   if(!doc.containsKey(F("ota"))){
     return;
   }
 
   if(!doc["ota"].containsKey(F("url"))){
+    eventLog.createEvent("OTA cfg no url");
+    return;
+  }
+
+  String url = doc["ota"]["url"];
+
+  if(!url.startsWith("http:") && !url.startsWith("https:")){
+    eventLog.createEvent("OTA cfg inv proto");
     return;
   }
 
   otaFirmware.setManifestURL(url.c_str());
 
   if(url.startsWith(F("https"))){
+    if(!doc["ota"].containsKey(F("certificate"))){
+      eventLog.createEvent("OTA cfg no cert");
+      return;
+    }
+
+    const char* certificate = doc["ota"]["certificate"];
     if(!configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + certificate)){
       eventLog.createEvent(F("OTA cert missing"), EventLog::LOG_LEVEL_ERROR);
       return;
