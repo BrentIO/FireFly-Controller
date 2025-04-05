@@ -2165,7 +2165,8 @@
                     method: 'POST',
                     body: JSON.stringify(payload),
                     headers: {
-                        "visual-token":controllerLS.visualToken
+                        "visual-token":controllerLS.visualToken,
+                        "Content-Type": "application/json"
                     }
                 });
 
