@@ -2242,12 +2242,26 @@ void eventHandler_otaFirmwareProgress(size_t progress, size_t size){
 
   otaFirmware.updateInProcess = true;
 
+  float percentage = ((float)progress/(float)size);
+
   if(progress == 0){
     eventLog.createEvent("OTA firmware started", EventLog::LOG_LEVEL_NOTIFICATION);
     oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
   }
 
-  oled.setProgressBar(((float)progress/(float)size));
+  oled.setProgressBar(percentage);
+
+  char* topic = new char[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+  snprintf(topic, MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+
+  StaticJsonDocument<32> doc;
+  doc["in_progress"] = true;
+  doc["update_percentage"] = int(percentage*100);
+
+  char buffer[256];
+  serializeJson(doc, buffer);
+
+  mqttClient.publish(topic, buffer);
 }
 
 
@@ -2258,6 +2272,17 @@ void eventHandler_otaFirmwareProgress(size_t progress, size_t size){
 void eventHandler_otaFirmwareFailed(int partition){
   log_e("Failed partition: [%i]", partition);
   eventLog.createEvent("OTA firmware failed", EventLog::LOG_LEVEL_NOTIFICATION);
+
+  char* topic = new char[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+  snprintf(topic, MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+
+  StaticJsonDocument<16> doc;
+  doc["in_progress"] = false;
+
+  char buffer[256];
+  serializeJson(doc, buffer);
+
+  mqttClient.publish(topic, buffer);
 }
 
 
@@ -2728,7 +2753,19 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
   }
 
   if(ms.Match(MQTT_TOPIC_UPDATE_SET_REGEX)){ //This is an update command request
-    log_i("I will find queue the update!");
+
+    char* topic = new char[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+    snprintf(topic, MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+
+    StaticJsonDocument<16> doc;
+    doc["in_progress"] = true;
+  
+    char buffer[256];
+    serializeJson(doc, buffer);
+  
+    mqttClient.publish(topic, buffer);
+
+    otaFirmware.execOTA();
     return;
   } 
 }
@@ -3388,6 +3425,9 @@ void mqtt_publishUpdateAvailable(JsonVariant &updateDoc){
   if(updateDoc.containsKey(F("release_url"))){
     mqttDoc["release_url"] = updateDoc["release_url"].as<const char*>();
   }
+
+  mqttDoc["in_progress"] = false;
+  mqttDoc["update_percentage"] = NULL;
 
   char* topic = new char[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
   snprintf(topic, MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
