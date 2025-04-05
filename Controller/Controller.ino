@@ -2050,7 +2050,7 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
     return;
   }
 
-  if(newFirmwareRequest.url.startsWith("https")){
+  if(newFirmwareRequest.url.startsWith("https:")){
     if(!doc.containsKey(F("certificate"))){
       http_badRequest(request, F("https requires certificate"));
       return;
@@ -2193,7 +2193,7 @@ void otaFirmware_checkPending(){
 
     bool updateSuccess = false;
 
-    if(otaFirmware.pending.get(i).url.startsWith("https")){
+    if(otaFirmware.pending.get(i).url.startsWith("https:")){
       otaFirmware.pending.get(i).certificate = CONFIGFS_PATH_CERTS + (String)"/" + otaFirmware.pending.get(i).certificate;
       otaFirmware.setRootCA(new CryptoFileAsset(otaFirmware.pending.get(i).certificate.c_str(), &configFS));
     }
