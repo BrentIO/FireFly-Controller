@@ -287,8 +287,10 @@ void setup() {
     httpServer.on("/api/provisioning", http_handleProvisioning);
     httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced));
+    httpServer.on("/api/ota/app", ASYNC_HTTP_OPTIONS, http_options);
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced_POST));
+    httpServer.on("/api/ota/spiffs", ASYNC_HTTP_OPTIONS, http_options);
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced_POST));
     httpServer.on("/ui/version", http_handleUIVersion);
     setup_OtaFirmware();
   }else{
@@ -2013,12 +2015,7 @@ void http_handleCert_DELETE(AsyncWebServerRequest *request){
 /**
  * Handles force OTA force update requests using the payload provided
 */
-void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
-
-  if(request->method() == ASYNC_HTTP_OPTIONS){
-    http_options(request);
-    return;
-  }
+void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
   if(!request->hasHeader(F("visual-token"))){
       http_unauthorized(request);
@@ -2030,7 +2027,12 @@ void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-   if(!doc.containsKey(F("url"))){
+  if(request->method() != ASYNC_HTTP_POST){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  if(!doc.containsKey(F("url"))){
     http_badRequest(request, F("Field url is required"));
     return;
   }
