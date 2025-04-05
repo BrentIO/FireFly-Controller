@@ -2040,6 +2040,11 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
   forcedOtaUpdateConfig newFirmwareRequest;
   newFirmwareRequest.url = doc["url"].as<String>();
 
+  if(!newFirmwareRequest.url.endsWith(".bin")){
+    http_badRequest(request, F("Bad url; File must be of type '.bin'"));
+    return;
+  }
+
   if(!newFirmwareRequest.url.startsWith("http:") && !newFirmwareRequest.url.startsWith("https:")){
     http_badRequest(request, F("Bad url; http or https required"));
     return;
