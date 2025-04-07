@@ -1968,15 +1968,30 @@ void http_handleCert(AsyncWebServerRequest *request){
 */
 void http_handleCert_GET(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader(F("visual-token"))){
+if(!request->hasHeader(F("visual-token")) && !request->hasHeader(F("mac-address"))){
     http_unauthorized(request);
     return;
-  }
+}
 
+if(request->hasHeader(F("visual-token"))){
   if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
     http_unauthorized(request);
     return;
   }
+}
+
+if(request->hasHeader(F("mac-address"))){
+
+  if(provisioningMode.getStatus() != true){
+    http_badRequest(request, F("Provisioning mode inactive"));
+    return;
+  }
+
+  if(!authClientWithMacAddress(request->pathArg(0).c_str(), request->header(F("mac-address")).c_str())){
+    http_forbiddenRequest(request, F("Request will not be fulfilled"));
+    return;
+  }
+}
 
   if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0))){
 
