@@ -46,7 +46,7 @@ let extendedClients = [];
 
 async function drawAllControllerInputs(){
 
-    await getExtendedClients();
+    extendedClients = await getExtendedClients();
 
     var controllers = await db.controllers.orderBy('name').toArray();
 
@@ -142,7 +142,7 @@ async function drawAvailableClients(){
 
     assignedClients = [];
 
-    await getExtendedClients();
+    extendedClients = await getExtendedClients();
 
     var clients = await db.clients.orderBy('name').toArray();
 
