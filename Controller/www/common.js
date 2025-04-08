@@ -860,6 +860,16 @@ async function getExtendedClients(){
 }
 
 
+async function checkIOConfiguration(){
+
+    var controllers = await db.controllers.toArray()
+    
+    controllers.forEach((controller) =>{
+        getControllerPOSTPayload(controller.id);
+    });
+}
+
+
 async function getControllerPOSTPayload(id){
 
     const maximumLength_name = 20;
