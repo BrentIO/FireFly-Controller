@@ -258,6 +258,28 @@ void setup() {
   if (configFS.begin(false, "/configFS", (uint8_t)10U, "config"))
   {
     configFS_isMounted = true;
+
+    if(!configFS.exists(CONFIGFS_PATH_CERTS + (String)"/")){
+      if(!configFS.mkdir(CONFIGFS_PATH_CERTS)){
+        eventLog.createEvent(F("Err mkdir certs"), EventLog::LOG_LEVEL_ERROR);
+        configFS_isMounted = false;
+      };
+    }
+
+    if(!configFS.exists(CONFIGFS_PATH_CONTROLLERS + (String)"/")){
+      if(!configFS.mkdir(CONFIGFS_PATH_CONTROLLERS)){
+        eventLog.createEvent(F("Err mkdir ctlrs"), EventLog::LOG_LEVEL_ERROR);
+        configFS_isMounted = false;
+      };
+    }
+
+    if(!configFS.exists(CONFIGFS_PATH_CLIENTS + (String)"/")){
+      if(!configFS.mkdir(CONFIGFS_PATH_CLIENTS)){
+        eventLog.createEvent(F("Err mkdir clients"), EventLog::LOG_LEVEL_ERROR);
+        configFS_isMounted = false;
+      };
+    }
+
   }
   else{
     eventLog.createEvent(F("configFS mount fail"), EventLog::LOG_LEVEL_ERROR);
@@ -1138,13 +1160,6 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
     return;
   }
 
-  if(!configFS.exists(CONFIGFS_PATH_CONTROLLERS + (String)"/")){
-    if(!configFS.mkdir(CONFIGFS_PATH_CONTROLLERS + (String)"/")){
-      http_error(request, F("Unable to create CONFIGFS_PATH_CONTROLLERS directory"));
-      return;
-    };
-  }
-
   File file = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/" + request->pathArg(0) , "w");
 
   if(!file){
@@ -1370,13 +1385,6 @@ void http_handleClients_PUT(AsyncWebServerRequest *request, JsonVariant doc){
   if(request->pathArg(0).length() != 36){
     http_badRequest(request, F("UUID must be exactly 36 characters"));
     return;
-  }
-
-  if(!configFS.exists(CONFIGFS_PATH_CLIENTS + (String)"/")){
-    if(!configFS.mkdir(CONFIGFS_PATH_CLIENTS + (String)"/")){
-      http_error(request, F("Unable to create CONFIGFS_PATH_CLIENTS directory"));
-      return;
-    };
   }
 
   File file = configFS.open(CONFIGFS_PATH_CLIENTS + (String)"/" + request->pathArg(0) , "w");
@@ -1878,10 +1886,6 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
   }
 
   if(!index){
-
-    if(!configFS.exists(CONFIGFS_PATH_CERTS)){
-      configFS.mkdir(CONFIGFS_PATH_CERTS);
-    }
 
     if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + filename)){
       http_forbiddenRequest(request, F("Certificate already exists"));
