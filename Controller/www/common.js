@@ -844,7 +844,7 @@ function move_array(theArray, from, to) {
 
 async function getExtendedClients(){
 
-    var extendedClients = [];
+    let extendedClients = [];
 
     clientList =  await db.clients.orderBy('name').toArray()
 
@@ -877,7 +877,7 @@ async function getControllerPOSTPayload(id){
     const maximumLength_id = 8;
     const maximumLength_icon = 64;
 
-    var extendedClients = await getExtendedClients();
+    let extendedClients = await getExtendedClients();
 
     var payload = await db.controllers.where("id").equals(id).toArray();
 
@@ -1045,7 +1045,7 @@ async function getClientPOSTPayload(id){
     var client = await db.clients.where("id").equals(id).first();
 
     if(typeof client.extends != "undefined"){
-        var extendedClient = await db.clients.where("id").equals(client.extends).first();
+        let extendedClient = await db.clients.where("id").equals(client.extends).first();
 
         for(var i = 0; i < extendedClient.hids.length; i++){
             client.hids.push(extendedClient.hids[i]);
