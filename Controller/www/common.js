@@ -895,6 +895,7 @@ async function checkConfiguration(){
             }
         }),
         clients.map(async client =>{
+
             if(client.mac == "ff:ff:ff:ff:ff:ff"){
                 errorList.push(`Client "${client.name}" has an invalid MAC address and will not be able to be provisioned.`)
             }
@@ -902,6 +903,42 @@ async function checkConfiguration(){
             if(client.hids.length == 0){
                 errorList.push(`Client "${client.name}" does not have any buttons or switches defined.`);
             }
+
+            client.hids.forEach(async (hid) =>{
+                let i = 0;
+                hid.actions.forEach(async (action) => {
+                    i++;
+                    action.circuit = await db.circuits.where('id').equals(action.circuit).first()
+                    action.circuit.relay_model = await db.relay_models.where('id').equals(action.circuit.relay_model).first()
+                    action.circuit.area = await db.areas.where('id').equals(action.circuit.area).first()
+
+                    if(action.action != "TOGGLE" && action.circuit.relay_model.type == "BINARY"){
+                        
+                        switch (action.action){
+                            case "INCREASE":
+                                action.action = "Increase"; 
+                                break;
+                            case "INCREASE_MAXIMUM":
+                                action.action = "Increase Maximum";
+                                break;
+                            case "DECREASE":
+                                action.action = "Decrease";
+                                break;
+                            case "DECREASE_MAXIMUM":
+                                action.action = "Decrease Maximum";
+                                break;
+                            case "TOGGLE":
+                                action.action = "Toggle";
+                                break;
+                            default:
+                                break;
+                        }
+
+                        errorList.push(`Client "${client.name}" channel ${i} has an invalid action of "${action.action}" on binary circuit "${action.circuit.area.name} ${action.circuit.description} (${action.circuit.name})."`);
+                    }
+                })
+                
+            })
         }),
         breakers.map(async breaker =>{
 
