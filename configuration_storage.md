@@ -1,8 +1,6 @@
 # About Controller and Client Configurations
 Controllers store data on the configFS file system as minified JSON files, stored by the device's UUID in the `/configFS/{type}/` directory, where `{type}` is either `controllers` or `clients`. All controllers will have definitions for all other controllers and clients in their own file system for redundancy.
 
-Configurations for breakers and relays are stored in the `/configFS/` directory as `breakers.json` and `relays.json`, respectively.
-
 ## Configuration File Contents
 The configurations contain only override data for each entity.  Default data is not populated should not be populated in the file.  For example, an input that is normally open, enabled, and does not monitor for a long change should not be populated in the file, because all of these parameters match defaults.
 
