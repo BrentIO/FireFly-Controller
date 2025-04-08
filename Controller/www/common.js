@@ -937,7 +937,8 @@ async function getControllerPOSTPayload(id){
                 client.channels[i+1]['enabled'] = false;
             }
 
-            client.hids[i].actions.forEach((action) =>{
+            client.hids[i].actions.forEach(async (action) => {
+                var matched = false;
                 for(const [outputPort, circuit] of Object.entries(payload[0].outputs)){
                     if(circuit.id == action.circuit){
                         if("actions" in client.channels[i+1] == false){
@@ -957,8 +958,15 @@ async function getControllerPOSTPayload(id){
                             }
                         }
 
+                        matched = true
                         client.channels[i+1]['actions'].push(action);
                     }
+                }
+
+                if(!matched){
+                    var requestedCircuit = await db.circuits.where("id").equals(action.circuit).first();
+                    requestedCircuit.area = await db.areas.where("id").equals(requestedCircuit.area).first();
+                    showToast(`Client "${client.id}" channel ${i+1} has an input action for circuit "${requestedCircuit.area.name} ${requestedCircuit.description} (${requestedCircuit.name})", but that circuit is not assigned to controller "${payload[0].name}."  The requested action will be ignored.`, type="warning", options={'autohide':false});
                 }
             });
         }
