@@ -181,8 +181,8 @@
     .card{
         background-color: #c0e7c3;
         text-align: center;
-        min-height: 130px;
-        max-width: 130px;
+        height: 130px;
+        width: 130px;
     }
 }
 
@@ -191,8 +191,8 @@
     .card{
         background-color: #ffc885;
         text-align: center;
-        min-height: 130px;
-        max-width: 130px;
+        height: 130px;
+        width: 130px;
     }
     .extendedClient{
         background-color: #ffefdb;

@@ -113,7 +113,7 @@
 
                     newOutputPort = `
                         <div class="col">
-                            <div class="outputPort assignedOutputPort" draggable="true" controllerId="${controller.id}" port="${i}" circuitId="${controller.outputs[i].id}" ondragstart="assignedCircuitDragStart(event);" ondragover="{event.preventDefault();}" ondragend="assignedCircuitDragEnd(event);">
+                            <div class="outputPort assignedOutputPort overflow-auto" draggable="true" controllerId="${controller.id}" port="${i}" circuitId="${controller.outputs[i].id}" ondragstart="assignedCircuitDragStart(event);" ondragover="{event.preventDefault();}" ondragend="assignedCircuitDragEnd(event);">
                                 <div class="outputPortLabel">Port ${i}</div>
                                 <div class="outputPortBody h3" id="controller_${controller.id}_port_${i}">${controller.outputs[i].name}</div>
                                 <div class="additionalDetail">${controller.outputs[i].area.name}</div>
@@ -161,7 +161,7 @@
 
             newAvailableCircuit = `
                 <div class="availableCircuit col">
-                    <div class="card mb-3" id="circuit_${circuit.id}" circuitId="${circuit.id}" draggable="true" ondragstart="availableCircuitOnDragStart(event);">
+                    <div class="card mb-3  overflow-auto" id="circuit_${circuit.id}" circuitId="${circuit.id}" draggable="true" ondragstart="availableCircuitOnDragStart(event);">
                         <div class="card-body">
                             <div class="card-title mb-3 h3">${circuit.name}</div>
                             <div>${circuit.area.name}</div>

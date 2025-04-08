@@ -118,7 +118,7 @@ async function drawAllControllerInputs(){
 
                 newInputPort = `
                     <div class="col">
-                        <div class="inputPort assignedInputPort" id="controller_${controller.id}_port_${j}" draggable="true" controllerId="${controller.id}" port="${j}" clientId="${controller.inputs[j].id}" controllerAssignmentRestriction="${controllerAssignmentRestriction??""}" ondragstart="assignedClientDragStart(event);" ondragover="{event.preventDefault();}" ondragend="assignedClientDragEnd(event);">
+                        <div class="inputPort assignedInputPort overflow-auto" id="controller_${controller.id}_port_${j}" draggable="true" controllerId="${controller.id}" port="${j}" clientId="${controller.inputs[j].id}" controllerAssignmentRestriction="${controllerAssignmentRestriction??""}" ondragstart="assignedClientDragStart(event);" ondragover="{event.preventDefault();}" ondragend="assignedClientDragEnd(event);">
                             <div class="inputPortLabel">Port ${j}</div>
                             <div class="inputPortBody h3" >${controller.inputs[j].name}</div>
                             <div class="additionalDetail">${controller.inputs[j].area.name}</div>
@@ -176,7 +176,7 @@ async function drawAvailableClients(){
 
         newAvailableClient = `
             <div class="availableClient col">
-                <div class="card mb-3" id="client_${clients[i].id}" clientId="${clients[i].id}" controllerAssignmentRestriction="${controllerAssignmentRestriction??""}" draggable="true" ondragstart="availableClientOnDragStart(event);">
+                <div class="card mb-3 overflow-auto" id="client_${clients[i].id}" clientId="${clients[i].id}" controllerAssignmentRestriction="${controllerAssignmentRestriction??""}" draggable="true" ondragstart="availableClientOnDragStart(event);">
                     <div class="card-body">
                         <div class="card-title mb-3 h3">${clients[i].name}</div>
                         <div>${clients[i].area.name}</div>
