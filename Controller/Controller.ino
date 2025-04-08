@@ -2619,6 +2619,11 @@ void setupMQTT(){
   mqttClient.setCallback_Disconnect(eventHandler_mqttDisconnect);
 
   String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
+
+  if(!configFS.exists(filename)){
+    return;
+  }
+
   File file = configFS.open(filename, "r");
 
   StaticJsonDocument<48> filter;
