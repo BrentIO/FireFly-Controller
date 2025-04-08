@@ -860,13 +860,85 @@ async function getExtendedClients(){
 }
 
 
-async function checkIOConfiguration(){
+async function checkConfiguration(){
 
-    var controllers = await db.controllers.toArray()
-    
-    controllers.forEach((controller) =>{
-        getControllerPOSTPayload(controller.id);
+    let errorList=[];
+    assignedClients = [];
+    assignedCircuits = [];
+
+    var controllers = await db.controllers.toArray();
+    var extendedClientIds = await getExtendedClients();
+    var clients = await db.clients.where('id').noneOf(extendedClientIds).toArray();
+    var breakers = await db.breakers.toArray();
+    await Promise.all(breakers.map(async breaker => {
+        [breaker.circuits] = await Promise.all([
+            db.circuits.where('breaker').equals(breaker.id).toArray()
+        ])
+    }));
+
+    await Promise.all(
+        controllers.map(async controller => {
+            await Promise.all([
+                response = await getControllerPOSTPayload(controller.id, true),
+            ])
+
+            response.forEach((entry) => {
+                errorList.push(entry);
+            })
+
+            for (const [key, value] of Object.entries(controller.inputs)) {
+                assignedClients.push(value);
+            }
+
+            for (const [key, value] of Object.entries(controller.outputs)) {
+                assignedCircuits.push(value);
+            }
+        }),
+        clients.map(async client =>{
+            if(client.mac == "ff:ff:ff:ff:ff:ff"){
+                errorList.push(`Client "${client.name}" has an invalid MAC address and will not be able to be provisioned.`)
+            }
+
+            if(client.hids.length == 0){
+                errorList.push(`Client "${client.name}" does not have any buttons or switches defined.`);
+            }
+        }),
+        breakers.map(async breaker =>{
+
+            breaker.load_amperage = 0;
+
+            breaker.circuits.forEach((circuit) => {
+                breaker.load_amperage = parseInt(breaker.load_amperage) + parseInt(circuit.load_amperage);
+            });
+
+            breaker.utilization = Math.round((breaker.load_amperage / breaker.amperage) * 100);
+
+            if(breaker.utilization > 80){
+                errorList.push(`Breaker "${breaker.name}" has a utilization of ${breaker.utilization}%, which may not be safe.`);
+            }
+        })
+    );
+
+    var unAssignedClients = await db.clients.where('id').noneOf(assignedClients).toArray();
+
+    unAssignedClients.forEach((client)=>{
+        errorList.push(`Client ${client.name} has not been assigned to an input.`);
     });
+
+
+    var unAssignedCircuits = await db.circuits.where('id').noneOf(assignedCircuits).toArray();
+
+    unAssignedCircuits.forEach((circuit)=>{
+        errorList.push(`Circuit ${circuit.name} has not been assigned to an output.`);
+    });
+
+    errorList.forEach((entry) =>{
+        showToast(entry, type="warning", options={'autohide':false})
+    })
+
+    if(errorList.length == 0){
+        showToast("Configuration is OK!");
+    }
 }
 
 
