@@ -966,7 +966,7 @@ async function getControllerPOSTPayload(id){
                 if(!matched){
                     var requestedCircuit = await db.circuits.where("id").equals(action.circuit).first();
                     requestedCircuit.area = await db.areas.where("id").equals(requestedCircuit.area).first();
-                    showToast(`Client "${client.id}" channel ${i+1} has an input action for circuit "${requestedCircuit.area.name} ${requestedCircuit.description} (${requestedCircuit.name})", but that circuit is not assigned to controller "${payload[0].name}."  The requested action will be ignored.`, type="warning", options={'autohide':false});
+                    showToast(`Client '${client.id}' channel ${i+1} has an invalid action for circuit "${requestedCircuit.area.name} ${requestedCircuit.description} (${requestedCircuit.name})."\n\nThe client is assigned to controller '${payload[0].name}', but the circuit is not assigned to controller '${payload[0].name}'.\n\nThe action will be ignored.`, type="warning", options={'autohide':false});
                 }
             });
         }
