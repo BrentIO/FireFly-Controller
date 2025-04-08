@@ -1629,10 +1629,6 @@
 
                 breaker.utilization = Math.round((breaker.load_amperage / breaker.amperage) * 100);
 
-                if(breaker.utilization > 80){
-                    showToast(`Breaker "${breaker.name}" has a utilization of ${breaker.utilization}%, which may not be safe.`, type='danger');
-                }
-
             });
 
             var controllerLS = new controllerLocalStorage(id);
@@ -1762,6 +1758,8 @@
                 await drawManagedControllers();
                 return;
             }
+
+            checkIOConfiguration();
 
             stepProgressText.innerText = `Deleting existing controllers...`;
             updateStatusBar(stepProgressBar,0);
@@ -1958,14 +1956,6 @@
             for(var i = 0; i < clientsToPush.length; i++){
 
                 updateStatusBar(stepProgressBar,parseInt((i/clientsToPush.length)*100));
-
-                if(clientsToPush[i].mac == "ff:ff:ff:ff:ff:ff"){
-                    showToast(`Client "${clientsToPush[i].name}" has an invalid MAC address and will not be able to be provisioned.`, type="warning", options={'autohide':false});
-                }
-
-                if(clientsToPush[i].hids.length == 0){
-                    showToast(`Client "${clientsToPush[i].name}" does not have any buttons or switches defined.`, type="warning", options={'autohide':false});
-                }
 
                 currentStepText.innerText = `Pushing client ${clientsToPush[i].uuid}...`;
 
@@ -2351,7 +2341,6 @@
 
     drawManagedControllers();
     getControllerPIDs();
-    checkIOConfiguration();
 
 </script>
 
