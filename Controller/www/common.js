@@ -870,12 +870,13 @@ async function checkIOConfiguration(){
 }
 
 
-async function getControllerPOSTPayload(id){
+async function getControllerPOSTPayload(id, returnOnlyErrors=false){
 
     const maximumLength_name = 20;
     const maximumLength_area = 20;
     const maximumLength_id = 8;
     const maximumLength_icon = 64;
+    let errorList = [];
 
     let extendedClients = await getExtendedClients();
 
@@ -966,7 +967,7 @@ async function getControllerPOSTPayload(id){
                 if(!matched){
                     var requestedCircuit = await db.circuits.where("id").equals(action.circuit).first();
                     requestedCircuit.area = await db.areas.where("id").equals(requestedCircuit.area).first();
-                    showToast(`Client '${client.id}' channel ${i+1} has an invalid action for circuit "${requestedCircuit.area.name} ${requestedCircuit.description} (${requestedCircuit.name})."\n\nThe client is assigned to controller '${payload[0].name}', but the circuit is not assigned to controller '${payload[0].name}'.\n\nThe action will be ignored.`, type="warning", options={'autohide':false});
+                    errorList.push(`Client '${client.id}' channel ${i+1} has an invalid action for circuit "${requestedCircuit.area.name} ${requestedCircuit.description} (${requestedCircuit.name})."\n\nThe client is assigned to controller '${payload[0].name}', but the circuit is not assigned to controller '${payload[0].name}'.\n\nThe action will be ignored.`);
                 }
             });
         }
@@ -1039,7 +1040,13 @@ async function getControllerPOSTPayload(id){
         }
     }
 
-    return payload[0];
+    
+    if(!returnOnlyErrors){
+        return payload[0];
+    }else{
+        return errorList;
+    }
+    
 }
 
 
