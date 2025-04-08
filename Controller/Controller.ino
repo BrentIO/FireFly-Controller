@@ -63,9 +63,8 @@ bool wwwFS_isMounted = false;
 bool configFS_isMounted = false;
 
 #define CONFIGFS_PATH_CERTS "/certs"
-#define CONFIGFS_PATH_DEVICES "/devices"
-#define CONFIGFS_PATH_DEVICES_CONTROLLERS "/devices/controllers"
-#define CONFIGFS_PATH_DEVICES_CLIENTS "/devices/clients"
+#define CONFIGFS_PATH_CONTROLLERS "/controllers"
+#define CONFIGFS_PATH_CLIENTS "/clients"
 
 
 enum outputAction{
@@ -1066,7 +1065,7 @@ void http_handleControllers_GET(AsyncWebServerRequest *request){
     return;
   }
   
-  String filename = CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + request->pathArg(0);
+  String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + request->pathArg(0);
 
   if(!configFS.exists(filename)){
     http_notFound(request);
@@ -1094,7 +1093,7 @@ void http_handleControllers_DELETE(AsyncWebServerRequest *request){
     return;
   }
 
-  String filename = CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + request->pathArg(0);
+  String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + request->pathArg(0);
 
   if(!configFS.exists(filename)){
     http_notFound(request);
@@ -1139,21 +1138,14 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
     return;
   }
 
-  if(!configFS.exists(F(CONFIGFS_PATH_DEVICES))){
-    if(!configFS.mkdir(F(CONFIGFS_PATH_DEVICES))){
-      http_error(request, F("Unable to create CONFIGFS_PATH_DEVICES directory"));
+  if(!configFS.exists(CONFIGFS_PATH_CONTROLLERS + (String)"/")){
+    if(!configFS.mkdir(CONFIGFS_PATH_CONTROLLERS + (String)"/")){
+      http_error(request, F("Unable to create CONFIGFS_PATH_CONTROLLERS directory"));
       return;
     };
   }
 
-  if(!configFS.exists(CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/")){
-    if(!configFS.mkdir(CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/")){
-      http_error(request, F("Unable to create CONFIGFS_PATH_DEVICES_CONTROLLERS directory"));
-      return;
-    };
-  }
-
-  File file = configFS.open(CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + request->pathArg(0) , "w");
+  File file = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/" + request->pathArg(0) , "w");
 
   if(!file){
     file.close();
@@ -1197,7 +1189,7 @@ void http_handleListControllers(AsyncWebServerRequest *request){
   DynamicJsonDocument doc(8192);  //Supports 128 UUID's
   JsonArray array = doc.to<JsonArray>();
 
-  File root = configFS.open(CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/");
+  File root = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/");
 
   File file = root.openNextFile();
 
@@ -1271,7 +1263,7 @@ void http_handleClients_GET(AsyncWebServerRequest *request){
     }
   }
   
-  String filename = CONFIGFS_PATH_DEVICES_CLIENTS + (String)"/" + request->pathArg(0);
+  String filename = CONFIGFS_PATH_CLIENTS + (String)"/" + request->pathArg(0);
 
   if(!configFS.exists(filename)){
     http_notFound(request);
@@ -1289,7 +1281,7 @@ void http_handleClients_GET(AsyncWebServerRequest *request){
 /// @return true if authorized, false if not authorized
 boolean authClientWithMacAddress(const char* uuid, const char* macAddress){
 
-    String filename = CONFIGFS_PATH_DEVICES_CLIENTS + (String)"/" + uuid;
+    String filename = CONFIGFS_PATH_CLIENTS + (String)"/" + uuid;
 
     if(!configFS.exists(filename)){
       return false;
@@ -1335,7 +1327,7 @@ void http_handleClients_DELETE(AsyncWebServerRequest *request){
     return;
   }
 
-  String filename = CONFIGFS_PATH_DEVICES_CLIENTS + (String)"/" + request->pathArg(0);
+  String filename = CONFIGFS_PATH_CLIENTS + (String)"/" + request->pathArg(0);
 
   if(!configFS.exists(filename)){
     http_notFound(request);
@@ -1380,21 +1372,14 @@ void http_handleClients_PUT(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  if(!configFS.exists(F(CONFIGFS_PATH_DEVICES))){
-    if(!configFS.mkdir(F(CONFIGFS_PATH_DEVICES))){
-      http_error(request, F("Unable to create CONFIGFS_PATH_DEVICES directory"));
+  if(!configFS.exists(CONFIGFS_PATH_CLIENTS + (String)"/")){
+    if(!configFS.mkdir(CONFIGFS_PATH_CLIENTS + (String)"/")){
+      http_error(request, F("Unable to create CONFIGFS_PATH_CLIENTS directory"));
       return;
     };
   }
 
-  if(!configFS.exists(CONFIGFS_PATH_DEVICES_CLIENTS + (String)"/")){
-    if(!configFS.mkdir(CONFIGFS_PATH_DEVICES_CLIENTS + (String)"/")){
-      http_error(request, F("Unable to create CONFIGFS_PATH_DEVICES_CLIENTS directory"));
-      return;
-    };
-  }
-
-  File file = configFS.open(CONFIGFS_PATH_DEVICES_CLIENTS + (String)"/" + request->pathArg(0) , "w");
+  File file = configFS.open(CONFIGFS_PATH_CLIENTS + (String)"/" + request->pathArg(0) , "w");
 
   if(!file){
     file.close();
@@ -1438,7 +1423,7 @@ void http_handleListClients(AsyncWebServerRequest *request){
   DynamicJsonDocument doc(8192);  //Supports 128 UUID's
   JsonArray array = doc.to<JsonArray>();
 
-  File root = configFS.open(CONFIGFS_PATH_DEVICES_CLIENTS + (String)"/");
+  File root = configFS.open(CONFIGFS_PATH_CLIENTS + (String)"/");
 
   File file = root.openNextFile();
 
@@ -1519,7 +1504,7 @@ void http_handleProvisioning_PUT(AsyncWebServerRequest *request){
   StaticJsonDocument<16> filter;
   filter["mac"] = true;
 
-  File root = configFS.open(CONFIGFS_PATH_DEVICES_CLIENTS + (String)"/");
+  File root = configFS.open(CONFIGFS_PATH_CLIENTS + (String)"/");
   File file = root.openNextFile();
 
   while(file){
@@ -2117,7 +2102,7 @@ void setup_OtaFirmware(){
     return;
   }
 
-  String filename = CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
+  String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
 
   if(!configFS.exists(filename)){
     return;
@@ -2336,7 +2321,7 @@ void setupIO(){
     return;
   }
 
-  String filename = CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
+  String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
 
   if(!configFS.exists(filename)){
     eventLog.createEvent(F("No I/O file to read"));
@@ -2633,7 +2618,7 @@ void setupMQTT(){
   mqttClient.setCallback_Connect(eventHandler_mqttConnect);
   mqttClient.setCallback_Disconnect(eventHandler_mqttDisconnect);
 
-  String filename = CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
+  String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
   File file = configFS.open(filename, "r");
 
   StaticJsonDocument<48> filter;
@@ -2954,7 +2939,7 @@ void mqtt_publishTemperatures(){
  */
 void mqtt_autoDiscovery_outputs(){
 
-  if(!configFS.exists(CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid)){
+  if(!configFS.exists(CONFIGFS_PATH_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid)){
     log_v("Controller config file does not exist");
     return;
   };
@@ -2971,7 +2956,7 @@ void mqtt_autoDiscovery_outputs(){
 
   DynamicJsonDocument controllerDoc(12288); //Supports up to 32 ports
 
-  File controllerFile = configFS.open(CONFIGFS_PATH_DEVICES_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid, "r");
+  File controllerFile = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid, "r");
   DeserializationError errorControllerFileDeserialization = deserializeJson(controllerDoc, controllerFile, DeserializationOption::Filter(controllerFilterDoc));
   controllerFile.close();
 
