@@ -922,7 +922,7 @@ async function getControllerPOSTPayload(id){
 
         client.channels = {};
 
-        for(var i=0; i<client.hids.length; i++){
+        for(let i=0; i<client.hids.length; i++){
             client.channels[i+1] = {};
 
             if(extendedClients.includes(client.id)){
