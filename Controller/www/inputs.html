@@ -326,21 +326,6 @@ async function deleteClientAssignment(controllerId, port){
     }
 }
 
-    
-async function getExtendedClients(){
-
-    extendedClients = [];
-
-    clientList =  await db.clients.orderBy('name').toArray()
-
-    clientList.forEach((client)=>{
-
-        if(typeof client.extends != "undefined"){
-            extendedClients.push(client.extends);
-        }
-    });
-}
-
 
 async function getControllerAssignmentRestriction(clientId){
 
