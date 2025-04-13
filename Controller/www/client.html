@@ -418,6 +418,10 @@
 
                 toolTipText = "";
 
+                for(var t=0; t < combinedHIDList[i].tags.length; t++){
+                    combinedHIDList[i].tags[t] = await db.tags.where('id').equals(combinedHIDList[i].tags[t]).first();
+                }
+
                 combinedHIDList[i].actions.forEach((action) => {
 
                     var change_state = "";
@@ -456,6 +460,14 @@
                     }
                     toolTipText += `<b>${change_state}:</b> ${action_type} ${action.circuit.area.name} ${action.circuit.description} (${action.circuit.name})<hr>`;
                 });
+
+                if(combinedHIDList[i].tags.length > 0){
+                    toolTipText += `<b>Tags:</b><br>`
+                    combinedHIDList[i].tags.forEach((tag) => {
+                        toolTipText += `${tag.name}<br>`
+                    });
+                    toolTipText = toolTipText.replace(/<br>$/, '');
+                }
 
                 toolTipText = toolTipText.replace(/<hr>$/, '');
 
@@ -658,7 +670,7 @@
     function checkHidHasTag(hid, tagId){
 
         for(var j=0; j<hid.tags.length; j++){
-            if(hid.tags[j] == tagId){return true;}
+            if(hid.tags[j].id == tagId){return true;}
         }
 
         return false;
@@ -674,7 +686,7 @@
     async function deleteTagFromHid(element, tagId){
 
         for(var i=0;i<combinedHIDList[element].tags.length; i++){
-            if(combinedHIDList[element].tags[i] == tagId){
+            if(combinedHIDList[element].tags[i].id == tagId){
                 combinedHIDList[element].tags.splice(i, 1);
                 break;
             }
