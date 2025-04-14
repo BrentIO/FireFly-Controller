@@ -78,7 +78,7 @@
             let newControllerCard = `
                     <div class="card mb-3">
                         <div class="card-body">
-                            <div class="card-title mb-3 h3">${controller.name} <button class="btn btn-outline-dark btn-sm" id="showHide_${controller.id}_outputPorts" type="button" data-bs-toggle="collapse" data-bs-target="#controller_${controller.id}_outputPorts" aria-expanded="true" aria-controls="controller_${controller.id}_outputPorts">Hide</button></div>
+                            <div class="card-title mb-3 h3">${controller.name} <span class="d-none d-print-inline">Outputs</span><button class="btn btn-outline-dark btn-sm" id="showHide_${controller.id}_outputPorts" type="button" data-bs-toggle="collapse" data-bs-target="#controller_${controller.id}_outputPorts" aria-expanded="true" aria-controls="controller_${controller.id}_outputPorts">Hide</button></div>
                             <div class="container">
                                 <div class="row collapse show d-print-flex" id="controller_${controller.id}_outputPorts">
                                 </div>
