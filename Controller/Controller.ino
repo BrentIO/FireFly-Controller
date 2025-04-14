@@ -2699,7 +2699,7 @@ void setupMQTT(){
   mqttClient.setServer(mqtt["host"].as<const char*>(), port);
 
   uint8_t baseMac[6];
-  esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
+  esp_read_mac(baseMac, ESP_MAC_ETH);
 
   char macOnly[13] = {0};
   sprintf(macOnly, "%02X%02X%02X%02X%02X%02X", baseMac[0],baseMac[1],baseMac[2],baseMac[3], baseMac[4], baseMac[5]);
