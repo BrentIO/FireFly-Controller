@@ -1885,6 +1885,14 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
     return;
   }
 
+  MatchState ms;
+  ms.Target((char*)filename.c_str());
+
+  if(ms.MatchCount("[^a-z0-9_.]") > 0){
+    http_badRequest(request, F("Invalid filename; Only [a-z0-9_.] permitted"));
+    return;
+  };
+
   if(!index){
 
     if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + filename)){
