@@ -3006,6 +3006,10 @@ void mqtt_autoDiscovery_outputs(){
         strcpy(devicePlatform,"light");
       }
 
+      if(output.value()["icon"].as<String>().indexOf("chandelier") != -1){
+        strcpy(devicePlatform,"light");
+      }
+
       if(output.value()["icon"].as<String>().indexOf("fan") != -1){
         strcpy(devicePlatform,"fan");
       }
