@@ -2069,11 +2069,6 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
       return;
     }
 
-    if(otaFirmware.enabled == false){
-      http_forbiddenRequest(request, F("OTA firmware disabled"));
-      return;
-    }
-
     if(!configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + newFirmwareRequest.certificate)){
       http_badRequest(request, F("Certificate does not exist"));
       return;
@@ -2188,10 +2183,6 @@ void setup_OtaFirmware(){
 void otaFirmware_checkPending(){
 
   if(otaFirmware.pending.size() == 0){
-    return;
-  }
-
-  if(otaFirmware.enabled == false){
     return;
   }
 
