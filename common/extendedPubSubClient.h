@@ -11,6 +11,7 @@
     #define WORD_LENGTH_CONFIG 7            //len("/config")
     #define WORD_LENGTH_INPUTS 7             //len("inputs/")
     #define WORD_LENGTH_CIRCUITS 9             //len("circuits/")
+    #define WORD_LENGTH_CHANNELS 9            //len("channels/")
     #define WORD_LENGTH_INTEGRATION 20        //The longest MQTT integration allowed in Home Assistant is len("/alarm_control_panel"), see https://www.home-assistant.io/integrations/mqtt/
     #define WORD_LENGTH_AUTODISCOVERY_ROOT 24 //len(this->auto_discovery_root)
     #define UUID_LENGTH 36                  //len(uuidv4)
@@ -20,8 +21,8 @@
 
     /***************** I/O TOPICS *****************/
 
-    #define MQTT_TOPIC_INPUT_STATE_PATTERN WORD_FIREFLY_SLASH "inputs/%sC%i/state"           //%s = Port ID, %s = channel number
-    #define MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + WORD_LENGTH_INPUTS + PORT_ID_MAX_LENGTH + 1 + 1 + WORD_LENGTH_STATE
+    #define MQTT_TOPIC_INPUT_STATE_PATTERN WORD_FIREFLY_SLASH "inputs/%s/channels/%i/state"           //%s = Port ID, %s = channel number
+    #define MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + WORD_LENGTH_INPUTS + PORT_ID_MAX_LENGTH + 1 + WORD_LENGTH_CHANNELS + 1 + WORD_LENGTH_STATE
     
     #define MQTT_TOPIC_OUTPUT_SET_PATTERN WORD_FIREFLY_SLASH "circuits/%s/set"              //%s = Output ID
     #define MQTT_TOPIC_OUTPUT_SET_REGEX "^FireFly\/circuits\/([A-Za-z0-9~!@#$%^&*()_+-=|]+)\/set$"
