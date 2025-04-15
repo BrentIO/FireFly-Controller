@@ -360,6 +360,11 @@
     #endif
 
 
+    #ifndef LFS_NAME_MAX
+        #define LFS_NAME_MAX 64 /* Set LittleFS filename max length to 64 characters */
+    #endif
+
+
     /* Check to ensure configuration is acceptable */
     #ifndef IO_EXTENDER_MODEL
         #error IO_EXTENDER_MODEL not set
