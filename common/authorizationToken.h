@@ -114,6 +114,11 @@
             */
             boolean authenticate(const char* code, boolean retain = false){
 
+                #if CORE_DEBUG_LEVEL >= 4
+                    #warning visual token authentication will be bypassed because CORE_DEBUG_LEVEL >= 4
+                    return true;
+                #endif
+
                 if(strncmp(this->_visualToken.code, code, strlen(this->_visualToken.code)) == 0){
                     if(retain){
                         _createAuthorization();
