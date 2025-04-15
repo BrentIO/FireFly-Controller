@@ -238,10 +238,7 @@
 
 
     #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
-
-        #ifndef SSD1306_NO_SPLASH
-            #error Build failed, missing SSD1306_NO_SPLASH to prevent the Adafruit logo from being uploaded. Ensure it was set in ./.vscode/arduino.json {"buildPreferences":[["build.extra_flags","-DSSD1306_NO_SPLASH"]]}
-        #endif
+        #define SSD1306_NO_SPLASH
 
         #include <Wire.h>
         #include <Adafruit_GFX.h>
