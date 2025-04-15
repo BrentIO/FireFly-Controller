@@ -100,9 +100,10 @@
                 throw new Error("The file selected is not a x509 certificate.");
             }
 
-            const file = event.dataTransfer.items[0].getAsFile();
+            var file = event.dataTransfer.items[0].getAsFile();
+            const fileName = file.name.toLowerCase().replace(/[^a-z0-9_.]/g, "");
 
-            if(file.name.length > 31){
+            if(fileName > 31){
                 throw new Error("File name must be less than 32 characters.");
             }
 
@@ -114,7 +115,7 @@
                 }
             });
 
-            await storeCertificate(file.name, result);
+            await storeCertificate(fileName, result);
             await toggleAddCertificateModal();
             await drawCertificateList();
 
