@@ -348,6 +348,8 @@ void setup() {
 
   setupIO();
 
+  setControllerNameOnOLED();
+
   oled.setPage(managerOled::PAGE_EVENT_LOG);
 
 }
@@ -756,6 +758,32 @@ void updateNTPTime(bool force){
       bootTime = timeClient.getEpochTime() - (esp_timer_get_time()/1000000);
       mqtt_publishStartTime();
     }
+}
+
+
+/** 
+ * Sets the controller name on the OLED display
+ */
+void setControllerNameOnOLED(){
+
+  String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
+
+  if(configFS.exists(filename)){
+    StaticJsonDocument<16> filter;
+    filter["name"] = true;
+
+    StaticJsonDocument<64> doc;
+
+    File file = configFS.open(filename, "r");
+
+    deserializeJson(doc, file, DeserializationOption::Filter(filter));
+
+    file.close();
+
+    oled.setName(doc["name"]);
+
+  }
+
 }
 
 

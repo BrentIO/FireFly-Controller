@@ -53,6 +53,7 @@
             uint8_t _address = OLED_ADDRESS;
             char* _productId;
             char* _uuid;
+            char* _name;
 
             #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
                 WiFiClass *_wifiInfo;
@@ -297,6 +298,8 @@
                     #else
                         this->hardware.println(F("UNKNOWN"));
                     #endif
+
+                    this->hardware.println(this->_name);
 
                 #endif
 
@@ -1018,6 +1021,11 @@
 
             void setUUID(char* value){
                 this->_uuid = value;
+            }
+
+            void setName(const char* value){
+                this->_name = new char[CONTROLLER_NAME_MAX_LENGTH+1];
+                strcpy(this->_name, value);
             }
 
             #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
