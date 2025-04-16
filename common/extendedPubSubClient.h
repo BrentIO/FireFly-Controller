@@ -21,7 +21,7 @@
 
     /***************** I/O TOPICS *****************/
 
-    #define MQTT_TOPIC_INPUT_STATE_PATTERN WORD_FIREFLY_SLASH "inputs/%s/channels/%i/state"           //%s = Port ID, %s = channel number
+    #define MQTT_TOPIC_INPUT_STATE_PATTERN WORD_FIREFLY_SLASH "inputs/%s/channels/%i/state"           //%s = Port ID, %i = channel number
     #define MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + WORD_LENGTH_INPUTS + PORT_ID_MAX_LENGTH + 1 + WORD_LENGTH_CHANNELS + 1 + WORD_LENGTH_STATE
     
     #define MQTT_TOPIC_OUTPUT_SET_PATTERN WORD_FIREFLY_SLASH "circuits/%s/set"              //%s = Output ID
