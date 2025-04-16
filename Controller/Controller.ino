@@ -3155,7 +3155,7 @@ void mqtt_autoDiscovery_start_time(){
   }
 
   doc["state_topic"] = state_topic;
-  doc["value_template"] = "{{ ( value | int ) | timestamp_utc }}";
+  doc["value_template"] = "{{ ( value | int ) | timestamp_local }}";
   doc["availability_topic"] = mqttClient.topic_availability;
 
   mqttClient.beginPublish(topic, measureJson(doc), true);
