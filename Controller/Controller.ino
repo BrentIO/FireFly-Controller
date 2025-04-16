@@ -3105,7 +3105,7 @@ void mqtt_autoDiscovery_start_time(){
   doc["name"] = "Start Time";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = "mdi:clock";
+  doc["icon"] = "mdi:calendar-clock";
   doc["entity_category"] = "diagnostic";
 
   JsonObject device = doc.createNestedObject("device");
