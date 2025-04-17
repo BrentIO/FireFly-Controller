@@ -24,7 +24,7 @@
         private:
 
             LinkedList<eventLogEntry> _eventLog;
-            LinkedList<char*> _errors;
+            LinkedList<const char*> _errors;
             NTPClient* _timeClient;
 
             void (*_ptrInfoCallback)(); //Function to call when there is an info logged
@@ -36,7 +36,7 @@
              * Logs errors to the error event log, ensuring only one event with that text description is maintained in the log
              * @param text Descriptive text of the error
             */
-            void _logError(char* text){
+            void _logError(const char* text){
 
                 for(int i=0; i < this->_errors.size(); i++){
                     if(this->_errors.get(i) == text){
@@ -95,7 +95,7 @@
              * @param text Descriptive text about the event
              * @param level Severity level of the event, defaulting to LOG_LEVEL_INFO if not specified
             */
-            void createEvent(char* text, logLevel level = LOG_LEVEL_INFO){
+            void createEvent(const char* text, logLevel level = LOG_LEVEL_INFO){
 
                 eventLogEntry newEvent;
 
@@ -106,7 +106,7 @@
                 }
 
                 newEvent.level = level;
-                newEvent.text = text;
+                strcpy(newEvent.text, text);
 
                 if(this->_eventLog.size() >= EVENT_LOG_MAXIMUM_ENTRIES){
                     this->_eventLog.shift();
@@ -147,7 +147,7 @@
              * @param level Severity level of the event
             */
             void createEvent(const __FlashStringHelper *text, logLevel level = LOG_LEVEL_INFO){
-                createEvent((char*)text, level);
+                createEvent(text, level);
             }
 
             /**
@@ -160,7 +160,7 @@
             /**
              * Retrieves the list of errors from the error log
             */
-            LinkedList<char*>* getErrors(){
+            LinkedList<const char*>* getErrors(){
                 return &_errors;
             }
 
