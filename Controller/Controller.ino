@@ -382,7 +382,7 @@ void loop() {
   provisioningMode.loop();
 
   #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
-    if(ESP32_W5500_isConnected){
+    if(ESP32_W5500_isConnected()){
       if(!mqttClient.loop() && mqttClient.enabled == true){
         mqtt_reconnect();
       };
