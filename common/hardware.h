@@ -323,7 +323,7 @@
 
 
     #ifndef EVENT_LOG_ENTRY_MAX_LENGTH
-        #define EVENT_LOG_MAXIMUM_ENTRIES OLED_CHARACTERS_PER_LINE /* Maximum length of the event log text */
+        #define EVENT_LOG_ENTRY_MAX_LENGTH OLED_CHARACTERS_PER_LINE /* Maximum length of the event log text */
     #endif
 
 
