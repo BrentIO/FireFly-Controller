@@ -399,7 +399,7 @@ void loop() {
  * @param location the location where the change was observed
  * @param value the new temperature in degrees celsius
 */
-void eventHandler_temperature(char* location, float value){
+void eventHandler_temperature(const char* location, float value){
 
   char* temperature = new char[6];
   snprintf(temperature, 6, "%.2f", value);
@@ -2902,7 +2902,7 @@ void mqtt_autoDiscovery_temperature(){
 
   for(int i = 0; i < TEMPERATURE_SENSOR_COUNT; i++){
 
-    char* sensorLocation = temperatureSensors.getSensorLocation(i);
+    const char* sensorLocation = temperatureSensors.getSensorLocation(i);
 
     DynamicJsonDocument doc(1024);
 

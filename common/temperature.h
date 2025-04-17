@@ -97,7 +97,7 @@ class managerTemperatureSensors{
 
             float previousRead = 0; /* Previous read temperature in degrees celsius. Default 0 */
             unsigned long timePreviousRead = 0; /* Time (millis) when the sensor was last read. Default 0 */
-            char* location; /* Physical location of the sensor */
+            const char* location; /* Physical location of the sensor */
             bool enabled = true; /* Indicates if the sensor is enabled. Default true */
         };
 
@@ -109,7 +109,7 @@ class managerTemperatureSensors{
 
 
         /** Reference to the callback function that will be called when a temperature change is sensed */
-        void (*ptrPublisherCallback)(char*, float);
+        void (*ptrPublisherCallback)(const char*, float);
 
 
         /** Reference to the callback function that will be called when a temperature sensor has failed */
@@ -170,7 +170,7 @@ class managerTemperatureSensors{
 
 
         /** Callback function that is called when a temperature change is observed */
-        void setCallback_publisher(void (*userDefinedCallback)(char*, float)) {
+        void setCallback_publisher(void (*userDefinedCallback)(const char*, float)) {
                     ptrPublisherCallback = userDefinedCallback; }
 
 
@@ -197,14 +197,14 @@ class managerTemperatureSensors{
                 log_e("TEMPERATURE_SENSOR_COUNT and the length of TEMPERATURE_SENSOR_ADDRESSES are mismatched in hardware.h; Disabling temperature sensors.");
 
                 temperatureSensor invalid;
-                strcpy(invalid.location, "INVALID");
+                invalid.location = "INVALID";
 
                 failTemperatureSensor(&invalid, failureReason::INVALID_HARDWARE_CONFIGURATION);
                 return;
 
             }
 
-            char* locations[TEMPERATURE_SENSOR_COUNT] = TEMPERATURE_SENSOR_LOCATIONS;
+            const char* locations[TEMPERATURE_SENSOR_COUNT] = TEMPERATURE_SENSOR_LOCATIONS;
 
             for(int i = 0; i < TEMPERATURE_SENSOR_COUNT; i++){
 
@@ -283,7 +283,7 @@ class managerTemperatureSensors{
          * Retrieves the sensor location name from the index
          * @param index the position in the temperature sensor array
          */
-        char* getSensorLocation(uint8_t index){
+        const char* getSensorLocation(uint8_t index){
             return this->temperatureSensors[index].location;
         }
         
