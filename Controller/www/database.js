@@ -25,11 +25,6 @@ const initDB = () => {
         settings: "&setting, value"
     });
 
-    db.version(1).upgrade(function(transaction) {
-        transaction.product_ids.clear();
-        transaction.product_ids.bulkAdd(product_ids);
-    });
-
     db.on("populate", function(transaction) {
         transaction.controller_products.bulkAdd(controller_products);
         transaction.colors.bulkAdd(colors);
