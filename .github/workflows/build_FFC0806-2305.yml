@@ -58,6 +58,6 @@ jobs:
               version: 0.1.1
           cli-compile-flags: |
             - --build-property
-            - "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=0x08062305 -DESP32"
+            - "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=0x08062305 -DESP32 -I../"
           sketch-paths: |
             - Controller
