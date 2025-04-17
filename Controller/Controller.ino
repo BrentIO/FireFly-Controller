@@ -495,7 +495,7 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
 nsOutputs::set_result actionOutputPort(uint8_t port, outputAction action){
   uint8_t currentPortValue = outputs.getPortValue(port);
 
-  nsOutputs::set_result returnValue;
+  nsOutputs::set_result returnValue = nsOutputs::set_result::SUCCESS;
 
   switch(action){
 
