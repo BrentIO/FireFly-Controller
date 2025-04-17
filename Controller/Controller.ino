@@ -445,10 +445,10 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
   switch(changeState){
     case managerInputs::changeState::CHANGE_STATE_NORMAL:
       mqttClient.publish(state_topic, "NORMAL");
-    break;
+      break;
     case managerInputs::changeState::CHANGE_STATE_LONG_DURATION:
       mqttClient.publish(state_topic, "LONG");
-    break;
+      break;
     case managerInputs::changeState::CHANGE_STATE_SHORT_DURATION:
       mqttClient.publish(state_topic, "SHORT");
     break;
