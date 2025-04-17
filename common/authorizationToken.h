@@ -54,7 +54,7 @@
 
                 #ifdef ESP32
                     this->_visualToken.issuedAt = esp_timer_get_time();
-                    this->_visualToken.expiresAt = esp_timer_get_time() + (VISUAL_AUTH_TOKEN_TTL * 1000);
+                    this->_visualToken.expiresAt = esp_timer_get_time() + ((uint64_t)VISUAL_AUTH_TOKEN_TTL * 1000);
                 #else
                     this->_visualToken.issuedAt = millis();
                     this->_visualToken.expiresAt = millis() + VISUAL_AUTH_TOKEN_TTL;
@@ -83,7 +83,7 @@
                 newAuthorization.issuedAt = _visualToken.issuedAt;
 
                 #ifdef ESP32
-                    newAuthorization.expiresAt = esp_timer_get_time() + (AUTH_TOKEN_TTL * 1000);
+                    newAuthorization.expiresAt = esp_timer_get_time() + ((uint64_t)AUTH_TOKEN_TTL * 1000);
                 #else
                     newAuthorization.expiresAt = millis() + AUTH_TOKEN_TTL;
                 #endif
