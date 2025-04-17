@@ -244,8 +244,8 @@
                 this->_clear();
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
-                    #define LOGO_WIDTH  20
-                    #define LOGO_HEIGHT 10
+                    const uint8_t logo_width = 20;
+                    const uint8_t logo_height = 10;
 
                     const uint8_t PROGMEM logo[] = {
                         0b00000110,0b11001001,0b10110000,
@@ -260,8 +260,8 @@
                         0b11011001,0b00110110,0b00000000,
                     };
 
-                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                    this->hardware.setCursor(LOGO_WIDTH + 2, OLED_DISPLAY_HEIGHT / 2);
+                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - logo_height) / 2, logo, logo_width, logo_height, SSD1306_WHITE);
+                    this->hardware.setCursor(logo_width + 2, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.println(F("P5 Software"));
@@ -321,8 +321,8 @@
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
-                    #define LOGO_WIDTH  20
-                    #define LOGO_HEIGHT 20
+                    const uint8_t logo_width = 20;
+                    const uint8_t logo_height = 20;
 
                     const uint8_t PROGMEM logo[] = {
                         0b00000000,0b00000000,0b00000000,
@@ -347,8 +347,8 @@
                         0b00000000,0b00000000,0b00000000,
                     };
 
-                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                    this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
+                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - logo_height) / 2, logo, logo_width, logo_height, SSD1306_WHITE);
+                    this->hardware.setCursor(logo_width + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.println(F("Event Log"));
@@ -374,8 +374,8 @@
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
-                    #define LOGO_WIDTH  20
-                    #define LOGO_HEIGHT 20
+                    const uint8_t logo_width = 20;
+                    const uint8_t logo_height = 20;
 
                     const uint8_t PROGMEM logo[] = {
                         0b00000000,0b00000000,0b00000000,
@@ -400,8 +400,8 @@
                         0b00000000,0b00000000,0b00000000,
                     };
 
-                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                    this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
+                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - logo_height) / 2, logo, logo_width, logo_height, SSD1306_WHITE);
+                    this->hardware.setCursor(logo_width + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.println(F("Network"));
@@ -427,8 +427,8 @@
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
-                    #define LOGO_WIDTH  20
-                    #define LOGO_HEIGHT 20
+                    const uint8_t logo_width = 20;
+                    const uint8_t logo_height = 20;
 
                     const uint8_t PROGMEM logo[] = {
                         0b00000000,0b00000000,0b00000000,
@@ -453,8 +453,8 @@
                         0b00000000,0b00000000,0b00000000,
                     };
 
-                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                    this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
+                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - logo_height) / 2, logo, logo_width, logo_height, SSD1306_WHITE);
+                    this->hardware.setCursor(logo_width + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.println(F("Hardware"));
@@ -481,8 +481,8 @@
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
-                    #define LOGO_WIDTH  20
-                    #define LOGO_HEIGHT 20
+                    const uint8_t logo_width = 20;
+                    const uint8_t logo_height = 20;
 
                     const uint8_t PROGMEM logo[] = {
                         0b00000000,0b00000000,0b00000000,
@@ -507,8 +507,8 @@
                         0b00000000,0b00000000,0b00000000,
                     };
 
-                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                    this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
+                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - logo_height) / 2, logo, logo_width, logo_height, SSD1306_WHITE);
+                    this->hardware.setCursor(logo_width + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.println(F("Software"));
@@ -535,8 +535,8 @@
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
-                    #define LOGO_WIDTH  20
-                    #define LOGO_HEIGHT 20
+                    const uint8_t logo_width = 20;
+                    const uint8_t logo_height = 20;
 
                     const uint8_t PROGMEM logo[] = {
                         0b00000000,0b00000000,0b00000000,
@@ -561,8 +561,8 @@
                         0b00000000,0b00000000,0b00000000,
                     };
 
-                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                    this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
+                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - logo_height) / 2, logo, logo_width, logo_height, SSD1306_WHITE);
+                    this->hardware.setCursor(logo_width + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.println(F("Error"));
@@ -663,8 +663,8 @@
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
-                    #define LOGO_WIDTH  20
-                    #define LOGO_HEIGHT 20
+                    const uint8_t logo_width = 20;
+                    const uint8_t logo_height = 20;
 
                     const uint8_t PROGMEM wifi_logo[] = {
                         0b00000000,0b00000000,0b00000000,
@@ -695,16 +695,16 @@
 
                             case wifi_mode_t::WIFI_MODE_AP:
 
-                                this->hardware.drawBitmap(0,0, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                                this->hardware.setCursor(LOGO_WIDTH + 3, 0);
+                                this->hardware.drawBitmap(0,0, wifi_logo, logo_width, logo_height, SSD1306_WHITE);
+                                this->hardware.setCursor(logo_width + 3, 0);
                                 this->hardware.println(this->_wifiInfo->softAPSSID()); 
-                                this->hardware.setCursor(LOGO_WIDTH + 3, 8);
+                                this->hardware.setCursor(logo_width + 3, 8);
                                 this->hardware.println(this->_wifiInfo->softAPIP());
-                                this->hardware.setCursor(LOGO_WIDTH + 3, 16);
+                                this->hardware.setCursor(logo_width + 3, 16);
                                 this->hardware.println(this->_wifiInfo->softAPmacAddress());
-                                this->hardware.setCursor(LOGO_WIDTH + 3, 24);
+                                this->hardware.setCursor(logo_width + 3, 24);
                                 this->hardware.println("Clients: " + String(this->_wifiInfo->softAPgetStationNum()));
-                                this->hardware.setCursor(4, LOGO_HEIGHT+5);
+                                this->hardware.setCursor(4, logo_height+5);
                                 this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); // Draw black text
                                 this->hardware.println(F("AP"));
                                 this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
@@ -713,21 +713,21 @@
                             case wifi_mode_t::WIFI_MODE_STA:
 
                                 if(this->_wifiInfo->isConnected() == false){
-                                    this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                                    this->hardware.setCursor(LOGO_WIDTH + 3, 0);
+                                    this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - logo_height) / 2, wifi_logo, logo_width, logo_height, SSD1306_WHITE);
+                                    this->hardware.setCursor(logo_width + 3, 0);
                                     this->hardware.println(F("Disconnected"));
-                                    this->hardware.setCursor(LOGO_WIDTH + 3, 16);
+                                    this->hardware.setCursor(logo_width + 3, 16);
                                     this->hardware.println(this->_wifiInfo->macAddress());
                                 } else {
 
-                                    this->hardware.drawBitmap(0,0, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                                    this->hardware.setCursor(LOGO_WIDTH + 3, 0);
+                                    this->hardware.drawBitmap(0,0, wifi_logo, logo_width, logo_height, SSD1306_WHITE);
+                                    this->hardware.setCursor(logo_width + 3, 0);
                                     this->hardware.println(this->_wifiInfo->SSID());
-                                    this->hardware.setCursor(LOGO_WIDTH + 3, 8);
+                                    this->hardware.setCursor(logo_width + 3, 8);
                                     this->hardware.println(this->_wifiInfo->localIP());
-                                    this->hardware.setCursor(LOGO_WIDTH + 3, 16);
+                                    this->hardware.setCursor(logo_width + 3, 16);
                                     this->hardware.println(this->_wifiInfo->macAddress());
-                                    this->hardware.setCursor(2, LOGO_HEIGHT+5);
+                                    this->hardware.setCursor(2, logo_height+5);
                                     this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); // Draw black text
                                     this->hardware.println(F("STA"));
                                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
@@ -736,14 +736,14 @@
                                 break;
 
                             case wifi_mode_t::WIFI_MODE_NULL:
-                                this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                                this->hardware.setCursor(LOGO_WIDTH + 10, (OLED_DISPLAY_HEIGHT/2)-3);
+                                this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - logo_height) / 2, wifi_logo, logo_width, logo_height, SSD1306_WHITE);
+                                this->hardware.setCursor(logo_width + 10, (OLED_DISPLAY_HEIGHT/2)-3);
                                 this->hardware.println(F("WiFi Off"));
                                 break;
 
                             default:
-                                this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, wifi_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                                this->hardware.setCursor(LOGO_WIDTH + 20, (OLED_DISPLAY_HEIGHT/2)-3);
+                                this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - logo_height) / 2, wifi_logo, logo_width, logo_height, SSD1306_WHITE);
+                                this->hardware.setCursor(logo_width + 20, (OLED_DISPLAY_HEIGHT/2)-3);
                                 this->hardware.println(F("Unknown"));
                                 break;
                         }
@@ -767,8 +767,8 @@
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
-                    #define LOGO_WIDTH  20
-                    #define LOGO_HEIGHT 20
+                    const uint8_t logo_width = 20;
+                    const uint8_t logo_height = 20;
 
                     const uint8_t PROGMEM ethernet_logo[] = {
                         0b00000000,0b00000000,0b00000000,
@@ -793,10 +793,10 @@
                         0b00000000,0b00000000,0b00000000,
                     };
 
-                    this->hardware.drawBitmap(0,5, ethernet_logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
+                    this->hardware.drawBitmap(0,5, ethernet_logo, logo_width, logo_height, SSD1306_WHITE);
                
                     #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
-                        this->hardware.setCursor(LOGO_WIDTH + 3, 16);
+                        this->hardware.setCursor(logo_width + 3, 16);
                         uint8_t ethMac[6];
                         esp_read_mac(ethMac, ESP_MAC_ETH);
                         char macAddress[18] = {0};
@@ -804,11 +804,11 @@
                         this->hardware.println(macAddress);
 
                         if(ESP32_W5500_isConnected()){
-                            this->hardware.setCursor(LOGO_WIDTH + 3, 0);
+                            this->hardware.setCursor(logo_width + 3, 0);
                             this->hardware.println(F("Connected"));
-                            this->hardware.setCursor(LOGO_WIDTH + 3, 8);
+                            this->hardware.setCursor(logo_width + 3, 8);
                             this->hardware.println(this->_ethernetInfo->localIP());
-                            this->hardware.setCursor(LOGO_WIDTH + 3, 24);
+                            this->hardware.setCursor(logo_width + 3, 24);
                             this->hardware.print(ETH.linkSpeed());
                             this->hardware.print("MB ");
                             if(ETH.fullDuplex()){
@@ -819,7 +819,7 @@
                             
 
                         }else{
-                            this->hardware.setCursor(LOGO_WIDTH + 3, 0);
+                            this->hardware.setCursor(logo_width + 3, 0);
                             this->hardware.println(F("Disconnected"));
                         }
 
@@ -848,8 +848,8 @@
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
-                    #define LOGO_WIDTH  20
-                    #define LOGO_HEIGHT 20
+                    const uint8_t logo_width = 20;
+                    const uint8_t logo_height = 20;
 
                     const uint8_t PROGMEM logo[] = {
                         0b00000000,0b00000000,0b00000000,
@@ -874,8 +874,8 @@
                         0b00000000,0b00000000,0b00000000,
                     };
 
-                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - LOGO_HEIGHT) / 2, logo, LOGO_WIDTH, LOGO_HEIGHT, SSD1306_WHITE);
-                    this->hardware.setCursor(LOGO_WIDTH + 5, OLED_DISPLAY_HEIGHT / 2);
+                    this->hardware.drawBitmap(0, (OLED_DISPLAY_HEIGHT - logo_height) / 2, logo, logo_width, logo_height, SSD1306_WHITE);
+                    this->hardware.setCursor(logo_width + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.println(F("Auth Token"));
