@@ -975,7 +975,6 @@
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
-                    const uint8_t countdown_timer_height = 4;
                     this->hardware.setCursor(12, 12);
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.println(this->_authorizationToken->getVisualToken().code);
