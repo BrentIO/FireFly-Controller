@@ -49,7 +49,7 @@
         #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
         #define TEMPERATURE_SENSOR_COUNT 1 /* The number of temperature sensors */
         #define TEMPERATURE_SENSOR_ADDRESSES {0x48} /* I2C addresses of the on-board temperature sensors */
-        #define TEMPERATURE_SENSOR_LOCATIONS {"Center"} /* Temperature locations as an array, maximum string length = 8 */
+        #define TEMPERATURE_SENSOR_LOCATIONS {"Center"} /* Temperature locations as an array, maximum string length = TEMPERATURE_SENSOR_LOCATION_MAX_LENGTH */
 
         /* OLED Display and Button */
         #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32 /* OLED display model */
@@ -92,7 +92,7 @@
         #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
         #define TEMPERATURE_SENSOR_COUNT 1 /* The number of temperature sensors */
         #define TEMPERATURE_SENSOR_ADDRESSES {0x48} /* I2C addresses of the on-board temperature sensors */
-        #define TEMPERATURE_SENSOR_LOCATIONS {"Center"} /* Temperature locations as an array, maximum string length = 8 */
+        #define TEMPERATURE_SENSOR_LOCATIONS {"Center"} /* Temperature locations as an array, maximum string length = TEMPERATURE_SENSOR_LOCATION_MAX_LENGTH */
 
         /* OLED Display and Button */
         #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32 /* OLED display model */
@@ -136,7 +136,7 @@
         #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
         #define TEMPERATURE_SENSOR_COUNT 1 /* The number of temperature sensors */
         #define TEMPERATURE_SENSOR_ADDRESSES {0x48} /* I2C addresses of the on-board temperature sensors */
-        #define TEMPERATURE_SENSOR_LOCATIONS {"Center"} /* Temperature locations as an array, maximum string length = 8 */
+        #define TEMPERATURE_SENSOR_LOCATIONS {"Center"} /* Temperature locations as an array, maximum string length = TEMPERATURE_SENSOR_LOCATION_MAX_LENGTH */
 
         /* OLED Display and Button */
         #define OLED_DISPLAY_MODEL ENUM_OLED_MODEL_SSD1306_128_32 /* OLED display model */
@@ -359,6 +359,11 @@
 
     #ifndef LFS_NAME_MAX
         #define LFS_NAME_MAX 64 /* Set LittleFS filename max length to 64 characters */
+    #endif
+
+
+    #ifndef TEMPERATURE_SENSOR_LOCATION_MAX_LENGTH
+        #define TEMPERATURE_SENSOR_LOCATION_MAX_LENGTH 8 /* Maximum length for a temperature sensor location */
     #endif
 
 
