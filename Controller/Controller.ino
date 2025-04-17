@@ -451,7 +451,9 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
       break;
     case managerInputs::changeState::CHANGE_STATE_SHORT_DURATION:
       mqttClient.publish(state_topic, "SHORT");
-    break;
+      break;
+    default:
+      break;
   }
 
   for(int i=0; i < IO_EXTENDER_COUNT_CHANNELS_PER_PORT; i++){
@@ -475,6 +477,8 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
               }
             }
           }
+          break;
+        default:
           break;
       }
       break;
