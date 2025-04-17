@@ -29,7 +29,7 @@ jobs:
             - source-url: https://github.com/bblanchon/ArduinoJson.git
               version: v6.21.5
             - source-url: https://github.com/bblanchon/ArduinoStreamUtils.git
-              version: 1.9.0
+              version: v1.9.0
             - source-url: https://github.com/BrentIO/AsyncTCP.git
               version: 2024.2.1
             - source-url: https://github.com/BrentIO/AsyncWebServer_ESP32_W5500.git
