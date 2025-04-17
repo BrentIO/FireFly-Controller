@@ -17,7 +17,7 @@
 
             struct eventLogEntry{
                 unsigned long timestamp = 0; //Time at which the event occurred in seconds.  If NTP was available at time the event occurred, Epoch time will be used, otherwise elapsed time since boot will be used
-                char* text = ""; //Descriptive text of the event
+                char* text; //Descriptive text of the event
                 logLevel level = LOG_LEVEL_INFO; //Severity level of the event
             };
 
