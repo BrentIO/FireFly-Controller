@@ -322,6 +322,11 @@
     #endif
 
 
+    #ifndef EVENT_LOG_ENTRY_MAX_LENGTH
+        #define EVENT_LOG_MAXIMUM_ENTRIES OLED_CHARACTERS_PER_LINE /* Maximum length of the event log text */
+    #endif
+
+
     #ifndef PORT_ID_MAX_LENGTH
         #define PORT_ID_MAX_LENGTH 8 /* Maximum number of characters in a port's ID; must match Swagger */
     #endif

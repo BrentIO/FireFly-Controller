@@ -5,6 +5,11 @@
 #ifndef eventLog_h
     #define eventLog_h
 
+    #ifndef EVENT_LOG_ENTRY_MAX_LENGTH
+        #define EVENT_LOG_ENTRY_MAX_LENGTH 20
+    #endif
+
+
     class EventLog{
 
         public:
@@ -106,6 +111,7 @@
                 }
 
                 newEvent.level = level;
+                newEvent.text = new char[EVENT_LOG_ENTRY_MAX_LENGTH + 1];
                 strcpy(newEvent.text, text);
 
                 if(this->_eventLog.size() >= EVENT_LOG_MAXIMUM_ENTRIES){
