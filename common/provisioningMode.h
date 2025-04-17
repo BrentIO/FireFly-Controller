@@ -76,7 +76,7 @@
                 #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
                     this->_wifi->softAP(F("FireFly-Provisioning"));
 
-                    WiFiEventId_t eventID = this->_wifi->onEvent(
+                    this->_wifi->onEvent(
                         [&](WiFiEvent_t event, WiFiEventInfo_t info ) {
                           char macAddress[18] = {0};
                           sprintf(macAddress, "%02x:%02x:%02x:%02x:%02x:%02x", info.wifi_ap_staconnected.mac[0],info.wifi_ap_staconnected.mac[1],info.wifi_ap_staconnected.mac[2],info.wifi_ap_staconnected.mac[3], info.wifi_ap_staconnected.mac[4], info.wifi_ap_staconnected.mac[5]);
