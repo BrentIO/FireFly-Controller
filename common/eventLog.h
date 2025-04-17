@@ -44,7 +44,7 @@
             void _logError(const char* text){
 
                 for(int i=0; i < this->_errors.size(); i++){
-                    if(this->_errors.get(i) == text){
+                    if(strcmp(this->_errors.get(i), text) == 0){
                         return;
                     }
                 }
@@ -176,7 +176,7 @@
              * @param text Descriptive text of the original error that should be resolved
              * 
             */
-            void resolveError(char* text){
+            void resolveError(const char* text){
 
                 for(int i=0; i < this->_errors.size(); i++){
 
