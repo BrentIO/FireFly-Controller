@@ -1,4 +1,4 @@
-let dbVersion = 11;
+let dbVersion = 20240405;
 
 const dbName = "FireFly-Controller";
 let db = new Dexie(dbName);
