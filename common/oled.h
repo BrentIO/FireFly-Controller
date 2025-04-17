@@ -1195,6 +1195,9 @@
                             setPage(PAGE_AUTH_TOKEN);
                         } 
                         break;
+
+                    default:
+                        break;
                 }
               
             }
