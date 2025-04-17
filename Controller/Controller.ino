@@ -2984,7 +2984,6 @@ void mqtt_autoDiscovery_outputs(){
     return;
   };
 
-  boolean isOK = true;
   StaticJsonDocument<128> controllerFilterDoc;
 
   JsonObject filter_outputs__ = controllerFilterDoc["outputs"].createNestedObject("*");
