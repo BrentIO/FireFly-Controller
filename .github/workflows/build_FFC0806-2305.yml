@@ -27,7 +27,7 @@ jobs:
             - source-url: https://github.com/adafruit/Adafruit_SSD1306.git
               version: 2.5.7
             - source-url: https://github.com/bblanchon/ArduinoJson.git
-              version: 6.21.5
+              version: v6.21.5
             - source-url: https://github.com/bblanchon/ArduinoStreamUtils.git
               version: 1.9.0
             - source-url: https://github.com/BrentIO/AsyncTCP.git
