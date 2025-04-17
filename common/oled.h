@@ -1166,7 +1166,8 @@
                                 break;
                             #endif
 
-                        } 
+                        }
+                        break;
 
                     case PAGE_HARDWARE_INTRO:
 

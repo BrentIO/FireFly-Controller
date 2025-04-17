@@ -301,6 +301,8 @@ class managerInputs{
                             break;
                         }
 
+                        break;
+
                     case inputType::NORMALLY_CLOSED:
 
                         //Check if input is in an abnormal state
