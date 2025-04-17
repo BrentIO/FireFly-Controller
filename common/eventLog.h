@@ -147,7 +147,7 @@
              * @param level Severity level of the event
             */
             void createEvent(const __FlashStringHelper *text, logLevel level = LOG_LEVEL_INFO){
-                createEvent(text, level);
+                createEvent((const char*)text, level);
             }
 
             /**
