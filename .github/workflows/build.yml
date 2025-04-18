@@ -3,7 +3,7 @@ name: Build Firmware
 on: workflow_dispatch
 
 env:
-  VERSION_arduino-cli: 0.35.3
+  VERSION_arduino_cli: 0.35.3
   VERSION_ESP_Core: 2.0.11
   VERSION_Adafruit_BusIO: 1.14.1
 
@@ -18,7 +18,7 @@ jobs:
       - name: Install Arduino CLI
         uses: arduino/setup-arduino-cli@v2
         with:
-          version: $VERSION_arduino-cli
+          version: $VERSION_arduino_cli
 
       - name: Initialize the installation
         run: arduino-cli config init
