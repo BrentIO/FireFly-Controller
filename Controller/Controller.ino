@@ -403,6 +403,10 @@ void loop() {
 */
 void eventHandler_temperature(const char* location, float value){
 
+  if(externalEEPROM.enabled == false){
+    return;
+  }
+
   char* temperature = new char[6];
   snprintf(temperature, 6, "%.2f", value);
 
@@ -771,6 +775,11 @@ void updateNTPTime(bool force){
  * Sets the controller name on the OLED display
  */
 void setControllerNameOnOLED(){
+
+  if(externalEEPROM.enabled == false){
+    return;
+  }
+
 
   String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
 
@@ -2135,7 +2144,7 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
 */
 void setup_OtaFirmware(){
 
-  if(strcmp(externalEEPROM.data.uuid, "") == 0){
+  if(externalEEPROM.enabled == false){
     return;
   }
 
@@ -2152,10 +2161,8 @@ void setup_OtaFirmware(){
   otaFirmware.setSPIFFsPartitionLabel("www");
   otaFirmware.setCertFileSystem(nullptr);
 
-  if(strcmp(externalEEPROM.data.uuid, "") != 0){
-    otaFirmware.setExtraHTTPHeader(F("uuid"), externalEEPROM.data.uuid);
-    otaFirmware.setExtraHTTPHeader(F("product_id"), externalEEPROM.data.product_id);
-  }
+  otaFirmware.setExtraHTTPHeader(F("uuid"), externalEEPROM.data.uuid);
+  otaFirmware.setExtraHTTPHeader(F("product_id"), externalEEPROM.data.product_id);
 
   StaticJsonDocument<16> filter;
   filter["ota"] = true;
@@ -2277,6 +2284,10 @@ void otaFirmware_checkPending(){
 */
 void eventHandler_otaFirmwareProgress(size_t progress, size_t size){
 
+  if(externalEEPROM.enabled == false){
+    return;
+  }
+
   otaFirmware.updateInProcess = true;
 
   float percentage = ((float)progress/(float)size);
@@ -2307,6 +2318,11 @@ void eventHandler_otaFirmwareProgress(size_t progress, size_t size){
  * @param partition inherited from esp32FOTA library
 */
 void eventHandler_otaFirmwareFailed(int partition){
+
+  if(externalEEPROM.enabled == false){
+    return;
+  }
+
   log_e("Failed partition: [%i]", partition);
   eventLog.createEvent("OTA firmware failed", EventLog::LOG_LEVEL_NOTIFICATION);
 
@@ -2348,7 +2364,7 @@ void setupIO(){
 
   bool isOK = true;
 
-  if(strcmp(externalEEPROM.data.uuid, "") == 0){
+  if(externalEEPROM.enabled == false){
     eventLog.createEvent(F("No I/O setup (EEPROM)"), EventLog::LOG_LEVEL_ERROR);
     return;
   }
@@ -2628,6 +2644,10 @@ void mqtt_reconnect(){
     return;
   }
 
+  if(externalEEPROM.enabled == false){
+    return;
+  }
+
   if((esp_timer_get_time() - mqttClient.lastReconnectAttemptTime) / 1000  > MQTT_RECONNECT_WAIT_MILLISECONDS || mqttClient.lastReconnectAttemptTime == 0){
 
     if(!mqttClient.connected()){
@@ -2647,6 +2667,10 @@ void mqtt_reconnect(){
  * Sets up the MQTT client for use
  */
 void setupMQTT(){
+
+  if(externalEEPROM.enabled == false){
+    return;
+  }
 
   char *topic_availability = new char[MQTT_TOPIC_CONTROLLER_AVAILABILITY_LENGTH+1];
   snprintf(topic_availability, MQTT_TOPIC_CONTROLLER_AVAILABILITY_LENGTH+1, MQTT_TOPIC_CONTROLLER_AVAILABILITY_PATTERN, externalEEPROM.data.uuid);
@@ -2906,6 +2930,10 @@ void eventHandler_mqttDisconnect(int8_t errorNumber){
  */
 void mqtt_autoDiscovery_temperature(){
 
+  if(externalEEPROM.enabled == false){
+    return;
+  }
+
   for(int i = 0; i < TEMPERATURE_SENSOR_COUNT; i++){
 
     const char* sensorLocation = temperatureSensors.getSensorLocation(i);
@@ -2963,6 +2991,10 @@ void mqtt_autoDiscovery_temperature(){
  */
 void mqtt_publishTemperatures(){
 
+  if(externalEEPROM.enabled == false){
+    return;
+  }
+
   for(int i = 0; i < TEMPERATURE_SENSOR_COUNT; i++){
 
     char* temperature = new char[6];
@@ -2980,6 +3012,10 @@ void mqtt_publishTemperatures(){
  * Handles output auto discovery broadcasts
  */
 void mqtt_autoDiscovery_outputs(){
+
+  if(externalEEPROM.enabled == false){
+    return;
+  }
 
   if(!configFS.exists(CONFIGFS_PATH_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid)){
     log_v("Controller config file does not exist");
@@ -3124,6 +3160,10 @@ void mqtt_autoDiscovery_outputs(){
  */
 void mqtt_autoDiscovery_start_time(){
 
+  if(externalEEPROM.enabled == false){
+    return;
+  }
+
   DynamicJsonDocument doc(1024);
 
   char* topic = new char[MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_LENGTH+1];
@@ -3176,6 +3216,10 @@ void mqtt_autoDiscovery_start_time(){
  */
 void mqtt_publishStartTime(){
 
+  if(externalEEPROM.enabled == false){
+    return;
+  }
+
   char* state_topic = new char[MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_TIME_START_STATE_PATTERN, externalEEPROM.data.uuid);
 
@@ -3190,6 +3234,10 @@ void mqtt_publishStartTime(){
  * Handles MAC address sensor auto discovery broadcasts
  */
 void mqtt_autoDiscovery_mac_address(){
+
+  if(externalEEPROM.enabled == false){
+    return;
+  }
 
   DynamicJsonDocument doc(1024);
 
@@ -3241,6 +3289,10 @@ void mqtt_autoDiscovery_mac_address(){
  * Publishes the MAC Address to MQTT
  */
 void mqtt_publishMACAddress(){
+
+  if(externalEEPROM.enabled == false){
+    return;
+  }
 
   char* state_topic = new char[MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
@@ -3310,6 +3362,10 @@ void mqtt_autoDiscovery_ip_address(){
  */
 void mqtt_publishIPAddress(){
 
+  if(externalEEPROM.enabled == false){
+    return;
+  }
+
   char* state_topic = new char[MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
 
@@ -3321,6 +3377,10 @@ void mqtt_publishIPAddress(){
  * Handles count errors sensor auto discovery broadcasts
  */
 void mqtt_autoDiscovery_count_errors(){
+
+  if(externalEEPROM.enabled == false){
+    return;
+  }
 
   DynamicJsonDocument doc(1024);
 
@@ -3373,6 +3433,10 @@ void mqtt_autoDiscovery_count_errors(){
  */
 void mqtt_publishCountErrors(){
 
+  if(externalEEPROM.enabled == false){
+    return;
+  }
+
   char* state_topic = new char[MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN, externalEEPROM.data.uuid);
 
@@ -3387,6 +3451,10 @@ void mqtt_publishCountErrors(){
  * Handles update auto discovery broadcasts
  */
 void mqtt_autoDiscovery_update(){
+
+  if(externalEEPROM.enabled == false){
+    return;
+  }
   
   char* topic = new char[MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN_LENGTH+1];
   snprintf(topic, MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
@@ -3454,6 +3522,10 @@ void mqtt_autoDiscovery_update(){
  */
 void mqtt_publishUpdateAvailable(JsonVariant &updateDoc){
 
+  if(externalEEPROM.enabled == false){
+    return;
+  }
+
   DynamicJsonDocument mqttDoc(256);
 
   mqttDoc["installed_version"] = VERSION;
@@ -3489,6 +3561,10 @@ void mqtt_publishUpdateAvailable(JsonVariant &updateDoc){
  * Updates the update service availability.  If the service is available but no update is found, an MQTT event is published with the current version
  */
 void mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus status){
+
+  if(externalEEPROM.enabled == false){
+    return;
+  }
 
   char* availability_topic = new char[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
   snprintf(availability_topic, MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1, MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, externalEEPROM.data.uuid);
