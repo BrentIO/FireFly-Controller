@@ -299,7 +299,11 @@
                         this->hardware.println(F("UNKNOWN"));
                     #endif
 
-                    this->hardware.println(this->_name);
+                    if(this->_name){
+                        this->hardware.println(this->_name);
+                    }else{
+                        this->hardware.println(F("No Device Name"));
+                    }
 
                 #endif
 
