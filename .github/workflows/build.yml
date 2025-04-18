@@ -16,7 +16,7 @@ jobs:
       - name: Install Arduino CLI
         uses: arduino/setup-arduino-cli@v2
         with:
-          version: "v0.35.3"
+          version: 0.35.3
 
       - name: Configure Arduino CLI
         run: |
@@ -28,3 +28,50 @@ jobs:
           ARDUINO_DIR=`arduino-cli config dump --format json | jq -r .directories.data`
           ln -s ${{ github.workspace }}/boards.local.txt ${ARDUINO_DIR}/packages/esp32/hardware/esp32/$ESP_VERSION/boards.local.txt
           cat ${ARDUINO_DIR}/packages/esp32/hardware/esp32/$ESP_VERSION/boards.local.txt
+
+      - uses: arduino/compile-sketches@v1.1.2
+        with:
+          cli-version: 0.35.3
+          fqbn: "esp32:esp32:firefly_controller"
+          libraries: |
+            - source-url: https://github.com/adafruit/Adafruit_BusIO.git
+              version: 1.14.1
+            - source-url: https://github.com/adafruit/Adafruit-GFX-Library.git
+              version: 1.11.5
+            - source-url: https://github.com/adafruit/Adafruit_SSD1306.git
+              version: 2.5.7
+            - source-url: https://github.com/bblanchon/ArduinoJson.git
+              version: v6.21.5
+            - source-url: https://github.com/bblanchon/ArduinoStreamUtils.git
+              version: v1.9.0
+            - source-url: https://github.com/BrentIO/AsyncTCP.git
+              version: 2024.2.1
+            - source-url: https://github.com/BrentIO/AsyncWebServer_ESP32_W5500.git
+              version: 2024.7.1
+            - source-url: https://github.com/BrentIO/ESPAsyncWebServer.git
+              version: 2024.7.1
+            - source-url: https://github.com/BrentIO/esp32FOTA.git
+              version: 2025.4.1
+            - source-url: https://github.com/BrentIO/PCA95x5.git
+              version: 2023.10.2
+            - source-url: https://github.com/BrentIO/PCT2075.git
+              version: 2023.10.3
+            - source-url: https://github.com/BrentIO/pubsubclient.git
+              version: 2025.4.1
+            - source-url: https://github.com/arduino-libraries/Ethernet.git
+              version: 2.0.2
+            - source-url: https://github.com/RobTillaart/I2C_EEPROM.git
+              version: 1.7.1
+            - source-url: https://github.com/ivanseidel/LinkedList.git
+              version: v1.3.3
+            - source-url: https://github.com/arduino-libraries/NTPClient.git
+              version: 3.2.1
+            - source-url: https://github.com/RobTillaart/PCA9685_RT.git
+              version: 0.4.1
+            - source-url: https://github.com/nickgammon/Regexp.git
+              version: 0.1.1
+          cli-compile-flags: |
+            - --build-property
+            - "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=0x08062305 -DESP32 -I${{ github.workspace }}"
+          sketch-paths: |
+            - Controller
