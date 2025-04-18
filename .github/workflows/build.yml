@@ -18,7 +18,7 @@ jobs:
       - name: Install Arduino CLI
         uses: arduino/setup-arduino-cli@v2
         with:
-          version: $VERSION_arduino_cli
+          version: 0.35.3
 
       - name: Initialize the installation
         run: arduino-cli config init
