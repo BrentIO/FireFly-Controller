@@ -1,4 +1,4 @@
-name: Build Firmware FFC0806-2305
+name: Build Firmware
 
 on: workflow_dispatch
 
