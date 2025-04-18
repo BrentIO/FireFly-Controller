@@ -37,8 +37,6 @@ jobs:
             - source-url: https://github.com/BrentIO/ESPAsyncWebServer.git
               version: 2024.7.1
             - source-url: https://github.com/BrentIO/esp32FOTA.git
-          #- source-url: https://github.com/BrentIO/esp32FOTA.git
-          #  version: 2024.8.2
             - source-url: https://github.com/BrentIO/PCA95x5.git
               version: 2023.10.2
             - source-url: https://github.com/BrentIO/PCT2075.git
