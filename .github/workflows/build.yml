@@ -3,9 +3,7 @@ name: Build Firmware
 on: workflow_dispatch
 
 env:
-  VERSION_arduino_cli: 0.35.3
   VERSION_ESP_Core: 2.0.11
-  VERSION_Adafruit_BusIO: 1.14.1
 
 jobs:
   build:
@@ -38,9 +36,12 @@ jobs:
           ln -s ${{ github.workspace }}/boards.local.txt ${ARDUINO_DIR}/packages/esp32/hardware/esp32/$VERSION_ESP_Core/boards.local.txt
           cat ${ARDUINO_DIR}/packages/esp32/hardware/esp32/$VERSION_ESP_Core/boards.local.txt
 
+      - name: Enable unsafe installation so that git can be usedocal zip files can be installed
+        run: arduino-cli config set library.enable_unsafe_install true
+      
       - name: Install libraries
         run: |
-          arduino-cli lib install --git-url https://github.com/adafruit/Adafruit_BusIO.git#$VERSION_Adafruit_BusIO
+          arduino-cli lib install --git-url https://github.com/adafruit/Adafruit_BusIO.git#1.14.1
 
       - name: Print Libraries
         run: arduino-cli lib list
