@@ -392,7 +392,7 @@ void loop() {
   #endif
 
   #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_W5500
-    #error MQTT will not automatically reconnect with this ethernet model
+    #warning MQTT will not automatically reconnect with this ethernet model
   #endif
 
 }
