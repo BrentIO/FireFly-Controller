@@ -13,8 +13,11 @@ jobs:
 
     strategy:
       matrix:
-        application: ["Controller"]
-        product_hex: ["0x08062305","0x32322304"] 
+        application:
+          - "Controller"
+          
+        product_hex:
+          - "0x08062305" 
 
         include:
           - product_hex: "0x08062305"
@@ -79,8 +82,15 @@ jobs:
       - name: Compile
         run: arduino-cli compile -b esp32:esp32:firefly_controller ./${{ matrix.application }} --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
 
+      - name: Print Path
+        run: ls ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/
+
+      - name: Print Path with *
+        run: ls ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/
+
       - uses: actions/upload-artifact@v4
         name: Upload Artifacts
         with:
+          retention-days: 1
           name: ${{ matrix.name }}-${{ matrix.application }}
           path: ~/artifacts/*
