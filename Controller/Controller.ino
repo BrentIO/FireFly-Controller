@@ -3369,7 +3369,11 @@ void mqtt_publishIPAddress(){
   char* state_topic = new char[MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
 
-  mqttClient.publish(state_topic, ETH.localIP().toString().c_str(), true);
+  #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
+    mqttClient.publish(state_topic, ETH.localIP().toString().c_str(), true);
+  #else
+    #warning Unknown Ethernet Controller; IP address will not be published to MQTT
+  #endif
 }
 
 
