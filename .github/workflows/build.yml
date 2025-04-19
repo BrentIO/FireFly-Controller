@@ -6,9 +6,20 @@ env:
   VERSION_ESP_Core: 2.0.11
 
 jobs:
+
+  get-runner:
+    runs-on: ubuntu-latest
+    outputs:
+      RUNNER: ${{ runner.name }}
+    steps:
+      - run: echo "selected runner = ${{ runner.name }}"
+
+
+
   ConfigureEnvironment:
     name: Configure Environment
-    runs-on: ubuntu-latest
+    needs: get-runner
+    runs-on: ${{needs.get-runner.outputs.RUNNER}}
 
     steps:
       - name: Check out repository
@@ -66,8 +77,8 @@ jobs:
 
   CompileCode:
     name: Compile Code
-    needs: ConfigureEnvironment
-    runs-on: ubuntu-latest
+    needs: [get-runner, ConfigureEnvironment]
+    runs-on: ${{needs.get-runner.outputs.RUNNER}}
 
     strategy:
       matrix:
@@ -87,8 +98,8 @@ jobs:
 
   UploadArtifacts:
     name: Upload Artifacts
-    needs: CompileCode
-    runs-on: ubuntu-latest
+    needs: [get-runner, CompileCode]
+    runs-on: ${{needs.get-runner.outputs.RUNNER}}
     
     steps:
       - uses: actions/upload-artifact@v4
