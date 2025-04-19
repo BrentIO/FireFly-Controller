@@ -80,6 +80,7 @@ jobs:
         run: arduino-cli compile -b esp32:esp32:firefly_controller ./${{ matrix.application }} --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
 
   UploadArtifacts:
+      name: Upload Artifacts
       runs-on: ubuntu-latest
       needs: ConfigureAndBuild
       
