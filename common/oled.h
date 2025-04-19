@@ -1226,25 +1226,23 @@
                         _showPage_EventLog_Intro();
                         break;
 
-                    #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE || ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
-
-                        case PAGE_NETWORK_INTRO:
+                    case PAGE_NETWORK_INTRO:
+                        #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE || ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
                             _showPage_Network_Intro();
-                            break;
+                        #endif
+                        break;
 
-                    #endif
-
-                    #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
-                        case PAGE_WIFI:
+                    case PAGE_WIFI:
+                        #if WIFI_MODEL != ENUM_WIFI_MODEL_NONE
                             _showPage_WiFi();
-                            break;
-                    #endif
+                        #endif
+                        break;
 
-                    #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
-                        case PAGE_ETHERNET:
+                    case PAGE_ETHERNET:
+                        #if ETHERNET_MODEL != ENUM_ETHERNET_MODEL_NONE
                             _showPage_Ethernet();
-                            break;
-                    #endif
+                        #endif
+                        break;
 
                     case PAGE_HARDWARE_INTRO:
                         _showPage_Hardware_Intro();
