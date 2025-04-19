@@ -22,8 +22,8 @@ jobs:
         include:
           - product_hex: "0x08062305"
             name: "FFC0806-2305"
-          - product_hex: "0x32322304"
-            name: "FFC3232-2304"
+        #  - product_hex: "0x32322304"
+        #    name: "FFC3232-2304"
 
     steps:
       - name: Check out repository
