@@ -10,16 +10,14 @@ jobs:
   get-runner:
     runs-on: ubuntu-latest
     outputs:
-      RUNNER: ${{ runner.name }}
+      runner: ${{ runner.name }}
     steps:
       - run: echo "selected runner = ${{ runner.name }}"
-
-
 
   ConfigureEnvironment:
     name: Configure Environment
     needs: get-runner
-    runs-on: ${{needs.get-runner.outputs.RUNNER}}
+    runs-on: ${{ needs.get-runner.outputs.runner }}
 
     steps:
       - name: Check out repository
@@ -78,7 +76,7 @@ jobs:
   CompileCode:
     name: Compile Code
     needs: [get-runner, ConfigureEnvironment]
-    runs-on: ${{needs.get-runner.outputs.RUNNER}}
+    runs-on: ${{ needs.get-runner.outputs.runner }}
 
     strategy:
       matrix:
@@ -99,7 +97,7 @@ jobs:
   UploadArtifacts:
     name: Upload Artifacts
     needs: [get-runner, CompileCode]
-    runs-on: ${{needs.get-runner.outputs.RUNNER}}
+    runs-on: ${{ needs.get-runner.outputs.runner }}
     
     steps:
       - uses: actions/upload-artifact@v4
