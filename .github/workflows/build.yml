@@ -64,13 +64,34 @@ jobs:
       - name: Print Libraries
         run: arduino-cli lib list
 
-      - name: Create Artifacts directory
-        run: mkdir ~/artifacts/
+  CompileCode:
+    name: Compile Code
+    needs: ConfigureEnvironment
+    runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        product_hexes: ["0x08062305"] 
+
+        include:
+          - product_hexes: "0x08062305"
+            name: "FFC0806-2305"
+    
+    steps:
+      - name: Create Artifacts Directory for ${{ matrix.name }}
+        run: mkdir ~/artifacts/${{ matrix.name }}/
+        
       - name: Compile
-        run: arduino-cli compile -b esp32:esp32:firefly_controller ./Controller --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=0x08062305 -DESP32 -I${{ github.workspace }}" --export-binaries ~/artifacts/
+        run: arduino-cli compile -b esp32:esp32:firefly_controller ./Controller --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=0x08062305 -DESP32 -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/
 
+
+  UploadArtifacts:
+    name: Upload Artifacts
+    needs: CompileCode
+    runs-on: ubuntu-latest
+    
+    steps:
       - uses: actions/upload-artifact@v4
+        name: Upload Artifacts
         with:
-          name: Upload Artifacts
           path: ~/artifacts/*
