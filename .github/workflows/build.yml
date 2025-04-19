@@ -22,9 +22,12 @@ jobs:
         include:
           - product_hex: "0x08062305"
             name: FFC0806-2305
+            partition_size_config: "0x80000"
             partition_size_www: "0x2E0000"
+
         #  - product_hex: "0x32322304"
         #    name: "FFC3232-2304"
+        #    partition_size_config: "0x80000"
         #    partition_size_www: 0x2E0000
 
     steps:
@@ -94,7 +97,7 @@ jobs:
         run: |
           ARDUINO_DIR=`arduino-cli config dump --format json | jq -r .directories.data`
           ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/mklittlefs -s ${{ matrix.partition_size_www }} -c ${{ github.workspace }}/${{ matrix.application }}/www ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/www.bin
-          ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/mklittlefs -s ${{ matrix.partition_size_www }} -c ~/empty ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/config.bin
+          ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/mklittlefs -s ${{ matrix.partition_size_config }} -c ~/empty ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/config.bin
 
       - uses: actions/upload-artifact@v4
         name: Upload Artifacts
