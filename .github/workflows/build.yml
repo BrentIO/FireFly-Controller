@@ -81,16 +81,20 @@ jobs:
       - name: Print Libraries
         run: arduino-cli lib list
 
+      - name: Create Empty Directory
+        run: mkdir -p ~/empty/
+
       - name: Create Output Directory
         run: mkdir -p ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
       
       #- name: Compile
       #  run: arduino-cli compile -b esp32:esp32:firefly_controller ./${{ matrix.application }} --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
 
-      - name: Build www spiffs
+      - name: Build spiffs images
         run: |
           ARDUINO_DIR=`arduino-cli config dump --format json | jq -r .directories.data`
           ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/mklittlefs -s ${{ matrix.partition_size_www }} -c ${{ github.workspace }}/${{ matrix.application }}/www ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/www.bin
+          ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/mklittlefs -s ${{ matrix.partition_size_www }} -c ~/empty ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/config.bin
 
       - uses: actions/upload-artifact@v4
         name: Upload Artifacts
