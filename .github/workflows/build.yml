@@ -20,9 +20,9 @@ jobs:
           - 0x08062305
 
         include:
-          - product_hex: 0x08062305
+          - product_hex: "0x08062305"
             name: FFC0806-2305
-            partition_size_www: 0x2E0000
+            partition_size_www: "0x2E0000"
         #  - product_hex: "0x32322304"
         #    name: "FFC3232-2304"
         #    partition_size_www: 0x2E0000
@@ -80,19 +80,12 @@ jobs:
 
       - name: Print Libraries
         run: arduino-cli lib list
+
+      - name: Create Output Directory
+        run: mkdir -p ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
       
       #- name: Compile
       #  run: arduino-cli compile -b esp32:esp32:firefly_controller ./${{ matrix.application }} --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
-
-      - name: Print Path
-        run: |
-          ARDUINO_DIR=`arduino-cli config dump --format json | jq -r .directories.data`
-          ls ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/
-
-      - name: Print Path with *
-        run: |
-          ARDUINO_DIR=`arduino-cli config dump --format json | jq -r .directories.data`
-          ls ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/
 
       - name: Build www spiffs
         run: |
