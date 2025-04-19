@@ -4,24 +4,25 @@ on: workflow_dispatch
 
 env:
   VERSION_ESP_Core: 2.0.11
+  ARDUINO_DIR: ""
 
 jobs:
 
   ConfigureAndBuild:
     name: Build ${{ matrix.name }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     strategy:
       matrix:
         application:
-          - "Controller"
+          - Controller
           
         product_hex:
-          - "0x08062305" 
+          - 0x08062305
 
         include:
-          - product_hex: "0x08062305"
-            name: "FFC0806-2305"
+          - product_hex: 0x08062305
+            name: FFC0806-2305
         #  - product_hex: "0x32322304"
         #    name: "FFC3232-2304"
 
@@ -48,9 +49,9 @@ jobs:
 
       - name: Create symlink for boards.local.txt
         run: |
-          ARDUINO_DIR=`arduino-cli config dump --format json | jq -r .directories.data`
-          ln -s ${{ github.workspace }}/boards.local.txt ${ARDUINO_DIR}/packages/esp32/hardware/esp32/$VERSION_ESP_Core/boards.local.txt
-          cat ${ARDUINO_DIR}/packages/esp32/hardware/esp32/$VERSION_ESP_Core/boards.local.txt
+          $ARDUINO_DIR=`arduino-cli config dump --format json | jq -r .directories.data`
+          ln -s ${{ github.workspace }}/boards.local.txt $ARDUINO_DIR/packages/esp32/hardware/esp32/$VERSION_ESP_Core/boards.local.txt
+          cat $ARDUINO_DIR/packages/esp32/hardware/esp32/$VERSION_ESP_Core/boards.local.txt
 
       - name: Enable unsafe installation so that git can be usedocal zip files can be installed
         run: arduino-cli config set library.enable_unsafe_install true
@@ -83,10 +84,10 @@ jobs:
         run: arduino-cli compile -b esp32:esp32:firefly_controller ./${{ matrix.application }} --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
 
       - name: Print Path
-        run: ls ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/
+        run: ls $ARDUINO_DIR/packages/esp32/tools/mklittlefs/
 
       - name: Print Path with *
-        run: ls ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/
+        run: ls $ARDUINO_DIR/packages/esp32/tools/mklittlefs/**/
 
       - uses: actions/upload-artifact@v4
         name: Upload Artifacts
