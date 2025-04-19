@@ -57,8 +57,7 @@
         #define OLED_LED_PIN 33 /* LED for the front panel button */
         
         /* Ethernet */
-        #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_W5500
-        #define ETHERNET_PIN 0 /* Ethernet hardware control flow pin */
+        #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_NONE // INOPERATIVE THIS MODEL
 
         /* WiFi */
         #define WIFI_MODEL ENUM_WIFI_MODEL_ESP32
@@ -100,8 +99,7 @@
         #define OLED_LED_PIN 33 /* LED for the front panel button */
         
         /* Ethernet */
-        #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_W5500
-        #define ETHERNET_PIN 0 /* Ethernet hardware control flow pin */
+        #define ETHERNET_MODEL ENUM_ETHERNET_MODEL_NONE // INOPERATIVE THIS MODEL
 
         /* WiFi */
         #define WIFI_MODEL ENUM_WIFI_MODEL_ESP32
