@@ -7,17 +7,17 @@ env:
 
 jobs:
 
-  get-runner:
+  ConfigureAndBuild:
+    name: Configure Environment and Build
     runs-on: ubuntu-latest
-    outputs:
-      runner: ${{ runner.name }}
-    steps:
-      - run: echo "selected runner = ${{ runner.name }}"
 
-  ConfigureEnvironment:
-    name: Configure Environment
-    needs: get-runner
-    runs-on: ${{ needs.get-runner.outputs.runner }}
+    strategy:
+      matrix:
+        product_hexes: ["0x08062305"] 
+
+        include:
+          - product_hexes: "0x08062305"
+            name: "FFC0806-2305"
 
     steps:
       - name: Check out repository
@@ -72,34 +72,10 @@ jobs:
 
       - name: Print Libraries
         run: arduino-cli lib list
-
-  CompileCode:
-    name: Compile Code
-    needs: [get-runner, ConfigureEnvironment]
-    runs-on: ${{ needs.get-runner.outputs.runner }}
-
-    strategy:
-      matrix:
-        product_hexes: ["0x08062305"] 
-
-        include:
-          - product_hexes: "0x08062305"
-            name: "FFC0806-2305"
-    
-    steps:
-      - name: Create Artifacts Directory for ${{ matrix.name }}
-        run: mkdir -p ~/artifacts/${{ matrix.name }}/
-        
+      
       - name: Compile
         run: arduino-cli compile -b esp32:esp32:firefly_controller ./Controller --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=0x08062305 -DESP32 -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/
 
-
-  UploadArtifacts:
-    name: Upload Artifacts
-    needs: [get-runner, CompileCode]
-    runs-on: ${{ needs.get-runner.outputs.runner }}
-    
-    steps:
       - uses: actions/upload-artifact@v4
         name: Upload Artifacts
         with:
