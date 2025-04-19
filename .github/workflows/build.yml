@@ -79,7 +79,7 @@ jobs:
     
     steps:
       - name: Create Artifacts Directory for ${{ matrix.name }}
-        run: mkdir ~/artifacts/${{ matrix.name }}/
+        run: mkdir -p ~/artifacts/${{ matrix.name }}/
         
       - name: Compile
         run: arduino-cli compile -b esp32:esp32:firefly_controller ./Controller --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=0x08062305 -DESP32 -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/
