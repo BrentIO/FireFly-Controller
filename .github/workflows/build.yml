@@ -69,3 +69,8 @@ jobs:
 
       - name: Compile
         run: arduino-cli compile -b esp32:esp32:firefly_controller ./Controller --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=0x08062305 -DESP32 -I${{ github.workspace }}" --export-binaries ~/artifacts/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Upload Artifacts
+          path: ~/artifacts/*
