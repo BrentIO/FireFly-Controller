@@ -90,7 +90,7 @@ jobs:
         run: mkdir -p ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
       
       - name: Compile Application
-        run: arduino-cli compile -b esp32:esp32:firefly_controller ./${{ matrix.application }} --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
+        run: arduino-cli compile -b esp32:esp32:firefly_controller ./${{ matrix.application }} --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=0 -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
 
       - name: Create Empty Directory for Use by LittleFS
         run: mkdir -p ~/empty/
