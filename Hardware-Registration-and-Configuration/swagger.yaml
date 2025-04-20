@@ -14,8 +14,8 @@ tags:
     description: Mangage long-term http authorizations
   - name: Certificates
     description: Operations for the storage, retrieval, and management of certificates
-  - name: Configuration
-    description: Operations for configuring various services
+  - name: Over-the-Air Updates
+    description: Operations for pushing OTA updates
   - name: EEPROM
     description: Operations for managing the external EEPROM data
   - name: Event and Error Logs
@@ -272,7 +272,7 @@ paths:
   /api/ota/app:
     post:
       tags:
-        - Configuration
+        - Over-the-Air Updates
       summary: Force application OTA update
       description: Forces an over-the-air (OTA) application firmware retrieval with the URL provided
       security:
@@ -306,7 +306,7 @@ paths:
   /api/ota/spiffs:
     post:
       tags:
-        - Configuration
+        - Over-the-Air Updates
       summary: Force SPIFFs OTA update
       description: Forces an over-the-air (OTA) SPIFFs retrieval with the URL provided
       security:
