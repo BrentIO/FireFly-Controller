@@ -296,7 +296,7 @@ namespace nsOutputs{
         public:
 
             struct healthResult{
-                const uint8_t count = OUTPUT_CONTROLLER_COUNT;
+                uint8_t count = 0; /** The number of output controllers */
                 structHealth outputControllers[OUTPUT_CONTROLLER_COUNT] = {}; /** Array of output controller health */
             };
 
