@@ -328,6 +328,7 @@ void otaFirmware_checkPending(){
       eventLog.createEvent(F("OTA update failed"), EventLog::LOG_LEVEL_NOTIFICATION);
     }
 
+    otaFirmware.pending.remove(i);
   }
 
 }
