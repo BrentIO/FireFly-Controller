@@ -267,11 +267,7 @@ void setup() {
 */
 void loop() {
 
-  #if WIFI_MODEL != ENUM_WIFI_MODEL_ESP32 //Ignore when in SoftAP mode
-    updateNTPTime();
-
-
-  #endif
+  updateNTPTime();
 
   otaFirmware_checkPending();
 
