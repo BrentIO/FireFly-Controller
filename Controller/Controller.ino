@@ -2243,6 +2243,7 @@ void otaFirmware_checkPending(){
     forceFirmwareUpdate.setProgressCb(eventHandler_otaFirmwareProgress);
     forceFirmwareUpdate.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
     forceFirmwareUpdate.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
+    forceFirmwareUpdate.setSPIFFsPartitionLabel("www");
 
     bool updateSuccess = false;
 
