@@ -378,10 +378,12 @@ namespace nsOutputs{
                     return returnValue;
                 }
 
-                for(int i = 0; i < OUTPUT_CONTROLLER_COUNT; i++){
+                for(int i = 0; i < (sizeof(this->outputControllers) / sizeof(outputController)); i++){
                     returnValue.outputControllers[i].address = this->outputControllers[i].address;
                     returnValue.outputControllers[i].enabled = this->outputControllers[i].enabled;
                 }
+
+                returnValue.count = (sizeof(this->outputControllers) / sizeof(outputController));
 
                 return returnValue;
             }

@@ -489,12 +489,12 @@ class managerInputs{
                 return returnValue;
             }
 
-            for(int i = 0; i < IO_EXTENDER_COUNT; i++){
+            for(int i = 0; i < (sizeof(this->inputControllers) / sizeof(ioExtender)); i++){
                 returnValue.inputControllers[i].address = this->inputControllers[i].address;
                 returnValue.inputControllers[i].enabled = this->inputControllers[i].enabled;
             }
 
-            returnValue.count = IO_EXTENDER_COUNT;
+            returnValue.count = (sizeof(this->inputControllers) / sizeof(ioExtender));
 
             return returnValue;
         }

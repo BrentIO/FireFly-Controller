@@ -158,12 +158,12 @@ class managerTemperatureSensors{
                 return returnValue;
             }
 
-            for(int i = 0; i < TEMPERATURE_SENSOR_COUNT; i++){
+            for(int i = 0; i < (sizeof(this->temperatureSensors) / sizeof(temperatureSensor)); i++){
                 returnValue.sensor[i].address = this->temperatureSensors[i].address;
                 returnValue.sensor[i].enabled = this->temperatureSensors[i].enabled;
             }
 
-            returnValue.count = TEMPERATURE_SENSOR_COUNT;
+            returnValue.count = (sizeof(this->temperatureSensors) / sizeof(temperatureSensor));
 
             return returnValue;
         }
