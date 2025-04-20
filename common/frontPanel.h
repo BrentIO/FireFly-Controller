@@ -112,7 +112,7 @@ class managerFrontPanel{
             }
 
             //Values are different; Check if we are within the debounce delay and that the status isn't its normal state
-            if((millis() - timePreviousChange < DEBOUNCE_DELAY) && currentState != type){
+            if((millis() - timePreviousChange < DEBOUNCE_DELAY) && ((type == NORMALLY_OPEN && currentState != STATE_OPEN) || (type == NORMALLY_CLOSED && currentState != STATE_CLOSED))){
 
                 log_v("Front Panel Button: DEBOUNCE_DELAY (%i) not satisfied. Time Previous Change: %i Current Time: %i Difference: %i Current State: %s State: %s", DEBOUNCE_DELAY, timePreviousChange, millis(), (millis() - timePreviousChange), String(currentState), String(state));
                 return;
