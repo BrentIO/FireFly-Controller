@@ -15,7 +15,7 @@ jobs:
       matrix:
         application:
           - Controller
-          #- Hardware-Registration-and-Configuration
+          - Hardware-Registration-and-Configuration
           
         product_hex:
           - "0x08062305"
