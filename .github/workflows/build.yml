@@ -15,9 +15,11 @@ jobs:
       matrix:
         application:
           - Controller
+          #- Hardware-Registration-and-Configuration
           
         product_hex:
-          - 0x08062305
+          - "0x08062305"
+          - "0x32322304"
 
         include:
           - product_hex: "0x08062305"
@@ -25,10 +27,10 @@ jobs:
             partition_size_config: "0x80000"
             partition_size_www: "0x2E0000"
 
-        #  - product_hex: "0x32322304"
-        #    name: "FFC3232-2304"
-        #    partition_size_config: "0x80000"
-        #    partition_size_www: 0x2E0000
+          - product_hex: "0x32322304"
+            name: FFC3232-2304
+            partition_size_config: "0x80000"
+            partition_size_www: "0x2E0000"
 
     steps:
       - name: Check out repository
@@ -60,26 +62,26 @@ jobs:
       - name: Enable unsafe installation so that git can be usedocal zip files can be installed
         run: arduino-cli config set library.enable_unsafe_install true
       
-     # - name: Install required libraries at specified revisions
-     #   run: |
-     #     arduino-cli lib install --git-url https://github.com/adafruit/Adafruit_BusIO.git#1.14.1
-     #     arduino-cli lib install --git-url https://github.com/adafruit/Adafruit-GFX-Library.git#1.11.5
-     #     arduino-cli lib install --git-url https://github.com/adafruit/Adafruit_SSD1306.git#2.5.7
-     #     arduino-cli lib install --git-url https://github.com/bblanchon/ArduinoJson.git#v6.21.5
-     #     arduino-cli lib install --git-url https://github.com/bblanchon/ArduinoStreamUtils.git#v1.9.0
-     #     arduino-cli lib install --git-url https://github.com/BrentIO/AsyncTCP.git#2024.2.1
-     #     arduino-cli lib install --git-url https://github.com/BrentIO/AsyncWebServer_ESP32_W5500.git#2024.7.1
-     #     arduino-cli lib install --git-url https://github.com/BrentIO/ESPAsyncWebServer.git#2024.7.1
-     #     arduino-cli lib install --git-url https://github.com/BrentIO/esp32FOTA.git#2025.4.1
-     #     arduino-cli lib install --git-url https://github.com/BrentIO/PCA95x5.git#2023.10.2
-     #     arduino-cli lib install --git-url https://github.com/BrentIO/PCT2075.git#2023.10.3
-     #     arduino-cli lib install --git-url https://github.com/BrentIO/pubsubclient.git#2025.4.1
-     #     arduino-cli lib install --git-url https://github.com/arduino-libraries/Ethernet.git#2.0.2
-     #     arduino-cli lib install --git-url https://github.com/RobTillaart/I2C_EEPROM.git#1.7.1
-     #     arduino-cli lib install --git-url https://github.com/ivanseidel/LinkedList.git#v1.3.3
-     #     arduino-cli lib install --git-url https://github.com/arduino-libraries/NTPClient.git#3.2.1
-     #     arduino-cli lib install --git-url https://github.com/RobTillaart/PCA9685_RT.git#0.4.1
-     #     arduino-cli lib install --git-url https://github.com/nickgammon/Regexp.git#0.1.1
+      - name: Install required libraries at specified revisions
+        run: |
+          arduino-cli lib install --git-url https://github.com/adafruit/Adafruit_BusIO.git#1.14.1
+          arduino-cli lib install --git-url https://github.com/adafruit/Adafruit-GFX-Library.git#1.11.5
+          arduino-cli lib install --git-url https://github.com/adafruit/Adafruit_SSD1306.git#2.5.7
+          arduino-cli lib install --git-url https://github.com/bblanchon/ArduinoJson.git#v6.21.5
+          arduino-cli lib install --git-url https://github.com/bblanchon/ArduinoStreamUtils.git#v1.9.0
+          arduino-cli lib install --git-url https://github.com/BrentIO/AsyncTCP.git#2024.2.1
+          arduino-cli lib install --git-url https://github.com/BrentIO/AsyncWebServer_ESP32_W5500.git#2024.7.1
+          arduino-cli lib install --git-url https://github.com/BrentIO/ESPAsyncWebServer.git#2024.7.1
+          arduino-cli lib install --git-url https://github.com/BrentIO/esp32FOTA.git#2025.4.1
+          arduino-cli lib install --git-url https://github.com/BrentIO/PCA95x5.git#2023.10.2
+          arduino-cli lib install --git-url https://github.com/BrentIO/PCT2075.git#2023.10.3
+          arduino-cli lib install --git-url https://github.com/BrentIO/pubsubclient.git#2025.4.1
+          arduino-cli lib install --git-url https://github.com/arduino-libraries/Ethernet.git#2.0.2
+          arduino-cli lib install --git-url https://github.com/RobTillaart/I2C_EEPROM.git#1.7.1
+          arduino-cli lib install --git-url https://github.com/ivanseidel/LinkedList.git#v1.3.3
+          arduino-cli lib install --git-url https://github.com/arduino-libraries/NTPClient.git#3.2.1
+          arduino-cli lib install --git-url https://github.com/RobTillaart/PCA9685_RT.git#0.4.1
+          arduino-cli lib install --git-url https://github.com/nickgammon/Regexp.git#0.1.1
 
       - name: Print Libraries
         run: arduino-cli lib list
@@ -90,8 +92,8 @@ jobs:
       - name: Create Output Directory
         run: mkdir -p ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
       
-      #- name: Compile
-      #  run: arduino-cli compile -b esp32:esp32:firefly_controller ./${{ matrix.application }} --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
+      - name: Compile
+        run: arduino-cli compile -b esp32:esp32:firefly_controller ./${{ matrix.application }} --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
 
       - name: Build spiffs images
         run: |
@@ -105,4 +107,4 @@ jobs:
           retention-days: 1
           if-no-files-found: error
           name: ${{ matrix.name }}-${{ matrix.application }}
-          path: ~/artifacts/*
+          path: ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/*
