@@ -66,8 +66,6 @@ bool configFS_isMounted = false;
 #define CONFIGFS_PATH_CONTROLLERS "/controllers"
 #define CONFIGFS_PATH_CLIENTS "/clients"
 
-#define DISABLE_ALL_LIBRARY_WARNINGS // quiets FOTA
-
 
 enum outputAction{
   /// @brief The output should toggle the opposite of its current state
