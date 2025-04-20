@@ -51,6 +51,8 @@ exEsp32FOTA otaFirmware(APPLICATION_NAME, VERSION, false); /* OTA firmware updat
 
 fs::LittleFSFS wwwFS;
 fs::LittleFSFS configFS;
+bool wwwFS_isMounted = false;
+bool configFS_isMounted = false;
 
 #define CONFIGFS_PATH_CERTS "/certs"
 
@@ -59,8 +61,7 @@ fs::LittleFSFS configFS;
  * One-time setup
 */
 void setup() {
-  bool wwwFS_isMounted = false;
-  bool configFS_isMounted = false;
+
 
   eventLog.createEvent(F("Event log started"));
 
