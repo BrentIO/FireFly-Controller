@@ -47,7 +47,7 @@ uint64_t ntpSleepUntil = 0;
 
 void updateNTPTime(bool force = false);
 
-LinkedList<forcedOtaUpdateConfig> otaFirmware_pending;
+exEsp32FOTA otaFirmware(APPLICATION_NAME, VERSION, false); /* OTA firmware update class */
 
 fs::LittleFSFS wwwFS;
 fs::LittleFSFS configFS;
@@ -295,34 +295,34 @@ void frontPanelButtonPress(){
 */
 void otaFirmware_checkPending(){
 
-  if(otaFirmware_pending.size() == 0){
+  if(otaFirmware.pending.size() == 0){
     return;
   }
 
-  if(otaFirmware_enabled == false){
+  if(otaFirmware.updateInProcess == true){
     return;
   }
 
-  for(int i=0; i < otaFirmware_pending.size(); i++){
+  for(int i=0; i < otaFirmware.pending.size(); i++){
 
     bool updateSuccess = false;
 
-    if(otaFirmware_pending[i].url.startsWith("https")){
-      otaFirmware_pending[i].certificate = CONFIGFS_PATH_CERTS + (String)"/" + otaFirmware_pending[i].certificate;
-      otaFirmware.setRootCA(new CryptoFileAsset(otaFirmware_pending[i].certificate.c_str(), &configFS));
+    if(otaFirmware.pending[i].url.startsWith("https")){
+      otaFirmware.pending[i].certificate = CONFIGFS_PATH_CERTS + (String)"/" + otaFirmware.pending[i].certificate;
+      otaFirmware.setRootCA(new CryptoFileAsset(otaFirmware.pending[i].certificate.c_str(), &configFS));
     }
 
-    switch(otaFirmware_pending[i].type){
+    switch(otaFirmware.pending[i].type){
 
       case OTA_UPDATE_APP:
         eventLog.createEvent(F("OTA app forced"));
-        updateSuccess = otaFirmware.forceUpdate(otaFirmware_pending[i].url.c_str(), false);
+        updateSuccess = otaFirmware.forceUpdate(otaFirmware.pending[i].url.c_str(), false);
         break;
 
 
       case OTA_UPDATE_SPIFFS:
         eventLog.createEvent(F("OTA SPIFFS forced"));
-        updateSuccess = otaFirmware.forceUpdateSPIFFS(otaFirmware_pending[i].url.c_str(), false);
+        updateSuccess = otaFirmware.forceUpdateSPIFFS(otaFirmware.pending[i].url.c_str(), false);
         break;
     }
 
@@ -663,11 +663,6 @@ void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
       return;
     }
 
-    if(otaFirmware_enabled == false){
-      http_forbiddenRequest(request, F("OTA firmware disabled"));
-      return;
-    }
-
     if(!configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + newFirmwareRequest.certificate)){
       http_badRequest(request, F("Certificate does not exist"));
       return;
@@ -681,7 +676,7 @@ void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
     newFirmwareRequest.type = OTA_UPDATE_SPIFFS;
   }
 
-  otaFirmware_pending.add(newFirmwareRequest);
+  otaFirmware.pending.add(newFirmwareRequest);
 
   request->send(202);
 }
