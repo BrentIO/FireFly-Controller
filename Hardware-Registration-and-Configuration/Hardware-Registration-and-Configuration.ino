@@ -691,9 +691,9 @@ void http_handlePartitions(AsyncWebServerRequest *request){
     return;
   }
 
-  esp_partition_iterator_t pi = esp_partition_find(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_ANY, NULL);
+  esp_partition_iterator_t partitionIterator = esp_partition_find(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_ANY, NULL);
 
-  if (pi == NULL) {
+  if (partitionIterator == NULL) {
     http_error(request, F("esp_partition_find returned NULL"));
     return;
   }
@@ -703,7 +703,7 @@ void http_handlePartitions(AsyncWebServerRequest *request){
   JsonArray array = doc.to<JsonArray>();
 
   do {
-    const esp_partition_t* p = esp_partition_get(pi);
+    const esp_partition_t* p = esp_partition_get(partitionIterator);
     JsonObject jsonPartition = array.createNestedObject();
     
     jsonPartition[F("type")] = p->type;
@@ -712,9 +712,9 @@ void http_handlePartitions(AsyncWebServerRequest *request){
     jsonPartition[F("size")] = p->size;
     jsonPartition[F("label")] = p->label;
 
-  } while (pi = (esp_partition_next(pi)));
+  } while ((partitionIterator = esp_partition_next(partitionIterator)));
 
-  esp_partition_iterator_release(pi);
+  esp_partition_iterator_release(partitionIterator);
 
   serializeJson(doc, *response);
   request->send(response);
