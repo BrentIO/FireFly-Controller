@@ -143,7 +143,7 @@ class managerTemperatureSensors{
         /** Object containing the count of temperature sensors and a list of each sensor's bus status */
         struct healthResult{
             uint8_t count = 0; /** The number of temperature sensors */
-            structHealth sensor[TEMPERATURE_SENSOR_COUNT]; /** Array of temperature snsor health*/
+            structHealth sensor[TEMPERATURE_SENSOR_COUNT] = {}; /** Array of temperature snsor health*/
         };
 
 

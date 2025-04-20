@@ -391,7 +391,7 @@ class managerInputs{
         /** Object containing the count of controllers and a list of each controller's bus status */
         struct healthResult{
             uint8_t count = 0; /** The number of input controllers */
-            structHealth inputControllers[IO_EXTENDER_COUNT]; /** Array of input controller health */
+            structHealth inputControllers[IO_EXTENDER_COUNT] = {}; /** Array of input controller health */
         };
 
 
