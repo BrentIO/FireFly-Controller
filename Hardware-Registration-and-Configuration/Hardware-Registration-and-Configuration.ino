@@ -234,6 +234,7 @@ void setup() {
   httpServer.onNotFound(http_notFound);
 
   DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Origin"), F("*")); //Ignore CORS
+  DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Headers"), F("visual-token, Content-Type")); //Ignore CORS
   DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Methods"), F("GET, POST, OPTIONS, DELETE")); //Ignore CORS
 
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
