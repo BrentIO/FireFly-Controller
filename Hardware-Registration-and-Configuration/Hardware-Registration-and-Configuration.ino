@@ -26,7 +26,6 @@
 #include "AsyncJson.h"
 #include <NTPClient.h>
 #include <WiFiUdp.h>
-#include <esp32FOTA.hpp>
 
 unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
 AsyncWebServer httpServer(80);
