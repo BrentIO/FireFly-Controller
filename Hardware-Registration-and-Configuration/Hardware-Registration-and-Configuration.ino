@@ -343,7 +343,7 @@ void otaFirmware_checkPending(){
 void eventHandler_otaFirmwareProgress(size_t progress, size_t size){
 
   if(progress == 0){
-    eventLog.createEvent("OTA firmware started", EventLog::LOG_LEVEL_NOTIFICATION);
+    eventLog.createEvent("OTA update started", EventLog::LOG_LEVEL_NOTIFICATION);
     oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
   }
 
@@ -357,7 +357,7 @@ void eventHandler_otaFirmwareProgress(size_t progress, size_t size){
 */
 void eventHandler_otaFirmwareFailed(int partition){
   log_i("Failed partition: [%i]", partition);
-  eventLog.createEvent("OTA firmware failed", EventLog::LOG_LEVEL_NOTIFICATION);
+  eventLog.createEvent("OTA update failed", EventLog::LOG_LEVEL_NOTIFICATION);
 }
 
 
