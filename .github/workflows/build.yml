@@ -20,6 +20,8 @@ jobs:
         product_hex:
           - "0x08062305"
           - "0x32322304"
+          - "0x08062505"
+          - "0x32322505"
 
         include:
           - product_hex: "0x08062305"
@@ -31,6 +33,17 @@ jobs:
             name: FFC3232-2304
             partition_size_config: "0x80000"
             partition_size_www: "0x2E0000"
+
+          - product_hex: "0x08062505"
+            name: FFC0806-2505
+            partition_size_config: "0x80000"
+            partition_size_www: "0x2E0000"
+            
+          - product_hex: "0x32322505"
+            name: FFC3232-2505
+            partition_size_config: "0x80000"
+            partition_size_www: "0x2E0000"
+
 
     steps:
       - name: Check out repository
