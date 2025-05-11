@@ -260,6 +260,10 @@ void setup() {
   #endif
 
   oled.setPage(managerOled::PAGE_EVENT_LOG);
+
+  otaFirmware.setProgressCb(eventHandler_otaFirmwareProgress);
+  otaFirmware.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
+  otaFirmware.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
 }
 
 
