@@ -50,7 +50,6 @@
                 getErrorLog();
                 getUIVersion();
                 await getCertificates();
-                getOtaUpdate();
             }
 
 
@@ -1196,16 +1195,6 @@
                     return;
                 }
 
-                while(document.getElementById('ota-update-service-certificate').length > 0){
-                    document.getElementById('ota-update-service-certificate').remove(0);
-                }
-
-                var updateServiceCertificateNoneOption = document.createElement("option");
-                updateServiceCertificateNoneOption.value = "";
-                updateServiceCertificateNoneOption.text = "(None)";
-                document.getElementById('ota-update-service-certificate').add(updateServiceCertificateNoneOption);
-
-
                 while(document.getElementById('ota-update-force-certificate').length > 0){
                     document.getElementById('ota-update-force-certificate').remove(0);
                 }
@@ -1231,18 +1220,13 @@
                                     <path d=\"M11.46.146A.5.5 0 0 0 11.107 0H4.893a.5.5 0 0 0-.353.146L.146 4.54A.5.5 0 0 0 0 4.893v6.214a.5.5 0 0 0 .146.353l4.394 4.394a.5.5 0 0 0 .353.146h6.214a.5.5 0 0 0 .353-.146l4.394-4.394a.5.5 0 0 0 .146-.353V4.893a.5.5 0 0 0-.146-.353L11.46.146zm-6.106 4.5L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 1 1 .708-.708z\"/>\
                                 </svg> Delete</span></button>";
 
-                    var updateServiceOption = document.createElement("option");
                     var forceServiceOption = document.createElement("option");
-                    updateServiceOption.value = element.file;
-                    updateServiceOption.text = element.file;
                     forceServiceOption.value = element.file;
                     forceServiceOption.text = element.file;
 
-                    document.getElementById('ota-update-service-certificate').add(updateServiceOption);
                     document.getElementById('ota-update-force-certificate').add(forceServiceOption);
                 });
 
-                updateServiceCertificateNoneOption.selected = true;
                 forceCertificateNoneOption.selected = true;
 
                 document.getElementById('certificates-tab-content').classList.remove("d-none");
@@ -1460,219 +1444,6 @@
                     }
                 }         
             }
-
-
-            async function getOtaUpdate(){
-
-                try{
-                    let response = await fetch(api_root + "/ota", { signal: AbortSignal.timeout(api_timeout) });
-
-                    switch(response.status){
-                        case 200:
-                            otaConfig = await response.json();
-                            drawOtaConfig();
-                            break;
-
-                        case 404:
-                            otaConfig = null
-                            document.getElementById('updates-tab-wait-spinner').classList.add("d-none");
-                            document.getElementById('updates-tab-content').classList.remove("d-none");
-                            break;
-
-                        default:
-                            throw new Error("Unable to get " + response.url + " (" + response.status + ")");
-                    }
-                }
-                catch(err){
-                    if (err.name === "AbortError") {
-                        prependWarningLabel("updates-tab");
-                        errorHandler_get_div("updates-tab-content");
-                        document.getElementById('updates-tab-wait-spinner').classList.add("d-none");
-                        document.getElementById('updates-tab-content').classList.remove("d-none");
-                        createErrorToast("Unable to get OTA configuration", "Timeout");
-                        
-                    } else {
-                        prependWarningLabel("updates-tab");
-                        errorHandler_get_div("updates-tab-content");
-                        createErrorToast("Unable to get OTA configuration", err);
-                        errorHandler_get_div("updates-tab-content");
-                        document.getElementById('updates-tab-wait-spinner').classList.add("d-none");
-                        document.getElementById('updates-tab-content').classList.remove("d-none");
-                    }
-                } 
-            }
-
-            
-            function drawOtaConfig(){
-
-                document.getElementById('updates-tab-content').classList.remove("d-none");
-                document.getElementById('updates-tab-wait-spinner').classList.add("d-none");
-                
-                if(Object.keys(otaConfig).length == 0){
-                    document.getElementById('ota-update-service-url').value = "";
-                    document.getElementById('ota-update-service-certificate').value = "";
-                    return;
-                }
-
-                document.getElementById('ota-update-service-delete-button').disabled = false;
-                document.getElementById('ota-update-service-url').value = otaConfig.url;
-                document.getElementById('ota-update-service-save-button').disabled = true;
-
-                certificateExists = false;
-
-                for(i=0; i < document.getElementById('ota-update-service-certificate').length; i++){
-
-                    if(document.getElementById('ota-update-service-certificate').options[i].value == otaConfig.certificate){
-                        certificateExists = true;
-                    }
-                };
-
-                document.getElementById('ota-update-service-certificate').value = otaConfig.certificate;
-
-                if(!certificateExists){
-                    createErrorToast("OTA update service", "OTA update service certificate \"" + otaConfig.certificate + "\" does not exist");
-                }
-            }
-
-
-            async function postOtaUpdate(){
-
-                try{
-
-                    const transportPattern = /(^https?:\/\/)/;
-
-                    if(!transportPattern.test(document.getElementById("ota-update-service-url").value)){
-                        throw new Error("URL must begin with http:// or https://");
-                    }
-
-                    const urlPattern = /(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?\/[a-zA-Z0-9]{2,}|((https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?)|(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}(\.[a-zA-Z0-9]{2,})?/g;
-
-                    if(!urlPattern.test(document.getElementById("ota-update-service-url").value)){
-                        throw new Error("URL is not valid");
-                    }
-
-                    if(document.getElementById("ota-update-service-url").value.startsWith("https://") && document.getElementById("ota-update-service-certificate").value == ""){
-                        throw new Error("Certificate is required for https://");
-                    }
-
-                    payload = {}
-
-                    payload['url'] = document.getElementById("ota-update-service-url").value;
-                    if(document.getElementById("ota-update-service-certificate").value != ""){
-                        payload['certificate'] = document.getElementById("ota-update-service-certificate").value;
-                    }
-
-                    let authenticated = await authenticate();
-
-                    if(!authenticated){
-                        return;
-                    }
-
-                    document.getElementById("ota-update-service-save-button-spinner").classList.remove("d-none");
-                    document.getElementById("ota-update-service-save-button-icon").classList.add("d-none");
-                    document.getElementById("ota-update-service-save-button").disabled = true;
-
-                    let response = await fetch(api_root + "/ota", {
-                        signal: AbortSignal.timeout(api_timeout),
-                        method: "POST",
-                        body:JSON.stringify(payload),                     
-                        headers: {
-                            "content-type":"application/json",
-                            "visual-token":visual_token
-                        }
-                    });
-
-                    switch(response.status){
-                        case 201:
-                            createSuccessToast("Success", "OTA update service configured");
-                            document.getElementById("ota-update-service-delete-button").disabled = false;
-                            break;
-
-                        case 401:
-                            visual_token = "";
-                            createErrorToast("Unable to save OTA update", "Authentication failed");
-                            document.getElementById("ota-update-service-save-button").disabled = false;
-                            break;
-
-                        default:
-                            throw new Error("Unable to save OTA update " + response.url + " (" + response.status + ")");
-                    }
-                }
-                catch(err){            
-                    document.getElementById("ota-update-service-save-button").disabled = false;     
-                    if (err.name === "AbortError") {
-                        createErrorToast("Unable to save OTA update", "Timeout");
-                    } else {
-                        createErrorToast("Unable to save OTA update", err);
-                    }
-                }
-
-                document.getElementById("ota-update-service-save-button-spinner").classList.add("d-none");
-                document.getElementById("ota-update-service-save-button-icon").classList.remove("d-none");
-            }
-
-
-            async function deleteOtaUpdate(){
-
-                try{
-
-                    if(!confirm("Are you sure you wish to delete the OTA update service configuration?")){
-                        return;
-                    }
-
-                    let authenticated = await authenticate();
-
-                    if(!authenticated){
-                        return;
-                    }
-
-                    document.getElementById("ota-update-service-delete-button-spinner").classList.remove("d-none");
-                    document.getElementById("ota-update-service-delete-button-icon").classList.add("d-none");
-                    document.getElementById("ota-update-service-delete-button").disabled = true;
-
-                    let response = await fetch(api_root + "/ota", {
-                        signal: AbortSignal.timeout(api_timeout), 
-                        method: 'DELETE',
-                        headers: {
-                            "visual-token":visual_token
-                        }
-                    });
-
-                    switch(response.status){
-                        case 204:
-                            otaConfig = {};
-                            await getCertificates();
-                            drawOtaConfig();
-                            createSuccessToast("Success", "OTA update service configuration has been deleted");
-                            document.getElementById("ota-update-service-delete-button-spinner").classList.add("d-none");
-                            document.getElementById("ota-update-service-delete-button-icon").classList.remove("d-none");
-                            document.getElementById("ota-update-service-save-button").disabled = false;
-                            break;
-
-                        case 401:
-                            createErrorToast("Unable to delete OTA update service configuration", "Authentication failed");
-                            document.getElementById("ota-update-service-delete-button-spinner").classList.add("d-none");
-                            document.getElementById("ota-update-service-delete-button-icon").classList.remove("d-none");
-                            document.getElementById("ota-update-service-delete-button").disabled = false;
-                            break;
-
-                        default:
-                            throw new Error("Unable to delete OTA update service configuration " + response.url + " (" + response.status + ")");
-                    }
-                }
-                catch(err){
-                    document.getElementById("ota-update-service-delete-button").disabled = false;   
-                    document.getElementById("ota-update-service-delete-button-spinner").classList.add("d-none");
-                    document.getElementById("ota-update-service-delete-button-icon").classList.remove("d-none");
-
-                    if (err.name === "AbortError") {
-                        createErrorToast("Unable to delete OTA update service configuration", "Timeout");
-                    } else {
-                        createErrorToast("Unable to delete OTA update service configuration", err);
-                    }
-                }
-            }
-
 
 
             async function postForceOTAUpdate(){
@@ -2190,39 +1961,8 @@
             <!-- Updates -->
             <div class="tab-pane fade" id="updates-tab-pane" role="tabpanel" aria-labelledby="updates-tab" tabindex="0">
 
-
-                <!--Wait Spinner-->
-                <div class="d-flex justify-content-center align-items-center mt-2" id="updates-tab-wait-spinner">
-                    <div class="rounded d-flex justify-content-center align-items-center" style="background-color: rgb(0,0,0,0.1); width: 50px; height: 50px;">
-                        <div class="spinner-border spinner-border align-middle text-secondary" role="status" ><span class="visually-hidden">Loading...</span></div>
-                    </div>
-                </div>
-
                 <!--Input Forms-->
-                <div id="updates-tab-content" class="d-none">
-                    <div class="row mt-2">
-                        <h3>OTA Update Service</h3>
-                        <div class="input-group mb-3">
-                            <label class="input-group-text">URL</label>
-                            <input type="text" class="form-control" id="ota-update-service-url" required>
-                            <label class="input-group-text">Certificate</label>
-                            <select class="form-select" id="ota-update-service-certificate"><option value="">(None)</option></select>
-                            <button type="button" class="btn btn-primary" title="Save" id="ota-update-service-save-button" onclick="postOtaUpdate();">
-                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" id="ota-update-service-save-button-spinner"></span>
-                                <span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16" id="ota-update-service-save-button-icon">
-                                    <path fill-rule="evenodd" d="M8 10a.5.5 0 0 0 .5-.5V3.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 3.707V9.5a.5.5 0 0 0 .5.5zm-7 2.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13a.5.5 0 0 1-.5-.5z"/></svg> Save
-                                </span>
-                            </button>
-                            <button type="button" class="btn btn-outline-danger" id="ota-update-service-delete-button" title="Delete" onclick="deleteOtaUpdate();" disabled>
-                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" id="ota-update-service-delete-button-spinner"></span>
-                                <span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16" id="ota-update-service-delete-button-icon">
-                                    <path d="M11.46.146A.5.5 0 0 0 11.107 0H4.893a.5.5 0 0 0-.353.146L.146 4.54A.5.5 0 0 0 0 4.893v6.214a.5.5 0 0 0 .146.353l4.394 4.394a.5.5 0 0 0 .353.146h6.214a.5.5 0 0 0 .353-.146l4.394-4.394a.5.5 0 0 0 .146-.353V4.893a.5.5 0 0 0-.146-.353L11.46.146zm-6.106 4.5L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 1 1 .708-.708z"/>
-                                </svg> Delete</span></button>
-                        </div>
-                    </div>
-                </div>
-                <div id="updates-tab-force-update" class="row mt-5">
+                <div id="updates-tab-force-update" class="row">
                     <h3>Force OTA Update</h3>
                     <div class="input-group mb-3">
                         <label class="input-group-text">URL</label>
