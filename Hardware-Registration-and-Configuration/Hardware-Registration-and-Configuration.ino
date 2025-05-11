@@ -180,6 +180,8 @@ void setup() {
   if (wwwFS.begin(false, "/wwwFS", (uint8_t)10U, "www"))
   {
     wwwFS_isMounted = true;
+    otaFirmware.setSPIFFsPartitionLabel("www");
+    otaFirmware.setCertFileSystem(nullptr);
   }
   else{
     eventLog.createEvent(F("wwwFS mount fail"), EventLog::LOG_LEVEL_ERROR);
