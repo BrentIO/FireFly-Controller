@@ -325,7 +325,7 @@ void setup() {
   }
 
   if(wwwFS_isMounted){
-    httpServer.serveStatic("/", wwwFS, "/");
+    httpServer.serveStatic("/", wwwFS, "/", "public, max-age=86400");
     httpServer.rewrite("/", "/index.html");
   }
 

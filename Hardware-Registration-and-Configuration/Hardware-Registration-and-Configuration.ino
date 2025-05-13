@@ -228,7 +228,7 @@ void setup() {
   }
 
   if(wwwFS_isMounted){
-    httpServer.serveStatic("/", wwwFS, "/");
+    httpServer.serveStatic("/", wwwFS, "/", "public, max-age=86400");
     httpServer.rewrite("/ui/version", "/version.json");
     httpServer.rewrite("/", "/index.html");
   }
