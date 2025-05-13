@@ -2111,14 +2111,14 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
       return;
     }
 
-    newFirmwareRequest.certificate = doc["certificate"].as<String>();
-
-    if(newFirmwareRequest.certificate == ""){
+    if(doc["certificate"].as<String>() == ""){
       http_badRequest(request, F("Certificate cannot be empty"));
       return;
     }
 
-    if(!configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + newFirmwareRequest.certificate)){
+    newFirmwareRequest.certificate = CONFIGFS_PATH_CERTS + (String)"/" + doc["certificate"].as<String>();
+
+    if(!configFS.exists(newFirmwareRequest.certificate)){
       http_badRequest(request, F("Certificate does not exist"));
       return;
     }
@@ -2248,7 +2248,6 @@ void otaFirmware_checkPending(){
     bool updateSuccess = false;
 
     if(otaFirmware.pending.get(i).url.startsWith("https:")){
-      otaFirmware.pending.get(i).certificate = CONFIGFS_PATH_CERTS + (String)"/" + otaFirmware.pending.get(i).certificate;
       forceFirmwareUpdate.setRootCA(new CryptoFileAsset(otaFirmware.pending.get(i).certificate.c_str(), &configFS));
     }
 
