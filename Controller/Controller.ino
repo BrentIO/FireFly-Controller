@@ -2190,6 +2190,10 @@ void setup_OtaFirmware(){
 
   String url = doc["ota"]["url"];
 
+  if(externalEEPROM.enabled == true){
+    url.replace("$$pid$$", externalEEPROM.data.product_id);
+  }
+
   if(!url.startsWith("http:") && !url.startsWith("https:")){
     eventLog.createEvent("OTA cfg inv proto");
     return;

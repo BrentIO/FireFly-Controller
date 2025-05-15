@@ -27,6 +27,22 @@
             <div class="col py-3">
                 <div class="pageTitle">OTA Updates</div>
                 <div class="pageDescription">Configures how the devices will retrieve over-the-air updates.</div>
+                <div class="alert alert-info" role="alert">
+                    <h3>Wildcards</h3>
+                    You can configure the URL to include wildcards, which will be substituted at execution time.
+                    <table class="table table-info mt-3">
+                        <tr>
+                            <th>Wildcard</th>
+                            <th>Example Value</th>
+                        </tr>
+                        <tbody>
+                            <tr>
+                                <td><code>$$pid$$</code></td>
+                                <td><pre class="text-wrap">FFC3232-2305</pre></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
                 <div>
                     <div class="sectionHeader mt-5 mb-3">Controllers</div>
                     <form id="controller">
