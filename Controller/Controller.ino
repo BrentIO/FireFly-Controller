@@ -2194,6 +2194,8 @@ void setup_OtaFirmware(){
     url.replace("$$pid$$", externalEEPROM.data.product_id);
   }
 
+  url.replace("$$app$$", APPLICATION_NAME);
+
   if(!url.startsWith("http:") && !url.startsWith("https:")){
     eventLog.createEvent("OTA cfg inv proto");
     return;
