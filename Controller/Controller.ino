@@ -7,7 +7,7 @@
 *
 */
 
-#define VERSION "2025.5.11"
+#define VERSION "2025.5.15"
 #define APPLICATION_NAME "FireFly Controller"
 
 #include "common/hardware.h"
