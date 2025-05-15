@@ -2769,7 +2769,9 @@ void setupMQTT(){
   username.replace("$$mac$$", macOnly);
   username.replace("$$mac_dashes$$", macDashes);
   username.replace("$$mac_colons$$", macColons);
-  username.replace("$$uuid$$", externalEEPROM.data.uuid);
+  if(externalEEPROM.enabled == true){
+    username.replace("$$uuid$$", externalEEPROM.data.uuid);
+  }
   mqttClient.setUsername(username.c_str());
 
   String password = mqtt["password"].as<String>();
