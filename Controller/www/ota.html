@@ -168,7 +168,12 @@ document.getElementById("clientURL").addEventListener('input', () => {
 function validateFieldURL(device_type){
     var element = document.getElementById(`${device_type}URL`);
 
-    if(isValidURL(element.value)){
+    testValue = element.value;
+
+    testValue = testValue.replace("$$app$$", "app");
+    testValue = testValue.replace("$$pid$$", "pid");
+
+    if(isValidURL(testValue)){
         element.classList.remove("is-invalid");
         element.classList.add("is-valid");
     }else{
