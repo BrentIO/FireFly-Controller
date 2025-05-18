@@ -366,7 +366,11 @@ void loop() {
 
     if((esp_timer_get_time() - otaFirmware.lastCheckedTime) / 1000000 > FIRMWARE_CHECK_SECONDS || otaFirmware.lastCheckedTime == 0){
       if(otaFirmware.updateInProcess == false){
-        otaFirmware.execHTTPcheck();
+
+        if(otaFirmware.execHTTPcheck() == 0){
+          eventLog.createEvent(F("OTA firmware checked"));
+        }
+        
       }
       otaFirmware.lastCheckedTime = esp_timer_get_time();
     }
@@ -3535,6 +3539,8 @@ void mqtt_publishUpdateAvailable(JsonVariant &updateDoc){
   if(externalEEPROM.enabled == false){
     return;
   }
+
+  eventLog.createEvent(F("OTA update available"));
 
   DynamicJsonDocument mqttDoc(256);
 
