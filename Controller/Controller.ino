@@ -2757,17 +2757,17 @@ void setupMQTT(){
 
   mqttClient.setServer(mqtt["host"].as<const char*>(), port);
 
-  uint8_t baseMac[6];
-  esp_read_mac(baseMac, ESP_MAC_ETH);
+  uint8_t ethMac[6];
+  esp_read_mac(ethMac, ESP_MAC_ETH);
 
   char macOnly[13] = {0};
-  sprintf(macOnly, "%02X%02X%02X%02X%02X%02X", baseMac[0],baseMac[1],baseMac[2],baseMac[3], baseMac[4], baseMac[5]);
+  sprintf(macOnly, "%02X%02X%02X%02X%02X%02X", ethMac[0],ethMac[1],ethMac[2],ethMac[3], ethMac[4], ethMac[5]);
   
   char macDashes[18] = {0};
-  sprintf(macDashes, "%02X-%02X-%02X-%02X-%02X-%02X", baseMac[0],baseMac[1],baseMac[2],baseMac[3], baseMac[4], baseMac[5]);
+  sprintf(macDashes, "%02X-%02X-%02X-%02X-%02X-%02X", ethMac[0],ethMac[1],ethMac[2],ethMac[3], ethMac[4], ethMac[5]);
 
   char macColons[18] = {0};
-  sprintf(macColons, "%02X:%02X:%02X:%02X:%02X:%02X", baseMac[0],baseMac[1],baseMac[2],baseMac[3], baseMac[4], baseMac[5]);
+  sprintf(macColons, "%02X:%02X:%02X:%02X:%02X:%02X", ethMac[0],ethMac[1],ethMac[2],ethMac[3], ethMac[4], ethMac[5]);
 
   String username = mqtt["username"].as<String>();
   username.replace("$$mac$$", macOnly);
