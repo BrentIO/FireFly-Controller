@@ -305,6 +305,10 @@
                         this->hardware.println(F("No Device Name"));
                     }
 
+                    #if CORE_DEBUG_LEVEL >= 4
+                        this->hardware.println(F("**DEBUG BUILD**"));
+                    #endif
+
                 #endif
 
                 this->_drawScrollBar(PAGE_SOFTWARE);
