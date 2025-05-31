@@ -932,12 +932,20 @@ void http_handleNetworkInterfaceAll(AsyncWebServerRequest *request){
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<384> doc;
   JsonArray array = doc.to<JsonArray>();
-  JsonObject objBT = array.createNestedObject();
-  JsonObject objEth = array.createNestedObject();
   JsonObject objWifi = array.createNestedObject();
   JsonObject objAP = array.createNestedObject();
+  JsonObject objBT = array.createNestedObject();
+  JsonObject objEth = array.createNestedObject();
 
   char macAddress[18] = {0};
+
+  getMacAddress(ESP_MAC_WIFI_STA, macAddress);
+  objWifi[F("mac_address")] = macAddress;
+  objWifi[F("interface")] = F("wifi");
+
+  getMacAddress(ESP_MAC_WIFI_SOFTAP, macAddress);
+  objAP[F("mac_address")] = macAddress;
+  objAP[F("interface")] = F("wifi_ap");
 
   getMacAddress(ESP_MAC_BT, macAddress);
   objBT[F("mac_address")] = macAddress;
@@ -946,14 +954,6 @@ void http_handleNetworkInterfaceAll(AsyncWebServerRequest *request){
   getMacAddress(ESP_MAC_ETH, macAddress);
   objEth[F("mac_address")] = macAddress;
   objEth[F("interface")] = F("ethernet");
-  
-  getMacAddress(ESP_MAC_WIFI_STA, macAddress);
-  objWifi[F("mac_address")] = macAddress;
-  objWifi[F("interface")] = F("wifi");
-
-  getMacAddress(ESP_MAC_WIFI_SOFTAP, macAddress);
-  objAP[F("mac_address")] = macAddress;
-  objAP[F("interface")] = F("wifi_ap");
   
   serializeJson(doc, *response);
   request->send(response);
