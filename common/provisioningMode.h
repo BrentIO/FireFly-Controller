@@ -38,6 +38,12 @@
 
             void isMacAllowed(std::string macToCheck){
 
+                #if CORE_DEBUG_LEVEL >= 4
+                    #warning isMacAllowed will be bypassed because CORE_DEBUG_LEVEL >= 4
+                    log_i("isMacAllowed will be bypassed because CORE_DEBUG_LEVEL >= 4");
+                    return;
+                #endif
+
                 for(int i=0; i < this->_whitelistMACs.size(); i++){
 
                     if(strcmp(macToCheck.c_str(), this->_whitelistMACs.get(i).c_str()) == 0){
