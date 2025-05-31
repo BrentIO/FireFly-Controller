@@ -159,15 +159,6 @@ void setup() {
   provisioningMode.setCallback_rogueClient(&eventHandler_rogueClient);
 
 
-  /* Determine hostname */
-  #ifdef ESP32
-    uint8_t baseMac[6];
-    esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
-    char hostname[18] = {0};
-    sprintf(hostname, "FireFly-%02X%02X%02X", baseMac[3], baseMac[4], baseMac[5]);
-  #endif
-
-
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
     oled.setWiFiInfo(&WiFi);
     provisioningMode.setWiFI(&WiFi);
@@ -181,12 +172,15 @@ void setup() {
     ESP32_W5500_setCallback_disconnected(&eventHandler_ethernetDisconnect);
 
     log_d("Setting up Ethernet on W5500");
-
-    ETH.setHostname(hostname);
-    esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
-
     unsigned long ethernet_start_time = millis();
-    ETH.begin(SPI_MISO_PIN, SPI_MOSI_PIN, SPI_SCK_PIN, ETHERNET_PIN, ETHERNET_PIN_INTERRUPT, SPI_CLOCK_MHZ, ETH_SPI_HOST, baseMac); //Use the base MAC, not the Ethernet MAC.  Library will automatically adjust it, else future calls to get MAC addresses are skewed
+
+    uint8_t ethMac[6];
+    esp_read_mac(ethMac, ESP_MAC_ETH);
+    ETH.begin(SPI_MISO_PIN, SPI_MOSI_PIN, SPI_SCK_PIN, ETHERNET_PIN, ETHERNET_PIN_INTERRUPT, SPI_CLOCK_MHZ, ETH_SPI_HOST, ethMac);
+
+    char hostname[18] = {0};
+    sprintf(hostname, "FireFly-%02X%02X%02X", ethMac[3], ethMac[4], ethMac[5]);
+    ETH.setHostname(hostname);
 
     while(!ESP32_W5500_isConnected()){
 
