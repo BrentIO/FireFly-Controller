@@ -83,7 +83,7 @@ jobs:
           arduino-cli lib install --git-url https://github.com/bblanchon/ArduinoJson.git#v6.21.5
           arduino-cli lib install --git-url https://github.com/bblanchon/ArduinoStreamUtils.git#v1.9.0
           arduino-cli lib install --git-url https://github.com/BrentIO/AsyncTCP.git#2024.2.1
-          arduino-cli lib install --git-url https://github.com/BrentIO/AsyncWebServer_ESP32_W5500.git#2025.5.1
+          arduino-cli lib install --git-url https://github.com/BrentIO/AsyncWebServer_ESP32_W5500.git#2025.5.2
           arduino-cli lib install --git-url https://github.com/BrentIO/ESPAsyncWebServer.git#2024.7.1
           arduino-cli lib install --git-url https://github.com/BrentIO/esp32FOTA.git#2025.4.1
           arduino-cli lib install --git-url https://github.com/BrentIO/PCA95x5.git#2023.10.2
