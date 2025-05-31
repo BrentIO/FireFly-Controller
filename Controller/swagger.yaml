@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: FireFly Controller
   description: Configure and manage controllers and client configurations
-  version: 2025.4.5
+  version: 2025.5.16
 servers:
   - url: http://{domain}
     variables:
