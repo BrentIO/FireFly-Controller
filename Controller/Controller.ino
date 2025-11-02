@@ -2681,7 +2681,7 @@ void mqtt_reconnect(){
     return;
   }
 
-  if((esp_timer_get_time() - mqttClient.lastReconnectAttemptTime) / 1000  > MQTT_RECONNECT_WAIT_MILLISECONDS || mqttClient.lastReconnectAttemptTime == 0){
+  if((esp_timer_get_time() - mqttClient.lastReconnectAttemptTime) / 1000000  > MQTT_RECONNECT_WAIT_MILLISECONDS || mqttClient.lastReconnectAttemptTime == 0){
 
     if(!mqttClient.connected()){
 
