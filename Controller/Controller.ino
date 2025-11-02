@@ -8,6 +8,7 @@
 */
 
 #define VERSION "2025.5.16"
+uint32_t MAX_POSSIBLE_HEAP = ESP.getHeapSize();
 #define APPLICATION_NAME "FireFly Controller"
 
 #include "common/hardware.h"
@@ -29,6 +30,7 @@
 #include "common/provisioningMode.h"
 
 unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
+unsigned long lastMemoryBroadcast = 0;
 AsyncWebServer httpServer(80);
 managerExternalEEPROM externalEEPROM; /* External EEPROM instance */
 managerOled oled; /* OLED instance */
@@ -119,14 +121,36 @@ struct inputPort{
 inputPort inputPorts[(IO_EXTENDER_COUNT_PINS / IO_EXTENDER_COUNT_CHANNELS_PER_PORT) * IO_EXTENDER_COUNT];
 
 
+void reportMemoryUsage(const char* tag) {
+
+  if(ESP.getFreeHeap() > MAX_POSSIBLE_HEAP){
+    MAX_POSSIBLE_HEAP = ESP.getFreeHeap();
+  }
+
+  log_d("[%lu] ***Memory Usage Report***\tHeap Free: %lu, MaxAllocHeap: %lu, MinFreeHeap: %lu, TotalHeap: %lu, HeapFree: %u%%, Stack: %u\t[%s]",
+          timeClient.getEpochTime(),
+          (unsigned long)ESP.getFreeHeap(),
+          (unsigned long)ESP.getMaxAllocHeap(),
+          (unsigned long)ESP.getMinFreeHeap(),
+          (unsigned long)ESP.getHeapSize(),
+          (uint8_t)(ESP.getFreeHeap() * 100 / MAX_POSSIBLE_HEAP),
+          (unsigned int)uxTaskGetStackHighWaterMark(NULL),
+          tag);
+}
+
+
 /**
  * One-time setup
 */
 void setup() {
 
+  reportMemoryUsage("Setup begin.");
+
   eventLog.createEvent(F("Event log started"));
   
   Wire.begin();
+
+  reportMemoryUsage("Wire started.");
 
   /* Start the auth token service */
   authToken.begin();
@@ -164,6 +188,7 @@ void setup() {
     provisioningMode.setWiFI(&WiFi);
   #endif
 
+  reportMemoryUsage("Starting Ethernet.");
 
   #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 && defined(ESP32)
 
@@ -203,6 +228,7 @@ void setup() {
 
   #endif
 
+  reportMemoryUsage("Ethernet started.");
 
   /* Start external EEPROM */
   externalEEPROM.setCallback_failure(&failureHandler_eeprom);
@@ -218,24 +244,28 @@ void setup() {
     log_d("EEPROM Key: %s", externalEEPROM.data.key);
   }
 
+  reportMemoryUsage("Starting Inputs.");
 
   /* Start inputs */
   inputs.setCallback_failure(&failureHandler_inputs);
   inputs.setCallback_publisher(&eventHandler_inputs);
   inputs.begin();
 
+  reportMemoryUsage("Inputs started; starting outputs.");
 
   /* Start outputs */
   outputs.setCallback_failure(&failureHandler_outputs);
   outputs.setCallback_outputValueChanged(&mqtt_publishOutputValueChanged);
   outputs.begin();
 
+  reportMemoryUsage("Outputs started; starting temperature sensors.");
 
   /* Start temperature sensors */
   temperatureSensors.setCallback_publisher(&eventHandler_temperature);
   temperatureSensors.setCallback_failure(&failureHandler_temperatureSensors);
   temperatureSensors.begin();
 
+  reportMemoryUsage("Temperature sensors started; starting www server.");
 
   /* Start LittleFS for www */
   if (wwwFS.begin(false, "/wwwFS", (uint8_t)10U, "www"))
@@ -338,13 +368,19 @@ void setup() {
 
   #endif
 
+  reportMemoryUsage("www started.  Setting up MQTT.");
+
   setupMQTT();
+
+  reportMemoryUsage("MQTT Set.  Setting up IO.");
 
   setupIO();
 
   setControllerNameOnOLED();
 
   oled.setPage(managerOled::PAGE_EVENT_LOG);
+
+  reportMemoryUsage("Setup complete.");
 
 }
 
@@ -360,6 +396,7 @@ void loop() {
 
     if((esp_timer_get_time() - otaFirmware.lastCheckedTime) / 1000000 > FIRMWARE_CHECK_SECONDS || otaFirmware.lastCheckedTime == 0){
       if(otaFirmware.updateInProcess == false){
+        reportMemoryUsage("Starting firmware check.");
 
         if(otaFirmware.execHTTPcheck() == 0){
           eventLog.createEvent(F("OTA firmware checked"));
@@ -367,7 +404,13 @@ void loop() {
         
       }
       otaFirmware.lastCheckedTime = esp_timer_get_time();
+      reportMemoryUsage("Firmware check complete.");
     }
+  }
+
+  if((esp_timer_get_time() - lastMemoryBroadcast) /1000000 > 15){
+    lastMemoryBroadcast = esp_timer_get_time();
+    reportMemoryUsage("Memory report.");
   }
 
   otaFirmware_checkPending();
