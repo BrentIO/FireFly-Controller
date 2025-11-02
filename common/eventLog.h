@@ -6,7 +6,7 @@
     #define eventLog_h
 
     #ifndef EVENT_LOG_ENTRY_MAX_LENGTH
-        #define EVENT_LOG_ENTRY_MAX_LENGTH 20
+        #define EVENT_LOG_ENTRY_MAX_LENGTH 21
     #endif
 
 
