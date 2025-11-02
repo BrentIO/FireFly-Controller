@@ -407,9 +407,9 @@ void loop() {
     }
   }
 
-  if((esp_timer_get_time() - lastMemoryBroadcast) /1000000 > 15){
+  if((esp_timer_get_time() - lastMemoryBroadcast) /1000000 > MEMORY_USAGE_REPORT_SECONDS){
     lastMemoryBroadcast = esp_timer_get_time();
-    reportMemoryUsage("Memory report.");
+    reportMemoryUsage("Main loop timer elapsed.");
   }
 
   otaFirmware_checkPending();

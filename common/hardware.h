@@ -468,6 +468,11 @@
     #endif
 
 
+    #ifndef MEMORY_USAGE_REPORT_SECONDS
+        #define MEMORY_USAGE_REPORT_SECONDS 15 /* Number of seconds between each memory usage report in the main loop */
+    #endif
+
+
     #ifndef TEMPERATURE_SENSOR_LOCATION_MAX_LENGTH
         #define TEMPERATURE_SENSOR_LOCATION_MAX_LENGTH 8 /* Maximum length for a temperature sensor location */
     #endif
