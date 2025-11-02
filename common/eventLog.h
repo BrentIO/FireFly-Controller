@@ -117,7 +117,7 @@
                 if(newEvent.level == LOG_LEVEL_ERROR){
                     log_e("New event log entry: [%s]", newEvent.text);
                 }else{
-                    log_d("New event log entry: [%s]", newEvent.text);
+                    log_i("New event log entry: [%s]", newEvent.text);
                 }
 
                 if(this->_eventLog.size() >= EVENT_LOG_MAXIMUM_ENTRIES){
