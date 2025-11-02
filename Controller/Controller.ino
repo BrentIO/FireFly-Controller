@@ -445,11 +445,11 @@ void eventHandler_temperature(const char* location, float value){
     return;
   }
 
-  char* temperature = new char[6];
-  snprintf(temperature, 6, "%.2f", value);
+  char temperature[6];
+  snprintf(temperature, sizeof(temperature), "%.2f", value);
 
-  char *oledText = new char[OLED_CHARACTERS_PER_LINE+1];
-  snprintf(oledText, OLED_CHARACTERS_PER_LINE+1, "Temp: %s", temperature);
+  char oledText[OLED_CHARACTERS_PER_LINE+1];
+  snprintf(oledText, sizeof(oledText), "Temp: %s", temperature);
   eventLog.createEvent(oledText);
 
   char* topic = new char[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
@@ -464,12 +464,12 @@ void eventHandler_temperature(const char* location, float value){
 */
 void failureHandler_temperatureSensors(uint8_t address, managerTemperatureSensors::failureReason failureReason){
 
-  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+  char text[OLED_CHARACTERS_PER_LINE+1];
 
   if(failureReason == managerTemperatureSensors::failureReason::ADDRESS_OFFLINE){
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Temp sen 0x%02X offline", address);
+      snprintf(text, sizeof(text), "Temp sen 0x%02X offline", address);
   }else{
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Temp sen 0x%02X fail %i", address, failureReason);
+      snprintf(text, sizeof(text), "Temp sen 0x%02X fail %i", address, failureReason);
   }
   
   eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
@@ -632,17 +632,16 @@ void eventHandler_frontPanelButtonClosedAtBegin(){
 /** Handles failures of the OLED display */
 void failureHandler_oled(uint8_t address, managerOled::failureReason failureReason){
 
-  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+  char text[OLED_CHARACTERS_PER_LINE+1];
 
   if(failureReason == managerOled::failureReason::ADDRESS_OFFLINE){
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "OLED 0x%02X offline", address);
+      snprintf(text, sizeof(text), "OLED 0x%02X offline", address);
   }else{
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "OLED 0x%02X fail %i", address, failureReason);
+      snprintf(text, sizeof(text), "OLED 0x%02X fail %i", address, failureReason);
   }
   
   eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
-
 }
 
 
@@ -733,12 +732,12 @@ void eventHandler_eventLogResolvedErrorEvent(){
 */
 void failureHandler_eeprom(uint8_t address, managerExternalEEPROM::failureReason failureReason){
 
-  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+  char text[OLED_CHARACTERS_PER_LINE+1];
 
   if(failureReason == managerExternalEEPROM::failureReason::ADDRESS_OFFLINE){
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "ExEEPROM 0x%02X offline", address);
+      snprintf(text, sizeof(text), "ExEEPROM 0x%02X offline", address);
   }else{
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "ExEEPROM 0x%02X fail %i", address, failureReason);
+      snprintf(text, sizeof(text), "ExEEPROM 0x%02X fail %i", address, failureReason);
   }
   
   eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
@@ -752,12 +751,12 @@ void failureHandler_eeprom(uint8_t address, managerExternalEEPROM::failureReason
 */
 void failureHandler_inputs(uint8_t address, managerInputs::failureReason failureReason){
 	
-	char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+	char text[OLED_CHARACTERS_PER_LINE+1];
 
   if(failureReason == managerInputs::failureReason::ADDRESS_OFFLINE){
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Inpt ctl 0x%02X offline", address);
+      snprintf(text, sizeof(text), "Inpt ctl 0x%02X offline", address);
   }else{
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Inpt ctl 0x%02X fail %i", address, failureReason);
+      snprintf(text, sizeof(text), "Inpt ctl 0x%02X fail %i", address, failureReason);
   }
   
   eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
@@ -770,12 +769,12 @@ void failureHandler_inputs(uint8_t address, managerInputs::failureReason failure
 */
 void failureHandler_outputs(uint8_t address, nsOutputs::failureReason failureReason){
 
-  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+  char text[OLED_CHARACTERS_PER_LINE+1];
 
   if(failureReason == nsOutputs::failureReason::ADDRESS_OFFLINE){
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out ctl 0x%02X offline", address);
+      snprintf(text, sizeof(text), "Out ctl 0x%02X offline", address);
   }else{
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out ctl 0x%02X fail %i", address, failureReason);
+      snprintf(text, sizeof(text), "Out ctl 0x%02X fail %i", address, failureReason);
   }
   
   eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
@@ -1631,8 +1630,8 @@ void eventHandler_provisioningModeInactive(){
 
 
 void eventHandler_rogueClient(const char* macAddress){
-  char *oledText = new char[OLED_CHARACTERS_PER_LINE+1];
-  snprintf(oledText, OLED_CHARACTERS_PER_LINE+1, "!RC %s", macAddress);
+  char oledText[OLED_CHARACTERS_PER_LINE+1];
+  snprintf(oledText, sizeof(oledText), "!RC %s", macAddress);
   eventLog.createEvent(oledText, EventLog::LOG_LEVEL_NOTIFICATION);
 };
 
@@ -2212,9 +2211,8 @@ void setup_OtaFirmware(){
   DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
 
   if (error) {
-    char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-    snprintf(text, OLED_CHARACTERS_PER_LINE+1, "OTA parse err %s", error.c_str());
-    log_e("%s", text);
+    char text[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, sizeof(text), "OTA parse err %s", error.c_str());
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return;
   }
@@ -2464,9 +2462,8 @@ bool setup_outputs(String filename){
   DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
 
   if (error) {
-    char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-    snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out parse err %s", error.c_str());
-    log_e("%s", text);
+    char text[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, sizeof(text), "Out parse err %s", error.c_str());
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return false;
   }
@@ -2476,27 +2473,24 @@ bool setup_outputs(String filename){
     int8_t outputPortNumber = atoi(output.key().c_str());
 
     if(outputPortNumber > (OUTPUT_CONTROLLER_COUNT * OUTPUT_CONTROLLER_COUNT_PINS)){
-      char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out prt %s > max", output.key().c_str());
-      log_e("%s", text);
+      char text[OLED_CHARACTERS_PER_LINE+1];
+      snprintf(text, sizeof(text), "Out prt %s > max", output.key().c_str());
       eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
       isOK = false;
       continue;
     }
 
     if(outputPortNumber < 1){
-      char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out prt %s < 1", output.key().c_str());
-      log_e("%s", text);
+      char text[OLED_CHARACTERS_PER_LINE+1];
+      snprintf(text, sizeof(text), "Out prt %s < 1", output.key().c_str());
       eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
       isOK = false;
       continue;
     }
 
     if(!output.value().containsKey(F("id"))){
-      char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out prt %s no id", output.key().c_str());
-      log_e("%s", text);
+      char text[OLED_CHARACTERS_PER_LINE+1];
+      snprintf(text, sizeof(text), "Out prt %s no id", output.key().c_str());
       eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
       isOK = false;
       continue;
@@ -2550,9 +2544,8 @@ bool setup_inputs(String filename){
   file.close();
 
   if (error) {
-    char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-    snprintf(text, OLED_CHARACTERS_PER_LINE+1, "In parse err %s", error.c_str());
-    log_e("%s", text);
+    char text[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, sizeof(text), "In parse err %s", error.c_str());
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return false;
   }
@@ -2560,18 +2553,16 @@ bool setup_inputs(String filename){
   for (JsonPair port : doc["ports"].as<JsonObject>()) {
 
     if(atoi(port.key().c_str()) > (IO_EXTENDER_COUNT_PINS / IO_EXTENDER_COUNT_CHANNELS_PER_PORT) * IO_EXTENDER_COUNT){
-      char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "In prt %s > max", port.key().c_str());
-      log_e("%s", text);
+      char text[OLED_CHARACTERS_PER_LINE+1];
+      snprintf(text, sizeof(text), "In prt %s > max", port.key().c_str());
       eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
       isOK = false;
       continue;
     }
 
     if(atoi(port.key().c_str()) < 1){
-      char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "In prt %s < 1", port.key().c_str());
-      log_e("%s", text);
+      char text[OLED_CHARACTERS_PER_LINE+1];
+      snprintf(text, sizeof(text), "In prt %s < 1", port.key().c_str());
       eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
       isOK = false;
       continue;
@@ -2584,9 +2575,8 @@ bool setup_inputs(String filename){
     for (JsonPair port_value_channel : port.value()["channels"].as<JsonObject>()){
 
       if(i > IO_EXTENDER_COUNT_CHANNELS_PER_PORT){
-        char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-        snprintf(text, OLED_CHARACTERS_PER_LINE+1, "In prt %s ch > max", port.key().c_str());
-        log_e("%s", text);
+        char text[OLED_CHARACTERS_PER_LINE+1];
+        snprintf(text, sizeof(text), "In prt %s ch > max", port.key().c_str());
         eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
         isOK = false;
         continue;
@@ -2663,9 +2653,8 @@ bool setup_inputs(String filename){
         if(actionIsOK){
           inputPorts[atoi(port.key().c_str())-1].channels[i].actions.add(newInputAction);
         }else{
-          char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-          snprintf(text, OLED_CHARACTERS_PER_LINE+1, "In prt %s ch %s inv act", port.key().c_str(), port_value_channel.key().c_str());
-          log_e("%s", text);
+          char text[OLED_CHARACTERS_PER_LINE+1];
+          snprintf(text, sizeof(text), "In prt %s ch %s inv act", port.key().c_str(), port_value_channel.key().c_str());
           eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
           isOK = false;
         }
@@ -2743,9 +2732,8 @@ void setupMQTT(){
   file.close();
 
   if (error) {
-    char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-    snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT parse err %s", error.c_str());
-    log_e("%s", text);
+    char text[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, sizeof(text), "MQTT parse err %s", error.c_str());
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return;
   }
@@ -2759,9 +2747,8 @@ void setupMQTT(){
   }
 
   if(!doc.containsKey(F("mqtt"))){
-    char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-    snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT obj missing");
-    log_e("%s", text);
+    char text[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, sizeof(text), "MQTT obj missing");
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return;
   }
@@ -2770,25 +2757,22 @@ void setupMQTT(){
   uint16_t port = 1883;
 
   if(!mqtt.containsKey(F("host"))){
-    char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-    snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT host missing");
-    log_e("%s", text);
+    char text[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, sizeof(text), "MQTT host missing");
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return;
   }
 
   if(!mqtt.containsKey(F("username"))){
-    char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-    snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT user missing");
-    log_e("%s", text);
+    char text[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, sizeof(text), "MQTT user missing");
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return;
   }
 
   if(!mqtt.containsKey(F("password"))){
-    char *text = new char[OLED_CHARACTERS_PER_LINE+1];
-    snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT pass missing");
-    log_e("%s", text);
+    char text[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, sizeof(text), "MQTT pass missing");
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return;
   }
@@ -2916,56 +2900,55 @@ void eventHandler_mqttConnect(){
  * Handles MQTT disconnect events
  */
 void eventHandler_mqttDisconnect(int8_t errorNumber){
-  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+  char text[OLED_CHARACTERS_PER_LINE+1];
 
   switch(errorNumber){
 
     case -4:
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT conn timeout");
+      snprintf(text, sizeof(text), "MQTT conn timeout");
       break;
 
     case -3:
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT conn lost");
+      snprintf(text, sizeof(text), "MQTT conn lost");
       break;
 
     case -2:
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT conn fail");
+      snprintf(text, sizeof(text), "MQTT conn fail");
       break;
 
     case -1:
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT conn disconnect");
+      snprintf(text, sizeof(text), "MQTT conn disconnect");
       break;
 
     case 0:
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT connected");
+      snprintf(text, sizeof(text), "MQTT connected");
       break;
 
     case 1:
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT bad protocol");
+      snprintf(text, sizeof(text), "MQTT bad protocol");
       break;
 
     case 2:
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT bad client ID");
+      snprintf(text, sizeof(text), "MQTT bad client ID");
       break;
 
     case 3:
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT unavailable");
+      snprintf(text, sizeof(text), "MQTT unavailable");
       break;
 
     case 4:
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT bad creds");
+      snprintf(text, sizeof(text), "MQTT bad creds");
       break;
 
     case 5:
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "MQTT unauthorized");
+      snprintf(text, sizeof(text), "MQTT unauthorized");
       break;
 
     default:
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Unknown MQTT state");
+      snprintf(text, sizeof(text), "Unknown MQTT state");
       break;
   }
 
-  log_v("%s", text);
   eventLog.createEvent(text);
   eventLog.createEvent("MQTT disconnected", EventLog::LOG_LEVEL_ERROR);
 }
@@ -3043,8 +3026,8 @@ void mqtt_publishTemperatures(){
 
   for(int i = 0; i < TEMPERATURE_SENSOR_COUNT; i++){
 
-    char* temperature = new char[6];
-    snprintf(temperature, 6, "%.2f", temperatureSensors.getCurrentTemp(i));
+    char temperature[6];
+    snprintf(temperature, sizeof(temperature), "%.2f", temperatureSensors.getCurrentTemp(i));
 
     char* topic = new char[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
     snprintf(topic, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, externalEEPROM.data.uuid, temperatureSensors.getSensorLocation(i));
@@ -3104,7 +3087,7 @@ void mqtt_autoDiscovery_outputs(){
       continue;
     }
 
-    char* devicePlatform = new char[WORD_LENGTH_INTEGRATION+1];
+    char devicePlatform[WORD_LENGTH_INTEGRATION+1];
     strcpy(devicePlatform,"switch"); //Default
 
     if(output.value().containsKey(F("icon"))){
@@ -3490,8 +3473,8 @@ void mqtt_publishCountErrors(){
   char* state_topic = new char[MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN, externalEEPROM.data.uuid);
 
-  char* count = new char[3];
-  snprintf(count, 3, "%i", eventLog.getErrors()->size());
+  char count[3];
+  snprintf(count, sizeof(count), "%i", eventLog.getErrors()->size());
 
   mqttClient.publish(state_topic, count, true);
 }
@@ -3655,8 +3638,8 @@ void mqtt_publishOutputValueChanged(char* id, uint8_t value){
     char* state_topic = new char[MQTT_TOPIC_OUTPUT_STATE_LENGTH+1];
     snprintf(state_topic, MQTT_TOPIC_OUTPUT_STATE_LENGTH+1, MQTT_TOPIC_OUTPUT_STATE_PATTERN, id);
 
-    char* value_char = new char[4];
-    snprintf(value_char, 4, "%i", value);
+    char value_char[4];
+    snprintf(value_char, sizeof(value_char), "%i", value);
 
     mqttClient.publish(state_topic, value_char, true);
 }
