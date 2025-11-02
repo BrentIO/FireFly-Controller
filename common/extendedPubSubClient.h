@@ -103,7 +103,7 @@
 
         public:
             using PubSubClient::PubSubClient; /* Inherit the base PubSubClient */
-            const char* topic_availability; /* Topic name for availability, which will be used as the last will topic name as well */
+            char topic_availability[MQTT_TOPIC_CONTROLLER_AVAILABILITY_LENGTH + 1]; /* Topic name for availability, which will be used as the last will topic name as well */
             int64_t lastReconnectAttemptTime = 0; /* The time (millis() or equivalent) when the last reconnection was be attempted */
             LinkedList<const char*> subscriptions; /* List of MQTT subscriptions */
             char username[MQTT_USERNAME_MAX_LENGTH + 1]; /* MQTT username to use when authenticating */

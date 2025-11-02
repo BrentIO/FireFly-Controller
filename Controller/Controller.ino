@@ -452,8 +452,8 @@ void eventHandler_temperature(const char* location, float value){
   snprintf(oledText, sizeof(oledText), "Temp: %s", temperature);
   eventLog.createEvent(oledText);
 
-  char* topic = new char[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
-  snprintf(topic, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, externalEEPROM.data.uuid, location);
+  char topic[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, externalEEPROM.data.uuid, location);
 
   mqttClient.publish(topic, temperature, true);
 };
@@ -483,8 +483,8 @@ void failureHandler_temperatureSensors(uint8_t address, managerTemperatureSensor
 */
 void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::changeState changeState){
 
-  char* state_topic = new char[MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_INPUT_STATE_PATTERN, inputPorts[portChannel.port-1].id, (portChannel.channel+portChannel.offset));
+  char state_topic[MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_INPUT_STATE_PATTERN, inputPorts[portChannel.port-1].id, (portChannel.channel+portChannel.offset));
 
   switch(changeState){
     case managerInputs::changeState::CHANGE_STATE_NORMAL:
@@ -2341,8 +2341,8 @@ void eventHandler_otaFirmwareProgress(size_t progress, size_t size){
 
   oled.setProgressBar(percentage);
 
-  char* topic = new char[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-  snprintf(topic, MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+  char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
 
   StaticJsonDocument<32> doc;
   doc["in_progress"] = true;
@@ -2368,8 +2368,8 @@ void eventHandler_otaFirmwareFailed(int partition){
   log_e("Failed partition: [%i]", partition);
   eventLog.createEvent("OTA firmware failed", EventLog::LOG_LEVEL_NOTIFICATION);
 
-  char* topic = new char[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-  snprintf(topic, MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+  char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
 
   StaticJsonDocument<16> doc;
   doc["in_progress"] = false;
@@ -2705,9 +2705,9 @@ void setupMQTT(){
     return;
   }
 
-  char *topic_availability = new char[MQTT_TOPIC_CONTROLLER_AVAILABILITY_LENGTH+1];
-  snprintf(topic_availability, MQTT_TOPIC_CONTROLLER_AVAILABILITY_LENGTH+1, MQTT_TOPIC_CONTROLLER_AVAILABILITY_PATTERN, externalEEPROM.data.uuid);
-  mqttClient.topic_availability = topic_availability;
+  char topic_availability[sizeof(mqttClient.topic_availability)+1];
+  snprintf(topic_availability, sizeof(topic_availability), MQTT_TOPIC_CONTROLLER_AVAILABILITY_PATTERN, externalEEPROM.data.uuid);
+  strcpy(mqttClient.topic_availability, topic_availability);
   mqttClient.setCallback(eventHandler_mqttMessageReceived);
   mqttClient.setCallback_Connect(eventHandler_mqttConnect);
   mqttClient.setCallback_Disconnect(eventHandler_mqttDisconnect);
@@ -2850,8 +2850,8 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
 
   if(ms.Match(MQTT_TOPIC_UPDATE_SET_REGEX)){ //This is an update command request
 
-    char* topic = new char[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-    snprintf(topic, MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+    char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+    snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
 
     StaticJsonDocument<16> doc;
     doc["in_progress"] = true;
@@ -2969,14 +2969,14 @@ void mqtt_autoDiscovery_temperature(){
 
     DynamicJsonDocument doc(1024);
 
-    char* topic = new char[MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_LENGTH+1];
-    snprintf(topic, MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_LENGTH+1, MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid, sensorLocation);
+    char topic[MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_LENGTH+1];
+    snprintf(topic, sizeof(topic), MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid, sensorLocation);
 
-    char* unique_id = new char[MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-    snprintf(unique_id, MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1, MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid, sensorLocation);
+    char unique_id[MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+    snprintf(unique_id, sizeof(unique_id), MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid, sensorLocation);
 
-    char* state_topic = new char[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
-    snprintf(state_topic, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, externalEEPROM.data.uuid, sensorLocation);
+    char state_topic[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
+    snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, externalEEPROM.data.uuid, sensorLocation);
 
     doc["name"] = sensorLocation;
     doc["unique_id"] = unique_id;
@@ -3029,8 +3029,8 @@ void mqtt_publishTemperatures(){
     char temperature[6];
     snprintf(temperature, sizeof(temperature), "%.2f", temperatureSensors.getCurrentTemp(i));
 
-    char* topic = new char[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
-    snprintf(topic, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, externalEEPROM.data.uuid, temperatureSensors.getSensorLocation(i));
+    char topic[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
+    snprintf(topic, sizeof(topic), MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, externalEEPROM.data.uuid, temperatureSensors.getSensorLocation(i));
 
     mqttClient.publish(topic, temperature, true);
   }
@@ -3123,17 +3123,17 @@ void mqtt_autoDiscovery_outputs(){
 
     DynamicJsonDocument mqttDoc(1024);
 
-    char* autodiscovery_topic = new char[MQTT_TOPIC_OUTPUT_AUTO_DISCOVERY_LENGTH+1];
-    snprintf(autodiscovery_topic, MQTT_TOPIC_OUTPUT_AUTO_DISCOVERY_LENGTH+1, MQTT_TOPIC_OUTPUT_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, devicePlatform, output.value()["id"].as<const char*>());
+    char autodiscovery_topic[MQTT_TOPIC_OUTPUT_AUTO_DISCOVERY_LENGTH+1];
+    snprintf(autodiscovery_topic, sizeof(autodiscovery_topic), MQTT_TOPIC_OUTPUT_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, devicePlatform, output.value()["id"].as<const char*>());
 
-    char* unique_id = new char[MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-    snprintf(unique_id, MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1, MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, output.value()["id"].as<const char*>());
+    char unique_id[MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+    snprintf(unique_id, sizeof(unique_id), MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, output.value()["id"].as<const char*>());
 
-    char* state_topic = new char[MQTT_TOPIC_OUTPUT_STATE_LENGTH+1];
-    snprintf(state_topic, MQTT_TOPIC_OUTPUT_STATE_LENGTH+1, MQTT_TOPIC_OUTPUT_STATE_PATTERN, output.value()["id"].as<const char*>());
+    char state_topic[MQTT_TOPIC_OUTPUT_STATE_LENGTH+1];
+    snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_OUTPUT_STATE_PATTERN, output.value()["id"].as<const char*>());
 
-    char* command_topic = new char[MQTT_TOPIC_OUTPUT_SET_LENGTH+1];
-    snprintf(command_topic, MQTT_TOPIC_OUTPUT_SET_LENGTH+1, MQTT_TOPIC_OUTPUT_SET_PATTERN, output.value()["id"].as<const char*>());
+    char command_topic[MQTT_TOPIC_OUTPUT_SET_LENGTH+1];
+    snprintf(command_topic, sizeof(command_topic), MQTT_TOPIC_OUTPUT_SET_PATTERN, output.value()["id"].as<const char*>());
 
     mqttDoc["name"] = (char*)NULL;
     mqttDoc["unique_id"] = unique_id;
@@ -3195,14 +3195,14 @@ void mqtt_autoDiscovery_start_time(){
 
   DynamicJsonDocument doc(1024);
 
-  char* topic = new char[MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_LENGTH+1];
-  snprintf(topic, MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_LENGTH+1, MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+  char topic[MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_LENGTH+1];
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
 
-  char* unique_id = new char[MQTT_TIME_START_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, MQTT_TIME_START_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1, MQTT_TIME_START_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+  char unique_id[MQTT_TIME_START_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+  snprintf(unique_id, sizeof(unique_id), MQTT_TIME_START_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
 
-  char* state_topic = new char[MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_TIME_START_STATE_PATTERN, externalEEPROM.data.uuid);
+  char state_topic[MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_TIME_START_STATE_PATTERN, externalEEPROM.data.uuid);
 
   doc["name"] = "Start Time";
   doc["unique_id"] = unique_id;
@@ -3249,8 +3249,8 @@ void mqtt_publishStartTime(){
     return;
   }
 
-  char* state_topic = new char[MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_TIME_START_STATE_PATTERN, externalEEPROM.data.uuid);
+  char state_topic[MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_TIME_START_STATE_PATTERN, externalEEPROM.data.uuid);
 
   char* start_time = new char[21];
   snprintf(start_time, 21, "%lu", bootTime);
@@ -3270,14 +3270,14 @@ void mqtt_autoDiscovery_mac_address(){
 
   DynamicJsonDocument doc(1024);
 
-  char* topic = new char[MQTT_TOPIC_MAC_ADDRESS_AUTO_DISCOVERY_LENGTH+1];
-  snprintf(topic, MQTT_TOPIC_MAC_ADDRESS_AUTO_DISCOVERY_LENGTH+1, MQTT_TOPIC_MAC_ADDRESS_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+  char topic[MQTT_TOPIC_MAC_ADDRESS_AUTO_DISCOVERY_LENGTH+1];
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_MAC_ADDRESS_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
 
-  char* unique_id = new char[MQTT_MAC_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, MQTT_MAC_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1, MQTT_MAC_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+  char unique_id[MQTT_MAC_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+  snprintf(unique_id, sizeof(unique_id), MQTT_MAC_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
 
-  char* state_topic = new char[MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
+  char state_topic[MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
 
   doc["name"] = "MAC Address";
   doc["unique_id"] = unique_id;
@@ -3323,8 +3323,8 @@ void mqtt_publishMACAddress(){
     return;
   }
 
-  char* state_topic = new char[MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
+  char state_topic[MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
 
   uint8_t ethMac[6];
   esp_read_mac(ethMac, ESP_MAC_ETH);
@@ -3342,14 +3342,14 @@ void mqtt_autoDiscovery_ip_address(){
 
   DynamicJsonDocument doc(1024);
 
-  char* topic = new char[MQTT_TOPIC_IP_ADDRESS_AUTO_DISCOVERY_LENGTH+1];
-  snprintf(topic, MQTT_TOPIC_IP_ADDRESS_AUTO_DISCOVERY_LENGTH+1, MQTT_TOPIC_IP_ADDRESS_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+  char topic[MQTT_TOPIC_IP_ADDRESS_AUTO_DISCOVERY_LENGTH+1];
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_IP_ADDRESS_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
 
-  char* unique_id = new char[MQTT_IP_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, MQTT_IP_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1, MQTT_IP_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+  char unique_id[MQTT_IP_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+  snprintf(unique_id, sizeof(unique_id), MQTT_IP_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
 
-  char* state_topic = new char[MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
+  char state_topic[MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
 
   doc["name"] = "IP Address";
   doc["unique_id"] = unique_id;
@@ -3395,8 +3395,8 @@ void mqtt_publishIPAddress(){
     return;
   }
 
-  char* state_topic = new char[MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
+  char state_topic[MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
 
   #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
     mqttClient.publish(state_topic, ETH.localIP().toString().c_str(), true);
@@ -3417,14 +3417,14 @@ void mqtt_autoDiscovery_count_errors(){
 
   DynamicJsonDocument doc(1024);
 
-  char* topic = new char[MQTT_TOPIC_COUNT_ERRORS_AUTO_DISCOVERY_LENGTH+1];
-  snprintf(topic, MQTT_TOPIC_COUNT_ERRORS_AUTO_DISCOVERY_LENGTH+1, MQTT_TOPIC_COUNT_ERRORS_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+  char topic[MQTT_TOPIC_COUNT_ERRORS_AUTO_DISCOVERY_LENGTH+1];
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_COUNT_ERRORS_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
 
-  char* unique_id = new char[MQTT_COUNT_ERRORS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, MQTT_COUNT_ERRORS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1, MQTT_COUNT_ERRORS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+  char unique_id[MQTT_COUNT_ERRORS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+  snprintf(unique_id, sizeof(unique_id), MQTT_COUNT_ERRORS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
 
-  char* state_topic = new char[MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN, externalEEPROM.data.uuid);
+  char state_topic[MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN, externalEEPROM.data.uuid);
 
   doc["name"] = F("Error Count");
   doc["unique_id"] = unique_id;
@@ -3470,8 +3470,8 @@ void mqtt_publishCountErrors(){
     return;
   }
 
-  char* state_topic = new char[MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN, externalEEPROM.data.uuid);
+  char state_topic[MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN, externalEEPROM.data.uuid);
 
   char count[3];
   snprintf(count, sizeof(count), "%i", eventLog.getErrors()->size());
@@ -3489,20 +3489,20 @@ void mqtt_autoDiscovery_update(){
     return;
   }
   
-  char* topic = new char[MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN_LENGTH+1];
-  snprintf(topic, MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+  char topic[MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN_LENGTH+1];
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
 
-  char* unique_id = new char[MQTT_UPDATE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, MQTT_UPDATE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1, MQTT_UPDATE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+  char unique_id[MQTT_UPDATE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+  snprintf(unique_id, sizeof(unique_id), MQTT_UPDATE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
 
-  char* state_topic = new char[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+  char state_topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
 
-  char* command_topic = new char[MQTT_TOPIC_UPDATE_SET_PATTERN_LENGTH+1];
-  snprintf(command_topic, MQTT_TOPIC_UPDATE_SET_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_SET_PATTERN, externalEEPROM.data.uuid);
+  char command_topic[MQTT_TOPIC_UPDATE_SET_PATTERN_LENGTH+1];
+  snprintf(command_topic, sizeof(command_topic), MQTT_TOPIC_UPDATE_SET_PATTERN, externalEEPROM.data.uuid);
 
-  char* availability_topic = new char[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
-  snprintf(availability_topic, MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1, MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, externalEEPROM.data.uuid);
+  char availability_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
+  snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, externalEEPROM.data.uuid);
 
   DynamicJsonDocument doc(1024);
 
@@ -3581,8 +3581,8 @@ void mqtt_publishUpdateAvailable(JsonVariant &updateDoc){
   mqttDoc["in_progress"] = false;
   mqttDoc["update_percentage"] = NULL;
 
-  char* topic = new char[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-  snprintf(topic, MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+  char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
 
   mqttClient.beginPublish(topic, measureJson(mqttDoc), false); //Don't retain
   BufferingPrint bufferedClient(mqttClient, 32);
@@ -3601,8 +3601,8 @@ void mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus stat
     return;
   }
 
-  char* availability_topic = new char[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
-  snprintf(availability_topic, MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1, MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, externalEEPROM.data.uuid);
+  char availability_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
+  snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, externalEEPROM.data.uuid);
 
   if(status == esp32FOTA::lastHTTPCheckStatus::SUCCESS || status == esp32FOTA::lastHTTPCheckStatus::SUCCESS_NO_UPDATE_AVAILABLE){
     mqttClient.publish(availability_topic, "online");
@@ -3616,8 +3616,8 @@ void mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus stat
     mqttDoc["installed_version"] = VERSION;
     mqttDoc["latest_version"] = VERSION;
 
-    char* topic = new char[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-    snprintf(topic, MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1, MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+    char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+    snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
 
     mqttClient.beginPublish(topic, measureJson(mqttDoc), false); //Don't retain
     BufferingPrint bufferedClient(mqttClient, 32);
@@ -3635,8 +3635,8 @@ void mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus stat
  */
 void mqtt_publishOutputValueChanged(char* id, uint8_t value){
 
-    char* state_topic = new char[MQTT_TOPIC_OUTPUT_STATE_LENGTH+1];
-    snprintf(state_topic, MQTT_TOPIC_OUTPUT_STATE_LENGTH+1, MQTT_TOPIC_OUTPUT_STATE_PATTERN, id);
+    char state_topic[MQTT_TOPIC_OUTPUT_STATE_LENGTH+1];
+    snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_OUTPUT_STATE_PATTERN, id);
 
     char value_char[4];
     snprintf(value_char, sizeof(value_char), "%i", value);
