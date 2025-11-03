@@ -139,7 +139,8 @@
              * Adds a new subscription to the list and automatically subscribes to the topic 
              */
             void addSubscription(const char* topic){
-                this->subscriptions.add(topic);
+                char* topic_to_add = strdup(topic);
+                this->subscriptions.add(topic_to_add);
                 this->subscribe(topic);
             }
 
