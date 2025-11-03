@@ -6,7 +6,9 @@
 * (C) 2019-2025, P5 Software, LLC
 *
 */
+
 uint32_t MAX_POSSIBLE_HEAP = ESP.getHeapSize();
+
 #define VERSION "2025.11.01"
 #define APPLICATION_NAME "FireFly Controller"
 
@@ -2681,9 +2683,7 @@ void mqtt_reconnect(){
     return;
   }
 
-  if((esp_timer_get_time() - mqttClient.lastReconnectAttemptTime) / 1000000  > MQTT_RECONNECT_WAIT_MILLISECONDS || mqttClient.lastReconnectAttemptTime == 0){
-
-    if(!mqttClient.connected()){
+  if((esp_timer_get_time() - mqttClient.lastReconnectAttemptTime) / 1000  > MQTT_RECONNECT_WAIT_MILLISECONDS || mqttClient.lastReconnectAttemptTime == 0){
 
       if(mqttClient.connect(externalEEPROM.data.uuid, mqttClient.username, mqttClient.password, mqttClient.topic_availability, 2, true, "offline")){
         mqttClient.lastReconnectAttemptTime = 0;
@@ -2691,7 +2691,6 @@ void mqtt_reconnect(){
       }
 
       mqttClient.lastReconnectAttemptTime = esp_timer_get_time();
-    }
   }
 }
 
