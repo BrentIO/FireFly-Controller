@@ -469,7 +469,7 @@
 
 
     #ifndef MEMORY_USAGE_REPORT_SECONDS
-        #define MEMORY_USAGE_REPORT_SECONDS 15 /* Number of seconds between each memory usage report in the main loop */
+        #define MEMORY_USAGE_REPORT_SECONDS 60 /* Number of seconds between each memory usage report in the main loop */
     #endif
 
 
