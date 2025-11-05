@@ -32,6 +32,8 @@ uint32_t MAX_POSSIBLE_HEAP = ESP.getHeapSize();
 
 unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
 unsigned long lastMemoryBroadcast = 0;
+unsigned long lastTimeHttpServerUsed = 0; /* The last time the HTTP server responded to a request */
+bool httpServerIsActive = false; /* If the HTTP server has been started */
 AsyncWebServer httpServer(80);
 managerExternalEEPROM externalEEPROM; /* External EEPROM instance */
 managerOled oled; /* OLED instance */
@@ -361,15 +363,9 @@ void setup() {
   DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Methods"), F("GET, POST, OPTIONS, PUT, DELETE")); //Ignore CORS
 
 
-  #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+  startHttpServer();
 
-    httpServer.begin();
-    eventLog.createEvent(F("Web server started"));
-    log_d("HTTP server ready");
-
-  #endif
-
-  reportMemoryUsage("www started.  Setting up MQTT.");
+  reportMemoryUsage("Setting up MQTT.");
 
   setupMQTT();
 
@@ -2862,7 +2858,22 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
 
     otaFirmware.execOTA();
     return;
-  } 
+  }
+
+  if(ms.Match(MQTT_TOPIC_HTTP_SERVER_SET_REGEX)){ //User wants to enable or disable the HTTP server
+
+    payload.toUpperCase();
+
+    if(payload == "ON"){
+      startHttpServer();
+      return;
+    }
+    
+    if(payload == "OFF"){
+      stopHttpServer();
+      return;
+    }
+  }
 }
 
 
@@ -2884,6 +2895,7 @@ void eventHandler_mqttConnect(){
     mqtt_autoDiscovery_ip_address();
     mqtt_autoDiscovery_mac_address();
     mqtt_autoDiscovery_count_errors();
+    mqtt_autoDiscovery_http_server();
     mqttClient.autoDiscovery.sent = true;
   }
 
@@ -2892,6 +2904,8 @@ void eventHandler_mqttConnect(){
   mqtt_publishIPAddress();
   mqtt_publishMACAddress();
   mqtt_publishCountErrors();
+  mqtt_publishHttpServerStateChanged(httpServerIsActive);
+
 }
 
 
@@ -3592,6 +3606,94 @@ void mqtt_publishUpdateAvailable(JsonVariant &updateDoc){
 
 
 /**
+ * Handles http server auto discovery broadcasts
+ */
+void mqtt_autoDiscovery_http_server(){
+
+  DynamicJsonDocument doc(1024);
+
+  char topic[MQTT_TOPIC_HTTP_SERVER_AUTO_DISCOVERY_LENGTH+1];
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_HTTP_SERVER_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+
+  char unique_id[MQTT_HTTP_SERVER_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+  snprintf(unique_id, sizeof(unique_id), MQTT_HTTP_SERVER_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+
+  char state_topic[MQTT_TOPIC_HTTP_SERVER_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HTTP_SERVER_STATE_PATTERN, externalEEPROM.data.uuid);
+
+  char command_topic[MQTT_TOPIC_HTTP_SERVER_SET_PATTERN_LENGTH+1];
+  snprintf(command_topic, sizeof(command_topic), MQTT_TOPIC_HTTP_SERVER_SET_PATTERN, externalEEPROM.data.uuid);
+
+  doc["name"] = "HTTP Server";
+  doc["unique_id"] = unique_id;
+  doc["object_id"] = unique_id;
+  doc["icon"] = "mdi:web";
+
+  JsonObject device = doc.createNestedObject("device");
+  JsonArray identifiers = device.createNestedArray(F("identifiers"));
+  identifiers.add(externalEEPROM.data.uuid);
+
+  if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
+    device["name"] =  mqttClient.autoDiscovery.deviceName;
+  }
+
+  device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
+  device["model"] = APPLICATION_NAME;
+  device["model_id"] = externalEEPROM.data.product_id;
+  device["serial_number"] = externalEEPROM.data.uuid;
+  device["sw_version"] = VERSION;
+
+  if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
+        device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
+  }
+
+  doc["state_topic"] = state_topic;
+  doc["command_topic"] = command_topic;
+  doc["availability_topic"] = mqttClient.topic_availability;
+  doc["payload_on"] = F("ON");
+  doc["payload_off"] = F("OFF");
+  doc["state_on"] = F("ON");
+  doc["state_off"] =F("OFF");
+
+  mqttClient.beginPublish(topic, measureJson(doc), true);
+  BufferingPrint bufferedClient(mqttClient, 32);
+  serializeJson(doc, bufferedClient);
+  bufferedClient.flush();
+  mqttClient.endPublish();
+
+  mqttClient.addSubscription(command_topic);
+}
+
+
+/**
+ * Broadcasts an MQTT message that the HTTP server state has changed
+ * @param state as the HTTP servers' current state (True = Enabled, False = Disabled)
+ */
+void mqtt_publishHttpServerStateChanged(boolean state){
+
+  if(externalEEPROM.enabled == false){
+    return;
+  }
+
+  if(!mqttClient.connected()){
+    return;
+  }
+
+  char state_topic[MQTT_TOPIC_HTTP_SERVER_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HTTP_SERVER_STATE_PATTERN, externalEEPROM.data.uuid);
+
+  char value_char[4];
+  if(state == true){
+    snprintf(value_char, sizeof(value_char), "%s", "ON");
+  }else{
+    snprintf(value_char, sizeof(value_char), "%s", "OFF");
+  }
+
+  mqttClient.publish(state_topic, value_char, true);
+}
+
+
+/**
  * Updates the update service availability.  If the service is available but no update is found, an MQTT event is published with the current version
  */
 void mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus status){
@@ -3639,6 +3741,45 @@ void mqtt_publishOutputValueChanged(char* id, uint8_t value){
 
     char value_char[4];
     snprintf(value_char, sizeof(value_char), "%i", value);
+/**
+ * Starts the HTTP server
+ */
+void startHttpServer(){
+
+    #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+
+      httpServer.begin();
+      httpServerIsActive = true;
+
+      eventLog.createEvent(F("HTTP server started"));
+      reportMemoryUsage("HTTP server started.");
+
+      lastTimeHttpServerUsed = esp_timer_get_time();
+      
+      mqtt_publishHttpServerStateChanged(httpServerIsActive);
+
+    #endif
+}
+
+
+/**
+ * Stops the HTTP server
+ */
+void stopHttpServer(){
+
+  #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+
+    httpServer.end();
+    httpServerIsActive = false;
+
+    eventLog.createEvent(F("HTTP server stopped"));
+    reportMemoryUsage("HTTP server stopped.");
+
+    lastTimeHttpServerUsed = 0;
+
+    mqtt_publishHttpServerStateChanged(httpServerIsActive);
+
+  #endif
 
     mqttClient.publish(state_topic, value_char, true);
 }

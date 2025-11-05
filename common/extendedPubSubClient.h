@@ -72,6 +72,16 @@
     #define MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s-temperature-%s"       //%s = Controller UUID, %s = location
     #define MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 11 + 1 + 8
 
+    #define MQTT_TOPIC_HTTP_SERVER_STATE_PATTERN WORD_FIREFLY_SLASH "%s/http-server/state"     //%s = Controller UUID
+    #define MQTT_TOPIC_HTTP_SERVER_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 12 + WORD_LENGTH_STATE //len("/http-server")
+    #define MQTT_TOPIC_HTTP_SERVER_AUTO_DISCOVERY_PATTERN "%s/switch/FireFly-%s-http-server/config"     //%s = Home Assistant root topic (defaults to "homeassistant"), %s = Controller UUID
+    #define MQTT_TOPIC_HTTP_SERVER_AUTO_DISCOVERY_LENGTH WORD_LENGTH_AUTODISCOVERY_ROOT + 1 + WORD_LENGTH_INTEGRATION + 7 + 1 + UUID_LENGTH + 1 + 11 + WORD_LENGTH_CONFIG //11 = len("http-server")
+    #define MQTT_HTTP_SERVER_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s-http-server"       //%s = Controller UUID
+    #define MQTT_HTTP_SERVER_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 11 //11 = len("http-server")
+    #define MQTT_TOPIC_HTTP_SERVER_SET_PATTERN WORD_FIREFLY_SLASH "%s/http-server/set"       //%s = Controller UUID
+    #define MQTT_TOPIC_HTTP_SERVER_SET_REGEX "^FireFly\/[0-9a-f-]+\/http[-]server\/set$"
+    #define MQTT_TOPIC_HTTP_SERVER_SET_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 11 + WORD_LENGTH_SET //len("/http-server")
+
 
     /***************** FIRMWARE UPDATE TOPICS *****************/
 
