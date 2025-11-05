@@ -3091,6 +3091,10 @@ void mqtt_publishTemperatures(){
     return;
   }
 
+  if(!mqttClient.connected()){
+    return;
+  }
+
   for(int i = 0; i < TEMPERATURE_SENSOR_COUNT; i++){
 
     char temperature[6];
@@ -3316,6 +3320,10 @@ void mqtt_publishStartTime(){
     return;
   }
 
+  if(!mqttClient.connected()){
+    return;
+  }
+
   char state_topic[MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_TIME_START_STATE_PATTERN, externalEEPROM.data.uuid);
 
@@ -3387,6 +3395,10 @@ void mqtt_autoDiscovery_mac_address(){
 void mqtt_publishMACAddress(){
 
   if(externalEEPROM.enabled == false){
+    return;
+  }
+
+  if(!mqttClient.connected()){
     return;
   }
 
@@ -3462,6 +3474,10 @@ void mqtt_publishIPAddress(){
     return;
   }
 
+  if(!mqttClient.connected()){
+    return;
+  }
+
   char state_topic[MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
 
@@ -3534,6 +3550,10 @@ void mqtt_autoDiscovery_count_errors(){
 void mqtt_publishCountErrors(){
 
   if(externalEEPROM.enabled == false){
+    return;
+  }
+
+  if(!mqttClient.connected()){
     return;
   }
 
@@ -3623,6 +3643,10 @@ void mqtt_autoDiscovery_update(){
 void mqtt_publishUpdateAvailable(JsonVariant &updateDoc){
 
   if(externalEEPROM.enabled == false){
+    return;
+  }
+
+  if(!mqttClient.connected()){
     return;
   }
 
@@ -3756,6 +3780,10 @@ void mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus stat
     return;
   }
 
+  if(!mqttClient.connected()){
+    return;
+  }
+
   char availability_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
   snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, externalEEPROM.data.uuid);
 
@@ -3792,6 +3820,10 @@ void mqtt_publishOutputValueChanged(char* id, uint8_t value){
 
     char state_topic[MQTT_TOPIC_OUTPUT_STATE_LENGTH+1];
     snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_OUTPUT_STATE_PATTERN, id);
+  if(!mqttClient.connected()){
+    return;
+  }
+
 
     char value_char[4];
     snprintf(value_char, sizeof(value_char), "%i", value);
