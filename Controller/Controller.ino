@@ -31,7 +31,7 @@ uint32_t MAX_POSSIBLE_HEAP = ESP.getHeapSize();
 #include "common/provisioningMode.h"
 
 unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
-unsigned long lastMemoryBroadcast = 0;
+unsigned long lastTimeMemoryBroadcast = 0; /* The last time memory usage was broadcast */
 unsigned long lastTimeHttpServerUsed = 0; /* The last time the HTTP server responded to a request */
 bool httpServerIsActive = false; /* If the HTTP server has been started */
 AsyncWebServer httpServer(80);
@@ -405,8 +405,8 @@ void loop() {
     }
   }
 
-  if((esp_timer_get_time() - lastMemoryBroadcast) /1000000 > MEMORY_USAGE_REPORT_SECONDS){
-    lastMemoryBroadcast = esp_timer_get_time();
+  if((esp_timer_get_time() - lastTimeMemoryBroadcast) /1000000 > MEMORY_USAGE_REPORT_SECONDS){
+    lastTimeMemoryBroadcast = esp_timer_get_time();
     reportMemoryUsage("Main loop timer elapsed.");
   }
 
