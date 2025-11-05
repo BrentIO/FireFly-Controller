@@ -3221,7 +3221,7 @@ void mqtt_autoDiscovery_start_time(){
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
   doc["icon"] = "mdi:calendar-clock";
-  doc["entity_category"] = "diagnostic";
+  doc["entity_category"] = F("diagnostic");
 
   JsonObject device = doc.createNestedObject("device");
   JsonArray identifiers = device.createNestedArray(F("identifiers"));
@@ -3296,7 +3296,7 @@ void mqtt_autoDiscovery_mac_address(){
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
   doc["icon"] = "mdi:ethernet";
-  doc["entity_category"] = "diagnostic";
+  doc["entity_category"] = F("diagnostic");
 
   JsonObject device = doc.createNestedObject("device");
   JsonArray identifiers = device.createNestedArray(F("identifiers"));
@@ -3368,7 +3368,7 @@ void mqtt_autoDiscovery_ip_address(){
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
   doc["icon"] = "mdi:ip";
-  doc["entity_category"] = "diagnostic";
+  doc["entity_category"] = F("diagnostic");
 
   JsonObject device = doc.createNestedObject("device");
   JsonArray identifiers = device.createNestedArray(F("identifiers"));
