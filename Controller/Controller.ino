@@ -3065,7 +3065,7 @@ void mqtt_autoDiscovery_temperature(){
     doc["name"] = sensorLocation;
     doc["unique_id"] = unique_id;
     doc["object_id"] = unique_id;
-    doc["icon"] = "mdi:thermometer";
+    doc["icon"] = F("mdi:thermometer");
     doc["device_class"] = "temperature";
     doc["unit_of_measurement"] = "°C";
 
@@ -3295,7 +3295,7 @@ void mqtt_autoDiscovery_start_time(){
   doc["name"] = "Start Time";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = "mdi:calendar-clock";
+  doc["icon"] = F("mdi:calendar-clock");
   doc["entity_category"] = F("diagnostic");
 
   JsonObject device = doc.createNestedObject("device");
@@ -3374,7 +3374,7 @@ void mqtt_autoDiscovery_mac_address(){
   doc["name"] = "MAC Address";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = "mdi:ethernet";
+  doc["icon"] = F("mdi:ethernet");
   doc["entity_category"] = F("diagnostic");
 
   JsonObject device = doc.createNestedObject("device");
@@ -3450,7 +3450,7 @@ void mqtt_autoDiscovery_ip_address(){
   doc["name"] = "IP Address";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = "mdi:ip";
+  doc["icon"] = F("mdi:ip");
   doc["entity_category"] = F("diagnostic");
 
   JsonObject device = doc.createNestedObject("device");
@@ -3722,7 +3722,7 @@ void mqtt_autoDiscovery_http_server(){
   doc["name"] = "HTTP Server";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = "mdi:web";
+  doc["icon"] = F("mdi:web");
 
   JsonObject device = doc.createNestedObject("device");
   JsonArray identifiers = device.createNestedArray(F("identifiers"));
