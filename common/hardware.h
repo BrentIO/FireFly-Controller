@@ -478,6 +478,11 @@
     #endif
 
 
+    #ifndef HTTP_SERVER_MAX_IDLE_SECONDS
+        #define HTTP_SERVER_MAX_IDLE_SECONDS 300 /* The number of seconds the HTTP server will run after its last request before being shut down */
+    #endif
+
+
     /* Check to ensure configuration is acceptable */
     #ifndef IO_EXTENDER_MODEL
         #error IO_EXTENDER_MODEL not set

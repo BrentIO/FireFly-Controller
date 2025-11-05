@@ -410,6 +410,13 @@ void loop() {
     reportMemoryUsage("Main loop timer elapsed.");
   }
 
+  if(httpServerIsActive){
+
+    if((esp_timer_get_time() - lastTimeHttpServerUsed) / 1000000  > HTTP_SERVER_MAX_IDLE_SECONDS){
+      stopHttpServer();
+    }
+  }
+
   otaFirmware_checkPending();
 
   oled.loop();
@@ -959,6 +966,8 @@ void http_handleVersion(AsyncWebServerRequest *request){
     return;
   }
 
+  lastTimeHttpServerUsed = esp_timer_get_time();
+
   if(externalEEPROM.enabled == false){
     http_error(request, F("Cannot connect to external EEPROM"));
     return;
@@ -1008,6 +1017,8 @@ void http_handleEventLog(AsyncWebServerRequest *request){
     http_methodNotAllowed(request);
     return;
   }
+
+  lastTimeHttpServerUsed = esp_timer_get_time();
 
   if(eventLog.getEvents()->size() == 0){
     request->send(200, F("application/json"),"[]");
@@ -1072,6 +1083,8 @@ void http_handleErrorLog(AsyncWebServerRequest *request){
     return;
   }
 
+  lastTimeHttpServerUsed = esp_timer_get_time();
+
   if(eventLog.getErrors()->size() == 0){
     request->send(200, F("application/json"),"[]");
     return;
@@ -1112,6 +1125,8 @@ void http_handleAuth(AsyncWebServerRequest *request){
         http_unauthorized(request);
         return;
       }
+
+      lastTimeHttpServerUsed = esp_timer_get_time();
     
       request->send(204);
       break;
@@ -1165,6 +1180,8 @@ void http_handleControllers_GET(AsyncWebServerRequest *request){
     return;
   }
   
+  lastTimeHttpServerUsed = esp_timer_get_time();
+
   String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + request->pathArg(0);
 
   if(!configFS.exists(filename)){
@@ -1192,6 +1209,8 @@ void http_handleControllers_DELETE(AsyncWebServerRequest *request){
     http_unauthorized(request);
     return;
   }
+
+  lastTimeHttpServerUsed = esp_timer_get_time();
 
   String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + request->pathArg(0);
 
@@ -1232,6 +1251,8 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
     http_methodNotAllowed(request);
     return;
   }
+
+  lastTimeHttpServerUsed = esp_timer_get_time();
 
   if(request->pathArg(0).length() != 36){
     http_badRequest(request, F("UUID must be exactly 36 characters"));
@@ -1277,6 +1298,8 @@ void http_handleListControllers(AsyncWebServerRequest *request){
     http_methodNotAllowed(request);
     return;
   }
+
+  lastTimeHttpServerUsed = esp_timer_get_time();
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   DynamicJsonDocument doc(8192);  //Supports 128 UUID's
@@ -1342,6 +1365,8 @@ void http_handleClients_GET(AsyncWebServerRequest *request){
       return;
     }
   }
+
+  lastTimeHttpServerUsed = esp_timer_get_time();
 
   if(request->hasHeader(F("mac-address"))){
 
@@ -1420,6 +1445,8 @@ void http_handleClients_DELETE(AsyncWebServerRequest *request){
     return;
   }
 
+  lastTimeHttpServerUsed = esp_timer_get_time();
+
   String filename = CONFIGFS_PATH_CLIENTS + (String)"/" + request->pathArg(0);
 
   if(!configFS.exists(filename)){
@@ -1459,6 +1486,8 @@ void http_handleClients_PUT(AsyncWebServerRequest *request, JsonVariant doc){
     http_methodNotAllowed(request);
     return;
   }
+
+  lastTimeHttpServerUsed = esp_timer_get_time();
 
   if(request->pathArg(0).length() != 36){
     http_badRequest(request, F("UUID must be exactly 36 characters"));
@@ -1504,6 +1533,8 @@ void http_handleListClients(AsyncWebServerRequest *request){
     http_methodNotAllowed(request);
     return;
   }
+
+  lastTimeHttpServerUsed = esp_timer_get_time();
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   DynamicJsonDocument doc(8192);  //Supports 128 UUID's
@@ -1568,6 +1599,8 @@ void http_handleProvisioning(AsyncWebServerRequest *request){
 
 
 void http_handleProvisioning_GET(AsyncWebServerRequest *request){
+  lastTimeHttpServerUsed = esp_timer_get_time();
+
   StaticJsonDocument<16> doc;
   doc["enabled"] = provisioningMode.getStatus();
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
@@ -1578,6 +1611,8 @@ void http_handleProvisioning_GET(AsyncWebServerRequest *request){
 
 
 void http_handleProvisioning_PUT(AsyncWebServerRequest *request){
+
+  lastTimeHttpServerUsed = esp_timer_get_time();
 
   if(!configFS_isMounted){
     http_error(request, F("File system not mounted"));
@@ -1612,6 +1647,7 @@ void http_handleProvisioning_PUT(AsyncWebServerRequest *request){
 }
 
 void http_handleProvisioning_DELETE(AsyncWebServerRequest *request){
+  lastTimeHttpServerUsed = esp_timer_get_time();
   request->send(202);
   provisioningMode.setInactive();
 }
@@ -1679,6 +1715,7 @@ void http_handleBackup_GET(AsyncWebServerRequest *request){
     return;
   }
 
+  lastTimeHttpServerUsed = esp_timer_get_time();
   AsyncWebServerResponse *response = request->beginResponse(configFS, F("/backup"), F("application/json"));
   request->send(response);
 }
@@ -1704,6 +1741,7 @@ void http_handleBackup_PUT(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
+  lastTimeHttpServerUsed = esp_timer_get_time();
   File file = configFS.open(F("/backup"), "w");
 
   if(!file){
@@ -1733,6 +1771,8 @@ void http_handleBackup_DELETE(AsyncWebServerRequest *request){
     http_unauthorized(request);
     return;
   }
+
+  lastTimeHttpServerUsed = esp_timer_get_time();
 
   if(!configFS.exists(F("/backup"))){
     http_notFound(request);
@@ -1782,6 +1822,8 @@ void http_handleUIVersion_GET(AsyncWebServerRequest *request){
     http_unauthorized(request);
     return;
   }
+
+  lastTimeHttpServerUsed = esp_timer_get_time();
 
   if(!wwwFS.exists(F("/version.json"))){
     http_notFound(request);
@@ -1844,6 +1886,8 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
     http_methodNotAllowed(request);
     return;
   }
+
+  lastTimeHttpServerUsed = esp_timer_get_time();
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   DynamicJsonDocument doc(49152);  //Supports approx 128 controllers, 128 clients, and 64 files in www
@@ -1915,6 +1959,8 @@ void http_handleCerts_GET(AsyncWebServerRequest *request){
     http_unauthorized(request);
     return;
   }
+  
+  lastTimeHttpServerUsed = esp_timer_get_time();
 
   AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
   StaticJsonDocument<768> doc;
@@ -1962,6 +2008,8 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
     http_methodNotAllowed(request);
     return;
   }
+
+  lastTimeHttpServerUsed = esp_timer_get_time();
 
   MatchState ms;
   ms.Target((char*)filename.c_str());
@@ -2055,6 +2103,8 @@ if(request->hasHeader(F("visual-token"))){
   }
 }
 
+lastTimeHttpServerUsed = esp_timer_get_time();
+
 if(request->hasHeader(F("mac-address"))){
 
   if(provisioningMode.getStatus() != true){
@@ -2095,6 +2145,8 @@ void http_handleCert_DELETE(AsyncWebServerRequest *request){
     return;
   }
 
+  lastTimeHttpServerUsed = esp_timer_get_time();
+
   if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0))){
     configFS.remove(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0));
     request->send(204);
@@ -2123,6 +2175,8 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
     http_methodNotAllowed(request);
     return;
   }
+
+  lastTimeHttpServerUsed = esp_timer_get_time();
 
   if(!doc.containsKey(F("url"))){
     http_badRequest(request, F("Field url is required"));
