@@ -268,7 +268,7 @@ void setup() {
   temperatureSensors.setCallback_failure(&failureHandler_temperatureSensors);
   temperatureSensors.begin();
 
-  reportMemoryUsage("Temperature sensors started; starting www server.");
+  reportMemoryUsage("Temperature sensors started; starting http server.");
 
   /* Start LittleFS for www */
   if (wwwFS.begin(false, "/wwwFS", (uint8_t)10U, "www"))
@@ -277,7 +277,7 @@ void setup() {
   }
   else{
     eventLog.createEvent(F("wwwFS mount fail"), EventLog::LOG_LEVEL_ERROR);
-    log_e("An Error has occurred while mounting www");
+    log_e("An Error has occurred while mounting wwwFS");
   }
 
 
@@ -313,7 +313,7 @@ void setup() {
     log_e("An Error has occurred while mounting configFS");
   }
 
-  /* Configure the web server.  
+  /* Configure the http server.  
     IMPORTANT: *** Sequence below matters, they are sorted specific to generic *** 
   */
 
@@ -369,7 +369,7 @@ void setup() {
 
   setupMQTT();
 
-  reportMemoryUsage("MQTT Set.  Setting up IO.");
+  reportMemoryUsage("MQTT Started.  Setting up IO.");
 
   setupIO();
 
