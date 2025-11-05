@@ -2928,6 +2928,8 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
       return;
     }
   }
+
+  log_w("MQTT subscribed topic [%s] received payload [%s] but was unhandled.", topic, payload);
 }
 
 
