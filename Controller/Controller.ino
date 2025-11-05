@@ -3820,15 +3820,19 @@ void mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus stat
  */
 void mqtt_publishOutputValueChanged(char* id, uint8_t value){
 
-    char state_topic[MQTT_TOPIC_OUTPUT_STATE_LENGTH+1];
-    snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_OUTPUT_STATE_PATTERN, id);
   if(!mqttClient.connected()){
     return;
   }
 
+  char state_topic[MQTT_TOPIC_OUTPUT_STATE_LENGTH+1];
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_OUTPUT_STATE_PATTERN, id);
 
-    char value_char[4];
-    snprintf(value_char, sizeof(value_char), "%i", value);
+  char value_char[4];
+  snprintf(value_char, sizeof(value_char), "%i", value);
+
+  mqttClient.publish(state_topic, value_char, true);
+}
+
 /**
  * Starts the HTTP server
  */
@@ -3869,5 +3873,4 @@ void stopHttpServer(){
 
   #endif
 
-    mqttClient.publish(state_topic, value_char, true);
 }
