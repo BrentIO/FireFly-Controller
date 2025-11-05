@@ -108,6 +108,50 @@
     #define MQTT_TOPIC_CONTROLLER_AVAILABILITY_PATTERN WORD_FIREFLY_SLASH "%s/availability"    //%s = Controller UUID
 
 
+    /***************** MEMORY MANAGEMENT TOPICS *****************/
+    #define MQTT_TOPIC_HEAP_FREE_STATE_PATTERN WORD_FIREFLY_SLASH "%s/heap-free/state"       //%s = Controller UUID
+    #define MQTT_TOPIC_HEAP_FREE_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 10 + WORD_LENGTH_STATE  //len("/heap-free")
+    #define MQTT_TOPIC_HEAP_FREE_AUTO_DISCOVERY_PATTERN "%s/sensor/FireFly-%s-heap-free/config"     //%s = Home Assistant root topic (defaults to "homeassistant"), %s = Controller UUID
+    #define MQTT_TOPIC_HEAP_FREE_AUTO_DISCOVERY_LENGTH WORD_LENGTH_AUTODISCOVERY_ROOT + 1 + WORD_LENGTH_INTEGRATION + 7 + 1 + UUID_LENGTH + 1 + 9 + WORD_LENGTH_CONFIG
+    #define MQTT_HEAP_FREE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s-heap-free"       //%s = Controller UUID
+    #define MQTT_HEAP_FREE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 9
+
+    #define MQTT_TOPIC_HEAP_SIZE_STATE_PATTERN WORD_FIREFLY_SLASH "%s/heap-size/state"       //%s = Controller UUID
+    #define MQTT_TOPIC_HEAP_SIZE_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 10 + WORD_LENGTH_STATE  //len("/heap-size")
+    #define MQTT_TOPIC_HEAP_SIZE_AUTO_DISCOVERY_PATTERN "%s/sensor/FireFly-%s-heap-size/config"     //%s = Home Assistant root topic (defaults to "homeassistant"), %s = Controller UUID
+    #define MQTT_TOPIC_HEAP_SIZE_AUTO_DISCOVERY_LENGTH WORD_LENGTH_AUTODISCOVERY_ROOT + 1 + WORD_LENGTH_INTEGRATION + 7 + 1 + UUID_LENGTH + 1 + 9 + WORD_LENGTH_CONFIG
+    #define MQTT_HEAP_SIZE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s-heap-size"       //%s = Controller UUID
+    #define MQTT_HEAP_SIZE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 9
+
+    #define MQTT_TOPIC_HEAP_FREE_PERCENT_STATE_PATTERN WORD_FIREFLY_SLASH "%s/heap-percent/state"       //%s = Controller UUID
+    #define MQTT_TOPIC_HEAP_FREE_PERCENT_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 13 + WORD_LENGTH_STATE  //len("/heap-percent")
+    #define MQTT_TOPIC_HEAP_FREE_PERCENT_AUTO_DISCOVERY_PATTERN "%s/sensor/FireFly-%s-heap-percent/config"     //%s = Home Assistant root topic (defaults to "homeassistant"), %s = Controller UUID
+    #define MQTT_TOPIC_HEAP_FREE_PERCENT_AUTO_DISCOVERY_LENGTH WORD_LENGTH_AUTODISCOVERY_ROOT + 1 + WORD_LENGTH_INTEGRATION + 7 + 1 + UUID_LENGTH + 1 + 12 + WORD_LENGTH_CONFIG
+    #define MQTT_HEAP_FREE_PERCENT_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s-heap-percent"       //%s = Controller UUID
+    #define MQTT_HEAP_FREE_PERCENT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 12
+
+    #define MQTT_TOPIC_HEAP_MAX_ALLOCATED_STATE_PATTERN WORD_FIREFLY_SLASH "%s/heap-max-alloc/state"       //%s = Controller UUID
+    #define MQTT_TOPIC_HEAP_MAX_ALLOCATED_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 15 + WORD_LENGTH_STATE  //len("/heap-max-alloc")
+    #define MQTT_TOPIC_HEAP_MAX_ALLOCATED_AUTO_DISCOVERY_PATTERN "%s/sensor/FireFly-%s-heap-max-alloc/config"     //%s = Home Assistant root topic (defaults to "homeassistant"), %s = Controller UUID
+    #define MQTT_TOPIC_HEAP_MAX_ALLOCATED_AUTO_DISCOVERY_LENGTH WORD_LENGTH_AUTODISCOVERY_ROOT + 1 + WORD_LENGTH_INTEGRATION + 7 + 1 + UUID_LENGTH + 1 + 14 + WORD_LENGTH_CONFIG
+    #define MQTT_HEAP_MAX_ALLOCATED_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s-heap-max-alloc"       //%s = Controller UUID
+    #define MQTT_HEAP_MAX_ALLOCATED_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 14
+
+    #define MQTT_TOPIC_HEAP_MIN_FREE_STATE_PATTERN WORD_FIREFLY_SLASH "%s/heap-min-free/state"       //%s = Controller UUID
+    #define MQTT_TOPIC_HEAP_MIN_FREE_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 14 + WORD_LENGTH_STATE  //len("/heap-min-free")
+    #define MQTT_TOPIC_HEAP_MIN_FREE_AUTO_DISCOVERY_PATTERN "%s/sensor/FireFly-%s-heap-min-free/config"     //%s = Home Assistant root topic (defaults to "homeassistant"), %s = Controller UUID
+    #define MQTT_TOPIC_HEAP_MIN_FREE_AUTO_DISCOVERY_LENGTH WORD_LENGTH_AUTODISCOVERY_ROOT + 1 + WORD_LENGTH_INTEGRATION + 7 + 1 + UUID_LENGTH + 1 + 13 + WORD_LENGTH_CONFIG
+    #define MQTT_HEAP_MIN_FREE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s-heap-min-free"       //%s = Controller UUID
+    #define MQTT_HEAP_MIN_FREE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 13
+
+    #define MQTT_TOPIC_STACK_MIN_FREE_STATE_PATTERN WORD_FIREFLY_SLASH "%s/stack-min-free/state"       //%s = Controller UUID
+    #define MQTT_TOPIC_STACK_MIN_FREE_STATE_PATTERN_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 15 + WORD_LENGTH_STATE  //len("/stack-min-free")
+    #define MQTT_TOPIC_STACK_MIN_FREE_AUTO_DISCOVERY_PATTERN "%s/sensor/FireFly-%s-stack-min-free/config"     //%s = Home Assistant root topic (defaults to "homeassistant"), %s = Controller UUID
+    #define MQTT_TOPIC_STACK_MIN_FREE_AUTO_DISCOVERY_LENGTH WORD_LENGTH_AUTODISCOVERY_ROOT + 1 + WORD_LENGTH_INTEGRATION + 7 + 1 + UUID_LENGTH + 1 + 14 + WORD_LENGTH_CONFIG
+    #define MQTT_STACK_MIN_FREE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s-stack-min-free"       //%s = Controller UUID
+    #define MQTT_STACK_MIN_FREE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + UUID_LENGTH + 1 + 14
+    
+
     class exPubSubClient : public PubSubClient
     {           
 
