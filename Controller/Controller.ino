@@ -208,7 +208,7 @@ void setup() {
     ESP32_W5500_setCallback_disconnected(&eventHandler_ethernetDisconnect);
 
     log_d("Setting up Ethernet on W5500");
-    unsigned long ethernet_start_time = millis();
+    uint64_t ethernet_start_time = esp_timer_get_time();
 
     uint8_t ethMac[6];
     esp_read_mac(ethMac, ESP_MAC_ETH);
