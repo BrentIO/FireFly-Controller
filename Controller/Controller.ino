@@ -198,7 +198,10 @@ void setup() {
 
     uint8_t ethMac[6];
     esp_read_mac(ethMac, ESP_MAC_ETH);
-    ETH.begin(SPI_MISO_PIN, SPI_MOSI_PIN, SPI_SCK_PIN, ETHERNET_PIN, ETHERNET_PIN_INTERRUPT, SPI_CLOCK_MHZ, ETH_SPI_HOST, ethMac);
+    if(!ETH.begin(SPI_MISO_PIN, SPI_MOSI_PIN, SPI_SCK_PIN, ETHERNET_PIN, ETHERNET_PIN_INTERRUPT, SPI_CLOCK_MHZ, ETH_SPI_HOST, ethMac)){
+      eventLog.resolveError(F("Ethernet begin fail"));
+      return;
+    }
 
     char hostname[18] = {0};
     sprintf(hostname, "FireFly-%02X%02X%02X", ethMac[3], ethMac[4], ethMac[5]);
