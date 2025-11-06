@@ -30,9 +30,9 @@ uint32_t MAX_POSSIBLE_HEAP = ESP.getHeapSize();
 #include "common/extendedPubSubClient.h"
 #include "common/provisioningMode.h"
 
-unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
-unsigned long lastTimeMemoryBroadcast = 0; /* The last time memory usage was broadcast */
-unsigned long lastTimeHttpServerUsed = 0; /* The last time the HTTP server responded to a request */
+uint64_t bootTime = 0; /* Approximate Epoch time the device booted */
+uint64_t lastTimeMemoryBroadcast = 0; /* The last time memory usage was broadcast */
+uint64_t lastTimeHttpServerUsed = 0; /* The last time the HTTP server responded to a request */
 bool httpServerIsActive = false; /* If the HTTP server has been started */
 AsyncWebServer httpServer(80);
 managerExternalEEPROM externalEEPROM; /* External EEPROM instance */
