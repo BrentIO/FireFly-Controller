@@ -3927,7 +3927,7 @@ void mqtt_publish_heapFreePercent(){
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_FREE_PERCENT_STATE_PATTERN, externalEEPROM.data.uuid);
 
   char buf[4];
-  sprintf(buf, "%lu", (uint8_t)(ESP.getFreeHeap() * 100 / MAX_POSSIBLE_HEAP));
+  sprintf(buf, "%lu", (uint8_t)(ESP.getFreeHeap() * 100 / ESP.getHeapSize()));
 
   mqttClient.publish(state_topic, buf, false);
 }
