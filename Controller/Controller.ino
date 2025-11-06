@@ -4329,6 +4329,11 @@ void mqtt_publishOutputValueChanged(char* id, uint8_t value){
  */
 void startHttpServer(){
 
+  if(httpServerIsActive == true){
+    log_w("HTTP server requested to start when already running.");
+    return;
+  }
+
     #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
       httpServer.begin();
@@ -4349,6 +4354,11 @@ void startHttpServer(){
  * Stops the HTTP server
  */
 void stopHttpServer(){
+
+  if(httpServerIsActive == false){
+    log_w("HTTP server requested to stop when not running.");
+    return;
+  }
 
   #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
