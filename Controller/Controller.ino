@@ -7,8 +7,6 @@
 *
 */
 
-uint32_t MAX_POSSIBLE_HEAP = ESP.getHeapSize();
-
 #define VERSION "2025.11.02"
 #define APPLICATION_NAME "FireFly Controller"
 
@@ -126,17 +124,13 @@ inputPort inputPorts[(IO_EXTENDER_COUNT_PINS / IO_EXTENDER_COUNT_CHANNELS_PER_PO
 
 void reportMemoryUsage(const char* tag) {
 
-  if(ESP.getFreeHeap() > MAX_POSSIBLE_HEAP){
-    MAX_POSSIBLE_HEAP = ESP.getFreeHeap();
-  }
-
   log_d("[%lu] ***Memory Usage Report***\tHeap Free: %lu, MaxAllocHeap: %lu, MinFreeHeap: %lu, HeapSize: %lu, HeapFree: %u%%, StackHighWaterMark: %u\t[%s]",
           timeClient.getEpochTime(),
           (unsigned long)ESP.getFreeHeap(),
           (unsigned long)ESP.getMaxAllocHeap(),
           (unsigned long)ESP.getMinFreeHeap(),
           (unsigned long)ESP.getHeapSize(),
-          (uint8_t)(ESP.getFreeHeap() * 100 / MAX_POSSIBLE_HEAP),
+          (uint8_t)(ESP.getFreeHeap() * 100 / ESP.getHeapSize()),
           (unsigned int)uxTaskGetStackHighWaterMark(NULL),
           tag);
 
