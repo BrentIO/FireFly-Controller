@@ -2736,7 +2736,7 @@ void mqtt_reconnect(){
         return;
       }
 
-      mqttClient.lastReconnectAttemptTime = esp_timer_get_time();
+    mqttClient.lastReconnectAttemptTime = esp_timer_get_time();
   }
 }
 
