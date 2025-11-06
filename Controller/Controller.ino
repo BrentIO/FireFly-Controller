@@ -211,7 +211,7 @@ void setup() {
 
       delay(100);
 
-      if(millis() > ethernet_start_time + ETHERNET_TIMEOUT){
+      if(esp_timer_get_time() > ethernet_start_time + (ETHERNET_TIMEOUT * 1000ULL)){
           log_w("Ethernet connection timeout");
         break;
       }
