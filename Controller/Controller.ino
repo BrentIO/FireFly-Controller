@@ -395,8 +395,8 @@ void loop() {
         if(otaFirmware.execHTTPcheck() == 0){
           eventLog.createEvent(F("OTA firmware checked"));
         }
-        
       }
+
       otaFirmware.lastCheckedTime = esp_timer_get_time();
       reportMemoryUsage("Firmware check complete.");
     }
@@ -792,7 +792,6 @@ void updateNTPTime(bool force){
   if((esp_timer_get_time() > ntpSleepUntil) || force){
       /*
         Workaround until https://github.com/arduino-libraries/NTPClient/pull/163 is merged
-
         If time client update is unsuccessful, stop trying for 5 minutes
       */
 
