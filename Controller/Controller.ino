@@ -3333,7 +3333,7 @@ void mqtt_publishStartTime(){
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_TIME_START_STATE_PATTERN, externalEEPROM.data.uuid);
 
   char start_time[21];
-  snprintf(start_time, sizeof(start_time), "%lu", bootTime);
+  snprintf(start_time, sizeof(start_time), "%llu", bootTime);
 
   mqttClient.publish(state_topic, start_time, true);
 }
