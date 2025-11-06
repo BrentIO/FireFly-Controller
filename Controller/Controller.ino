@@ -9,7 +9,7 @@
 
 uint32_t MAX_POSSIBLE_HEAP = ESP.getHeapSize();
 
-#define VERSION "2025.11.01"
+#define VERSION "2025.11.02"
 #define APPLICATION_NAME "FireFly Controller"
 
 #include "common/hardware.h"
