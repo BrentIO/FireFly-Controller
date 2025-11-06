@@ -268,7 +268,7 @@ void setup() {
   reportMemoryUsage("Temperature sensors started; starting http server.");
 
   /* Start LittleFS for www */
-  if (wwwFS.begin(false, "/wwwFS", (uint8_t)10U, "www"))
+  if(wwwFS.begin(false, "/wwwFS", (uint8_t)10U, "www"))
   {
     wwwFS_isMounted = true;
   }
@@ -279,7 +279,7 @@ void setup() {
 
 
   /* Start LittleFS for config */
-  if (configFS.begin(false, "/configFS", (uint8_t)10U, "config"))
+  if(configFS.begin(false, "/configFS", (uint8_t)10U, "config"))
   {
     configFS_isMounted = true;
 
@@ -1409,7 +1409,7 @@ boolean authClientWithMacAddress(const char* uuid, const char* macAddress){
 
     DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
 
-    if (error) {
+    if(error) {
       return false;
     }
 
@@ -1629,7 +1629,7 @@ void http_handleProvisioning_PUT(AsyncWebServerRequest *request){
       if(!file.isDirectory()){
         DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
 
-        if (error) {
+        if(error) {
           log_e("deserializeJson() failed: %s", error.c_str());
           continue;
         }
@@ -1837,16 +1837,16 @@ void http_handleUIVersion_GET(AsyncWebServerRequest *request){
 void listDirToJsonArray(fs::FS &fs, const char *dirname, JsonArray &array) {
 
   File root = fs.open(dirname);
-  if (!root) {
+  if(!root) {
     return;
   }
-  if (!root.isDirectory()) {
+  if(!root.isDirectory()) {
     return;
   }
 
   File file = root.openNextFile();
   while (file) {
-    if (file.isDirectory()) {
+    if(file.isDirectory()) {
       listDirToJsonArray(fs, file.path(), array);
     } else {
       JsonObject entry = array.createNestedObject();
@@ -2258,7 +2258,7 @@ void setup_OtaFirmware(){
 
   DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
 
-  if (error) {
+  if(error) {
     char text[OLED_CHARACTERS_PER_LINE+1];
     snprintf(text, sizeof(text), "OTA parse err %s", error.c_str());
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
@@ -2509,7 +2509,7 @@ bool setup_outputs(String filename){
 
   DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
 
-  if (error) {
+  if(error) {
     char text[OLED_CHARACTERS_PER_LINE+1];
     snprintf(text, sizeof(text), "Out parse err %s", error.c_str());
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
@@ -2591,7 +2591,7 @@ bool setup_inputs(String filename){
 
   file.close();
 
-  if (error) {
+  if(error) {
     char text[OLED_CHARACTERS_PER_LINE+1];
     snprintf(text, sizeof(text), "In parse err %s", error.c_str());
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
@@ -2776,7 +2776,7 @@ void setupMQTT(){
 
   file.close();
 
-  if (error) {
+  if(error) {
     char text[OLED_CHARACTERS_PER_LINE+1];
     snprintf(text, sizeof(text), "MQTT parse err %s", error.c_str());
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
@@ -3142,7 +3142,7 @@ void mqtt_autoDiscovery_outputs(){
   DeserializationError errorControllerFileDeserialization = deserializeJson(controllerDoc, controllerFile, DeserializationOption::Filter(controllerFilterDoc));
   controllerFile.close();
 
-  if (errorControllerFileDeserialization) {
+  if(errorControllerFileDeserialization) {
     return;
   }
 
