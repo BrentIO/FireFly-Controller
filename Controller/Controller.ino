@@ -789,7 +789,7 @@ void failureHandler_outputs(uint8_t address, nsOutputs::failureReason failureRea
 */
 void updateNTPTime(bool force){
 
-  if((esp_timer_get_time() > ntpSleepUntil) || force == true){
+  if((esp_timer_get_time() > ntpSleepUntil) || force){
       /*
         Workaround until https://github.com/arduino-libraries/NTPClient/pull/163 is merged
 
