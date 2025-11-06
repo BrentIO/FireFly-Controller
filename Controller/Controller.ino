@@ -3851,7 +3851,7 @@ void mqtt_publish_heapFree(){
   char buf[12];
   sprintf(buf, "%lu", ESP.getFreeHeap());
 
-  mqttClient.publish(state_topic, buf, true);
+  mqttClient.publish(state_topic, buf, false);
 }
 
 
@@ -3929,7 +3929,7 @@ void mqtt_publish_heapFreePercent(){
   char buf[4];
   sprintf(buf, "%lu", (uint8_t)(ESP.getFreeHeap() * 100 / MAX_POSSIBLE_HEAP));
 
-  mqttClient.publish(state_topic, buf, true);
+  mqttClient.publish(state_topic, buf, false);
 }
 
 
@@ -4008,7 +4008,7 @@ void mqtt_publish_heapMaxAllocated(){
   char buf[12];
   sprintf(buf, "%lu", ESP.getMaxAllocHeap());
 
-  mqttClient.publish(state_topic, buf, true);
+  mqttClient.publish(state_topic, buf, false);
 }
 
 
@@ -4087,7 +4087,7 @@ void mqtt_publish_heapMinFree(){
   char buf[12];
   sprintf(buf, "%lu", ESP.getMinFreeHeap());
 
-  mqttClient.publish(state_topic, buf, true);
+  mqttClient.publish(state_topic, buf, false);
 }
 
 
@@ -4166,7 +4166,7 @@ void mqtt_publish_heapSize(){
   char buf[12];
   sprintf(buf, "%lu", ESP.getHeapSize());
 
-  mqttClient.publish(state_topic, buf, true);
+  mqttClient.publish(state_topic, buf, false);
 }
 
 
@@ -4245,7 +4245,8 @@ void mqtt_publish_stackHighWaterMark(){
   char buf[11];
   sprintf(buf, "%u", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
 
-  mqttClient.publish(state_topic, buf, true);
+  mqttClient.publish(state_topic, buf, false);
+}
 
 
 /**
