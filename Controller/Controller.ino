@@ -133,14 +133,6 @@ void reportMemoryUsage(const char* tag) {
           (uint8_t)(ESP.getFreeHeap() * 100 / ESP.getHeapSize()),
           (unsigned int)uxTaskGetStackHighWaterMark(NULL),
           tag);
-
-  mqtt_publish_heapFree();
-  mqtt_publish_heapFreePercent();
-  mqtt_publish_heapMaxAllocated();
-  mqtt_publish_heapMinFree();
-  mqtt_publish_heapSize();
-  mqtt_publish_stackHighWaterMark();
-
 }
 
 
@@ -4252,6 +4244,20 @@ void mqtt_publish_stackHighWaterMark(){
   sprintf(buf, "%u", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
 
   mqttClient.publish(state_topic, buf, true);
+
+
+/**
+ * Publishes memory usage to MQTT
+ */
+void mqtt_publishMemoryUsage(){
+
+    mqtt_publish_heapFree();
+    mqtt_publish_heapFreePercent();
+    mqtt_publish_heapMaxAllocated();
+    mqtt_publish_heapMinFree();
+    mqtt_publish_heapSize();
+    mqtt_publish_stackHighWaterMark();
+
 }
 
 
