@@ -332,7 +332,7 @@
         #endif
 
         #ifndef TEMPERATURE_SENSOR_DEGREES_VARIATION_ALLOWED
-             #define TEMPERATURE_SENSOR_DEGREES_VARIATION_ALLOWED 0.25 /* Number of degrees allowed variance between temperature reads before the new value is stored and reported. Default 0.25. */
+             #define TEMPERATURE_SENSOR_DEGREES_VARIATION_ALLOWED 0.125 /* Number of degrees allowed variance between temperature reads before the new value is stored and reported. Default 0.125. */
         #endif
 
     #endif
