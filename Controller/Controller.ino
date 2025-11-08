@@ -386,10 +386,9 @@ void loop() {
 
   updateNTPTime();
 
-  if(otaFirmware.enabled && esp_timer_get_time() > 30000000){ //Wait 30 seconds after booting before checking the firmware
-
-    if((esp_timer_get_time() - otaFirmware.lastCheckedTime) / 1000000 > FIRMWARE_CHECK_SECONDS || otaFirmware.lastCheckedTime == 0){
-      if(otaFirmware.updateInProcess == false){
+  if(otaFirmware.enabled && esp_timer_get_time() > 30ULL * 1000000ULL){ //Wait 30 seconds after booting before checking the firmware
+    if((esp_timer_get_time() - otaFirmware.lastCheckedTime >= (uint64_t)FIRMWARE_CHECK_SECONDS * 1000000ULL) || (otaFirmware.lastCheckedTime == 0)){
+      if(!otaFirmware.updateInProcess){
         reportMemoryUsage("Starting firmware check.");
 
         if(otaFirmware.execHTTPcheck() == 0){
@@ -402,15 +401,15 @@ void loop() {
     }
   }
 
-  if((esp_timer_get_time() - lastTimeMemoryBroadcast) /1000000 > MEMORY_USAGE_REPORT_SECONDS){
+  if(esp_timer_get_time() - lastTimeMemoryBroadcast >= (uint64_t)MEMORY_USAGE_REPORT_SECONDS * 1000000ULL){
     lastTimeMemoryBroadcast = esp_timer_get_time();
     reportMemoryUsage("Main loop timer elapsed.");
+    mqtt_publishMemoryUsage();
   }
 
   if(httpServerIsActive){
-
-    if((esp_timer_get_time() - lastTimeHttpServerUsed) / 1000000  > HTTP_SERVER_MAX_IDLE_SECONDS){
-      stopHttpServer();
+    if(esp_timer_get_time() - lastTimeHttpServerUsed >= (uint64_t)HTTP_SERVER_MAX_IDLE_SECONDS * 1000000ULL){
+        stopHttpServer();
     }
   }
 
@@ -798,14 +797,16 @@ void updateNTPTime(bool force){
       if(timeClient.update()){
         ntpSleepUntil = 0;
       }else{
-        ntpSleepUntil = esp_timer_get_time() + 300000000;
+        ntpSleepUntil = esp_timer_get_time() + 300ULL * 1000000ULL; // 5 minutes in µs
+        return; // Stop early if update failed
       }
-    }
+  }
 
-    if(timeClient.isTimeSet() && bootTime == 0){
-      bootTime = timeClient.getEpochTime() - (esp_timer_get_time()/1000000);
+  if(timeClient.isTimeSet() && bootTime == 0){
+      unsigned long epoch = timeClient.getEpochTime();
+      bootTime = (uint64_t)epoch - (esp_timer_get_time() / 1000000ULL);
       mqtt_publishStartTime();
-    }
+  }
 }
 
 
@@ -2729,7 +2730,7 @@ void mqtt_reconnect(){
     return;
   }
 
-  if((esp_timer_get_time() - mqttClient.lastReconnectAttemptTime) / 1000  > MQTT_RECONNECT_WAIT_MILLISECONDS || mqttClient.lastReconnectAttemptTime == 0){
+  if((esp_timer_get_time() - mqttClient.lastReconnectAttemptTime >= (uint64_t)MQTT_RECONNECT_WAIT_MILLISECONDS * 1000ULL) || mqttClient.lastReconnectAttemptTime == 0){
 
     if(mqttClient.connect(externalEEPROM.data.uuid, mqttClient.username, mqttClient.password, mqttClient.topic_availability, 2, true, "offline")) {
         mqttClient.lastReconnectAttemptTime = 0;
