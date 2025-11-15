@@ -9,7 +9,7 @@
  * (C) 2024, P5 Software, LLC
 */
 
-#define VERSION "2025.5.16"
+#define VERSION "2025.11.1"
 #define APPLICATION_NAME "HW Reg and Config"
 
 #include "common/hardware.h"
