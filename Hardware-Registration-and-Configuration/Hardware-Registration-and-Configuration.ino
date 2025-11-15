@@ -63,7 +63,7 @@ bool configFS_isMounted = false;
 void setup() {
 
 
-  eventLog.createEvent(F("Event log started"));
+  eventLog.createEvent("Event log started");
 
   Wire.begin();
 
@@ -184,7 +184,7 @@ void setup() {
     otaFirmware.setCertFileSystem(nullptr);
   }
   else{
-    eventLog.createEvent(F("wwwFS mount fail"), EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("wwwFS mount fail", EventLog::LOG_LEVEL_ERROR);
     log_e("An Error has occurred while mounting www");
   }
 
@@ -195,7 +195,7 @@ void setup() {
     configFS_isMounted = true;
   }
   else{
-    eventLog.createEvent(F("configFS mount fail"), EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("configFS mount fail", EventLog::LOG_LEVEL_ERROR);
     log_e("An Error has occurred while mounting configFS");
   }
   
@@ -235,9 +235,9 @@ void setup() {
 
   httpServer.onNotFound(http_notFound);
 
-  DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Origin"), F("*")); //Ignore CORS
-  DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Headers"), F("visual-token, Content-Type")); //Ignore CORS
-  DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Methods"), F("GET, POST, OPTIONS, DELETE")); //Ignore CORS
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*"); //Ignore CORS
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "visual-token, Content-Type"); //Ignore CORS
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE"); //Ignore CORS
 
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
@@ -247,7 +247,7 @@ void setup() {
     
     }else{
       httpServer.begin();
-      eventLog.createEvent(F("Web server started"));
+      eventLog.createEvent("Web server started");
 
       log_i("HTTP server ready");
     }
@@ -256,7 +256,7 @@ void setup() {
   #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
 
       httpServer.begin();
-      eventLog.createEvent(F("Web server started"));
+      eventLog.createEvent("Web server started");
       log_i("HTTP server ready");
 
   #endif
@@ -320,19 +320,19 @@ void otaFirmware_checkPending(){
     switch(otaFirmware.pending[i].type){
 
       case OTA_UPDATE_APP:
-        eventLog.createEvent(F("OTA app forced"));
+        eventLog.createEvent("OTA app forced");
         updateSuccess = otaFirmware.forceUpdate(otaFirmware.pending[i].url.c_str(), false);
         break;
 
 
       case OTA_UPDATE_SPIFFS:
-        eventLog.createEvent(F("OTA SPIFFS forced"));
+        eventLog.createEvent("OTA SPIFFS forced");
         updateSuccess = otaFirmware.forceUpdateSPIFFS(otaFirmware.pending[i].url.c_str(), false);
         break;
     }
 
     if(!updateSuccess){
-      eventLog.createEvent(F("OTA update failed"), EventLog::LOG_LEVEL_NOTIFICATION);
+      eventLog.createEvent("OTA update failed", EventLog::LOG_LEVEL_NOTIFICATION);
     }
 
     otaFirmware.pending.remove(i);
@@ -374,10 +374,10 @@ void eventHandler_otaFirmwareFinished(int partition, bool needs_restart){
 
   log_i("Finished Partition: [%i] needs restart: [%s]", partition, needs_restart ? "true":"false");
 
-  eventLog.createEvent(F("OTA update finished"), EventLog::LOG_LEVEL_NOTIFICATION);
+  eventLog.createEvent("OTA update finished", EventLog::LOG_LEVEL_NOTIFICATION);
 
   if(needs_restart){
-      eventLog.createEvent(F("Rebooting..."), EventLog::LOG_LEVEL_NOTIFICATION);
+      eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
       delay(5000);
   }
 }
@@ -412,7 +412,7 @@ void http_unauthorized(AsyncWebServerRequest *request) {
 */
 void http_error(AsyncWebServerRequest *request, String message){
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<256> doc;
   doc["message"] = message;
 
@@ -427,7 +427,7 @@ void http_error(AsyncWebServerRequest *request, String message){
 */
 void http_badRequest(AsyncWebServerRequest *request, String message){
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<256> doc;
   doc["message"] = message;
 
@@ -442,7 +442,7 @@ void http_badRequest(AsyncWebServerRequest *request, String message){
 */
 void http_forbiddenRequest(AsyncWebServerRequest *request, String message){
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<256> doc;
   doc["message"] = message;
 
@@ -475,7 +475,7 @@ void http_configFSNotMunted(AsyncWebServerRequest *request){
     return;
   }
 
-  http_error(request, F("file system not mounted"));
+  http_error(request, "file system not mounted");
 
 }
 
@@ -534,7 +534,7 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
     }
 
     if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + filename)){
-      http_forbiddenRequest(request, F("Certificate already exists"));
+      http_forbiddenRequest(request, "Certificate already exists");
       return;
     }
 
@@ -644,8 +644,8 @@ void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-   if(!doc.containsKey(F("url"))){
-    http_badRequest(request, F("Field url is required"));
+   if(!doc.containsKey("url")){
+    http_badRequest(request, "Field url is required");
     return;
   }
 
@@ -654,23 +654,23 @@ void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
   newFirmwareRequest.certificate = doc["certificate"].as<String>();
 
   if(!newFirmwareRequest.url.startsWith("http")){
-    http_badRequest(request, F("Bad url; http or https required"));
+    http_badRequest(request, "Bad url; http or https required");
     return;
   }
 
   if(newFirmwareRequest.url.startsWith("https")){
-    if(!doc.containsKey(F("certificate"))){
-      http_badRequest(request, F("https requires certificate"));
+    if(!doc.containsKey("certificate")){
+      http_badRequest(request, "https requires certificate");
       return;
     }
 
     if(newFirmwareRequest.certificate == ""){
-      http_badRequest(request, F("Certificate cannot be empty"));
+      http_badRequest(request, "Certificate cannot be empty");
       return;
     }
 
     if(!configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + newFirmwareRequest.certificate)){
-      http_badRequest(request, F("Certificate does not exist"));
+      http_badRequest(request, "Certificate does not exist");
       return;
     }
   }
@@ -701,11 +701,11 @@ void http_handlePartitions(AsyncWebServerRequest *request){
   esp_partition_iterator_t partitionIterator = esp_partition_find(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_ANY, NULL);
 
   if (partitionIterator == NULL) {
-    http_error(request, F("esp_partition_find returned NULL"));
+    http_error(request, "esp_partition_find returned NULL");
     return;
   }
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<768> doc;
   JsonArray array = doc.to<JsonArray>();
 
@@ -713,11 +713,11 @@ void http_handlePartitions(AsyncWebServerRequest *request){
     const esp_partition_t* p = esp_partition_get(partitionIterator);
     JsonObject jsonPartition = array.createNestedObject();
     
-    jsonPartition[F("type")] = p->type;
-    jsonPartition[F("subtype")] = p->subtype;
-    jsonPartition[F("address")] = p->address;
-    jsonPartition[F("size")] = p->size;
-    jsonPartition[F("label")] = p->label;
+    jsonPartition["type"] = p->type;
+    jsonPartition["subtype"] = p->subtype;
+    jsonPartition["address"] = p->address;
+    jsonPartition["size"] = p->size;
+    jsonPartition["label"] = p->label;
 
   } while ((partitionIterator = esp_partition_next(partitionIterator)));
 
@@ -739,7 +739,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
     return;
   }
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<96> doc;
   doc["application"] = VERSION;
   char product_hex[16] = {0};
@@ -762,7 +762,7 @@ void http_handlePeripherals(AsyncWebServerRequest *request){
   }
 
   char address[5] = {0};
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<1536> doc;
   JsonArray array = doc.to<JsonArray>();
 
@@ -776,38 +776,38 @@ void http_handlePeripherals(AsyncWebServerRequest *request){
   for(int i=0; i < inputHealth.count; i++){
     JsonObject inputObj = array.createNestedObject();
     sprintf(address, "0x%02X", inputHealth.inputControllers[i].address);
-    inputObj[F("address")] = address;
-    inputObj[F("type")] = F("INPUT");
-    inputObj[F("online")] = inputHealth.inputControllers[i].enabled;
+    inputObj["address"] = address;
+    inputObj["type"] = "INPUT";
+    inputObj["online"] = inputHealth.inputControllers[i].enabled;
   }
 
   for(int i=0; i < outputHealth.count; i++){
     JsonObject outputObj = array.createNestedObject();
     sprintf(address, "0x%02X", outputHealth.outputControllers[i].address);
-    outputObj[F("address")] = address;
-    outputObj[F("type")] = F("OUTPUT");
-    outputObj[F("online")] = outputHealth.outputControllers[i].enabled;
+    outputObj["address"] = address;
+    outputObj["type"] = "OUTPUT";
+    outputObj["online"] = outputHealth.outputControllers[i].enabled;
   }
 
   for(int i=0; i < temperatureHealth.count; i++){
     JsonObject tempObj = array.createNestedObject();
     sprintf(address, "0x%02X", temperatureHealth.sensor[i].address);
-    tempObj[F("address")] = address;
-    tempObj[F("type")] = F("TEMPERATURE");
-    tempObj[F("online")] = temperatureHealth.sensor[i].enabled;
+    tempObj["address"] = address;
+    tempObj["type"] = "TEMPERATURE";
+    tempObj["online"] = temperatureHealth.sensor[i].enabled;
   }
 
   JsonObject oledObj = array.createNestedObject();
   sprintf(address, "0x%02X", oledHealth.address);
-  oledObj[F("address")] = address;
-  oledObj[F("type")] = F("OLED");
-  oledObj[F("online")] = oledHealth.enabled;
+  oledObj["address"] = address;
+  oledObj["type"] = "OLED";
+  oledObj["online"] = oledHealth.enabled;
 
   JsonObject externalEepromObj = array.createNestedObject();
   sprintf(address, "0x%02X", externalEepromHealth.address);
-  externalEepromObj[F("address")] = address;
-  externalEepromObj[F("type")] = F("EEPROM");
-  externalEepromObj[F("online")] = externalEepromHealth.enabled;
+  externalEepromObj["address"] = address;
+  externalEepromObj["type"] = "EEPROM";
+  externalEepromObj["online"] = externalEepromHealth.enabled;
 
   serializeJson(doc, *response);
   request->send(response);
@@ -824,7 +824,7 @@ void http_handleMCU(AsyncWebServerRequest *request){
     return;
   }
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<128> doc;
   doc["chip_model"] = ESP.getChipModel();
   doc["revision"] = (String)ESP.getChipRevision();
@@ -908,7 +908,7 @@ void http_handleNetworkInterface(AsyncWebServerRequest *request){
   char macAddress[18] = {0};
   getMacAddress(interface, macAddress);
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<96> doc;
 
   doc["interface"] = request->pathArg(0);
@@ -929,7 +929,7 @@ void http_handleNetworkInterfaceAll(AsyncWebServerRequest *request){
     return;
   }
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<384> doc;
   JsonArray array = doc.to<JsonArray>();
   JsonObject objWifi = array.createNestedObject();
@@ -940,20 +940,20 @@ void http_handleNetworkInterfaceAll(AsyncWebServerRequest *request){
   char macAddress[18] = {0};
 
   getMacAddress(ESP_MAC_WIFI_STA, macAddress);
-  objWifi[F("mac_address")] = macAddress;
-  objWifi[F("interface")] = F("wifi");
+  objWifi["mac_address"] = macAddress;
+  objWifi["interface"] = "wifi";
 
   getMacAddress(ESP_MAC_WIFI_SOFTAP, macAddress);
-  objAP[F("mac_address")] = macAddress;
-  objAP[F("interface")] = F("wifi_ap");
+  objAP["mac_address"] = macAddress;
+  objAP["interface"] = "wifi_ap";
 
   getMacAddress(ESP_MAC_BT, macAddress);
-  objBT[F("mac_address")] = macAddress;
-  objBT[F("interface")] = F("bluetooth");
+  objBT["mac_address"] = macAddress;
+  objBT["interface"] = "bluetooth";
   
   getMacAddress(ESP_MAC_ETH, macAddress);
-  objEth[F("mac_address")] = macAddress;
-  objEth[F("interface")] = F("ethernet");
+  objEth["mac_address"] = macAddress;
+  objEth["interface"] = "ethernet";
   
   serializeJson(doc, *response);
   request->send(response);
@@ -983,7 +983,7 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
         return;
       }
 
-      http_badRequest(request, F("Request requires a body")); //If there is no body in the request, it lands here
+      http_badRequest(request, "Request requires a body"); //If there is no body in the request, it lands here
       break;
 
     case ASYNC_HTTP_GET:
@@ -1018,7 +1018,7 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
 void http_handleEEPROM_GET(AsyncWebServerRequest *request){
 
   if(externalEEPROM.enabled == false){
-    http_error(request, F("Cannot connect to external EEPROM"));
+    http_error(request, "Cannot connect to external EEPROM");
     return;
   }
 
@@ -1027,7 +1027,7 @@ void http_handleEEPROM_GET(AsyncWebServerRequest *request){
     return;
   }
  
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<256> doc;
   doc["uuid"] = externalEEPROM.data.uuid;
   doc["product_id"] = externalEEPROM.data.product_id;
@@ -1045,7 +1045,7 @@ void http_handleEEPROM_GET(AsyncWebServerRequest *request){
 void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
 
   if (externalEEPROM.enabled == false){
-    http_error(request, F("Cannot connect to external EEPROM"));
+    http_error(request, "Cannot connect to external EEPROM");
     return;
   }
 
@@ -1055,7 +1055,7 @@ void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
   }
 
   if(externalEEPROM.destroy() == false){
-    http_error(request, F("Error during EEPROM delete"));
+    http_error(request, "Error during EEPROM delete");
     return;
   }
 
@@ -1064,7 +1064,7 @@ void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
 
   request->send(204);
 
-  eventLog.createEvent(F("Deleted EEPROM"), EventLog::LOG_LEVEL_NOTIFICATION);
+  eventLog.createEvent("Deleted EEPROM", EventLog::LOG_LEVEL_NOTIFICATION);
 }
 
 
@@ -1085,24 +1085,24 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
     }
 
   if (externalEEPROM.enabled == false){
-    http_error(request, F("Cannot connect to external EEPROM"));
+    http_error(request, "Cannot connect to external EEPROM");
     return;
   }
 
   if(strcmp(externalEEPROM.data.uuid, "") != 0){
-    http_badRequest(request, F("EEPROM already configured"));
+    http_badRequest(request, "EEPROM already configured");
     return;
   }
 
   MatchState ms;
 
-  if(!doc.containsKey(F("uuid"))){
-    http_badRequest(request, F("Field uuid is required"));
+  if(!doc.containsKey("uuid")){
+    http_badRequest(request, "Field uuid is required");
     return;
   }
 
   if(strlen(doc["uuid"])!=(sizeof(externalEEPROM.data.uuid)-1)){
-    http_badRequest(request, F("Field uuid is not exactly 36 characters"));
+    http_badRequest(request, "Field uuid is not exactly 36 characters");
     return;
   }
 
@@ -1113,29 +1113,29 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
   ms.Target(postedData.uuid);
 
   if(ms.MatchCount("^[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+$")!=1){ //Library does not support lengths of each section, so there is some opportunity for error
-    http_badRequest(request, F("Invalid uuid, see docs"));
+    http_badRequest(request, "Invalid uuid, see docs");
     return;
   }
 
   if(!doc.containsKey("product_id")){
-    http_badRequest(request, F("Field product_id is required"));
+    http_badRequest(request, "Field product_id is required");
     return;
   }
 
   if(strlen(doc["product_id"])>(sizeof(postedData.product_id)-1)){
-    http_badRequest(request, F("Field product_id is greater than 32 characters, see docs"));
+    http_badRequest(request, "Field product_id is greater than 32 characters, see docs");
     return;
   }
 
   strcpy(postedData.product_id, doc["product_id"]);
 
-  if(!doc.containsKey(F("key"))){
-    http_badRequest(request, F("Field key is required"));
+  if(!doc.containsKey("key")){
+    http_badRequest(request, "Field key is required");
     return;
   }
 
   if(strlen(doc["key"])!=(sizeof(postedData.key)-1)){
-    http_badRequest(request, F("Field key is not exactly 64 characters"));
+    http_badRequest(request, "Field key is not exactly 64 characters");
     return;
   }
 
@@ -1144,7 +1144,7 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
   ms.Target(postedData.key);
 
   if(ms.MatchCount("^[0-9A-Za-z]+$")!=1){
-    http_badRequest(request, F("Invalid key, see docs"));
+    http_badRequest(request, "Invalid key, see docs");
     return;
   }
 
@@ -1160,7 +1160,7 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
   request->send(201);
 
-  eventLog.createEvent(F("Wrote EEPROM"), EventLog::LOG_LEVEL_NOTIFICATION);
+  eventLog.createEvent("Wrote EEPROM", EventLog::LOG_LEVEL_NOTIFICATION);
 }
 
 
@@ -1175,36 +1175,36 @@ void http_handleEventLog(AsyncWebServerRequest *request){
   }
 
   if(eventLog.getEvents()->size() == 0){
-    request->send(200, F("application/json"),"[]");
+    request->send(200, "application/json","[]");
     return;
   }
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<EVENT_LOG_MAXIMUM_ENTRIES * 100> doc;
 
   for(int i=0; i < eventLog.getEvents()->size(); i++){
     JsonObject entry = doc.createNestedObject();
-    entry[F("time")] = eventLog.getEvents()->get(i).timestamp;
+    entry["time"] = eventLog.getEvents()->get(i).timestamp;
 
     switch(eventLog.getEvents()->get(i).level){
       case EventLog::LOG_LEVEL_ERROR:
-        entry[F("level")] = F("error");
+        entry["level"] = "error";
         break;
 
       case EventLog::LOG_LEVEL_NOTIFICATION:
-        entry[F("level")] = F("notify");
+        entry["level"] = "notify";
         break;
 
       case EventLog::LOG_LEVEL_INFO:
-        entry[F("level")] = F("info");
+        entry["level"] = "info";
         break;
 
       default:
-        entry[F("level")] = F("unknown");
+        entry["level"] = "unknown";
         break;
     }
 
-    entry[F("text")] = eventLog.getEvents()->get(i).text;
+    entry["text"] = eventLog.getEvents()->get(i).text;
   }
  
   serializeJson(doc, *response);
@@ -1223,17 +1223,17 @@ void http_handleErrorLog(AsyncWebServerRequest *request){
   }
 
   if(eventLog.getErrors()->size() == 0){
-    request->send(200, F("application/json"),"[]");
+    request->send(200, "application/json","[]");
     return;
   }
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<EVENT_LOG_MAXIMUM_ENTRIES * 64> doc;
 
   for(int i=0; i < eventLog.getErrors()->size(); i++){
     JsonObject entry = doc.createNestedObject();
 
-    entry[F("text")] = eventLog.getErrors()->get(i);
+    entry["text"] = eventLog.getErrors()->get(i);
   }
 
   serializeJson(doc, *response);
@@ -1246,7 +1246,7 @@ void http_handleErrorLog(AsyncWebServerRequest *request){
 */
 void http_handleCerts_GET(AsyncWebServerRequest *request){
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<768> doc;
   JsonArray array = doc.to<JsonArray>();
 
@@ -1256,8 +1256,8 @@ void http_handleCerts_GET(AsyncWebServerRequest *request){
   while(file){
       if(!file.isDirectory()){
           JsonObject fileInstance = array.createNestedObject();
-          fileInstance[F("file")] = (String)file.name();
-          fileInstance[F("size")] = file.size();
+          fileInstance["file"] = (String)file.name();
+          fileInstance["size"] = file.size();
       }
       file = root.openNextFile();
     }
@@ -1478,8 +1478,8 @@ void eventHandler_visualAuthChanged(){
   */
   void eventHandler_ethernetConnect(){
     updateNTPTime(true);
-    eventLog.createEvent(F("Ethernet connected"));
-    eventLog.resolveError(F("Ethernet disconnected"));
+    eventLog.createEvent("Ethernet connected");
+    eventLog.resolveError("Ethernet disconnected");
   }
 
 
@@ -1487,7 +1487,7 @@ void eventHandler_visualAuthChanged(){
    * Handle Ethernet being disconnected
   */
   void eventHandler_ethernetDisconnect(){
-    eventLog.createEvent(F("Ethernet disconnected"), EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("Ethernet disconnected", EventLog::LOG_LEVEL_ERROR);
   }
 
 #endif

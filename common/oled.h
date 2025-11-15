@@ -264,7 +264,7 @@
                     this->hardware.setCursor(logo_width + 2, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
-                    this->hardware.println(F("P5 Software"));
+                    this->hardware.println("P5 Software");
                     this->hardware.setFont();
 
                 #endif
@@ -291,22 +291,22 @@
                         this->hardware.println(APPLICATION_NAME);
                     #endif
 
-                    this->hardware.print(F("Ver: "));
+                    this->hardware.print("Ver: ");
 
                     #ifdef VERSION
                         this->hardware.println(VERSION);
                     #else
-                        this->hardware.println(F("UNKNOWN"));
+                        this->hardware.println("UNKNOWN");
                     #endif
 
                     if(this->_name){
                         this->hardware.println(this->_name);
                     }else{
-                        this->hardware.println(F("No Device Name"));
+                        this->hardware.println("No Device Name");
                     }
 
                     #if CORE_DEBUG_LEVEL >= 4
-                        this->hardware.println(F("**DEBUG BUILD**"));
+                        this->hardware.println("**DEBUG BUILD**");
                     #endif
 
                 #endif
@@ -359,7 +359,7 @@
                     this->hardware.setCursor(logo_width + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
-                    this->hardware.println(F("Event Log"));
+                    this->hardware.println("Event Log");
                     this->hardware.setFont();
                     this->_drawScrollBar(PAGE_EVENT_LOG);
 
@@ -412,7 +412,7 @@
                     this->hardware.setCursor(logo_width + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
-                    this->hardware.println(F("Network"));
+                    this->hardware.println("Network");
                     this->hardware.setFont();
                     this->_drawScrollBar(PAGE_WIFI);
 
@@ -465,7 +465,7 @@
                     this->hardware.setCursor(logo_width + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
-                    this->hardware.println(F("Hardware"));
+                    this->hardware.println("Hardware");
                     this->hardware.setFont();
                     this->_drawScrollBar(PAGE_HARDWARE);
                 
@@ -519,7 +519,7 @@
                     this->hardware.setCursor(logo_width + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
-                    this->hardware.println(F("Software"));
+                    this->hardware.println("Software");
                     this->hardware.setFont();
                     this->_drawScrollBar(PAGE_SOFTWARE);
 
@@ -573,7 +573,7 @@
                     this->hardware.setCursor(logo_width + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
-                    this->hardware.println(F("Error"));
+                    this->hardware.println("Error");
                     this->hardware.setFont();
                     this->_drawScrollBar(PAGE_ERROR);
 
@@ -604,7 +604,7 @@
 
                     this->hardware.setCursor(0, 0);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
-                    this->hardware.println(F("     Factory Reset    "));
+                    this->hardware.println("     Factory Reset    ");
                     this->hardware.setFont(&Prototype9pt7b);
                     this->hardware.setCursor(OLED_DISPLAY_WIDTH / 2, 26);
                     this->hardware.println(this->_factory_reset_value);
@@ -631,17 +631,17 @@
                     this->hardware.setCursor(0, 0);
 
                     if(this->_productId){
-                        this->hardware.print(F("PID: "));
+                        this->hardware.print("PID: ");
                         this->hardware.println(this->_productId);
                     }else{
-                        this->hardware.println(F("Unknown Product ID"));
+                        this->hardware.println("Unknown Product ID");
                     }
 
                     if(this->_uuid){
-                        this->hardware.print(F("UUID: "));
+                        this->hardware.print("UUID: ");
                         this->hardware.println(this->_uuid);
                     }else{
-                        this->hardware.println(F("Unknown UUID"));
+                        this->hardware.println("Unknown UUID");
                     }
                   
                 #endif
@@ -714,7 +714,7 @@
                                 this->hardware.println("Clients: " + String(this->_wifiInfo->softAPgetStationNum()));
                                 this->hardware.setCursor(4, logo_height+5);
                                 this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); // Draw black text
-                                this->hardware.println(F("AP"));
+                                this->hardware.println("AP");
                                 this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                                 break;
 
@@ -723,7 +723,7 @@
                                 if(this->_wifiInfo->isConnected() == false){
                                     this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - logo_height) / 2, wifi_logo, logo_width, logo_height, SSD1306_WHITE);
                                     this->hardware.setCursor(logo_width + 3, 0);
-                                    this->hardware.println(F("Disconnected"));
+                                    this->hardware.println("Disconnected");
                                     this->hardware.setCursor(logo_width + 3, 16);
                                     this->hardware.println(this->_wifiInfo->macAddress());
                                 } else {
@@ -737,7 +737,7 @@
                                     this->hardware.println(this->_wifiInfo->macAddress());
                                     this->hardware.setCursor(2, logo_height+5);
                                     this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); // Draw black text
-                                    this->hardware.println(F("STA"));
+                                    this->hardware.println("STA");
                                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                                 }
                                 
@@ -746,13 +746,13 @@
                             case wifi_mode_t::WIFI_MODE_NULL:
                                 this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - logo_height) / 2, wifi_logo, logo_width, logo_height, SSD1306_WHITE);
                                 this->hardware.setCursor(logo_width + 10, (OLED_DISPLAY_HEIGHT/2)-3);
-                                this->hardware.println(F("WiFi Off"));
+                                this->hardware.println("WiFi Off");
                                 break;
 
                             default:
                                 this->hardware.drawBitmap(0,(OLED_DISPLAY_HEIGHT - logo_height) / 2, wifi_logo, logo_width, logo_height, SSD1306_WHITE);
                                 this->hardware.setCursor(logo_width + 20, (OLED_DISPLAY_HEIGHT/2)-3);
-                                this->hardware.println(F("Unknown"));
+                                this->hardware.println("Unknown");
                                 break;
                         }
                     #endif
@@ -813,7 +813,7 @@
 
                         if(ESP32_W5500_isConnected()){
                             this->hardware.setCursor(logo_width + 3, 0);
-                            this->hardware.println(F("Connected"));
+                            this->hardware.println("Connected");
                             this->hardware.setCursor(logo_width + 3, 8);
                             this->hardware.println(this->_ethernetInfo->localIP());
                             this->hardware.setCursor(logo_width + 3, 24);
@@ -828,7 +828,7 @@
 
                         }else{
                             this->hardware.setCursor(logo_width + 3, 0);
-                            this->hardware.println(F("Disconnected"));
+                            this->hardware.println("Disconnected");
                         }
 
                     #endif
@@ -886,7 +886,7 @@
                     this->hardware.setCursor(logo_width + 5, OLED_DISPLAY_HEIGHT / 2);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
                     this->hardware.setFont(&Prototype9pt7b);
-                    this->hardware.println(F("Auth Token"));
+                    this->hardware.println("Auth Token");
                     this->hardware.setFont();
                     this->_drawScrollBar(PAGE_AUTH_TOKEN);
 
@@ -945,7 +945,7 @@
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                     this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); //Inverted text
                     this->hardware.setCursor(0, 0);
-                    this->hardware.println(F("        ERROR        "));
+                    this->hardware.println("        ERROR        ");
                     this->hardware.setTextColor(SSD1306_WHITE); //Draw white text
                     this->hardware.setCursor(0, 9);
 
@@ -1008,8 +1008,8 @@
 
                     
                     this->hardware.setCursor(0, 0);
-                    this->hardware.println(F("      OTA update    "));
-                    this->hardware.println(F("    in progress...  "));
+                    this->hardware.println("      OTA update    ");
+                    this->hardware.println("    in progress...  ");
 
                 #endif
                 

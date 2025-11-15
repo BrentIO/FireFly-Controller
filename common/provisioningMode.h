@@ -80,7 +80,7 @@
             /// @brief Sets provisioning mode to an active state
             void setActive(){
                 #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
-                    this->_wifi->softAP(F("FireFly-Provisioning"));
+                    this->_wifi->softAP("FireFly-Provisioning");
 
                     this->_wifi->onEvent(
                         [&](WiFiEvent_t event, WiFiEventInfo_t info ) {

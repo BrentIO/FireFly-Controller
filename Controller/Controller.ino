@@ -143,7 +143,7 @@ void setup() {
 
   reportMemoryUsage("Setup begin.");
 
-  eventLog.createEvent(F("Event log started"));
+  eventLog.createEvent("Event log started");
   
   Wire.begin();
 
@@ -199,7 +199,7 @@ void setup() {
     uint8_t ethMac[6];
     esp_read_mac(ethMac, ESP_MAC_ETH);
     if(!ETH.begin(SPI_MISO_PIN, SPI_MOSI_PIN, SPI_SCK_PIN, ETHERNET_PIN, ETHERNET_PIN_INTERRUPT, SPI_CLOCK_MHZ, ETH_SPI_HOST, ethMac)){
-      eventLog.resolveError(F("Ethernet begin fail"));
+      eventLog.resolveError("Ethernet begin fail");
       return;
     }
 
@@ -273,7 +273,7 @@ void setup() {
     wwwFS_isMounted = true;
   }
   else{
-    eventLog.createEvent(F("wwwFS mount fail"), EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("wwwFS mount fail", EventLog::LOG_LEVEL_ERROR);
     log_e("An Error has occurred while mounting wwwFS");
   }
 
@@ -285,28 +285,28 @@ void setup() {
 
     if(!configFS.exists(CONFIGFS_PATH_CERTS + (String)"/")){
       if(!configFS.mkdir(CONFIGFS_PATH_CERTS)){
-        eventLog.createEvent(F("Err mkdir certs"), EventLog::LOG_LEVEL_ERROR);
+        eventLog.createEvent("Err mkdir certs", EventLog::LOG_LEVEL_ERROR);
         configFS_isMounted = false;
       };
     }
 
     if(!configFS.exists(CONFIGFS_PATH_CONTROLLERS + (String)"/")){
       if(!configFS.mkdir(CONFIGFS_PATH_CONTROLLERS)){
-        eventLog.createEvent(F("Err mkdir ctlrs"), EventLog::LOG_LEVEL_ERROR);
+        eventLog.createEvent("Err mkdir ctlrs", EventLog::LOG_LEVEL_ERROR);
         configFS_isMounted = false;
       };
     }
 
     if(!configFS.exists(CONFIGFS_PATH_CLIENTS + (String)"/")){
       if(!configFS.mkdir(CONFIGFS_PATH_CLIENTS)){
-        eventLog.createEvent(F("Err mkdir clients"), EventLog::LOG_LEVEL_ERROR);
+        eventLog.createEvent("Err mkdir clients", EventLog::LOG_LEVEL_ERROR);
         configFS_isMounted = false;
       };
     }
 
   }
   else{
-    eventLog.createEvent(F("configFS mount fail"), EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("configFS mount fail", EventLog::LOG_LEVEL_ERROR);
     log_e("An Error has occurred while mounting configFS");
   }
 
@@ -355,9 +355,9 @@ void setup() {
 
   httpServer.onNotFound(http_notFound);
 
-  DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Origin"), F("*")); //Ignore CORS
-  DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Headers"), F("visual-token, Content-Type")); //Ignore CORS
-  DefaultHeaders::Instance().addHeader(F("Access-Control-Allow-Methods"), F("GET, POST, OPTIONS, PUT, DELETE")); //Ignore CORS
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*"); //Ignore CORS
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "visual-token, Content-Type"); //Ignore CORS
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE"); //Ignore CORS
 
 
   startHttpServer();
@@ -392,7 +392,7 @@ void loop() {
         reportMemoryUsage("Starting firmware check.");
 
         if(otaFirmware.execHTTPcheck() == 0){
-          eventLog.createEvent(F("OTA firmware checked"));
+          eventLog.createEvent("OTA firmware checked");
         }
       }
 
@@ -713,8 +713,8 @@ void eventHandler_eventLogResolvedErrorEvent(){
   */
   void eventHandler_ethernetConnect(){
     updateNTPTime(true);
-    eventLog.createEvent(F("Ethernet connected"));
-    eventLog.resolveError(F("Ethernet disconnected"));
+    eventLog.createEvent("Ethernet connected");
+    eventLog.resolveError("Ethernet disconnected");
   }
 
 
@@ -722,7 +722,7 @@ void eventHandler_eventLogResolvedErrorEvent(){
    * Handle Ethernet being disconnected
   */
   void eventHandler_ethernetDisconnect(){
-    eventLog.createEvent(F("Ethernet disconnected"), EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("Ethernet disconnected", EventLog::LOG_LEVEL_ERROR);
   }
 
 #endif
@@ -870,7 +870,7 @@ void http_unauthorized(AsyncWebServerRequest *request) {
 */
 void http_error(AsyncWebServerRequest *request, String message){
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<256> doc;
   doc["message"] = message;
 
@@ -885,7 +885,7 @@ void http_error(AsyncWebServerRequest *request, String message){
 */
 void http_badRequest(AsyncWebServerRequest *request, String message){
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<256> doc;
   doc["message"] = message;
 
@@ -900,7 +900,7 @@ void http_badRequest(AsyncWebServerRequest *request, String message){
 */
 void http_forbiddenRequest(AsyncWebServerRequest *request, String message){
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<256> doc;
   doc["message"] = message;
 
@@ -923,17 +923,17 @@ void http_options(AsyncWebServerRequest *request) {
 */
 void http_configFSNotMunted(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
 
-  http_error(request, F("file system not mounted"));
+  http_error(request, "file system not mounted");
 
 }
 
@@ -948,12 +948,12 @@ void http_handleVersion(AsyncWebServerRequest *request){
     return;
   }
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -966,19 +966,19 @@ void http_handleVersion(AsyncWebServerRequest *request){
   lastTimeHttpServerUsed = esp_timer_get_time();
 
   if(externalEEPROM.enabled == false){
-    http_error(request, F("Cannot connect to external EEPROM"));
+    http_error(request, "Cannot connect to external EEPROM");
     return;
   }
 
   if(strcmp(externalEEPROM.data.uuid, "") == 0){
-    http_error(request, F("Invalid EEPROM data"));
+    http_error(request, "Invalid EEPROM data");
     return;
   }
 
   char product_hex[16] = {0};
   sprintf(product_hex, "0x%08X", PRODUCT_HEX);
  
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<192> doc;
   doc["uuid"] = externalEEPROM.data.uuid;
   doc["product_id"] = externalEEPROM.data.product_id;
@@ -1000,12 +1000,12 @@ void http_handleEventLog(AsyncWebServerRequest *request){
     return;
   }
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -1018,36 +1018,36 @@ void http_handleEventLog(AsyncWebServerRequest *request){
   lastTimeHttpServerUsed = esp_timer_get_time();
 
   if(eventLog.getEvents()->size() == 0){
-    request->send(200, F("application/json"),"[]");
+    request->send(200, "application/json","[]");
     return;
   }
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<EVENT_LOG_MAXIMUM_ENTRIES * 100> doc;
 
   for(int i=0; i < eventLog.getEvents()->size(); i++){
     JsonObject entry = doc.createNestedObject();
-    entry[F("time")] = eventLog.getEvents()->get(i).timestamp;
+    entry["time"] = eventLog.getEvents()->get(i).timestamp;
 
     switch(eventLog.getEvents()->get(i).level){
       case EventLog::LOG_LEVEL_ERROR:
-        entry[F("level")] = F("error");
+        entry["level"] = "error";
         break;
 
       case EventLog::LOG_LEVEL_NOTIFICATION:
-        entry[F("level")] = F("notify");
+        entry["level"] = "notify";
         break;
 
       case EventLog::LOG_LEVEL_INFO:
-        entry[F("level")] = F("info");
+        entry["level"] = "info";
         break;
 
       default:
-        entry[F("level")] = F("unknown");
+        entry["level"] = "unknown";
         break;
     }
 
-    entry[F("text")] = eventLog.getEvents()->get(i).text;
+    entry["text"] = eventLog.getEvents()->get(i).text;
   }
  
   serializeJson(doc, *response);
@@ -1065,12 +1065,12 @@ void http_handleErrorLog(AsyncWebServerRequest *request){
     return;
   }
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -1083,17 +1083,17 @@ void http_handleErrorLog(AsyncWebServerRequest *request){
   lastTimeHttpServerUsed = esp_timer_get_time();
 
   if(eventLog.getErrors()->size() == 0){
-    request->send(200, F("application/json"),"[]");
+    request->send(200, "application/json","[]");
     return;
   }
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<EVENT_LOG_MAXIMUM_ENTRIES * 64> doc;
 
   for(int i=0; i < eventLog.getErrors()->size(); i++){
     JsonObject entry = doc.createNestedObject();
 
-    entry[F("text")] = eventLog.getErrors()->get(i);
+    entry["text"] = eventLog.getErrors()->get(i);
   }
 
   serializeJson(doc, *response);
@@ -1113,12 +1113,12 @@ void http_handleAuth(AsyncWebServerRequest *request){
       break;
 
     case ASYNC_HTTP_POST:
-      if(!request->hasHeader(F("visual-token"))){
+      if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
       }
     
-      if(!authToken.authenticate(request->header(F("visual-token")).c_str(), true)){
+      if(!authToken.authenticate(request->header("visual-token").c_str(), true)){
         http_unauthorized(request);
         return;
       }
@@ -1167,12 +1167,12 @@ void http_handleControllers(AsyncWebServerRequest *request){
 */
 void http_handleControllers_GET(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -1186,7 +1186,7 @@ void http_handleControllers_GET(AsyncWebServerRequest *request){
     return;
   }
 
-  AsyncWebServerResponse *response = request->beginResponse(configFS, filename, F("application/json"));
+  AsyncWebServerResponse *response = request->beginResponse(configFS, filename, "application/json");
   request->send(response);
 
 }
@@ -1197,17 +1197,17 @@ void http_handleControllers_GET(AsyncWebServerRequest *request){
 */
 void http_handleControllers_DELETE(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
   String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + request->pathArg(0);
 
@@ -1219,7 +1219,7 @@ void http_handleControllers_DELETE(AsyncWebServerRequest *request){
   if(configFS.remove(filename)){
     request->send(204);
   }else{
-    http_error(request, F("Failed when trying to delete file"));
+    http_error(request, "Failed when trying to delete file");
   }
 }
 
@@ -1234,12 +1234,12 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
     return;
   }
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -1252,7 +1252,7 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
   lastTimeHttpServerUsed = esp_timer_get_time();
 
   if(request->pathArg(0).length() != 36){
-    http_badRequest(request, F("UUID must be exactly 36 characters"));
+    http_badRequest(request, "UUID must be exactly 36 characters");
     return;
   }
 
@@ -1260,7 +1260,7 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
 
   if(!file){
     file.close();
-    http_error(request, F("Unable to open the file for writing"));
+    http_error(request, "Unable to open the file for writing");
     return;
   }
 
@@ -1281,12 +1281,12 @@ void http_handleListControllers(AsyncWebServerRequest *request){
     return;
   }
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -1298,7 +1298,7 @@ void http_handleListControllers(AsyncWebServerRequest *request){
 
   lastTimeHttpServerUsed = esp_timer_get_time();
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   DynamicJsonDocument doc(8192);  //Supports 128 UUID's
   JsonArray array = doc.to<JsonArray>();
 
@@ -1351,13 +1351,13 @@ void http_handleClients(AsyncWebServerRequest *request){
 */
 void http_handleClients_GET(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader(F("visual-token")) && !request->hasHeader(F("mac-address"))){
+  if(!request->hasHeader("visual-token") && !request->hasHeader("mac-address")){
       http_unauthorized(request);
       return;
   }
 
-  if(request->hasHeader(F("visual-token"))){
-    if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(request->hasHeader("visual-token")){
+    if(!authToken.authenticate(request->header("visual-token").c_str())){
       http_unauthorized(request);
       return;
     }
@@ -1365,15 +1365,15 @@ void http_handleClients_GET(AsyncWebServerRequest *request){
 
   lastTimeHttpServerUsed = esp_timer_get_time();
 
-  if(request->hasHeader(F("mac-address"))){
+  if(request->hasHeader("mac-address")){
 
     if(provisioningMode.getStatus() != true){
-      http_badRequest(request, F("Provisioning mode inactive"));
+      http_badRequest(request, "Provisioning mode inactive");
       return;
     }
 
-    if(!authClientWithMacAddress(request->pathArg(0).c_str(), request->header(F("mac-address")).c_str())){
-      http_forbiddenRequest(request, F("Request will not be fulfilled"));
+    if(!authClientWithMacAddress(request->pathArg(0).c_str(), request->header("mac-address").c_str())){
+      http_forbiddenRequest(request, "Request will not be fulfilled");
       return;
     }
   }
@@ -1385,7 +1385,7 @@ void http_handleClients_GET(AsyncWebServerRequest *request){
     return;
   }
 
-  AsyncWebServerResponse *response = request->beginResponse(configFS, filename, F("application/json"));
+  AsyncWebServerResponse *response = request->beginResponse(configFS, filename, "application/json");
   request->send(response);
 
 }
@@ -1432,12 +1432,12 @@ boolean authClientWithMacAddress(const char* uuid, const char* macAddress){
 */
 void http_handleClients_DELETE(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -1454,7 +1454,7 @@ void http_handleClients_DELETE(AsyncWebServerRequest *request){
   if(configFS.remove(filename)){
     request->send(204);
   }else{
-    http_error(request, F("Failed when trying to delete file"));
+    http_error(request, "Failed when trying to delete file");
   }
 }
 
@@ -1469,12 +1469,12 @@ void http_handleClients_PUT(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -1487,7 +1487,7 @@ void http_handleClients_PUT(AsyncWebServerRequest *request, JsonVariant doc){
   lastTimeHttpServerUsed = esp_timer_get_time();
 
   if(request->pathArg(0).length() != 36){
-    http_badRequest(request, F("UUID must be exactly 36 characters"));
+    http_badRequest(request, "UUID must be exactly 36 characters");
     return;
   }
 
@@ -1495,7 +1495,7 @@ void http_handleClients_PUT(AsyncWebServerRequest *request, JsonVariant doc){
 
   if(!file){
     file.close();
-    http_error(request, F("Unable to open the file for writing"));
+    http_error(request, "Unable to open the file for writing");
     return;
   }
 
@@ -1516,12 +1516,12 @@ void http_handleListClients(AsyncWebServerRequest *request){
     return;
   }
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -1533,7 +1533,7 @@ void http_handleListClients(AsyncWebServerRequest *request){
 
   lastTimeHttpServerUsed = esp_timer_get_time();
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   DynamicJsonDocument doc(8192);  //Supports 128 UUID's
   JsonArray array = doc.to<JsonArray>();
 
@@ -1564,12 +1564,12 @@ void http_handleProvisioning(AsyncWebServerRequest *request){
     return;
   }
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
     http_unauthorized(request);
     return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -1600,7 +1600,7 @@ void http_handleProvisioning_GET(AsyncWebServerRequest *request){
 
   StaticJsonDocument<16> doc;
   doc["enabled"] = provisioningMode.getStatus();
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   serializeJson(doc, *response);
 
   request->send(response);
@@ -1612,7 +1612,7 @@ void http_handleProvisioning_PUT(AsyncWebServerRequest *request){
   lastTimeHttpServerUsed = esp_timer_get_time();
 
   if(!configFS_isMounted){
-    http_error(request, F("File system not mounted"));
+    http_error(request, "File system not mounted");
     return;
   }
 
@@ -1651,12 +1651,12 @@ void http_handleProvisioning_DELETE(AsyncWebServerRequest *request){
 
 
 void eventHandler_provisioningModeActive(){
-  eventLog.createEvent(F("Provisioning active"), EventLog::LOG_LEVEL_NOTIFICATION);
+  eventLog.createEvent("Provisioning active", EventLog::LOG_LEVEL_NOTIFICATION);
 }
 
 
 void eventHandler_provisioningModeInactive(){
-  eventLog.createEvent(F("Provisioning inactive"));
+  eventLog.createEvent("Provisioning inactive");
 }
 
 
@@ -1697,23 +1697,23 @@ void http_handleBackup(AsyncWebServerRequest *request){
 */
 void http_handleBackup_GET(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
 
-  if(!configFS.exists(F("/backup"))){
+  if(!configFS.exists("/backup")){
     http_notFound(request);
     return;
   }
 
   lastTimeHttpServerUsed = esp_timer_get_time();
-  AsyncWebServerResponse *response = request->beginResponse(configFS, F("/backup"), F("application/json"));
+  AsyncWebServerResponse *response = request->beginResponse(configFS, "/backup", "application/json");
   request->send(response);
 }
 
@@ -1723,12 +1723,12 @@ void http_handleBackup_GET(AsyncWebServerRequest *request){
 */
 void http_handleBackup_PUT(AsyncWebServerRequest *request, JsonVariant doc){
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -1739,11 +1739,11 @@ void http_handleBackup_PUT(AsyncWebServerRequest *request, JsonVariant doc){
   }
 
   lastTimeHttpServerUsed = esp_timer_get_time();
-  File file = configFS.open(F("/backup"), "w");
+  File file = configFS.open("/backup", "w");
 
   if(!file){
     file.close();
-    http_error(request, F("Unable to open the file for writing"));
+    http_error(request, "Unable to open the file for writing");
     return;
   }
 
@@ -1759,27 +1759,27 @@ void http_handleBackup_PUT(AsyncWebServerRequest *request, JsonVariant doc){
 */
 void http_handleBackup_DELETE(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
-  if(!configFS.exists(F("/backup"))){
+  if(!configFS.exists("/backup")){
     http_notFound(request);
     return;
   }
 
-  if(configFS.remove(F("/backup"))){
+  if(configFS.remove("/backup")){
     request->send(204);
   }else{
-    http_error(request, F("Failed when trying to delete file"));
+    http_error(request, "Failed when trying to delete file");
   }
 }
 
@@ -1810,24 +1810,24 @@ void http_handleUIVersion(AsyncWebServerRequest *request){
 */
 void http_handleUIVersion_GET(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
-  if(!wwwFS.exists(F("/version.json"))){
+  if(!wwwFS.exists("/version.json")){
     http_notFound(request);
     return;
   }
 
-  AsyncWebServerResponse *response = request->beginResponse(wwwFS, F("/version.json"), F("application/json"));
+  AsyncWebServerResponse *response = request->beginResponse(wwwFS, "/version.json", "application/json");
   request->send(response);
 }
 
@@ -1869,12 +1869,12 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
     return;
   }
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -1886,7 +1886,7 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
 
   lastTimeHttpServerUsed = esp_timer_get_time();
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   DynamicJsonDocument doc(49152);  //Supports approx 128 controllers, 128 clients, and 64 files in www
   JsonObject root = doc.to<JsonObject>();
   JsonObject configObject = root.createNestedObject("config");
@@ -1895,19 +1895,19 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
   if(configFS_isMounted){
     configObject["total"] = configFS.totalBytes();
     configObject["used"] = configFS.usedBytes();
-    JsonArray fileList = configObject.createNestedArray(F("files"));
+    JsonArray fileList = configObject.createNestedArray("files");
     listDirToJsonArray(configFS, "/", fileList);
   }else{
-    configObject["error"] = F("File system not mounted");
+    configObject["error"] = "File system not mounted";
   }
 
   if(wwwFS_isMounted){
     wwwObject["total"] = wwwFS.totalBytes();
     wwwObject["used"] = wwwFS.usedBytes();
-    JsonArray fileList = wwwObject.createNestedArray(F("files"));
+    JsonArray fileList = wwwObject.createNestedArray("files");
     listDirToJsonArray(wwwFS, "/", fileList);
   }else{
-    wwwObject["error"] = F("File system not mounted");
+    wwwObject["error"] = "File system not mounted";
   }
 
   serializeJson(doc, *response);
@@ -1947,19 +1947,19 @@ void http_handleCerts(AsyncWebServerRequest *request){
 */
 void http_handleCerts_GET(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
     http_unauthorized(request);
     return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
   
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
-  AsyncResponseStream *response = request->beginResponseStream(F("application/json"));
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<768> doc;
   JsonArray array = doc.to<JsonArray>();
 
@@ -1969,8 +1969,8 @@ void http_handleCerts_GET(AsyncWebServerRequest *request){
   while(file){
       if(!file.isDirectory()){
           JsonObject fileInstance = array.createNestedObject();
-          fileInstance[F("file")] = (String)file.name();
-          fileInstance[F("size")] = file.size();
+          fileInstance["file"] = (String)file.name();
+          fileInstance["size"] = file.size();
       }
       file = root.openNextFile();
     }
@@ -1991,12 +1991,12 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
     return;
   }
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -2012,14 +2012,14 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
   ms.Target((char*)filename.c_str());
 
   if(ms.MatchCount("[^a-z0-9_.]") > 0){
-    http_badRequest(request, F("Invalid filename; Only [a-z0-9_.] permitted"));
+    http_badRequest(request, "Invalid filename; Only [a-z0-9_.] permitted");
     return;
   };
 
   if(!index){
 
     if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + filename)){
-      http_forbiddenRequest(request, F("Certificate already exists"));
+      http_forbiddenRequest(request, "Certificate already exists");
       return;
     }
 
@@ -2047,12 +2047,12 @@ void http_handleCert(AsyncWebServerRequest *request){
 
     case ASYNC_HTTP_GET:
 
-        if(!request->hasHeader(F("visual-token"))){
+        if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
       }
 
-      if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+      if(!authToken.authenticate(request->header("visual-token").c_str())){
         http_unauthorized(request);
         return;
       }
@@ -2062,12 +2062,12 @@ void http_handleCert(AsyncWebServerRequest *request){
 
     case ASYNC_HTTP_DELETE:
 
-      if(!request->hasHeader(F("visual-token"))){
+      if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
       }
 
-      if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+      if(!authToken.authenticate(request->header("visual-token").c_str())){
         http_unauthorized(request);
         return;
       }
@@ -2088,13 +2088,13 @@ void http_handleCert(AsyncWebServerRequest *request){
 */
 void http_handleCert_GET(AsyncWebServerRequest *request){
 
-if(!request->hasHeader(F("visual-token")) && !request->hasHeader(F("mac-address"))){
+if(!request->hasHeader("visual-token") && !request->hasHeader("mac-address")){
     http_unauthorized(request);
     return;
 }
 
-if(request->hasHeader(F("visual-token"))){
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+if(request->hasHeader("visual-token")){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -2102,22 +2102,22 @@ if(request->hasHeader(F("visual-token"))){
 
 lastTimeHttpServerUsed = esp_timer_get_time();
 
-if(request->hasHeader(F("mac-address"))){
+if(request->hasHeader("mac-address")){
 
   if(provisioningMode.getStatus() != true){
-    http_badRequest(request, F("Provisioning mode inactive"));
+    http_badRequest(request, "Provisioning mode inactive");
     return;
   }
 
-  if(!authClientWithMacAddress(request->pathArg(0).c_str(), request->header(F("mac-address")).c_str())){
-    http_forbiddenRequest(request, F("Request will not be fulfilled"));
+  if(!authClientWithMacAddress(request->pathArg(0).c_str(), request->header("mac-address").c_str())){
+    http_forbiddenRequest(request, "Request will not be fulfilled");
     return;
   }
 }
 
   if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0))){
 
-    AsyncWebServerResponse *response = request->beginResponse(configFS, CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0), F("text/plain"));
+    AsyncWebServerResponse *response = request->beginResponse(configFS, CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0), "text/plain");
     response->setCode(200);
     request->send(response);
 
@@ -2132,12 +2132,12 @@ if(request->hasHeader(F("mac-address"))){
 */
 void http_handleCert_DELETE(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
     http_unauthorized(request);
     return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str())){
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
@@ -2158,12 +2158,12 @@ void http_handleCert_DELETE(AsyncWebServerRequest *request){
 */
 void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
-  if(!request->hasHeader(F("visual-token"))){
+  if(!request->hasHeader("visual-token")){
       http_unauthorized(request);
       return;
   }
 
-  if(!authToken.authenticate(request->header(F("visual-token")).c_str(), true)){
+  if(!authToken.authenticate(request->header("visual-token").c_str(), true)){
     http_unauthorized(request);
     return;
   }
@@ -2175,8 +2175,8 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
 
   lastTimeHttpServerUsed = esp_timer_get_time();
 
-  if(!doc.containsKey(F("url"))){
-    http_badRequest(request, F("Field url is required"));
+  if(!doc.containsKey("url")){
+    http_badRequest(request, "Field url is required");
     return;
   }
 
@@ -2184,30 +2184,30 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
   newFirmwareRequest.url = doc["url"].as<String>();
 
   if(!newFirmwareRequest.url.endsWith(".bin")){
-    http_badRequest(request, F("Bad url; File must be of type '.bin'"));
+    http_badRequest(request, "Bad url; File must be of type '.bin'");
     return;
   }
 
   if(!newFirmwareRequest.url.startsWith("http:") && !newFirmwareRequest.url.startsWith("https:")){
-    http_badRequest(request, F("Bad url; http or https required"));
+    http_badRequest(request, "Bad url; http or https required");
     return;
   }
 
   if(newFirmwareRequest.url.startsWith("https:")){
-    if(!doc.containsKey(F("certificate"))){
-      http_badRequest(request, F("https requires certificate"));
+    if(!doc.containsKey("certificate")){
+      http_badRequest(request, "https requires certificate");
       return;
     }
 
     if(doc["certificate"].as<String>() == ""){
-      http_badRequest(request, F("Certificate cannot be empty"));
+      http_badRequest(request, "Certificate cannot be empty");
       return;
     }
 
     newFirmwareRequest.certificate = CONFIGFS_PATH_CERTS + (String)"/" + doc["certificate"].as<String>();
 
     if(!configFS.exists(newFirmwareRequest.certificate)){
-      http_badRequest(request, F("Certificate does not exist"));
+      http_badRequest(request, "Certificate does not exist");
       return;
     }
   }
@@ -2247,8 +2247,8 @@ void setup_OtaFirmware(){
   otaFirmware.setSPIFFsPartitionLabel("www");
   otaFirmware.setCertFileSystem(nullptr);
 
-  otaFirmware.setExtraHTTPHeader(F("uuid"), externalEEPROM.data.uuid);
-  otaFirmware.setExtraHTTPHeader(F("product_id"), externalEEPROM.data.product_id);
+  otaFirmware.setExtraHTTPHeader("uuid", externalEEPROM.data.uuid);
+  otaFirmware.setExtraHTTPHeader("product_id", externalEEPROM.data.product_id);
 
   StaticJsonDocument<16> filter;
   filter["ota"] = true;
@@ -2266,11 +2266,11 @@ void setup_OtaFirmware(){
     return;
   }
 
-  if(!doc.containsKey(F("ota"))){
+  if(!doc.containsKey("ota")){
     return;
   }
 
-  if(!doc["ota"].containsKey(F("url"))){
+  if(!doc["ota"].containsKey("url")){
     eventLog.createEvent("OTA cfg no url");
     return;
   }
@@ -2290,15 +2290,15 @@ void setup_OtaFirmware(){
 
   otaFirmware.setManifestURL(url.c_str());
 
-  if(url.startsWith(F("https"))){
-    if(!doc["ota"].containsKey(F("certificate"))){
+  if(url.startsWith("https")){
+    if(!doc["ota"].containsKey("certificate")){
       eventLog.createEvent("OTA cfg no cert");
       return;
     }
 
     const char* certificate = doc["ota"]["certificate"];
     if(!configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + certificate)){
-      eventLog.createEvent(F("OTA cert missing"), EventLog::LOG_LEVEL_ERROR);
+      eventLog.createEvent("OTA cert missing", EventLog::LOG_LEVEL_ERROR);
       return;
     }
 
@@ -2313,7 +2313,7 @@ void setup_OtaFirmware(){
   otaFirmware.setUpdateServiceAvailabilityCb(mqtt_publishUpdateServiceAvailability);
 
   otaFirmware.enabled = true;
-  eventLog.createEvent(F("OTA update enabled"));
+  eventLog.createEvent("OTA update enabled");
 }
 
 
@@ -2347,19 +2347,19 @@ void otaFirmware_checkPending(){
     switch(otaFirmware.pending.get(i).type){
 
       case OTA_UPDATE_APP:
-        eventLog.createEvent(F("OTA app forced"));
+        eventLog.createEvent("OTA app forced");
         updateSuccess = forceFirmwareUpdate.forceUpdate(otaFirmware.pending.get(i).url.c_str(), false);
         break;
 
 
       case OTA_UPDATE_SPIFFS:
-        eventLog.createEvent(F("OTA SPIFFS forced"));
+        eventLog.createEvent("OTA SPIFFS forced");
         updateSuccess = forceFirmwareUpdate.forceUpdateSPIFFS(otaFirmware.pending.get(i).url.c_str(), false);
         break;
     }
 
     if(!updateSuccess){
-      eventLog.createEvent(F("OTA update failed"), EventLog::LOG_LEVEL_NOTIFICATION);
+      eventLog.createEvent("OTA update failed", EventLog::LOG_LEVEL_NOTIFICATION);
     }
 
     otaFirmware.pending.remove(i);
@@ -2437,10 +2437,10 @@ void eventHandler_otaFirmwareFinished(int partition, bool needs_restart){
 
   log_i("Finished Partition: [%i] needs restart: [%s]", partition, needs_restart ? "true":"false");
 
-  eventLog.createEvent(F("OTA update finished"), EventLog::LOG_LEVEL_NOTIFICATION);
+  eventLog.createEvent("OTA update finished", EventLog::LOG_LEVEL_NOTIFICATION);
 
   if(needs_restart){
-      eventLog.createEvent(F("Rebooting..."), EventLog::LOG_LEVEL_NOTIFICATION);
+      eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
       delay(5000);
   }
 
@@ -2456,19 +2456,19 @@ void setupIO(){
   bool isOK = true;
 
   if(externalEEPROM.enabled == false){
-    eventLog.createEvent(F("No I/O setup (EEPROM)"), EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("No I/O setup (EEPROM)", EventLog::LOG_LEVEL_ERROR);
     return;
   }
 
   if(configFS_isMounted == false){
-    eventLog.createEvent(F("No I/O ConfigFS offline"), EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("No I/O ConfigFS offline", EventLog::LOG_LEVEL_ERROR);
     return;
   }
 
   String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
 
   if(!configFS.exists(filename)){
-    eventLog.createEvent(F("No I/O file to read"));
+    eventLog.createEvent("No I/O file to read");
     return;
   }
 
@@ -2481,9 +2481,9 @@ void setupIO(){
   };
 
   if(isOK){
-      eventLog.createEvent(F("I/O setup read OK"));
+      eventLog.createEvent("I/O setup read OK");
   }else{
-    eventLog.createEvent(F("I/O setup read fail"));
+    eventLog.createEvent("I/O setup read fail");
   }
 }
 
@@ -2537,7 +2537,7 @@ bool setup_outputs(String filename){
       continue;
     }
 
-    if(!output.value().containsKey(F("id"))){
+    if(!output.value().containsKey("id")){
       char text[OLED_CHARACTERS_PER_LINE+1];
       snprintf(text, sizeof(text), "Out prt %s no id", output.key().c_str());
       eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
@@ -2547,13 +2547,13 @@ bool setup_outputs(String filename){
 
     outputs.setPortId(outputPortNumber, output.value()["id"]);
 
-    if(output.value().containsKey(F("type"))){
+    if(output.value().containsKey("type")){
       if(strcmp(output.value()["type"], "VARIABLE") == 0){
         outputs.setPortType(outputPortNumber, nsOutputs::outputPin::VARIABLE);
       }
     }
 
-    if(output.value().containsKey(F("enabled"))){
+    if(output.value().containsKey("enabled")){
       outputs.enablePort(outputPortNumber, output.value()["enabled"].as<boolean>());
     }
 
@@ -2638,7 +2638,7 @@ bool setup_inputs(String filename){
       inputPorts[atoi(port.key().c_str())-1].channels[i].channel = portChannel.channel;
 
       if(port_value_channel.value()["type"]){
-        if(port_value_channel.value()["type"] != F("NORMALLY_OPEN")){
+        if(port_value_channel.value()["type"] != "NORMALLY_OPEN"){
           inputs.setPortChannelInputType(portChannel, managerInputs::NORMALLY_CLOSED);
         }
       }
@@ -2657,7 +2657,7 @@ bool setup_inputs(String filename){
 
         inputAction newInputAction;
 
-        if(port_value_channel_value_action.containsKey(F("action"))){
+        if(port_value_channel_value_action.containsKey("action")){
         
           if(strcmp(port_value_channel_value_action["action"], "INCREASE") == 0){
             newInputAction.action = INCREASE;
@@ -2685,7 +2685,7 @@ bool setup_inputs(String filename){
           }
         }
 
-        if(!port_value_channel_value_action.containsKey(F("change_state"))){
+        if(!port_value_channel_value_action.containsKey("change_state")){
           newInputAction.changeState = managerInputs::changeState::CHANGE_STATE_SHORT_DURATION;
         }else{
           if(strcmp(port_value_channel_value_action["change_state"], "LONG") == 0){
@@ -2784,15 +2784,15 @@ void setupMQTT(){
     return;
   }
 
-  if(doc.containsKey(F("name"))){
+  if(doc.containsKey("name")){
     mqttClient.autoDiscovery.setDeviceName(doc["name"].as<String>().c_str());
   }
 
-  if(doc.containsKey(F("area"))){
+  if(doc.containsKey("area")){
     mqttClient.autoDiscovery.setSuggestedArea(doc["area"].as<String>().c_str());
   }
 
-  if(!doc.containsKey(F("mqtt"))){
+  if(!doc.containsKey("mqtt")){
     char text[OLED_CHARACTERS_PER_LINE+1];
     snprintf(text, sizeof(text), "MQTT obj missing");
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
@@ -2802,28 +2802,28 @@ void setupMQTT(){
   JsonObject mqtt = doc["mqtt"];
   uint16_t port = 1883;
 
-  if(!mqtt.containsKey(F("host"))){
+  if(!mqtt.containsKey("host")){
     char text[OLED_CHARACTERS_PER_LINE+1];
     snprintf(text, sizeof(text), "MQTT host missing");
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return;
   }
 
-  if(!mqtt.containsKey(F("username"))){
+  if(!mqtt.containsKey("username")){
     char text[OLED_CHARACTERS_PER_LINE+1];
     snprintf(text, sizeof(text), "MQTT user missing");
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return;
   }
 
-  if(!mqtt.containsKey(F("password"))){
+  if(!mqtt.containsKey("password")){
     char text[OLED_CHARACTERS_PER_LINE+1];
     snprintf(text, sizeof(text), "MQTT pass missing");
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return;
   }
 
-  if(mqtt.containsKey(F("port"))){
+  if(mqtt.containsKey("port")){
     port = mqtt["port"];
   }
 
@@ -3054,12 +3054,12 @@ void mqtt_autoDiscovery_temperature(){
     doc["name"] = sensorLocation;
     doc["unique_id"] = unique_id;
     doc["object_id"] = unique_id;
-    doc["icon"] = F("mdi:thermometer");
+    doc["icon"] = "mdi:thermometer";
     doc["device_class"] = "temperature";
     doc["unit_of_measurement"] = "°C";
 
     JsonObject device = doc.createNestedObject("device");
-    JsonArray identifiers = device.createNestedArray(F("identifiers"));
+    JsonArray identifiers = device.createNestedArray("identifiers");
     identifiers.add(externalEEPROM.data.uuid);
 
     if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3160,14 +3160,14 @@ void mqtt_autoDiscovery_outputs(){
       continue;
     }
 
-    if(!output.value().containsKey(F("id"))){
+    if(!output.value().containsKey("id")){
       continue;
     }
 
     char devicePlatform[WORD_LENGTH_INTEGRATION+1];
     strcpy(devicePlatform,"switch"); //Default
 
-    if(output.value().containsKey(F("icon"))){
+    if(output.value().containsKey("icon")){
 
       if(output.value()["icon"].as<String>().indexOf("light") != -1){
         strcpy(devicePlatform,"light");
@@ -3192,7 +3192,7 @@ void mqtt_autoDiscovery_outputs(){
 
     bool isVariableOutput = false;
 
-    if(output.value().containsKey(F("type"))){
+    if(output.value().containsKey("type")){
       if(strcmp(output.value()["type"].as<const char*>(), "VARIABLE") == 0){
         isVariableOutput = true;
       }
@@ -3216,7 +3216,7 @@ void mqtt_autoDiscovery_outputs(){
     mqttDoc["unique_id"] = unique_id;
     mqttDoc["object_id"] = unique_id;
 
-    if(output.value().containsKey(F("icon"))){
+    if(output.value().containsKey("icon")){
         mqttDoc["icon"] = output.value()["icon"].as<const char*>();
     }
 
@@ -3230,10 +3230,10 @@ void mqtt_autoDiscovery_outputs(){
     mqttDoc["state_value_template"] = "{% if value|int > 0 %}ON{% else %}OFF{% endif %}";
 
     JsonObject device = mqttDoc.createNestedObject("device");
-    JsonArray identifiers = device.createNestedArray(F("identifiers"));
+    JsonArray identifiers = device.createNestedArray("identifiers");
     identifiers.add(unique_id);
 
-    if(output.value().containsKey(F("name"))){
+    if(output.value().containsKey("name")){
       device["name"] = output.value()["name"].as<const char*>();
     }else{
       device["name"] = output.value()["id"].as<const char*>();
@@ -3241,7 +3241,7 @@ void mqtt_autoDiscovery_outputs(){
 
     device["via_device"] = externalEEPROM.data.uuid;
 
-    if(output.value().containsKey(F("area"))){
+    if(output.value().containsKey("area")){
       device["suggested_area"] =  output.value()["area"].as<const char*>();
     }
     mqttDoc["state_topic"] = state_topic;
@@ -3284,11 +3284,11 @@ void mqtt_autoDiscovery_start_time(){
   doc["name"] = "Start Time";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = F("mdi:calendar-clock");
-  doc["entity_category"] = F("diagnostic");
+  doc["icon"] = "mdi:calendar-clock";
+  doc["entity_category"] = "diagnostic";
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray(F("identifiers"));
+  JsonArray identifiers = device.createNestedArray("identifiers");
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3363,11 +3363,11 @@ void mqtt_autoDiscovery_mac_address(){
   doc["name"] = "MAC Address";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = F("mdi:ethernet");
-  doc["entity_category"] = F("diagnostic");
+  doc["icon"] = "mdi:ethernet";
+  doc["entity_category"] = "diagnostic";
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray(F("identifiers"));
+  JsonArray identifiers = device.createNestedArray("identifiers");
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3439,11 +3439,11 @@ void mqtt_autoDiscovery_ip_address(){
   doc["name"] = "IP Address";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = F("mdi:ip");
-  doc["entity_category"] = F("diagnostic");
+  doc["icon"] = "mdi:ip";
+  doc["entity_category"] = "diagnostic";
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray(F("identifiers"));
+  JsonArray identifiers = device.createNestedArray("identifiers");
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3515,14 +3515,14 @@ void mqtt_autoDiscovery_count_errors(){
   char state_topic[MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN, externalEEPROM.data.uuid);
 
-  doc["name"] = F("Error Count");
+  doc["name"] = "Error Count";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = F("mdi:alert");
-  doc["entity_category"] = F("diagnostic");
+  doc["icon"] = "mdi:alert";
+  doc["entity_category"] = "diagnostic";
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray(F("identifiers"));
+  JsonArray identifiers = device.createNestedArray("identifiers");
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3599,13 +3599,13 @@ void mqtt_autoDiscovery_update(){
 
   DynamicJsonDocument doc(1024);
 
-  doc["name"] = F("Firmware");
+  doc["name"] = "Firmware";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = F("mdi:update");
+  doc["icon"] = "mdi:update";
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray(F("identifiers"));
+  JsonArray identifiers = device.createNestedArray("identifiers");
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3622,16 +3622,16 @@ void mqtt_autoDiscovery_update(){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
   }
 
-  JsonArray availability = doc.createNestedArray(F("availability")); //Note, this is different from others
+  JsonArray availability = doc.createNestedArray("availability"); //Note, this is different from others
   JsonObject update_specific = availability.createNestedObject();
   JsonObject controller_level = availability.createNestedObject();
   update_specific["topic"] = availability_topic;
   controller_level["topic"] = mqttClient.topic_availability;
-  doc["availability_mode"] = F("all");
+  doc["availability_mode"] = "all";
 
   doc["state_topic"] = state_topic;
   doc["command_topic"] = command_topic;
-  doc["payload_install"] = F("do-update");
+  doc["payload_install"] = "do-update";
 
   mqttClient.beginPublish(topic, measureJson(doc), true);
   BufferingPrint bufferedClient(mqttClient, 32);
@@ -3656,22 +3656,22 @@ void mqtt_publishUpdateAvailable(JsonVariant &updateDoc){
     return;
   }
 
-  eventLog.createEvent(F("OTA update available"));
+  eventLog.createEvent("OTA update available");
 
   DynamicJsonDocument mqttDoc(256);
 
   mqttDoc["installed_version"] = VERSION;
   mqttDoc["latest_version"] = updateDoc["version"].as<const char*>();
 
-  if(updateDoc.containsKey(F("title"))){
+  if(updateDoc.containsKey("title")){
     mqttDoc["title"] = updateDoc["title"].as<const char*>();
   }
 
-  if(updateDoc.containsKey(F("release_summary"))){
+  if(updateDoc.containsKey("release_summary")){
     mqttDoc["release_summary"] = updateDoc["release_summary"].as<const char*>();
   }
 
-  if(updateDoc.containsKey(F("release_url"))){
+  if(updateDoc.containsKey("release_url")){
     mqttDoc["release_url"] = updateDoc["release_url"].as<const char*>();
   }
 
@@ -3711,10 +3711,10 @@ void mqtt_autoDiscovery_http_server(){
   doc["name"] = "HTTP Server";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = F("mdi:web");
+  doc["icon"] = "mdi:web";
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray(F("identifiers"));
+  JsonArray identifiers = device.createNestedArray("identifiers");
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3734,10 +3734,10 @@ void mqtt_autoDiscovery_http_server(){
   doc["state_topic"] = state_topic;
   doc["command_topic"] = command_topic;
   doc["availability_topic"] = mqttClient.topic_availability;
-  doc["payload_on"] = F("ON");
-  doc["payload_off"] = F("OFF");
-  doc["state_on"] = F("ON");
-  doc["state_off"] =F("OFF");
+  doc["payload_on"] = "ON";
+  doc["payload_off"] = "OFF";
+  doc["state_on"] = "ON";
+  doc["state_off"] ="OFF";
 
   mqttClient.beginPublish(topic, measureJson(doc), true);
   BufferingPrint bufferedClient(mqttClient, 32);
@@ -3796,15 +3796,15 @@ void mqtt_autoDiscovery_heapFree(){
   doc["name"] = "Heap Free";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = F("mdi:memory");
-  doc["entity_category"] = F("diagnostic");
+  doc["icon"] = "mdi:memory";
+  doc["entity_category"] = "diagnostic";
   doc["enabled_by_default"] = false;
-  doc["unit_of_measurement"] = F("B");
-  doc["device_class"] = F("data_size");
-  doc["state_class"] = F("measurement");
+  doc["unit_of_measurement"] = "B";
+  doc["device_class"] = "data_size";
+  doc["state_class"] = "measurement";
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray(F("identifiers"));
+  JsonArray identifiers = device.createNestedArray("identifiers");
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3875,14 +3875,14 @@ void mqtt_autoDiscovery_heapFreePercent(){
   doc["name"] = "Heap Free Percent";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = F("mdi:memory");
-  doc["entity_category"] = F("diagnostic");
+  doc["icon"] = "mdi:memory";
+  doc["entity_category"] = "diagnostic";
   doc["enabled_by_default"] = false;
-  doc["unit_of_measurement"] = F("%");
-  doc["state_class"] = F("measurement");
+  doc["unit_of_measurement"] = "%";
+  doc["state_class"] = "measurement";
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray(F("identifiers"));
+  JsonArray identifiers = device.createNestedArray("identifiers");
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3953,15 +3953,15 @@ void mqtt_autoDiscovery_heapMaxAllocated(){
   doc["name"] = "Heap Max Allocated";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = F("mdi:memory");
-  doc["entity_category"] = F("diagnostic");
+  doc["icon"] = "mdi:memory";
+  doc["entity_category"] = "diagnostic";
   doc["enabled_by_default"] = false;
-  doc["unit_of_measurement"] = F("B");
-  doc["device_class"] = F("data_size");
-  doc["state_class"] = F("measurement");
+  doc["unit_of_measurement"] = "B";
+  doc["device_class"] = "data_size";
+  doc["state_class"] = "measurement";
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray(F("identifiers"));
+  JsonArray identifiers = device.createNestedArray("identifiers");
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -4032,15 +4032,15 @@ void mqtt_autoDiscovery_heapMinFree(){
   doc["name"] = "Heap Minimum Free";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = F("mdi:memory");
-  doc["entity_category"] = F("diagnostic");
+  doc["icon"] = "mdi:memory";
+  doc["entity_category"] = "diagnostic";
   doc["enabled_by_default"] = false;
-  doc["unit_of_measurement"] = F("B");
-  doc["device_class"] = F("data_size");
-  doc["state_class"] = F("measurement");
+  doc["unit_of_measurement"] = "B";
+  doc["device_class"] = "data_size";
+  doc["state_class"] = "measurement";
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray(F("identifiers"));
+  JsonArray identifiers = device.createNestedArray("identifiers");
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -4111,15 +4111,15 @@ void mqtt_autoDiscovery_heapSize(){
   doc["name"] = "Heap Size";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = F("mdi:memory");
-  doc["entity_category"] = F("diagnostic");
+  doc["icon"] = "mdi:memory";
+  doc["entity_category"] = "diagnostic";
   doc["enabled_by_default"] = false;
-  doc["unit_of_measurement"] = F("B");
-  doc["device_class"] = F("data_size");
-  doc["state_class"] = F("measurement");
+  doc["unit_of_measurement"] = "B";
+  doc["device_class"] = "data_size";
+  doc["state_class"] = "measurement";
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray(F("identifiers"));
+  JsonArray identifiers = device.createNestedArray("identifiers");
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -4190,15 +4190,15 @@ void mqtt_autoDiscovery_stackHighWaterMark(){
   doc["name"] = "Stack High Water Mark";
   doc["unique_id"] = unique_id;
   doc["object_id"] = unique_id;
-  doc["icon"] = F("mdi:memory");
-  doc["entity_category"] = F("diagnostic");
+  doc["icon"] = "mdi:memory";
+  doc["entity_category"] = "diagnostic";
   doc["enabled_by_default"] = false;
-  doc["unit_of_measurement"] = F("B");
-  doc["device_class"] = F("data_size");
-  doc["state_class"] = F("measurement");
+  doc["unit_of_measurement"] = "B";
+  doc["device_class"] = "data_size";
+  doc["state_class"] = "measurement";
 
   JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray(F("identifiers"));
+  JsonArray identifiers = device.createNestedArray("identifiers");
   identifiers.add(externalEEPROM.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -4340,7 +4340,7 @@ void startHttpServer(){
       httpServer.begin();
       httpServerIsActive = true;
 
-      eventLog.createEvent(F("HTTP server started"));
+      eventLog.createEvent("HTTP server started");
       reportMemoryUsage("HTTP server started.");
 
       lastTimeHttpServerUsed = esp_timer_get_time();
@@ -4366,7 +4366,7 @@ void stopHttpServer(){
     httpServer.end();
     httpServerIsActive = false;
 
-    eventLog.createEvent(F("HTTP server stopped"));
+    eventLog.createEvent("HTTP server stopped");
     reportMemoryUsage("HTTP server stopped.");
 
     lastTimeHttpServerUsed = 0;
