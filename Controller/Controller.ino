@@ -3850,7 +3850,7 @@ void mqtt_publish_heapFree(){
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_FREE_STATE_PATTERN, externalEEPROM.data.uuid);
 
   char buf[12];
-  sprintf(buf, "%lu", ESP.getFreeHeap());
+  sprintf(buf, "%u", ESP.getFreeHeap());
 
   mqttClient.publish(state_topic, buf, false);
 }
@@ -3928,7 +3928,7 @@ void mqtt_publish_heapFreePercent(){
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_FREE_PERCENT_STATE_PATTERN, externalEEPROM.data.uuid);
 
   char buf[4];
-  sprintf(buf, "%lu", (uint8_t)(ESP.getFreeHeap() * 100 / ESP.getHeapSize()));
+  sprintf(buf, "%u", (uint8_t)(ESP.getFreeHeap() * 100 / ESP.getHeapSize()));
 
   mqttClient.publish(state_topic, buf, false);
 }
@@ -4007,7 +4007,7 @@ void mqtt_publish_heapMaxAllocated(){
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_MAX_ALLOCATED_STATE_PATTERN, externalEEPROM.data.uuid);
 
   char buf[12];
-  sprintf(buf, "%lu", ESP.getMaxAllocHeap());
+  sprintf(buf, "%u", ESP.getMaxAllocHeap());
 
   mqttClient.publish(state_topic, buf, false);
 }
@@ -4086,7 +4086,7 @@ void mqtt_publish_heapMinFree(){
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_MIN_FREE_STATE_PATTERN, externalEEPROM.data.uuid);
 
   char buf[12];
-  sprintf(buf, "%lu", ESP.getMinFreeHeap());
+  sprintf(buf, "%u", ESP.getMinFreeHeap());
 
   mqttClient.publish(state_topic, buf, false);
 }
@@ -4165,7 +4165,7 @@ void mqtt_publish_heapSize(){
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_SIZE_STATE_PATTERN, externalEEPROM.data.uuid);
 
   char buf[12];
-  sprintf(buf, "%lu", ESP.getHeapSize());
+  sprintf(buf, "%u", ESP.getHeapSize());
 
   mqttClient.publish(state_topic, buf, false);
 }
