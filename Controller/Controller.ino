@@ -3304,6 +3304,7 @@ void mqtt_autoDiscovery_start_time(){
   }
 
   doc["state_topic"] = state_topic;
+  doc["device_class"] = "timestamp";
   doc["value_template"] = "{{ ( value | int ) | timestamp_local }}";
   doc["availability_topic"] = mqttClient.topic_availability;
 
