@@ -30,7 +30,7 @@
 
 uint64_t bootTime = 0; /* Approximate Epoch time the device booted */
 uint64_t lastTimeMemoryBroadcast = 0; /* The last time memory usage was broadcast */
-uint64_t lastTimeHttpServerUsed = 0; /* The last time the HTTP server responded to a request */
+volatile uint64_t lastTimeHttpServerUsed = 0;  /* The last time the HTTP server responded to a request */
 bool httpServerIsActive = false; /* If the HTTP server has been started */
 AsyncWebServer httpServer(80);
 managerExternalEEPROM externalEEPROM; /* External EEPROM instance */
@@ -408,8 +408,11 @@ void loop() {
   }
 
   if(httpServerIsActive){
-    if(esp_timer_get_time() - lastTimeHttpServerUsed >= (uint64_t)HTTP_SERVER_MAX_IDLE_SECONDS * 1000000ULL){
-        stopHttpServer();
+    uint64_t now = esp_timer_get_time();
+    uint64_t diff = now - lastTimeHttpServerUsed;
+
+    if (diff >= (uint64_t)HTTP_SERVER_MAX_IDLE_SECONDS * 1000000ULL) {
+      stopHttpServer();
     }
   }
 
@@ -963,7 +966,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
   if(externalEEPROM.enabled == false){
     http_error(request, "Cannot connect to external EEPROM");
@@ -1015,7 +1018,7 @@ void http_handleEventLog(AsyncWebServerRequest *request){
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
   if(eventLog.getEvents()->size() == 0){
     request->send(200, "application/json","[]");
@@ -1080,7 +1083,7 @@ void http_handleErrorLog(AsyncWebServerRequest *request){
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
   if(eventLog.getErrors()->size() == 0){
     request->send(200, "application/json","[]");
@@ -1123,7 +1126,7 @@ void http_handleAuth(AsyncWebServerRequest *request){
         return;
       }
 
-      lastTimeHttpServerUsed = esp_timer_get_time();
+      resetHTPServerUsage();
     
       request->send(204);
       break;
@@ -1146,12 +1149,10 @@ void http_handleControllers(AsyncWebServerRequest *request){
       break;
 
     case ASYNC_HTTP_GET:
-
       http_handleControllers_GET(request);
       break;
 
     case ASYNC_HTTP_DELETE:
-
       http_handleControllers_DELETE(request);
       break;
 
@@ -1177,7 +1178,7 @@ void http_handleControllers_GET(AsyncWebServerRequest *request){
     return;
   }
   
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
   String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + request->pathArg(0);
 
@@ -1249,7 +1250,7 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
   if(request->pathArg(0).length() != 36){
     http_badRequest(request, "UUID must be exactly 36 characters");
@@ -1296,7 +1297,7 @@ void http_handleListControllers(AsyncWebServerRequest *request){
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   DynamicJsonDocument doc(8192);  //Supports 128 UUID's
@@ -1330,12 +1331,10 @@ void http_handleClients(AsyncWebServerRequest *request){
       break;
 
     case ASYNC_HTTP_GET:
-
       http_handleClients_GET(request);
       break;
 
     case ASYNC_HTTP_DELETE:
-
       http_handleClients_DELETE(request);
       break;
 
@@ -1363,7 +1362,7 @@ void http_handleClients_GET(AsyncWebServerRequest *request){
     }
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
   if(request->hasHeader("mac-address")){
 
@@ -1442,7 +1441,7 @@ void http_handleClients_DELETE(AsyncWebServerRequest *request){
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
   String filename = CONFIGFS_PATH_CLIENTS + (String)"/" + request->pathArg(0);
 
@@ -1484,7 +1483,7 @@ void http_handleClients_PUT(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
   if(request->pathArg(0).length() != 36){
     http_badRequest(request, "UUID must be exactly 36 characters");
@@ -1531,7 +1530,7 @@ void http_handleListClients(AsyncWebServerRequest *request){
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   DynamicJsonDocument doc(8192);  //Supports 128 UUID's
@@ -1577,14 +1576,17 @@ void http_handleProvisioning(AsyncWebServerRequest *request){
   switch(request->method()){
 
     case ASYNC_HTTP_PUT:
+      resetHTPServerUsage();
       http_handleProvisioning_PUT(request);
       break;
 
     case ASYNC_HTTP_GET:
+      resetHTPServerUsage();
       http_handleProvisioning_GET(request);
       break;
 
     case ASYNC_HTTP_DELETE:
+      resetHTPServerUsage();
       http_handleProvisioning_DELETE(request);
       break;
 
@@ -1596,7 +1598,6 @@ void http_handleProvisioning(AsyncWebServerRequest *request){
 
 
 void http_handleProvisioning_GET(AsyncWebServerRequest *request){
-  lastTimeHttpServerUsed = esp_timer_get_time();
 
   StaticJsonDocument<16> doc;
   doc["enabled"] = provisioningMode.getStatus();
@@ -1608,8 +1609,6 @@ void http_handleProvisioning_GET(AsyncWebServerRequest *request){
 
 
 void http_handleProvisioning_PUT(AsyncWebServerRequest *request){
-
-  lastTimeHttpServerUsed = esp_timer_get_time();
 
   if(!configFS_isMounted){
     http_error(request, "File system not mounted");
@@ -1644,7 +1643,6 @@ void http_handleProvisioning_PUT(AsyncWebServerRequest *request){
 }
 
 void http_handleProvisioning_DELETE(AsyncWebServerRequest *request){
-  lastTimeHttpServerUsed = esp_timer_get_time();
   request->send(202);
   provisioningMode.setInactive();
 }
@@ -1712,7 +1710,7 @@ void http_handleBackup_GET(AsyncWebServerRequest *request){
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
   AsyncWebServerResponse *response = request->beginResponse(configFS, "/backup", "application/json");
   request->send(response);
 }
@@ -1738,7 +1736,7 @@ void http_handleBackup_PUT(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
   File file = configFS.open("/backup", "w");
 
   if(!file){
@@ -1884,7 +1882,7 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   DynamicJsonDocument doc(49152);  //Supports approx 128 controllers, 128 clients, and 64 files in www
@@ -2006,7 +2004,7 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
   MatchState ms;
   ms.Target((char*)filename.c_str());
@@ -2100,7 +2098,7 @@ if(request->hasHeader("visual-token")){
   }
 }
 
-lastTimeHttpServerUsed = esp_timer_get_time();
+resetHTPServerUsage();
 
 if(request->hasHeader("mac-address")){
 
@@ -2142,7 +2140,7 @@ void http_handleCert_DELETE(AsyncWebServerRequest *request){
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
   if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0))){
     configFS.remove(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0));
@@ -2173,7 +2171,7 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
     return;
   }
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  resetHTPServerUsage();
 
   if(!doc.containsKey("url")){
     http_badRequest(request, "Field url is required");
@@ -4343,7 +4341,7 @@ void startHttpServer(){
       eventLog.createEvent("HTTP server started");
       reportMemoryUsage("HTTP server started.");
 
-      lastTimeHttpServerUsed = esp_timer_get_time();
+      resetHTPServerUsage();
       
       mqtt_publishHttpServerStateChanged(httpServerIsActive);
 
@@ -4374,5 +4372,15 @@ void stopHttpServer(){
     mqtt_publishHttpServerStateChanged(httpServerIsActive);
 
   #endif
+
+}
+
+/**
+ * Resets the lastTimeHttpServerUsed variable anytime the HTTP server is successfully called
+ * with an authorized request
+ */
+void resetHTPServerUsage(){
+
+  lastTimeHttpServerUsed = esp_timer_get_time();
 
 }
