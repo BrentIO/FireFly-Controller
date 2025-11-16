@@ -4382,6 +4382,8 @@ void stopHttpServer(){
  */
 void resetHTPServerUsage(){
 
-  lastTimeHttpServerUsed = esp_timer_get_time();
+  if(lastTimeHttpServerUsed < esp_timer_get_time()){
+      lastTimeHttpServerUsed = esp_timer_get_time();
+  }
 
 }
