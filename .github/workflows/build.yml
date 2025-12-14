@@ -19,9 +19,9 @@ jobs:
           
         product_hex:
           - "0x08062305"
-          #- "0x32322304"
-          #- "0x08062505"
-          #- "0x32322505"
+          - "0x32322304"
+          - "0x08062505"
+          - "0x32322505"
 
         include:
           - product_hex: "0x08062305"
@@ -29,23 +29,37 @@ jobs:
             partition_size_config: "0x80000"
             partition_size_www: "0x2E0000"
 
-          #- product_hex: "0x32322304"
-          #  name: FFC3232-2304
-          #  partition_size_config: "0x80000"
-          #  partition_size_www: "0x2E0000"
+          - product_hex: "0x32322304"
+            name: FFC3232-2304
+            partition_size_config: "0x80000"
+            partition_size_www: "0x2E0000"
 
-          #- product_hex: "0x08062505"
-          #  name: FFC0806-2505
-          #  partition_size_config: "0x80000"
-          #  partition_size_www: "0x2E0000"
+          - product_hex: "0x08062505"
+            name: FFC0806-2505
+            partition_size_config: "0x80000"
+            partition_size_www: "0x2E0000"
             
-          #- product_hex: "0x32322505"
-          #  name: FFC3232-2505
-          #  partition_size_config: "0x80000"
-          #  partition_size_www: "0x2E0000"
-
+          - product_hex: "0x32322505"
+            name: FFC3232-2505
+            partition_size_config: "0x80000"
+            partition_size_www: "0x2E0000"
 
     steps:
+      - name: Set and Adjust Build Variables
+        run: |
+          # Shorten the commit SHA
+          COMMIT_HASH=${GITHUB_SHA::7}
+          echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
+
+          # Set VERSION from branch/tag name
+          VERSION=$GITHUB_REF_NAME
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+        
+      - name: Echo Tag or Branch Name
+        run: |
+          echo "VERSION: $VERSION"
+          echo "COMMIT_HASH: $COMMIT_HASH"
+
       - name: Check out repository
         uses: actions/checkout@v4
 
@@ -85,7 +99,7 @@ jobs:
           arduino-cli lib install --git-url https://github.com/BrentIO/AsyncTCP.git#2024.2.1
           arduino-cli lib install --git-url https://github.com/BrentIO/AsyncWebServer_ESP32_W5500.git#2025.5.2
           arduino-cli lib install --git-url https://github.com/BrentIO/ESPAsyncWebServer.git#2024.7.1
-          arduino-cli lib install --git-url https://github.com/BrentIO/esp32FOTA.git#2025.11.1
+          arduino-cli lib install --git-url https://github.com/BrentIO/esp32FOTA.git#2025.4.1
           arduino-cli lib install --git-url https://github.com/BrentIO/PCA95x5.git#2023.10.2
           arduino-cli lib install --git-url https://github.com/BrentIO/PCT2075.git#2023.10.3
           arduino-cli lib install --git-url https://github.com/BrentIO/pubsubclient.git#2025.4.1
@@ -103,7 +117,13 @@ jobs:
         run: mkdir -p ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
       
       - name: Compile Application
-        run: arduino-cli compile -b esp32:esp32:firefly_controller ./${{ matrix.application }} --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=0 -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
+        #Main branch will always be considered a debug version
+        run: |
+          if [ "$VERSION" = "main" ]; then
+            arduino-cli compile -b esp32:esp32:firefly_controller ./${{ matrix.application }} --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
+          else
+            arduino-cli compile -b esp32:esp32:firefly_controller ./${{ matrix.application }} --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=0 -DVERSION="$VERSION" -DCOMMIT_HASH="$COMMIT_HASH" -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
+          fi
 
       - name: Create Empty Directory for Use by LittleFS
         run: mkdir -p ~/empty/
