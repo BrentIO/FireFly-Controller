@@ -305,8 +305,8 @@
                         this->hardware.println("No Device Name");
                     }
 
-                    #if CORE_DEBUG_LEVEL >= 4
-                        this->hardware.println("**DEBUG BUILD**");
+                    #ifdef COMMIT_HASH
+                        this->hardware.println(COMMIT_HASH);
                     #endif
 
                 #endif

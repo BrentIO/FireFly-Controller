@@ -7,7 +7,26 @@
 *
 */
 
-#define VERSION "2025.11.4"
+#if CORE_DEBUG_LEVEL == 0
+  #ifndef VERSION
+    #error "VERSION must be specified for a production build."
+  #endif
+  #ifndef COMMIT_HASH
+    #error "COMMIT_HASH must be specified for a production build."
+  #endif
+#else
+  #ifdef VERSION
+    #error "VERSION may not be specified for a debug build."
+  #else
+    #define VERSION "9999.99.99"
+  #endif
+  #ifdef COMMIT_HASH
+    #error "COMMIT_HASH may not be specified for a debug build."
+  #else
+    #define COMMIT_HASH "DEBUG"
+  #endif
+#endif
+
 #define APPLICATION_NAME "FireFly Controller"
 
 #include "common/hardware.h"
