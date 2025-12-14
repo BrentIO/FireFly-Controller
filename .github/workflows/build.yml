@@ -4,17 +4,18 @@ on: workflow_dispatch
 
 env:
   VERSION_ESP_Core: 2.0.11
+  ARTIFACT_ROOT: /home/runner/artifacts
 
 jobs:
 
   ConfigureAndBuild:
-    name: Build ${{ matrix.name }} ${{ matrix.application }}
+    name: Build all firmware
     runs-on: ubuntu-24.04
 
     strategy:
       matrix:
         application:
-          - Controller
+          #- Controller
           - Hardware-Registration-and-Configuration
           
         product_hex:
@@ -47,18 +48,17 @@ jobs:
     steps:
       - name: Set and Adjust Build Variables
         run: |
-          # Shorten the commit SHA
           COMMIT_HASH=${GITHUB_SHA::7}
           echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
 
-          # Set VERSION from branch/tag name
           VERSION=$GITHUB_REF_NAME
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-        
-      - name: Echo Tag or Branch Name
+              
+      - name: Echo Tag or Branch Name and Commit Hash
         run: |
-          echo "VERSION: $VERSION"
-          echo "COMMIT_HASH: $COMMIT_HASH"
+          echo "VERSION: ${{ env.VERSION }}"
+          echo "COMMIT_HASH: ${{ env.COMMIT_HASH }}"
+          echo "ARTIFACT_ROOT: ${{ env.ARTIFACT_ROOT }}"
 
       - name: Check out repository
         uses: actions/checkout@v4
@@ -82,7 +82,7 @@ jobs:
 
       - name: Create symlink for boards.local.txt
         run: |
-          ARDUINO_DIR=`arduino-cli config dump --format json | jq -r .directories.data`
+          ARDUINO_DIR=$(arduino-cli config dump --format json | jq -r .directories.data)
           ln -s ${{ github.workspace }}/boards.local.txt ${ARDUINO_DIR}/packages/esp32/hardware/esp32/$VERSION_ESP_Core/boards.local.txt
           cat ${ARDUINO_DIR}/packages/esp32/hardware/esp32/$VERSION_ESP_Core/boards.local.txt
 
@@ -114,30 +114,73 @@ jobs:
         run: arduino-cli lib list
 
       - name: Create Output Directory
-        run: mkdir -p ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
-      
+        run: mkdir -p "${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.VERSION }}-${{ env.COMMIT_HASH }}"
+
       - name: Compile Application
-        #Main branch will always be considered a debug version
         run: |
+          set -e
+
+          VERSION="${{ env.VERSION }}"
+          COMMIT_HASH="${{ env.COMMIT_HASH }}"
+          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${VERSION}-${COMMIT_HASH}"
+          mkdir -p "$OUTDIR"
+
+          echo "Using OUTDIR: $OUTDIR"
+
           if [ "$VERSION" = "main" ]; then
-            arduino-cli compile -b esp32:esp32:firefly_controller ./${{ matrix.application }} --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
+            echo "Building DEBUG firmware (main branch)"
+            arduino-cli compile \
+              -b esp32:esp32:firefly_controller ./${{ matrix.application }} \
+              --warnings more --clean \
+              --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -I${{ github.workspace }}" \
+              --output-dir "$OUTDIR"
           else
-            arduino-cli compile -b esp32:esp32:firefly_controller ./${{ matrix.application }} --warnings more --clean --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=0 -DVERSION="$VERSION" -DCOMMIT_HASH="$COMMIT_HASH" -I${{ github.workspace }}" --output-dir ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/
+            echo "Building RELEASE firmware"
+            arduino-cli compile \
+              -b esp32:esp32:firefly_controller ./${{ matrix.application }} \
+              --warnings more --clean \
+              --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=0 -DVERSION=\"${VERSION}\" -DCOMMIT_HASH=\"${COMMIT_HASH}\" -I${{ github.workspace }}" \
+              --output-dir "$OUTDIR"
           fi
 
+          echo "Contents of OUTDIR after compile:"
+          ls -al "$OUTDIR"
+
       - name: Create Empty Directory for Use by LittleFS
-        run: mkdir -p ~/empty/
+        run: mkdir -p "${{ env.ARTIFACT_ROOT }}/empty"
 
       - name: Build LittleFS Images
         run: |
-          ARDUINO_DIR=`arduino-cli config dump --format json | jq -r .directories.data`
-          ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/mklittlefs -s ${{ matrix.partition_size_www }} -c ${{ github.workspace }}/${{ matrix.application }}/www ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/www.bin
-          ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/mklittlefs -s ${{ matrix.partition_size_config }} -c ~/empty ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/config.bin
+          set -e
+
+          ARDUINO_DIR=$(arduino-cli config dump --format json | jq -r .directories.data)
+          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.VERSION }}-${{ env.COMMIT_HASH }}"
+          mkdir -p "$OUTDIR"
+
+          echo "Building LittleFS images into: $OUTDIR"
+
+          ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/mklittlefs \
+            -s ${{ matrix.partition_size_www }} \
+            -c ${{ github.workspace }}/${{ matrix.application }}/www \
+            "$OUTDIR/www.bin"
+
+          ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/mklittlefs \
+            -s ${{ matrix.partition_size_config }} \
+            -c "${{ env.ARTIFACT_ROOT }}/empty" \
+            "$OUTDIR/config.bin"
+
+          echo "Contents of OUTDIR after LittleFS:"
+          ls -al "$OUTDIR"
+
+      - name: Debug artifacts directory before upload
+        run: |
+          echo "Listing entire artifacts tree:"
+          ls -R "${{ env.ARTIFACT_ROOT }}" || echo "No artifacts directory"
 
       - uses: actions/upload-artifact@v4
         name: Upload Artifacts
         with:
           retention-days: 1
           if-no-files-found: error
-          name: ${{ matrix.name }}-${{ matrix.application }}
-          path: ~/artifacts/${{ matrix.name }}/${{ matrix.application }}/*
+          name: ${{ matrix.name }}-${{ matrix.application }}-${{ env.VERSION }}-${{ env.COMMIT_HASH }}
+          path: ${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.VERSION }}-${{ env.COMMIT_HASH }}/*
