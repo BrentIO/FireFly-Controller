@@ -143,14 +143,10 @@ inputPort inputPorts[(IO_EXTENDER_COUNT_PINS / IO_EXTENDER_COUNT_CHANNELS_PER_PO
 
 void reportMemoryUsage(const char* tag) {
 
-  log_d("[%lu] ***Memory Usage Report***\tHeap Free: %lu, MaxAllocHeap: %lu, MinFreeHeap: %lu, HeapSize: %lu, HeapFree: %u%%, StackHighWaterMark: %u\t[%s]",
+  log_d("[%lu] ***Memory Usage Report***\tHeap Free: %lu, Largest Free Heap Block: %lu",
           timeClient.getEpochTime(),
           (unsigned long)ESP.getFreeHeap(),
-          (unsigned long)ESP.getMaxAllocHeap(),
-          (unsigned long)ESP.getMinFreeHeap(),
-          (unsigned long)ESP.getHeapSize(),
-          (uint8_t)(ESP.getFreeHeap() * 100 / ESP.getHeapSize()),
-          (unsigned int)uxTaskGetStackHighWaterMark(NULL),
+          (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT),
           tag);
 }
 
@@ -2967,12 +2963,7 @@ void eventHandler_mqttConnect(){
     mqtt_autoDiscovery_count_errors();
     mqtt_autoDiscovery_http_server();
     mqtt_autoDiscovery_heapFree();
-    mqtt_autoDiscovery_heapFreePercent();
-    mqtt_autoDiscovery_heapMaxAllocated();
-    mqtt_autoDiscovery_heapMinFree();
-    mqtt_autoDiscovery_heapSize();
-    mqtt_autoDiscovery_stackHighWaterMark();
-
+    mqtt_autoDiscovery_heapLargestFreeBlock();
     mqttClient.autoDiscovery.sent = true;
   }
 
@@ -3065,12 +3056,15 @@ void mqtt_autoDiscovery_temperature(){
     char unique_id[MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
     snprintf(unique_id, sizeof(unique_id), MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid, sensorLocation);
 
+    char default_entity_id[MQTT_TEMPERATURE_DEFAULT_ENTITY_ID_LENGTH+1];
+    snprintf(default_entity_id, sizeof(default_entity_id), MQTT_TEMPERATURE_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid, sensorLocation);
+
     char state_topic[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
     snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, externalEEPROM.data.uuid, sensorLocation);
 
     doc["name"] = sensorLocation;
     doc["unique_id"] = unique_id;
-    doc["object_id"] = unique_id;
+    doc["default_entity_id"] = default_entity_id;
     doc["icon"] = "mdi:thermometer";
     doc["device_class"] = "temperature";
     doc["unit_of_measurement"] = "°C";
@@ -3223,6 +3217,9 @@ void mqtt_autoDiscovery_outputs(){
     char unique_id[MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
     snprintf(unique_id, sizeof(unique_id), MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, output.value()["id"].as<const char*>());
 
+    char default_entity_id[MQTT_OUTPUT_DEFAULT_ENTITY_ID_LENGTH+1];
+    snprintf(default_entity_id, sizeof(default_entity_id), MQTT_OUTPUT_DEFAULT_ENTITY_ID_PATTERN, devicePlatform, output.value()["id"].as<const char*>());
+
     char state_topic[MQTT_TOPIC_OUTPUT_STATE_LENGTH+1];
     snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_OUTPUT_STATE_PATTERN, output.value()["id"].as<const char*>());
 
@@ -3231,7 +3228,7 @@ void mqtt_autoDiscovery_outputs(){
 
     mqttDoc["name"] = (char*)NULL;
     mqttDoc["unique_id"] = unique_id;
-    mqttDoc["object_id"] = unique_id;
+    mqttDoc["default_entity_id"] = default_entity_id;
 
     if(output.value().containsKey("icon")){
         mqttDoc["icon"] = output.value()["icon"].as<const char*>();
@@ -3295,12 +3292,15 @@ void mqtt_autoDiscovery_start_time(){
   char unique_id[MQTT_TIME_START_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
   snprintf(unique_id, sizeof(unique_id), MQTT_TIME_START_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
 
+  char default_entity_id[MQTT_TIME_START_DEFAULT_ENTITY_ID_LENGTH+1];
+  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_TIME_START_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid);
+
   char state_topic[MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_TIME_START_STATE_PATTERN, externalEEPROM.data.uuid);
 
   doc["name"] = "Start Time";
   doc["unique_id"] = unique_id;
-  doc["object_id"] = unique_id;
+  doc["default_entity_id"] = default_entity_id;
   doc["icon"] = "mdi:calendar-clock";
   doc["entity_category"] = "diagnostic";
 
@@ -3375,12 +3375,15 @@ void mqtt_autoDiscovery_mac_address(){
   char unique_id[MQTT_MAC_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
   snprintf(unique_id, sizeof(unique_id), MQTT_MAC_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
 
+  char default_entity_id[MQTT_MAC_ADDRESS_DEFAULT_ENTITY_ID_LENGTH+1];
+  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_MAC_ADDRESS_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid);
+
   char state_topic[MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
 
   doc["name"] = "MAC Address";
   doc["unique_id"] = unique_id;
-  doc["object_id"] = unique_id;
+  doc["default_entity_id"] = default_entity_id;
   doc["icon"] = "mdi:ethernet";
   doc["entity_category"] = "diagnostic";
 
@@ -3451,12 +3454,15 @@ void mqtt_autoDiscovery_ip_address(){
   char unique_id[MQTT_IP_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
   snprintf(unique_id, sizeof(unique_id), MQTT_IP_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
 
+  char default_entity_id[MQTT_IP_ADDRESS_DEFAULT_ENTITY_ID_LENGTH+1];
+  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_IP_ADDRESS_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid);
+
   char state_topic[MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
 
   doc["name"] = "IP Address";
   doc["unique_id"] = unique_id;
-  doc["object_id"] = unique_id;
+  doc["default_entity_id"] = default_entity_id;
   doc["icon"] = "mdi:ip";
   doc["entity_category"] = "diagnostic";
 
@@ -3530,12 +3536,15 @@ void mqtt_autoDiscovery_count_errors(){
   char unique_id[MQTT_COUNT_ERRORS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
   snprintf(unique_id, sizeof(unique_id), MQTT_COUNT_ERRORS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
 
+  char default_entity_id[MQTT_COUNT_ERRORS_DEFAULT_ENTITY_ID_LENGTH+1];
+  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_COUNT_ERRORS_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid);
+
   char state_topic[MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN, externalEEPROM.data.uuid);
 
   doc["name"] = "Error Count";
   doc["unique_id"] = unique_id;
-  doc["object_id"] = unique_id;
+  doc["default_entity_id"] = default_entity_id;
   doc["icon"] = "mdi:alert";
   doc["entity_category"] = "diagnostic";
 
@@ -3606,6 +3615,9 @@ void mqtt_autoDiscovery_update(){
   char unique_id[MQTT_UPDATE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
   snprintf(unique_id, sizeof(unique_id), MQTT_UPDATE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
 
+  char default_entity_id[MQTT_UPDATE_DEFAULT_ENTITY_ID_LENGTH+1];
+  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_UPDATE_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid);
+
   char state_topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
 
@@ -3619,7 +3631,7 @@ void mqtt_autoDiscovery_update(){
 
   doc["name"] = "Firmware";
   doc["unique_id"] = unique_id;
-  doc["object_id"] = unique_id;
+  doc["default_entity_id"] = default_entity_id;
   doc["icon"] = "mdi:update";
 
   JsonObject device = doc.createNestedObject("device");
@@ -3720,6 +3732,9 @@ void mqtt_autoDiscovery_http_server(){
   char unique_id[MQTT_HTTP_SERVER_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
   snprintf(unique_id, sizeof(unique_id), MQTT_HTTP_SERVER_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
 
+  char default_entity_id[MQTT_HTTP_SERVER_DEFAULT_ENTITY_ID_LENGTH+1];
+  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_HTTP_SERVER_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid);
+
   char state_topic[MQTT_TOPIC_HTTP_SERVER_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HTTP_SERVER_STATE_PATTERN, externalEEPROM.data.uuid);
 
@@ -3728,7 +3743,7 @@ void mqtt_autoDiscovery_http_server(){
 
   doc["name"] = "HTTP Server";
   doc["unique_id"] = unique_id;
-  doc["object_id"] = unique_id;
+  doc["default_entity_id"] = default_entity_id;
   doc["icon"] = "mdi:web";
 
   JsonObject device = doc.createNestedObject("device");
@@ -3808,12 +3823,15 @@ void mqtt_autoDiscovery_heapFree(){
   char unique_id[MQTT_HEAP_FREE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
   snprintf(unique_id, sizeof(unique_id), MQTT_HEAP_FREE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
 
+  char default_entity_id[MQTT_HEAP_FREE_DEFAULT_ENTITY_ID_LENGTH+1];
+  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_HEAP_FREE_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid);
+
   char state_topic[MQTT_TOPIC_HEAP_FREE_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_FREE_STATE_PATTERN, externalEEPROM.data.uuid);
 
   doc["name"] = "Heap Free";
   doc["unique_id"] = unique_id;
-  doc["object_id"] = unique_id;
+  doc["default_entity_id"] = default_entity_id;
   doc["icon"] = "mdi:memory";
   doc["entity_category"] = "diagnostic";
   doc["enabled_by_default"] = false;
@@ -3875,102 +3893,27 @@ void mqtt_publish_heapFree(){
 
 
 /**
- * Handles heap free percent auto discovery broadcasts
+ * Handles heap largest free block auto discovery broadcasts
  */
-void mqtt_autoDiscovery_heapFreePercent(){
+void mqtt_autoDiscovery_heapLargestFreeBlock(){
 
   DynamicJsonDocument doc(1024);
 
-  char topic[MQTT_TOPIC_HEAP_FREE_PERCENT_AUTO_DISCOVERY_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_HEAP_FREE_PERCENT_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+  char topic[MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_STATE_PATTERN_LENGTH+1];
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
 
-  char unique_id[MQTT_HEAP_FREE_PERCENT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, sizeof(unique_id), MQTT_HEAP_FREE_PERCENT_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+  char unique_id[MQTT_HEAP_LARGEST_FREE_BLOCK_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+  snprintf(unique_id, sizeof(unique_id), MQTT_HEAP_LARGEST_FREE_BLOCK_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
 
-  char state_topic[MQTT_TOPIC_HEAP_FREE_PERCENT_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_FREE_PERCENT_STATE_PATTERN, externalEEPROM.data.uuid);
+  char default_entity_id[MQTT_HEAP_LARGEST_FREE_BLOCK_DEFAULT_ENTITY_ID_LENGTH+1];
+  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_HEAP_LARGEST_FREE_BLOCK_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid);
 
-  doc["name"] = "Heap Free Percent";
+  char state_topic[MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_STATE_PATTERN, externalEEPROM.data.uuid);
+
+  doc["name"] = "Heap Largest Free Block";
   doc["unique_id"] = unique_id;
-  doc["object_id"] = unique_id;
-  doc["icon"] = "mdi:memory";
-  doc["entity_category"] = "diagnostic";
-  doc["enabled_by_default"] = false;
-  doc["unit_of_measurement"] = "%";
-  doc["state_class"] = "measurement";
-
-  JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
-  identifiers.add(externalEEPROM.data.uuid);
-
-  if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
-    device["name"] =  mqttClient.autoDiscovery.deviceName;
-  }
-
-  device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = APPLICATION_NAME;
-  device["model_id"] = externalEEPROM.data.product_id;
-  device["serial_number"] = externalEEPROM.data.uuid;
-  device["sw_version"] = VERSION;
-
-  if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
-        device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
-  }
-
-  doc["state_topic"] = state_topic;
-  doc["availability_topic"] = mqttClient.topic_availability;
-
-  mqttClient.beginPublish(topic, measureJson(doc), true);
-  BufferingPrint bufferedClient(mqttClient, 32);
-  serializeJson(doc, bufferedClient);
-  bufferedClient.flush();
-  mqttClient.endPublish();
-
-}
-
-
-/**
- * Broadcasts an MQTT message containing the heap free percent
- */
-void mqtt_publish_heapFreePercent(){
-
-  if(externalEEPROM.enabled == false){
-    return;
-  }
-
-  if(!mqttClient.connected()){
-    return;
-  }
-
-  char state_topic[MQTT_TOPIC_HEAP_FREE_PERCENT_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_FREE_PERCENT_STATE_PATTERN, externalEEPROM.data.uuid);
-
-  char buf[4];
-  sprintf(buf, "%u", (uint8_t)(ESP.getFreeHeap() * 100 / ESP.getHeapSize()));
-
-  mqttClient.publish(state_topic, buf, false);
-}
-
-
-/**
- * Handles maximum heap allocation auto discovery broadcasts
- */
-void mqtt_autoDiscovery_heapMaxAllocated(){
-
-  DynamicJsonDocument doc(1024);
-
-  char topic[MQTT_TOPIC_HEAP_MAX_ALLOCATED_AUTO_DISCOVERY_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_HEAP_MAX_ALLOCATED_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
-
-  char unique_id[MQTT_HEAP_MAX_ALLOCATED_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, sizeof(unique_id), MQTT_HEAP_MAX_ALLOCATED_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
-
-  char state_topic[MQTT_TOPIC_HEAP_MAX_ALLOCATED_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_MAX_ALLOCATED_STATE_PATTERN, externalEEPROM.data.uuid);
-
-  doc["name"] = "Heap Max Allocated";
-  doc["unique_id"] = unique_id;
-  doc["object_id"] = unique_id;
+  doc["default_entity_id"] = default_entity_id;
   doc["icon"] = "mdi:memory";
   doc["entity_category"] = "diagnostic";
   doc["enabled_by_default"] = false;
@@ -4009,9 +3952,9 @@ void mqtt_autoDiscovery_heapMaxAllocated(){
 
 
 /**
- * Broadcasts an MQTT message containing the maximum heap allocation
+ * Broadcasts an MQTT message containing the largest free block of heap
  */
-void mqtt_publish_heapMaxAllocated(){
+void mqtt_publish_heapLargestFreeBlock(){
 
   if(externalEEPROM.enabled == false){
     return;
@@ -4021,248 +3964,11 @@ void mqtt_publish_heapMaxAllocated(){
     return;
   }
 
-  char state_topic[MQTT_TOPIC_HEAP_MAX_ALLOCATED_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_MAX_ALLOCATED_STATE_PATTERN, externalEEPROM.data.uuid);
+  char state_topic[MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_STATE_PATTERN_LENGTH+1];
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_STATE_PATTERN, externalEEPROM.data.uuid);
 
   char buf[12];
-  sprintf(buf, "%u", ESP.getMaxAllocHeap());
-
-  mqttClient.publish(state_topic, buf, false);
-}
-
-
-/**
- * Handles minimum free heap auto discovery broadcasts
- */
-void mqtt_autoDiscovery_heapMinFree(){
-
-  DynamicJsonDocument doc(1024);
-
-  char topic[MQTT_TOPIC_HEAP_MIN_FREE_AUTO_DISCOVERY_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_HEAP_MIN_FREE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
-
-  char unique_id[MQTT_HEAP_MIN_FREE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, sizeof(unique_id), MQTT_HEAP_MIN_FREE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
-
-  char state_topic[MQTT_TOPIC_HEAP_MIN_FREE_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_MIN_FREE_STATE_PATTERN, externalEEPROM.data.uuid);
-
-  doc["name"] = "Heap Minimum Free";
-  doc["unique_id"] = unique_id;
-  doc["object_id"] = unique_id;
-  doc["icon"] = "mdi:memory";
-  doc["entity_category"] = "diagnostic";
-  doc["enabled_by_default"] = false;
-  doc["unit_of_measurement"] = "B";
-  doc["device_class"] = "data_size";
-  doc["state_class"] = "measurement";
-
-  JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
-  identifiers.add(externalEEPROM.data.uuid);
-
-  if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
-    device["name"] =  mqttClient.autoDiscovery.deviceName;
-  }
-
-  device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = APPLICATION_NAME;
-  device["model_id"] = externalEEPROM.data.product_id;
-  device["serial_number"] = externalEEPROM.data.uuid;
-  device["sw_version"] = VERSION;
-
-  if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
-        device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
-  }
-
-  doc["state_topic"] = state_topic;
-  doc["availability_topic"] = mqttClient.topic_availability;
-
-  mqttClient.beginPublish(topic, measureJson(doc), true);
-  BufferingPrint bufferedClient(mqttClient, 32);
-  serializeJson(doc, bufferedClient);
-  bufferedClient.flush();
-  mqttClient.endPublish();
-
-}
-
-
-/**
- * Broadcasts an MQTT message containing the minimum free heap
- */
-void mqtt_publish_heapMinFree(){
-
-  if(externalEEPROM.enabled == false){
-    return;
-  }
-
-  if(!mqttClient.connected()){
-    return;
-  }
-
-  char state_topic[MQTT_TOPIC_HEAP_MIN_FREE_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_MIN_FREE_STATE_PATTERN, externalEEPROM.data.uuid);
-
-  char buf[12];
-  sprintf(buf, "%u", ESP.getMinFreeHeap());
-
-  mqttClient.publish(state_topic, buf, false);
-}
-
-
-/**
- * Handles heap size auto discovery broadcasts
- */
-void mqtt_autoDiscovery_heapSize(){
-
-  DynamicJsonDocument doc(1024);
-
-  char topic[MQTT_TOPIC_HEAP_SIZE_AUTO_DISCOVERY_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_HEAP_SIZE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
-
-  char unique_id[MQTT_HEAP_SIZE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, sizeof(unique_id), MQTT_HEAP_SIZE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
-
-  char state_topic[MQTT_TOPIC_HEAP_SIZE_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_SIZE_STATE_PATTERN, externalEEPROM.data.uuid);
-
-  doc["name"] = "Heap Size";
-  doc["unique_id"] = unique_id;
-  doc["object_id"] = unique_id;
-  doc["icon"] = "mdi:memory";
-  doc["entity_category"] = "diagnostic";
-  doc["enabled_by_default"] = false;
-  doc["unit_of_measurement"] = "B";
-  doc["device_class"] = "data_size";
-  doc["state_class"] = "measurement";
-
-  JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
-  identifiers.add(externalEEPROM.data.uuid);
-
-  if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
-    device["name"] =  mqttClient.autoDiscovery.deviceName;
-  }
-
-  device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = APPLICATION_NAME;
-  device["model_id"] = externalEEPROM.data.product_id;
-  device["serial_number"] = externalEEPROM.data.uuid;
-  device["sw_version"] = VERSION;
-
-  if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
-        device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
-  }
-
-  doc["state_topic"] = state_topic;
-  doc["availability_topic"] = mqttClient.topic_availability;
-
-  mqttClient.beginPublish(topic, measureJson(doc), true);
-  BufferingPrint bufferedClient(mqttClient, 32);
-  serializeJson(doc, bufferedClient);
-  bufferedClient.flush();
-  mqttClient.endPublish();
-
-}
-
-
-/**
- * Broadcasts an MQTT message containing the current heap size
- */
-void mqtt_publish_heapSize(){
-
-  if(externalEEPROM.enabled == false){
-    return;
-  }
-
-  if(!mqttClient.connected()){
-    return;
-  }
-
-  char state_topic[MQTT_TOPIC_HEAP_SIZE_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_SIZE_STATE_PATTERN, externalEEPROM.data.uuid);
-
-  char buf[12];
-  sprintf(buf, "%u", ESP.getHeapSize());
-
-  mqttClient.publish(state_topic, buf, false);
-}
-
-
-/**
- * Handles stack high water mark auto discovery broadcasts
- */
-void mqtt_autoDiscovery_stackHighWaterMark(){
-
-  DynamicJsonDocument doc(1024);
-
-  char topic[MQTT_TOPIC_STACK_MIN_FREE_AUTO_DISCOVERY_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_STACK_MIN_FREE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
-
-  char unique_id[MQTT_STACK_MIN_FREE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, sizeof(unique_id), MQTT_STACK_MIN_FREE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
-
-  char state_topic[MQTT_TOPIC_STACK_MIN_FREE_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_STACK_MIN_FREE_STATE_PATTERN, externalEEPROM.data.uuid);
-
-  doc["name"] = "Stack High Water Mark";
-  doc["unique_id"] = unique_id;
-  doc["object_id"] = unique_id;
-  doc["icon"] = "mdi:memory";
-  doc["entity_category"] = "diagnostic";
-  doc["enabled_by_default"] = false;
-  doc["unit_of_measurement"] = "B";
-  doc["device_class"] = "data_size";
-  doc["state_class"] = "measurement";
-
-  JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
-  identifiers.add(externalEEPROM.data.uuid);
-
-  if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
-    device["name"] =  mqttClient.autoDiscovery.deviceName;
-  }
-
-  device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = APPLICATION_NAME;
-  device["model_id"] = externalEEPROM.data.product_id;
-  device["serial_number"] = externalEEPROM.data.uuid;
-  device["sw_version"] = VERSION;
-
-  if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
-        device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
-  }
-
-  doc["state_topic"] = state_topic;
-  doc["availability_topic"] = mqttClient.topic_availability;
-
-  mqttClient.beginPublish(topic, measureJson(doc), true);
-  BufferingPrint bufferedClient(mqttClient, 32);
-  serializeJson(doc, bufferedClient);
-  bufferedClient.flush();
-  mqttClient.endPublish();
-
-}
-
-
-/**
- * Broadcasts an MQTT message containing the stack high water mark
- */
-void mqtt_publish_stackHighWaterMark(){
-
-  if(externalEEPROM.enabled == false){
-    return;
-  }
-
-  if(!mqttClient.connected()){
-    return;
-  }
-
-  char state_topic[MQTT_TOPIC_STACK_MIN_FREE_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_STACK_MIN_FREE_STATE_PATTERN, externalEEPROM.data.uuid);
-
-  char buf[11];
-  sprintf(buf, "%u", (unsigned int)uxTaskGetStackHighWaterMark(NULL));
+  sprintf(buf, "%ul", (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
 
   mqttClient.publish(state_topic, buf, false);
 }
@@ -4274,12 +3980,7 @@ void mqtt_publish_stackHighWaterMark(){
 void mqtt_publishMemoryUsage(){
 
     mqtt_publish_heapFree();
-    mqtt_publish_heapFreePercent();
-    mqtt_publish_heapMaxAllocated();
-    mqtt_publish_heapMinFree();
-    mqtt_publish_heapSize();
-    mqtt_publish_stackHighWaterMark();
-
+    mqtt_publish_heapLargestFreeBlock();
 }
 
 
