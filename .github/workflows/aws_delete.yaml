@@ -1,0 +1,37 @@
+name: Delete AWS SAM Stack
+
+on:
+  workflow_dispatch:
+
+jobs:
+  delete-s3-stack:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Install AWS CLI
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+
+      - name: Delete CloudFormation stack
+        run: |
+          aws cloudformation delete-stack \
+            --stack-name sam-s3-firmware-bucket-stack \
+            --region ${{ vars.AWS_REGION }}
+
+      - name: Wait for deletion to complete
+        run: |
+          aws cloudformation wait stack-delete-complete \
+            --stack-name sam-s3-firmware-bucket-stack \
+            --region ${{ vars.AWS_REGION }}

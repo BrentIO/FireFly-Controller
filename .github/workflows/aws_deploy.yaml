@@ -1,0 +1,38 @@
+name: Deploy AWS SAM Stack
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  deploy-s3:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Install AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+
+      - name: Build SAM application
+        run: sam build --template-file Cloud/template-s3.yaml
+
+      - name: Create S3 Bucket for Firmware
+        run: |
+          sam deploy \
+            --template-file Cloud/template-s3.yaml \
+            --stack-name sam-s3-firmware-bucket-stack \
+            --capabilities CAPABILITY_IAM \
+            --region ${{ vars.AWS_REGION }} \
+            --parameter-overrides BucketName=${{ secrets.S3_FIRMWARE_BUCKET_NAME }} \
+            --no-confirm-changeset \
+            --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }}
