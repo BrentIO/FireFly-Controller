@@ -5,12 +5,10 @@ on:
 
 jobs:
   delete-s3-stack:
+
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -18,20 +16,35 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Install AWS CLI
-        run: |
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          sudo ./aws/install
+      - name: Install AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
 
-      - name: Delete CloudFormation stack
+      - name: Delete S3 Bucket for Firmware stack
         run: |
-          aws cloudformation delete-stack \
+          sam delete \
             --stack-name sam-s3-firmware-bucket-stack \
-            --region ${{ vars.AWS_REGION }}
+            --region ${{ vars.AWS_REGION }} \
+            --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }} \
+            --no-prompts
 
-      - name: Wait for deletion to complete
+  delete-api-stack:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Install AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+
+      - name: Delete API Gateway + Custom Domain
         run: |
-          aws cloudformation wait stack-delete-complete \
-            --stack-name sam-s3-firmware-bucket-stack \
-            --region ${{ vars.AWS_REGION }}
+          sam delete \
+            --stack-name sam-api-stack \
+            --region ${{ vars.AWS_REGION }} \
+            --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }} \
+            --no-prompts
