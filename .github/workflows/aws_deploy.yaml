@@ -30,6 +30,7 @@ jobs:
       - name: Create S3 Bucket for Firmware
         run: |
           sam deploy \
+            --role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ vars.CLOUD_FORMATION_EXECUTION_ROLE_NAME }} \
             --template-file Cloud/template-s3.yaml \
             --stack-name firefly-s3-firmware-bucket-stack \
             --capabilities CAPABILITY_IAM \
@@ -65,6 +66,7 @@ jobs:
       - name: Deploy API Gateway + Custom Domain
         run: |
           sam deploy \
+            --role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ vars.CLOUD_FORMATION_EXECUTION_ROLE_NAME }} \
             --template-file Cloud/template-api.yaml \
             --stack-name firefly-api-stack \
             --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
@@ -119,6 +121,7 @@ jobs:
       - name: Deploy Lambda stack
         run: |
           sam deploy \
+            --role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ vars.CLOUD_FORMATION_EXECUTION_ROLE_NAME }} \
             --template-file Cloud/template-lambda.yaml \
             --stack-name firefly-lambda-stack \
             --capabilities CAPABILITY_IAM \
