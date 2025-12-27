@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Create an S3 bucket using AWS SAM
+Description: Creates an S3 bucket
 
 Parameters:
   BucketName:

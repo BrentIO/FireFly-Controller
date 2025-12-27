@@ -29,18 +29,13 @@ Resources:
   ApiGateway:
     Type: AWS::Serverless::HttpApi
     Properties:
+      Name: FireFly
       StageName: $default
       DisableExecuteApiEndpoint: true
-      DefinitionBody:
-        openapi: "3.0.1"
-        info:
-          title: "FireFly"
-        paths:
-          /health:
-            get:
-              responses:
-                "200":
-                  description: OK
+      AccessLogSettings:
+        DestinationArn: !GetAtt ApiAccessLogGroup.Arn
+        Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","routeKey":"$context.routeKey","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
+
 
   ApiCustomDomain:
     Type: AWS::ApiGatewayV2::DomainName
@@ -66,8 +61,22 @@ Resources:
       AliasTarget:
         DNSName: !GetAtt ApiCustomDomain.RegionalDomainName
         HostedZoneId: !GetAtt ApiCustomDomain.RegionalHostedZoneId
+  
+  ApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: /aws/apigateway/firefly-access-logs
+      RetentionInDays: 1
+      KmsKeyId: !Ref AWS::NoValue
+
 
 Outputs:
   ApiUrl:
     Value: !Sub "https://${ApiDomainName}"
     Description: Custom API URL
+    
+  ApiId:
+    Value: !Ref ApiGateway
+    Description: ID of the HTTP API

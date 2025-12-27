@@ -1,10 +1,11 @@
-name: Delete AWS SAM Stack
+name: ❌ Delete FireFly AWS Stack
 
 on:
   workflow_dispatch:
 
 jobs:
-  delete-s3-stack:
+  delete-s3:
+    name: Delete S3 Firmware Bucket
 
     runs-on: ubuntu-latest
 
@@ -22,12 +23,13 @@ jobs:
       - name: Delete S3 Bucket for Firmware stack
         run: |
           sam delete \
-            --stack-name sam-s3-firmware-bucket-stack \
+            --stack-name firefly-s3-firmware-bucket-stack \
             --region ${{ secrets.AWS_REGION }} \
             --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }} \
             --no-prompts
 
-  delete-api-stack:
+  delete-api:
+    name: Delete API Stack
     runs-on: ubuntu-latest
 
     steps:
@@ -44,7 +46,30 @@ jobs:
       - name: Delete API Gateway + Custom Domain
         run: |
           sam delete \
-            --stack-name sam-api-stack \
+            --stack-name firefly-api-stack \
             --region ${{ secrets.AWS_REGION }} \
             --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }} \
             --no-prompts
+
+  delete-lambdas:
+    name: Delete Lambda Stack
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+
+      - name: Delete Lambda stack
+        run: |
+          sam delete \
+            --stack-name firefly-lambda-stack \
+            --region ${{ secrets.AWS_REGION }} \
+            --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }} \
+              --no-prompts
