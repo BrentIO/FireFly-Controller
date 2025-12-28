@@ -36,7 +36,7 @@ Resources:
         DestinationArn: !GetAtt ApiAccessLogGroup.Arn
         Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","routeKey":"$context.routeKey","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
 
-
+  
   ApiCustomDomain:
     Type: AWS::ApiGatewayV2::DomainName
     Properties:
@@ -70,7 +70,6 @@ Resources:
       LogGroupName: /aws/apigateway/firefly-access-logs
       RetentionInDays: 1
       KmsKeyId: !Ref AWS::NoValue
-
 
 Outputs:
   ApiUrl:
