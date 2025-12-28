@@ -22,6 +22,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Install AWS SAM CLI
+        if: ${{ !env.ACT }}
         uses: aws-actions/setup-sam@v2
 
       - name: Build SAM application
@@ -58,6 +59,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Install AWS SAM CLI
+        if: ${{ !env.ACT }}
         uses: aws-actions/setup-sam@v2
 
       - name: Build API SAM application
@@ -82,6 +84,7 @@ jobs:
   deploy-lambdas:
     name: Deploy Lambda Stack
     runs-on: ubuntu-latest
+    needs: deploy-api
 
     steps:
 
@@ -96,6 +99,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Install AWS SAM CLI
+        if: ${{ !env.ACT }}
         uses: aws-actions/setup-sam@v2
 
       - name: Retrieve SAM Outputs
