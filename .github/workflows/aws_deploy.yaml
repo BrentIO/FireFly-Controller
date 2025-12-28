@@ -103,12 +103,12 @@ jobs:
         uses: aws-actions/setup-sam@v2
 
       - name: Retrieve SAM Outputs
-        run: sam list stack-outputs --stack-name firefly-api-stack --output json > firefly-outputs.json
+        run: sam list stack-outputs --stack-name firefly-api-stack --output json > firefly-stack-outputs.json
 
       - name: Parse API ID
         id: parse-api-id
         run: |
-          apiid=$(jq -r '.[] | select(.OutputKey=="ApiId") | .OutputValue' firefly-outputs.json)
+          apiid=$(jq -r '.[] | select(.OutputKey=="ApiId") | .OutputValue' firefly-stack-outputs.json)
           echo "apiid=$apiid" >> $GITHUB_OUTPUT
 
       - name: Validate API ID

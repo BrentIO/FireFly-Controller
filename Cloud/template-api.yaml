@@ -25,20 +25,26 @@ Resources:
       DomainValidationOptions:
         - DomainName: !Ref CertificateDomainName
           HostedZoneId: !Ref HostedZoneId
+      Tags:
+        - Key: Name 
+          Value: firefly-api-certificate
 
   ApiGateway:
     Type: AWS::Serverless::HttpApi
     Properties:
       Name: FireFly
+      Description: FireFly HTTPS API Gateway
       StageName: $default
       DisableExecuteApiEndpoint: true
       AccessLogSettings:
         DestinationArn: !GetAtt ApiAccessLogGroup.Arn
         Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","routeKey":"$context.routeKey","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
+      Tags:
+        Name: firefly-api-gateway
 
-  
   ApiCustomDomain:
     Type: AWS::ApiGatewayV2::DomainName
+    DependsOn: ApiCertificate
     Properties:
       DomainName: !Ref ApiDomainName
       DomainNameConfigurations:
@@ -47,6 +53,7 @@ Resources:
 
   ApiBasePathMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
+    DependsOn: ApiCustomDomain
     Properties:
       ApiId: !Ref ApiGateway
       DomainName: !Ref ApiCustomDomain
@@ -54,6 +61,7 @@ Resources:
 
   ApiDomainAliasRecord:
     Type: AWS::Route53::RecordSet
+    DependsOn: ApiCustomDomain
     Properties:
       HostedZoneId: !Ref HostedZoneId
       Name: !Ref ApiDomainName
@@ -64,10 +72,10 @@ Resources:
   
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
-    DeletionPolicy: Retain
+    DeletionPolicy: Delete
     UpdateReplacePolicy: Retain
     Properties:
-      LogGroupName: /aws/apigateway/firefly-access-logs
+      LogGroupName: /aws/apigateway/firefly-api-access-logs
       RetentionInDays: 1
       KmsKeyId: !Ref AWS::NoValue
 
