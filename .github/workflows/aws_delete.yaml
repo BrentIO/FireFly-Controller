@@ -18,6 +18,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Install AWS SAM CLI
+        if: ${{ !env.ACT }}
         uses: aws-actions/setup-sam@v2
 
       - name: Delete S3 Bucket for Firmware stack
@@ -41,6 +42,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Install AWS SAM CLI
+        if: ${{ !env.ACT }}
         uses: aws-actions/setup-sam@v2
 
       - name: Delete API Gateway + Custom Domain
@@ -64,6 +66,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Install AWS SAM CLI
+        if: ${{ !env.ACT }}
         uses: aws-actions/setup-sam@v2
 
       - name: Delete Lambda stack
