@@ -179,10 +179,45 @@ jobs:
           echo "Contents of OUTDIR after LittleFS:"
           ls -al "$OUTDIR"
 
-      - name: Debug artifacts directory before upload
+      - name: Generate manifest JSON
         run: |
-          echo "Listing entire artifacts tree:"
-          ls -R "${{ env.ARTIFACT_ROOT }}" || echo "No artifacts directory"
+          ROOT="${{ env.ARTIFACT_ROOT }}"
+          NAME="${{ matrix.name }}"
+          APPLICATION="${{ matrix.application }}"
+          VERSION="${{ env.VERSION }}"
+          COMMIT_HASH="${{ env.COMMIT_HASH }}"
+          JSON_FILE="${ROOT}/${NAME}/${APPLICATION}/${VERSION}-${COMMIT_HASH}/manifest.json"
+
+          # Start with an empty JSON array
+          FILES_JSON=$(jq -nc '[]')
+
+          # Recursively find all files
+          while IFS= read -r f; do
+            NAME=$(basename "$f")
+            SHA1=$(sha1sum "$f" | awk '{print $1}')
+
+            FILES_JSON=$(echo "$FILES_JSON" \
+              | jq -c --arg name "$NAME" --arg sha1 "$SHA1" \
+                '. += [{name: $name, sha1: $sha1}]')
+          done < <(find "$ROOT" -type f)
+
+          # Build the final JSON object
+          jq -nc \
+            --arg product_id "${{ matrix.name }}" \
+            --arg application "${{ matrix.application }}" \
+            --arg version "${{ env.VERSION }}" \
+            --arg commit "${{ env.COMMIT_HASH }}" \
+            --argjson files "$FILES_JSON" \
+            '{
+              product_id: $product_id,
+              application: $application,
+              version: $version,
+              commit: $commit,
+              files: $files
+            }' > "$JSON_FILE"
+
+          echo "Wrote $JSON_FILE"
+          cat $JSON_FILE
 
       - uses: actions/upload-artifact@v4
         name: Upload Artifacts
