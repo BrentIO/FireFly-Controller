@@ -1,4 +1,4 @@
-name: Build Firmware
+name: 🛠️ Build Firmware
 
 on: workflow_dispatch
 
