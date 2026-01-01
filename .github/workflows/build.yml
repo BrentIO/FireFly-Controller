@@ -128,7 +128,8 @@ jobs:
 
           VERSION="${{ env.VERSION }}"
           COMMIT_HASH="${{ env.COMMIT_HASH }}"
-          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${VERSION}-${COMMIT_HASH}"
+          APPLICATION="${{ matrix.application }}"
+          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${APPLICATION}/${VERSION}-${COMMIT_HASH}"
           mkdir -p "$OUTDIR"
 
           echo "Using OUTDIR: $OUTDIR"
@@ -136,14 +137,14 @@ jobs:
           if [ "$VERSION" = "main" ]; then
             echo "Building DEBUG firmware (main branch)"
             arduino-cli compile \
-              -b esp32:esp32:firefly_controller ./${{ matrix.application }} \
+              -b esp32:esp32:firefly_controller ./${APPLICATION} \
               --warnings more --clean \
               --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -I${{ github.workspace }}" \
               --output-dir "$OUTDIR"
           else
             echo "Building RELEASE firmware"
             arduino-cli compile \
-              -b esp32:esp32:firefly_controller ./${{ matrix.application }} \
+              -b esp32:esp32:firefly_controller ./${APPLICATION} \
               --warnings more --clean \
               --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=0 -DVERSION=\"${VERSION}\" -DCOMMIT_HASH=\"${COMMIT_HASH}\" -I${{ github.workspace }}" \
               --output-dir "$OUTDIR"
@@ -153,7 +154,7 @@ jobs:
           ls -al "$OUTDIR"
 
       - name: Create Empty Directory for Use by LittleFS
-        run: mkdir -p "${{ env.ARTIFACT_ROOT }}/empty"
+        run: mkdir -p "${{ env.ARTIFACT_ROOT }}/LittleFS"
 
       - name: Build LittleFS Images
         run: |
@@ -172,7 +173,7 @@ jobs:
 
           ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/mklittlefs \
             -s ${{ matrix.partition_size_config }} \
-            -c "${{ env.ARTIFACT_ROOT }}/empty" \
+            -c "${{ env.ARTIFACT_ROOT }}/LittleFS" \
             "$OUTDIR/config.bin"
 
           echo "Contents of OUTDIR after LittleFS:"
