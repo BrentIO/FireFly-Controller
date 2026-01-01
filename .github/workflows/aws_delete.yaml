@@ -1,7 +1,7 @@
 name: ❌ Delete FireFly AWS Stack
 
 on:
-  workflow_dispatch:
+  workflow_dispatch
 
 jobs:
   delete-s3:
