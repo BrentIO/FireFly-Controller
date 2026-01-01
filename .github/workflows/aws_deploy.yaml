@@ -1,9 +1,7 @@
 name: 🚀 Deploy FireFly AWS Stack
 
 on:
-  push:
-    branches: [ "main" ]
-  workflow_dispatch:
+  workflow_dispatch
 
 jobs:
   deploy-s3:
