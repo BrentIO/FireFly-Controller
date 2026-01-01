@@ -1,4 +1,4 @@
-name: Build Firmware
+name: 🛠️ Build Firmware
 
 on: workflow_dispatch
 
@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         application:
-          #- Controller
+          - Controller
           - Hardware-Registration-and-Configuration
           
         product_hex:
@@ -51,45 +51,58 @@ jobs:
           COMMIT_HASH=${GITHUB_SHA::7}
           echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
 
-          VERSION=$GITHUB_REF_NAME
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          BRANCH=$GITHUB_REF_NAME
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
               
       - name: Echo Tag or Branch Name and Commit Hash
         run: |
-          echo "VERSION: ${{ env.VERSION }}"
+          echo "BRANCH: ${{ env.BRANCH }}"
           echo "COMMIT_HASH: ${{ env.COMMIT_HASH }}"
           echo "ARTIFACT_ROOT: ${{ env.ARTIFACT_ROOT }}"
+
+      - name: Set VERSION based on tag or branch
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          else
+            echo "VERSION=DEBUG" >> $GITHUB_ENV
+          fi
 
       - name: Check out repository
         uses: actions/checkout@v4
 
       - name: Install Arduino CLI
+        if: ${{ !env.ACT }}
         uses: arduino/setup-arduino-cli@v2
         with:
           version: 0.35.3
 
       - name: Initialize the Arduino CLI Installation
+        if: ${{ !env.ACT }}
         run: arduino-cli config init
 
       - name: Add the ESP32 Board Manager Packages to Arduino CLI
+        if: ${{ !env.ACT }}
         run: arduino-cli config set board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 
       - name: Update CLI the Core Index
+        if: ${{ !env.ACT }}
         run: arduino-cli core update-index
 
       - name: Install ESP32 Core
+        if: ${{ !env.ACT }}
         run: arduino-cli core install esp32:esp32@$VERSION_ESP_Core
 
       - name: Create symlink for boards.local.txt
         run: |
           ARDUINO_DIR=$(arduino-cli config dump --format json | jq -r .directories.data)
           ln -s ${{ github.workspace }}/boards.local.txt ${ARDUINO_DIR}/packages/esp32/hardware/esp32/$VERSION_ESP_Core/boards.local.txt
-          cat ${ARDUINO_DIR}/packages/esp32/hardware/esp32/$VERSION_ESP_Core/boards.local.txt
 
       - name: Enable Unsafe Installation Flag to Enable Git Installs
         run: arduino-cli config set library.enable_unsafe_install true
-      
+
       - name: Install Required Libraries at Specified Revisions
+        if: ${{ !env.ACT }}
         run: |
           arduino-cli lib install --git-url https://github.com/adafruit/Adafruit_BusIO.git#1.14.1
           arduino-cli lib install --git-url https://github.com/adafruit/Adafruit-GFX-Library.git#1.11.5
@@ -110,54 +123,45 @@ jobs:
           arduino-cli lib install --git-url https://github.com/RobTillaart/PCA9685_RT.git#0.4.1
           arduino-cli lib install --git-url https://github.com/nickgammon/Regexp.git#0.1.1
 
-      - name: Print Installed Libraries
-        run: arduino-cli lib list
-
       - name: Create Output Directory
-        run: mkdir -p "${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.VERSION }}-${{ env.COMMIT_HASH }}"
+        run: mkdir -p "${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}"
 
       - name: Compile Application
         run: |
           set -e
 
-          VERSION="${{ env.VERSION }}"
+          BRANCH="${{ env.BRANCH }}"
           COMMIT_HASH="${{ env.COMMIT_HASH }}"
-          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${VERSION}-${COMMIT_HASH}"
+          APPLICATION="${{ matrix.application }}"
+          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${APPLICATION}/${BRANCH}-${COMMIT_HASH}"
           mkdir -p "$OUTDIR"
 
-          echo "Using OUTDIR: $OUTDIR"
-
-          if [ "$VERSION" = "main" ]; then
-            echo "Building DEBUG firmware (main branch)"
+          if [ "$VERSION" = "DEBUG" ]; then
+            echo "Building DEBUG firmware ($BRANCH)"
             arduino-cli compile \
-              -b esp32:esp32:firefly_controller ./${{ matrix.application }} \
+              -b esp32:esp32:firefly_controller ./${APPLICATION} \
               --warnings more --clean \
               --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -I${{ github.workspace }}" \
               --output-dir "$OUTDIR"
           else
             echo "Building RELEASE firmware"
             arduino-cli compile \
-              -b esp32:esp32:firefly_controller ./${{ matrix.application }} \
+              -b esp32:esp32:firefly_controller ./${APPLICATION} \
               --warnings more --clean \
               --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=0 -DVERSION=\"${VERSION}\" -DCOMMIT_HASH=\"${COMMIT_HASH}\" -I${{ github.workspace }}" \
               --output-dir "$OUTDIR"
           fi
 
-          echo "Contents of OUTDIR after compile:"
-          ls -al "$OUTDIR"
-
       - name: Create Empty Directory for Use by LittleFS
-        run: mkdir -p "${{ env.ARTIFACT_ROOT }}/empty"
+        run: mkdir -p "${{ env.ARTIFACT_ROOT }}/LittleFS"
 
       - name: Build LittleFS Images
         run: |
           set -e
 
           ARDUINO_DIR=$(arduino-cli config dump --format json | jq -r .directories.data)
-          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.VERSION }}-${{ env.COMMIT_HASH }}"
+          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}"
           mkdir -p "$OUTDIR"
-
-          echo "Building LittleFS images into: $OUTDIR"
 
           ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/mklittlefs \
             -s ${{ matrix.partition_size_www }} \
@@ -166,21 +170,66 @@ jobs:
 
           ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/mklittlefs \
             -s ${{ matrix.partition_size_config }} \
-            -c "${{ env.ARTIFACT_ROOT }}/empty" \
+            -c "${{ env.ARTIFACT_ROOT }}/LittleFS" \
             "$OUTDIR/config.bin"
 
-          echo "Contents of OUTDIR after LittleFS:"
-          ls -al "$OUTDIR"
-
-      - name: Debug artifacts directory before upload
+      - name: Generate manifest JSON
         run: |
-          echo "Listing entire artifacts tree:"
-          ls -R "${{ env.ARTIFACT_ROOT }}" || echo "No artifacts directory"
+          ROOT="${{ env.ARTIFACT_ROOT }}"
+          NAME="${{ matrix.name }}"
+          APPLICATION="${{ matrix.application }}"
+          BRANCH="${{ env.BRANCH }}"
+          VERSION="${{ env.VERSION }}"
+          COMMIT_HASH="${{ env.COMMIT_HASH }}"
+          JSON_FILE="${ROOT}/${NAME}/${APPLICATION}/${BRANCH}-${COMMIT_HASH}/manifest.json"
+
+          # Start with an empty JSON array
+          FILES_JSON=$(jq -nc '[]')
+
+          # Recursively find all files
+          while IFS= read -r f; do
+            NAME=$(basename "$f")
+            SHA1=$(sha1sum "$f" | awk '{print $1}')
+
+            FILES_JSON=$(echo "$FILES_JSON" \
+              | jq -c --arg name "$NAME" --arg sha1 "$SHA1" \
+                '. += [{name: $name, sha1: $sha1}]')
+          done < <(find "$ROOT" -type f)
+
+          # Build the final JSON object
+          jq -nc \
+            --arg class "CONTROLLER" \
+            --arg product_id "${{ matrix.name }}" \
+            --arg application "${{ matrix.application }}" \
+            --arg branch "${{ env.BRANCH }}" \
+            --arg version "${{ env.VERSION }}" \
+            --arg commit "${{ env.COMMIT_HASH }}" \
+            --argjson files "$FILES_JSON" \
+            '{
+              class: $class,
+              product_id: $product_id,
+              application: $application,
+              branch: $branch,
+              version: $version,
+              commit: $commit,
+              files: $files
+            }' > "$JSON_FILE"
 
       - uses: actions/upload-artifact@v4
         name: Upload Artifacts
         with:
           retention-days: 1
           if-no-files-found: error
-          name: ${{ matrix.name }}-${{ matrix.application }}-${{ env.VERSION }}-${{ env.COMMIT_HASH }}
-          path: ${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.VERSION }}-${{ env.COMMIT_HASH }}/*
+          name: ${{ matrix.name }}-${{ matrix.application }}-${{ env.BRANCH }}-${{ env.COMMIT_HASH }}
+          path: ${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}/*
+
+      - name: Upload ZIP to S3
+        uses: NotCoffee418/s3-zip-upload@v1.5
+        env:
+          AWS_SECRET_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
+          BUCKET_NAME: ${{ secrets.S3_FIRMWARE_BUCKET_NAME }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          SOURCE_MODE: ZIP
+          SOURCE_PATH: ${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}
+          DEST_FILE: incoming/${{ matrix.name }}-${{ matrix.application }}-${{ env.BRANCH }}-${{ env.COMMIT_HASH }}.zip
