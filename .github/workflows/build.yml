@@ -51,14 +51,22 @@ jobs:
           COMMIT_HASH=${GITHUB_SHA::7}
           echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
 
-          VERSION=$GITHUB_REF_NAME
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          BRANCH=$GITHUB_REF_NAME
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
               
       - name: Echo Tag or Branch Name and Commit Hash
         run: |
-          echo "VERSION: ${{ env.VERSION }}"
+          echo "BRANCH: ${{ env.BRANCH }}"
           echo "COMMIT_HASH: ${{ env.COMMIT_HASH }}"
           echo "ARTIFACT_ROOT: ${{ env.ARTIFACT_ROOT }}"
+
+      - name: Set VERSION based on tag or branch
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          else
+            echo "VERSION=DEBUG" >> $GITHUB_ENV
+          fi
 
       - name: Check out repository
         uses: actions/checkout@v4
@@ -120,22 +128,22 @@ jobs:
         run: arduino-cli lib list
 
       - name: Create Output Directory
-        run: mkdir -p "${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.VERSION }}-${{ env.COMMIT_HASH }}"
+        run: mkdir -p "${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}"
 
       - name: Compile Application
         run: |
           set -e
 
-          VERSION="${{ env.VERSION }}"
+          BRANCH="${{ env.BRANCH }}"
           COMMIT_HASH="${{ env.COMMIT_HASH }}"
           APPLICATION="${{ matrix.application }}"
-          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${APPLICATION}/${VERSION}-${COMMIT_HASH}"
+          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${APPLICATION}/${BRANCH}-${COMMIT_HASH}"
           mkdir -p "$OUTDIR"
 
           echo "Using OUTDIR: $OUTDIR"
 
-          if [ "$VERSION" = "main" ]; then
-            echo "Building DEBUG firmware (main branch)"
+          if [ "$VERSION" = "DEBUG" ]; then
+            echo "Building DEBUG firmware ($BRANCH)"
             arduino-cli compile \
               -b esp32:esp32:firefly_controller ./${APPLICATION} \
               --warnings more --clean \
@@ -161,7 +169,7 @@ jobs:
           set -e
 
           ARDUINO_DIR=$(arduino-cli config dump --format json | jq -r .directories.data)
-          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.VERSION }}-${{ env.COMMIT_HASH }}"
+          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}"
           mkdir -p "$OUTDIR"
 
           echo "Building LittleFS images into: $OUTDIR"
@@ -184,9 +192,10 @@ jobs:
           ROOT="${{ env.ARTIFACT_ROOT }}"
           NAME="${{ matrix.name }}"
           APPLICATION="${{ matrix.application }}"
+          BRANCH="${{ env.BRANCH }}"
           VERSION="${{ env.VERSION }}"
           COMMIT_HASH="${{ env.COMMIT_HASH }}"
-          JSON_FILE="${ROOT}/${NAME}/${APPLICATION}/${VERSION}-${COMMIT_HASH}/manifest.json"
+          JSON_FILE="${ROOT}/${NAME}/${APPLICATION}/${BRANCH}-${COMMIT_HASH}/manifest.json"
 
           # Start with an empty JSON array
           FILES_JSON=$(jq -nc '[]')
@@ -205,12 +214,14 @@ jobs:
           jq -nc \
             --arg product_id "${{ matrix.name }}" \
             --arg application "${{ matrix.application }}" \
+            --arg branch "${{ env.BRANCH }}" \
             --arg version "${{ env.VERSION }}" \
             --arg commit "${{ env.COMMIT_HASH }}" \
             --argjson files "$FILES_JSON" \
             '{
               product_id: $product_id,
               application: $application,
+              branch: $branch,
               version: $version,
               commit: $commit,
               files: $files
@@ -224,8 +235,8 @@ jobs:
         with:
           retention-days: 1
           if-no-files-found: error
-          name: ${{ matrix.name }}-${{ matrix.application }}-${{ env.VERSION }}-${{ env.COMMIT_HASH }}
-          path: ${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.VERSION }}-${{ env.COMMIT_HASH }}/*
+          name: ${{ matrix.name }}-${{ matrix.application }}-${{ env.BRANCH }}-${{ env.COMMIT_HASH }}
+          path: ${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}/*
 
       - name: Upload ZIP to S3
         uses: NotCoffee418/s3-zip-upload@v1.5
@@ -235,5 +246,5 @@ jobs:
           BUCKET_NAME: ${{ secrets.S3_FIRMWARE_BUCKET_NAME }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           SOURCE_MODE: ZIP
-          SOURCE_PATH: ${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.VERSION }}-${{ env.COMMIT_HASH }}
-          DEST_FILE: ${{ matrix.name }}-${{ matrix.application }}-${{ env.VERSION }}-${{ env.COMMIT_HASH }}.zip
+          SOURCE_PATH: ${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}
+          DEST_FILE: ${{ matrix.name }}-${{ matrix.application }}-${{ env.BRANCH }}-${{ env.COMMIT_HASH }}.zip
