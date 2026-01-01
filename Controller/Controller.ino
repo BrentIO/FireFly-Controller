@@ -3968,7 +3968,7 @@ void mqtt_publish_heapLargestFreeBlock(){
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_STATE_PATTERN, externalEEPROM.data.uuid);
 
   char buf[12];
-  sprintf(buf, "%ul", (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
+  sprintf(buf, "%lu", (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
 
   mqttClient.publish(state_topic, buf, false);
 }
