@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         application:
-          #- Controller
+          - Controller
           - Hardware-Registration-and-Configuration
           
         product_hex:
