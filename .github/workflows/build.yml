@@ -198,6 +198,7 @@ jobs:
 
           # Build the final JSON object
           jq -nc \
+            --arg class "CONTROLLER" \
             --arg product_id "${{ matrix.name }}" \
             --arg application "${{ matrix.application }}" \
             --arg branch "${{ env.BRANCH }}" \
@@ -205,6 +206,7 @@ jobs:
             --arg commit "${{ env.COMMIT_HASH }}" \
             --argjson files "$FILES_JSON" \
             '{
+              class: $class,
               product_id: $product_id,
               application: $application,
               branch: $branch,
