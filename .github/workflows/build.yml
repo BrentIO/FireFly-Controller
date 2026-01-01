@@ -97,7 +97,6 @@ jobs:
         run: |
           ARDUINO_DIR=$(arduino-cli config dump --format json | jq -r .directories.data)
           ln -s ${{ github.workspace }}/boards.local.txt ${ARDUINO_DIR}/packages/esp32/hardware/esp32/$VERSION_ESP_Core/boards.local.txt
-          cat ${ARDUINO_DIR}/packages/esp32/hardware/esp32/$VERSION_ESP_Core/boards.local.txt
 
       - name: Enable Unsafe Installation Flag to Enable Git Installs
         run: arduino-cli config set library.enable_unsafe_install true
@@ -124,9 +123,6 @@ jobs:
           arduino-cli lib install --git-url https://github.com/RobTillaart/PCA9685_RT.git#0.4.1
           arduino-cli lib install --git-url https://github.com/nickgammon/Regexp.git#0.1.1
 
-      - name: Print Installed Libraries
-        run: arduino-cli lib list
-
       - name: Create Output Directory
         run: mkdir -p "${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}"
 
@@ -139,8 +135,6 @@ jobs:
           APPLICATION="${{ matrix.application }}"
           OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${APPLICATION}/${BRANCH}-${COMMIT_HASH}"
           mkdir -p "$OUTDIR"
-
-          echo "Using OUTDIR: $OUTDIR"
 
           if [ "$VERSION" = "DEBUG" ]; then
             echo "Building DEBUG firmware ($BRANCH)"
@@ -158,9 +152,6 @@ jobs:
               --output-dir "$OUTDIR"
           fi
 
-          echo "Contents of OUTDIR after compile:"
-          ls -al "$OUTDIR"
-
       - name: Create Empty Directory for Use by LittleFS
         run: mkdir -p "${{ env.ARTIFACT_ROOT }}/LittleFS"
 
@@ -172,8 +163,6 @@ jobs:
           OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}"
           mkdir -p "$OUTDIR"
 
-          echo "Building LittleFS images into: $OUTDIR"
-
           ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/mklittlefs \
             -s ${{ matrix.partition_size_www }} \
             -c ${{ github.workspace }}/${{ matrix.application }}/www \
@@ -183,9 +172,6 @@ jobs:
             -s ${{ matrix.partition_size_config }} \
             -c "${{ env.ARTIFACT_ROOT }}/LittleFS" \
             "$OUTDIR/config.bin"
-
-          echo "Contents of OUTDIR after LittleFS:"
-          ls -al "$OUTDIR"
 
       - name: Generate manifest JSON
         run: |
@@ -226,9 +212,6 @@ jobs:
               commit: $commit,
               files: $files
             }' > "$JSON_FILE"
-
-          echo "Wrote $JSON_FILE"
-          cat $JSON_FILE
 
       - uses: actions/upload-artifact@v4
         name: Upload Artifacts
