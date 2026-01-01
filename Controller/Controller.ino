@@ -3899,7 +3899,7 @@ void mqtt_autoDiscovery_heapLargestFreeBlock(){
 
   DynamicJsonDocument doc(1024);
 
-  char topic[MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_STATE_PATTERN_LENGTH+1];
+  char topic[MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_AUTO_DISCOVERY_LENGTH+1];
   snprintf(topic, sizeof(topic), MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
 
   char unique_id[MQTT_HEAP_LARGEST_FREE_BLOCK_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
