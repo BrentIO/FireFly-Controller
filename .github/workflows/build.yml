@@ -232,4 +232,4 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           SOURCE_MODE: ZIP
           SOURCE_PATH: ${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}
-          DEST_FILE: ${{ matrix.name }}-${{ matrix.application }}-${{ env.BRANCH }}-${{ env.COMMIT_HASH }}.zip
+          DEST_FILE: incoming/${{ matrix.name }}-${{ matrix.application }}-${{ env.BRANCH }}-${{ env.COMMIT_HASH }}.zip
