@@ -71,6 +71,41 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Update Swagger version
+        run: |
+          BRANCH="${{ env.BRANCH }}"
+          COMMIT_HASH="${{ env.COMMIT_HASH }}"
+          VERSION="${{ env.VERSION }}"
+          if [ "${VERSION}" = "DEBUG" ]; then
+            sed -i "s/^  version: .*/  version: \"${VERSION} (${COMMIT_HASH})\"/" ./${{ matrix.application }}/swagger.yaml
+          else
+            sed -i "s/^  version: .*/  version: \"${BRANCH} (${COMMIT_HASH})\"/" ./${{ matrix.application }}/swagger.yaml
+          fi
+
+          cp ./${{ matrix.application }}/swagger.yaml ${{ github.workspace }}/${{ matrix.application }}/www
+          head -n 10  ${{ github.workspace }}/${{ matrix.application }}/www/swagger.yaml
+
+      - name: Update UI version (version.json)
+        run: |
+          BRANCH="${{ env.BRANCH }}"
+          COMMIT_HASH="${{ env.COMMIT_HASH }}"
+          VERSION="${{ env.VERSION }}"
+
+          if [ "${VERSION}" = "DEBUG" ]; then
+            UI_VERSION="${VERSION} (${COMMIT_HASH})"
+          else
+            UI_VERSION="${BRANCH} (${COMMIT_HASH})"
+          fi
+
+          jq --arg v "$UI_VERSION" '.ui = $v' \
+            "${{ github.workspace }}/${{ matrix.application }}/www/version.json" \
+            > version.json.tmp
+
+          mv version.json.tmp "${{ github.workspace }}/${{ matrix.application }}/www/version.json"
+
+          echo "Updated version.json:"
+          cat "${{ github.workspace }}/${{ matrix.application }}/www/version.json"
+
       - name: Install Arduino CLI
         if: ${{ !env.ACT }}
         uses: arduino/setup-arduino-cli@v2
