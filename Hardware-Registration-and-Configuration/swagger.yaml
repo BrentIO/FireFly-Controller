@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: FireFly Hardware Registration and Configuration
   description: Retrieve and set data required for hardware registration
-  version: 2024.5.16
+  version: ""
 servers:
   - url: http://{domain}
     variables:
