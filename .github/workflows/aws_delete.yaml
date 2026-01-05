@@ -5,7 +5,6 @@ on:
 
 jobs:
   delete-s3:
-    if: github.actor == 'BrentIO'
     environment: production
 
     name: Delete S3 Firmware Bucket
@@ -33,7 +32,6 @@ jobs:
             --no-prompts
 
   delete-api:
-    if: github.actor == 'BrentIO'
     environment: production
 
     name: Delete API Stack
@@ -60,7 +58,6 @@ jobs:
             --no-prompts
 
   delete-lambdas:
-    if: github.actor == 'BrentIO'
     environment: production
 
     name: Delete Lambda Stack

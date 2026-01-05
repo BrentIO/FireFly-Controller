@@ -5,7 +5,6 @@ on:
 
 jobs:
   deploy-s3:
-    if: github.actor == 'BrentIO'
     environment: production
 
     name: Deploy S3 Firmware Bucket
@@ -42,7 +41,6 @@ jobs:
             --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }}
 
   deploy-api:
-    if: github.actor == 'BrentIO'
     environment: production
 
     name: Deploy API Stack
@@ -86,7 +84,6 @@ jobs:
             --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }}
 
   deploy-lambdas:
-    if: github.actor == 'BrentIO'
     environment: production
 
     name: Deploy Lambda Stack
