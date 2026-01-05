@@ -9,6 +9,8 @@ env:
 jobs:
 
   ConfigureAndBuild:
+    environment: production
+
     name: Build all firmware
     runs-on: ubuntu-24.04
 
