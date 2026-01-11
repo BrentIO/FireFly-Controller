@@ -237,11 +237,11 @@ jobs:
           # Recursively find all files
           while IFS= read -r f; do
             NAME=$(basename "$f")
-            SHA1=$(sha1sum "$f" | awk '{print $1}')
+            SHA256=$(sha256sum "$f" | awk '{print $1}')
 
             FILES_JSON=$(echo "$FILES_JSON" \
-              | jq -c --arg name "$NAME" --arg sha1 "$SHA1" \
-                '. += [{name: $name, sha1: $sha1}]')
+              | jq -c --arg name "$NAME" --arg sha256 "$SHA256" \
+                '. += [{name: $name, sha256: $sha256}]')
           done < <(find "$ROOT" -type f)
 
           # Build the final JSON object
