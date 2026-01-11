@@ -25,13 +25,13 @@ jobs:
         uses: aws-actions/setup-sam@v2
 
       - name: Build SAM application
-        run: sam build --template-file Cloud/template-s3.yaml
+        run: sam build --template-file Cloud/templates/s3-create-bucket-firmware.yaml
 
       - name: Create S3 Bucket for Firmware
         run: |
           sam deploy \
             --role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ vars.CLOUD_FORMATION_EXECUTION_ROLE_NAME }} \
-            --template-file Cloud/template-s3.yaml \
+            --template-file Cloud/templates/s3-create-bucket-firmware.yaml \
             --stack-name firefly-s3-firmware-bucket-stack \
             --capabilities CAPABILITY_IAM \
             --region ${{ secrets.AWS_REGION }} \
@@ -64,13 +64,13 @@ jobs:
         uses: aws-actions/setup-sam@v2
 
       - name: Build API SAM application
-        run: sam build --template-file Cloud/template-api.yaml
+        run: sam build --template-file Cloud/templates/api-gateway.yaml
 
       - name: Deploy API Gateway + Custom Domain
         run: |
           sam deploy \
             --role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ vars.CLOUD_FORMATION_EXECUTION_ROLE_NAME }} \
-            --template-file Cloud/template-api.yaml \
+            --template-file Cloud/templates/api-gateway.yaml \
             --stack-name firefly-api-stack \
             --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
             --region ${{ secrets.AWS_REGION }} \
