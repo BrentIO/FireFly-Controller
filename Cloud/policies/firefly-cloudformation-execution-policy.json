@@ -16,7 +16,7 @@
                 "iam:ListRolePolicies",
                 "iam:PassRole"
             ],
-            "Resource": "arn:aws:iam::AWS_ACCOUNT_ID:role/firefly-lambda-stack-*"
+            "Resource": "arn:aws:iam::AWS_ACCOUNT_ID:role/firefly-func-*"
         },
         {
             "Effect": "Allow",
@@ -32,7 +32,7 @@
                 "lambda:GetFunction",
                 "lambda:GetFunctionConfiguration"
             ],
-            "Resource": "arn:aws:lambda:AWS_REGION:AWS_ACCOUNT_ID:function:firefly-*"
+            "Resource": "arn:aws:lambda:AWS_REGION:AWS_ACCOUNT_ID:function:firefly-func-*"
         },
         {
             "Effect": "Allow",
@@ -163,7 +163,7 @@
             "Resource": [
                 "arn:aws:logs:AWS_REGION:AWS_ACCOUNT_ID:log-group:/aws/apigateway/firefly-api-access-logs:*",
                 "arn:aws:logs:AWS_REGION:AWS_ACCOUNT_ID:log-group:/aws/apigateway/firefly-api-access-logs*",
-                "arn:aws:logs:AWS_REGION:AWS_ACCOUNT_ID:log-group:/aws/lambda/firefly-*:*"
+                "arn:aws:logs:AWS_REGION:AWS_ACCOUNT_ID:log-group:/aws/lambda/firefly-func-*:*"
             ]
         },
         {

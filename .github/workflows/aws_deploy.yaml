@@ -6,7 +6,6 @@ on:
 jobs:
   deploy-s3:
     environment: production
-
     name: Deploy S3 Firmware Bucket
     runs-on: ubuntu-latest
 
