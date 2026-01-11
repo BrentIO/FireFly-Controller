@@ -41,12 +41,12 @@ jobs:
 
   deploy-api:
     environment: production
-
     name: Deploy API Stack
     runs-on: ubuntu-latest
+    needs: deploy-s3
 
-    outputs: 
-      ApiId: ${{ steps.get-api-id.outputs.apiid }}
+    outputs:
+      ApiId: ${{ steps.parse-api-id.outputs.apiid }}
 
     steps:
       - name: Checkout repository
@@ -82,15 +82,20 @@ jobs:
             --no-fail-on-empty-changeset \
             --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }}
 
-  deploy-lambdas:
-    environment: production
+      - name: Retrieve SAM Outputs
+        id: parse-api-id
+        run: |
+          apiid=$(aws cloudformation describe-stacks --stack-name firefly-api-stack \
+            --query "Stacks[0].Outputs[?OutputKey=='ApiId'].OutputValue" --output text)
+          echo "apiid=$apiid" >> $GITHUB_OUTPUT
 
-    name: Deploy Lambda Stack
+  deploy-func-api-health:
+    environment: production
+    name: Deploy func-api-health
     runs-on: ubuntu-latest
     needs: deploy-api
 
     steps:
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -105,35 +110,96 @@ jobs:
         if: ${{ !env.ACT }}
         uses: aws-actions/setup-sam@v2
 
-      - name: Retrieve SAM Outputs
-        run: sam list stack-outputs --stack-name firefly-api-stack --output json > firefly-stack-outputs.json
+      - name: Build Health API stack
+        run: sam build --template-file Cloud/lambdas/func-api-health/template.yaml
 
-      - name: Parse API ID
-        id: parse-api-id
-        run: |
-          apiid=$(jq -r '.[] | select(.OutputKey=="ApiId") | .OutputValue' firefly-stack-outputs.json)
-          echo "apiid=$apiid" >> $GITHUB_OUTPUT
-
-      - name: Validate API ID
-        run: |
-          if [ -z "${{ steps.parse-api-id.outputs.apiid }}" ] || [ "${{ steps.parse-api-id.outputs.apiid }}" = "null" ]; then
-            echo "ERROR: ApiId is empty or null"
-            exit 1
-          fi
-          echo "ApiId is valid: ${{ steps.parse-api-id.outputs.apiid }}"
-
-      - name: Build Lambda stack
-        run: sam build --template-file Cloud/template-lambda.yaml
-
-      - name: Deploy Lambda stack
+      - name: Deploy Health API stack
         run: |
           sam deploy \
             --role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ vars.CLOUD_FORMATION_EXECUTION_ROLE_NAME }} \
-            --template-file Cloud/template-lambda.yaml \
-            --stack-name firefly-lambda-stack \
+            --template-file Cloud/lambdas/func-api-health/template.yaml \
+            --stack-name firefly-func-api-health \
             --capabilities CAPABILITY_IAM \
             --region ${{ secrets.AWS_REGION }} \
             --parameter-overrides \
-              ApiId=${{ steps.parse-api-id.outputs.apiid }} \
+              ApiId=${{ needs.deploy-api.outputs.ApiId }} \
+            --no-confirm-changeset \
+            --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }}
+
+  deploy-func-s3-firmware-uploaded:
+    environment: production
+    name: Deploy func-s3-firmware-uploaded
+    runs-on: ubuntu-latest
+    needs: deploy-s3
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install AWS SAM CLI
+        if: ${{ !env.ACT }}
+        uses: aws-actions/setup-sam@v2
+
+      - name: Build firmware uploaded Lambda stack
+        run: sam build --template-file Cloud/lambdas/func-s3-firmware-uploaded/template.yaml
+
+      - name: Deploy firmware uploaded Lambda stack
+        run: |
+          sam deploy \
+            --role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ vars.CLOUD_FORMATION_EXECUTION_ROLE_NAME }} \
+            --template-file Cloud/lambdas/func-s3-firmware-uploaded/template.yaml \
+            --stack-name firefly-func-s3-firmware-uploaded \
+            --capabilities CAPABILITY_IAM \
+            --region ${{ secrets.AWS_REGION }} \
+            --parameter-overrides \
+              FirmwareBucketName=${{ secrets.S3_FIRMWARE_BUCKET_NAME }} \
+              SuccessTableName=${{ vars.DDB_FIRMWARE_SUCCESS_TABLE_NAME }} \
+              ErrorTableName=${{ vars.DDB_FIRMWARE_ERROR_TABLE_NAME }} \
+            --no-confirm-changeset \
+            --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }}
+
+  deploy-func-s3-firmware-deleted:
+    environment: production
+    name: Deploy func-s3-firmware-deleted
+    runs-on: ubuntu-latest
+    needs: deploy-s3
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install AWS SAM CLI
+        if: ${{ !env.ACT }}
+        uses: aws-actions/setup-sam@v2
+
+      - name: Build firmware deleted Lambda stack
+        run: sam build --template-file Cloud/lambdas/func-s3-firmware-deleted/template.yaml
+
+      - name: Deploy firmware deleted Lambda stack
+        run: |
+          sam deploy \
+            --role-arn arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ vars.CLOUD_FORMATION_EXECUTION_ROLE_NAME }} \
+            --template-file Cloud/lambdas/func-s3-firmware-deleted/template.yaml \
+            --stack-name firefly-func-s3-firmware-deleted \
+            --capabilities CAPABILITY_IAM \
+            --region ${{ secrets.AWS_REGION }} \
+            --parameter-overrides \
+              FirmwareBucketName=${{ secrets.S3_FIRMWARE_BUCKET_NAME }} \
+              SuccessTableName=${{ vars.DDB_FIRMWARE_SUCCESS_TABLE_NAME }} \
+              ErrorTableName=${{ vars.DDB_FIRMWARE_ERROR_TABLE_NAME }} \
             --no-confirm-changeset \
             --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }}

@@ -4,11 +4,9 @@ on:
   workflow_dispatch
 
 jobs:
-  delete-s3:
+  delete-lambdas:
     environment: production
-
-    name: Delete S3 Firmware Bucket
-
+    name: Delete Lambda Stacks
     runs-on: ubuntu-latest
 
     steps:
@@ -23,19 +21,35 @@ jobs:
         if: ${{ !env.ACT }}
         uses: aws-actions/setup-sam@v2
 
-      - name: Delete S3 Bucket for Firmware stack
+      - name: Delete func-api-health
         run: |
           sam delete \
-            --stack-name firefly-s3-firmware-bucket-stack \
+            --stack-name firefly-func-api-health \
+            --region ${{ secrets.AWS_REGION }} \
+            --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }} \
+            --no-prompts
+
+      - name: Delete func-s3-firmware-uploaded
+        run: |
+          sam delete \
+            --stack-name firefly-func-s3-firmware-uploaded \
+            --region ${{ secrets.AWS_REGION }} \
+            --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }} \
+            --no-prompts
+
+      - name: Delete func-s3-firmware-deleted
+        run: |
+          sam delete \
+            --stack-name firefly-func-s3-firmware-deleted \
             --region ${{ secrets.AWS_REGION }} \
             --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }} \
             --no-prompts
 
   delete-api:
     environment: production
-
     name: Delete API Stack
     runs-on: ubuntu-latest
+    needs: delete-lambdas
 
     steps:
       - name: Configure AWS credentials
@@ -57,10 +71,9 @@ jobs:
             --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }} \
             --no-prompts
 
-  delete-lambdas:
+  delete-s3:
     environment: production
-
-    name: Delete Lambda Stack
+    name: Delete S3 Firmware Bucket
     runs-on: ubuntu-latest
 
     steps:
@@ -75,10 +88,10 @@ jobs:
         if: ${{ !env.ACT }}
         uses: aws-actions/setup-sam@v2
 
-      - name: Delete Lambda stack
+      - name: Delete S3 Bucket for Firmware stack
         run: |
           sam delete \
-            --stack-name firefly-lambda-stack \
+            --stack-name firefly-s3-firmware-bucket-stack \
             --region ${{ secrets.AWS_REGION }} \
             --s3-bucket ${{ secrets.SAM_DEPLOYMENT_BUCKET_NAME }} \
-              --no-prompts
+            --no-prompts
