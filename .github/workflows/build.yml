@@ -65,7 +65,15 @@ jobs:
       - name: Set VERSION based on tag or branch
         run: |
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then
-            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+            TAG="${GITHUB_REF#refs/tags/}"
+            echo "VERSION=$TAG" >> $GITHUB_ENV
+            echo "Release tag: $TAG"
+
+            if [[ ! "$TAG" =~ ^[0-9]{4}\.(0[1-9]|1[0-2])\.[0-9]{2}$ ]]; then
+              echo "❌ Invalid tag format. Expected YYYY.MM.bb"
+              exit 1
+            fi
+  
           else
             echo "VERSION=DEBUG" >> $GITHUB_ENV
           fi
