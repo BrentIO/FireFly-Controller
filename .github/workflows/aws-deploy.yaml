@@ -1,4 +1,4 @@
-name: 🚀 Deploy FireFly AWS Stack
+name: 🚀 Deploy FireFly AWS Infrastructure
 
 on:
   workflow_dispatch
