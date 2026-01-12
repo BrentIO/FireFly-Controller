@@ -90,7 +90,8 @@
                 "s3:PutBucketPublicAccessBlock",
                 "s3:PutEncryptionConfiguration",
                 "s3:GetBucketLocation",
-                "s3:PutLifecycleConfiguration"
+                "s3:PutLifecycleConfiguration",
+                "s3:PutBucketNotification"
             ],
             "Resource": "arn:aws:s3:::S3_FIRMWARE_BUCKET_NAME"
         },
@@ -99,7 +100,8 @@
             "Action": [
                 "s3:PutObject",
                 "s3:DeleteObject",
-                "s3:GetObject"
+                "s3:GetObject",
+                "s3:PutBucketNotification"
             ],
             "Resource": "arn:aws:s3:::S3_FIRMWARE_BUCKET_NAME/*"
         },
@@ -196,6 +198,18 @@
                 "cloudformation:DeleteChangeSet"
             ],
             "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:CreateTable",
+                "dynamodb:DescribeTable",
+                "dynamodb:UpdateTable",
+                "dynamodb:DeleteTable",
+                "dynamodb:UpdateTimeToLive",
+                "dynamodb:DescribeTimeToLive"
+            ],
+            "Resource": "arn:aws:dynamodb:*:AWS_ACCOUNT_ID:table/firefly-*"
         }
     ]
 }
