@@ -1,27 +1,40 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: HTTP API Gateway with custom domain (certificate provided externally)
+Description: HTTP API Gateway with custom domain and ACM certificate
 
 Parameters:
   ApiDomainName:
     Type: String
     Description: The custom domain for the API (e.g., api.p5software.com)
 
-  CertificateArn:
+  CertificateDomainName:
     Type: String
-    Description: ARN of the ACM certificate created in the certificate stack
+    Description: The domain name for the ACM certificate (e.g., *.p5software.com)
 
   HostedZoneId:
     Type: String
-    Description: Route53 Hosted Zone ID for the domain
+    Description: Route53 Hosted Zone ID for p5software.com
 
 Resources:
+
+  ApiCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref CertificateDomainName
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !Ref CertificateDomainName
+          HostedZoneId: !Ref HostedZoneId
+      Tags:
+        - Key: Name 
+          Value: firefly-api-certificate
 
   ApiGateway:
     Type: AWS::Serverless::HttpApi
     Properties:
-      Name: FireFly
+      Name: firefly-api-gateway
       Description: FireFly HTTPS API Gateway
+      StageName: $default
       DisableExecuteApiEndpoint: true
       AccessLogSettings:
         DestinationArn: !GetAtt ApiAccessLogGroup.Arn
@@ -29,26 +42,18 @@ Resources:
       Tags:
         Name: firefly-api-gateway
 
-  ApiStage:
-    Type: AWS::ApiGatewayV2::Stage
-    Properties:
-      ApiId: !Ref ApiGateway
-      StageName: '$default'
-      AutoDeploy: true
-
   ApiCustomDomain:
     Type: AWS::ApiGatewayV2::DomainName
+    DependsOn: ApiCertificate
     Properties:
       DomainName: !Ref ApiDomainName
       DomainNameConfigurations:
-        - CertificateArn: !Ref CertificateArn
+        - CertificateArn: !Ref ApiCertificate
           EndpointType: REGIONAL
 
   ApiBasePathMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
-    DependsOn:
-      - ApiStage
-      - ApiCustomDomain
+    DependsOn: ApiCustomDomain
     Properties:
       ApiId: !Ref ApiGateway
       DomainName: !Ref ApiCustomDomain
@@ -64,7 +69,7 @@ Resources:
       AliasTarget:
         DNSName: !GetAtt ApiCustomDomain.RegionalDomainName
         HostedZoneId: !GetAtt ApiCustomDomain.RegionalHostedZoneId
-
+  
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     DeletionPolicy: Delete
@@ -78,7 +83,7 @@ Outputs:
   ApiUrl:
     Value: !Sub "https://${ApiDomainName}"
     Description: Custom API URL
-
+    
   ApiId:
     Value: !Ref ApiGateway
     Description: ID of the HTTP API
