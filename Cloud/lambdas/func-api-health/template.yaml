@@ -31,6 +31,8 @@ Resources:
       CodeUri: .
       Handler: app.health
       Runtime: python3.12
+      Architectures:
+        - arm64
       Timeout: 5
 
   FuncApiHealthIntegration:

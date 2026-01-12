@@ -10,8 +10,7 @@ from urllib.parse import unquote_plus
 s3 = boto3.client("s3")
 dynamodb = boto3.resource("dynamodb")
 
-SUCCESS_TABLE = os.environ["DDB_SUCCESS_TABLE"]
-ERROR_TABLE = os.environ["DDB_ERROR_TABLE"]
+TABLE_NAME = os.environ["DYNAMODB_FIRMWARE_TABLE_NAME"]
 
 INCOMING_PREFIX = "incoming/"
 PROCESSING_PREFIX = "processing/"
@@ -19,8 +18,7 @@ PROCESSED_PREFIX = "processed/"
 ERROR_PREFIX = "errors/"
 TMP_DIR = "/tmp"
 
-success_table = dynamodb.Table(SUCCESS_TABLE)
-error_table = dynamodb.Table(ERROR_TABLE)
+firmware_table = dynamodb.Table(TABLE_NAME)
 
 
 def sha256_file(path):
@@ -52,17 +50,32 @@ def validate_manifest_schema(manifest):
             raise Exception(f"Invalid SHA256 for {entry['name']}")
 
 
-def log_error(zip_name, error_message, original_name=None):
+def put_error_item(uuid_name, error_message, original_name=None, manifest=None):
+    product_id = "__UNKNOWN_PRODUCT__"
+    version = f"ERROR#UNKNOWN#{uuid_name}"
+
+    if isinstance(manifest, dict):
+        if "product_id" in manifest:
+            product_id = manifest["product_id"]
+        if "version" in manifest:
+            version = f"ERROR#{manifest['version']}#{uuid_name}"
+
     item = {
-        "zip_name": zip_name,
+        "product_id": product_id,
+        "version": version,
+        "release_status": "ERROR",
         "error": error_message,
+        "zip_name": uuid_name,
         "timestamp": int(time.time()),
-        "deleted": False
+        "deleted": False,
     }
+
     if original_name:
         item["original_name"] = original_name
+    if manifest is not None:
+        item["manifest"] = manifest
 
-    error_table.put_item(Item=item)
+    firmware_table.put_item(Item=item)
 
 
 def move_object(bucket, source_key, dest_key):
@@ -90,15 +103,14 @@ def lambda_handler(event, context):
     processed_key = f"{PROCESSED_PREFIX}{uuid_name}"
     error_key = f"{ERROR_PREFIX}{uuid_name}"
 
+    manifest = None
+
     try:
-        # Rename incoming/<file> → processing/<uuid>.zip
         move_object(bucket, incoming_key, processing_key)
 
-        # Get metadata
         head = s3.head_object(Bucket=bucket, Key=processing_key)
         zip_size = head["ContentLength"]
 
-        # Download ZIP
         zip_path = os.path.join(TMP_DIR, uuid_name)
         s3.download_file(bucket, processing_key, zip_path)
 
@@ -117,10 +129,11 @@ def lambda_handler(event, context):
         with open(manifest_path) as f:
             manifest = json.load(f)
 
-        # Validate manifest structure
         validate_manifest_schema(manifest)
 
-        # Validate file hashes
+        product_id = manifest["product_id"]
+        version = manifest["version"]
+
         for entry in manifest["files"]:
             file_path = os.path.join(extract_dir, entry["name"])
             if not os.path.exists(file_path):
@@ -130,26 +143,35 @@ def lambda_handler(event, context):
             if actual_sha256 != entry["sha256"]:
                 raise Exception(f"SHA256 mismatch for {entry['name']}")
 
-        # Write success record
-        success_table.put_item(
-            Item={
-                "zip_name": uuid_name,
-                "original_name": original_filename,
-                "manifest": manifest,
-                "zip_sha256": zip_sha256,
-                "zip_size": zip_size,
-                "uploaded_at": int(time.time()),
-                "deleted": False
-            }
-        )
+        item = {
+            "product_id": product_id,
+            "version": version,
+            "class": manifest.get("class"),
+            "application": manifest.get("application"),
+            "branch": manifest.get("branch"),
+            "commit": manifest.get("commit"),
+            "created": manifest.get("created"),
+            "files": manifest.get("files", []),
+            "zip_name": uuid_name,
+            "original_name": original_filename,
+            "zip_sha256": zip_sha256,
+            "zip_size": zip_size,
+            "uploaded_at": int(time.time()),
+            "deleted": False,
+            "release_status": "PROCESSING",
+        }
 
-        # Move to processed/
+        firmware_table.put_item(Item=item)
+
         move_object(bucket, processing_key, processed_key)
 
     except Exception as e:
-        error_message = str(e)
-
-        log_error(uuid_name, error_message, original_name=original_filename)
+        put_error_item(
+            uuid_name,
+            str(e),
+            original_name=original_filename,
+            manifest=manifest,
+        )
 
         try:
             move_object(bucket, processing_key, error_key)

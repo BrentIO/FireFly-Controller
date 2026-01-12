@@ -3,11 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: Handles deletion of firmware ZIPs and updates DynamoDB TTL
 
 Parameters:
-  FirmwareBucketName:
-    Type: String
-  SuccessTableName:
-    Type: String
-  ErrorTableName:
+  DynamoDbFirmwareTableName:
     Type: String
 
 Resources:
@@ -33,9 +29,9 @@ Resources:
               - Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
+                  - dynamodb:Scan
                 Resource:
-                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${SuccessTableName}
-                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ErrorTableName}
+                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DynamoDbFirmwareTableName}
 
   FuncS3FirmwareDeleted:
     Type: AWS::Serverless::Function
@@ -45,38 +41,12 @@ Resources:
       CodeUri: .
       Handler: app.lambda_handler
       Runtime: python3.12
+      Architectures:
+        - arm64
       Timeout: 30
       Environment:
         Variables:
-          DDB_SUCCESS_TABLE: !Ref SuccessTableName
-          DDB_ERROR_TABLE: !Ref ErrorTableName
-      Events:
-        FirmwareZipDeletedProcessed:
-          Type: S3
-          Properties:
-            Bucket: !Ref FirmwareBucketName
-            Events:
-              - s3:ObjectRemoved:*
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: prefix
-                    Value: processed/
-                  - Name: suffix
-                    Value: .zip
-        FirmwareZipDeletedErrors:
-          Type: S3
-          Properties:
-            Bucket: !Ref FirmwareBucketName
-            Events:
-              - s3:ObjectRemoved:*
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: prefix
-                    Value: errors/
-                  - Name: suffix
-                    Value: .zip
+          DYNAMODB_FIRMWARE_TABLE_NAME: !Ref DynamoDbFirmwareTableName
 
 Outputs:
   FuncS3FirmwareDeletedArn:

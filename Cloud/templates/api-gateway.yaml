@@ -1,33 +1,21 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: HTTP API Gateway with custom domain and ACM certificate
+Description: HTTP API Gateway with custom domain (certificate provided externally)
 
 Parameters:
   ApiDomainName:
     Type: String
     Description: The custom domain for the API (e.g., api.p5software.com)
 
-  CertificateDomainName:
+  CertificateArn:
     Type: String
-    Description: The domain name for the ACM certificate (e.g., *.p5software.com)
+    Description: ARN of the ACM certificate created in the certificate stack
 
   HostedZoneId:
     Type: String
-    Description: Route53 Hosted Zone ID for p5software.com
+    Description: Route53 Hosted Zone ID for the domain
 
 Resources:
-
-  ApiCertificate:
-    Type: AWS::CertificateManager::Certificate
-    Properties:
-      DomainName: !Ref CertificateDomainName
-      ValidationMethod: DNS
-      DomainValidationOptions:
-        - DomainName: !Ref CertificateDomainName
-          HostedZoneId: !Ref HostedZoneId
-      Tags:
-        - Key: Name 
-          Value: firefly-api-certificate
 
   ApiGateway:
     Type: AWS::Serverless::HttpApi
@@ -44,11 +32,10 @@ Resources:
 
   ApiCustomDomain:
     Type: AWS::ApiGatewayV2::DomainName
-    DependsOn: ApiCertificate
     Properties:
       DomainName: !Ref ApiDomainName
       DomainNameConfigurations:
-        - CertificateArn: !Ref ApiCertificate
+        - CertificateArn: !Ref CertificateArn
           EndpointType: REGIONAL
 
   ApiBasePathMapping:
@@ -69,7 +56,7 @@ Resources:
       AliasTarget:
         DNSName: !GetAtt ApiCustomDomain.RegionalDomainName
         HostedZoneId: !GetAtt ApiCustomDomain.RegionalHostedZoneId
-  
+
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
     DeletionPolicy: Delete
@@ -83,7 +70,7 @@ Outputs:
   ApiUrl:
     Value: !Sub "https://${ApiDomainName}"
     Description: Custom API URL
-    
+
   ApiId:
     Value: !Ref ApiGateway
     Description: ID of the HTTP API
