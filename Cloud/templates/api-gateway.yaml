@@ -22,13 +22,19 @@ Resources:
     Properties:
       Name: FireFly
       Description: FireFly HTTPS API Gateway
-      StageName: $default
       DisableExecuteApiEndpoint: true
       AccessLogSettings:
         DestinationArn: !GetAtt ApiAccessLogGroup.Arn
         Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","routeKey":"$context.routeKey","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
       Tags:
         Name: firefly-api-gateway
+
+  ApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref ApiGateway
+      StageName: '$default'
+      AutoDeploy: true
 
   ApiCustomDomain:
     Type: AWS::ApiGatewayV2::DomainName
@@ -40,7 +46,9 @@ Resources:
 
   ApiBasePathMapping:
     Type: AWS::ApiGatewayV2::ApiMapping
-    DependsOn: ApiCustomDomain
+    DependsOn:
+      - ApiStage
+      - ApiCustomDomain
     Properties:
       ApiId: !Ref ApiGateway
       DomainName: !Ref ApiCustomDomain
