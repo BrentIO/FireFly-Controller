@@ -65,7 +65,15 @@ jobs:
       - name: Set VERSION based on tag or branch
         run: |
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then
-            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+            TAG="${GITHUB_REF#refs/tags/}"
+            echo "VERSION=$TAG" >> $GITHUB_ENV
+            echo "Release tag: $TAG"
+
+            if [[ ! "$TAG" =~ ^[0-9]{4}\.(0[1-9]|1[0-2])\.[0-9]{2}$ ]]; then
+              echo "❌ Invalid tag format. Expected YYYY.MM.bb"
+              exit 1
+            fi
+  
           else
             echo "VERSION=DEBUG" >> $GITHUB_ENV
           fi
@@ -220,17 +228,20 @@ jobs:
           COMMIT_HASH="${{ env.COMMIT_HASH }}"
           JSON_FILE="${ROOT}/${NAME}/${APPLICATION}/${BRANCH}-${COMMIT_HASH}/manifest.json"
 
+          # ISO 8601 timestamp (UTC)
+          CREATED_ISO=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
           # Start with an empty JSON array
           FILES_JSON=$(jq -nc '[]')
 
           # Recursively find all files
           while IFS= read -r f; do
             NAME=$(basename "$f")
-            SHA1=$(sha1sum "$f" | awk '{print $1}')
+            SHA256=$(sha256sum "$f" | awk '{print $1}')
 
             FILES_JSON=$(echo "$FILES_JSON" \
-              | jq -c --arg name "$NAME" --arg sha1 "$SHA1" \
-                '. += [{name: $name, sha1: $sha1}]')
+              | jq -c --arg name "$NAME" --arg sha256 "$SHA256" \
+                '. += [{name: $name, sha256: $sha256}]')
           done < <(find "$ROOT" -type f)
 
           # Build the final JSON object
@@ -241,6 +252,7 @@ jobs:
             --arg branch "${{ env.BRANCH }}" \
             --arg version "${{ env.VERSION }}" \
             --arg commit "${{ env.COMMIT_HASH }}" \
+            --arg created "$CREATED_ISO" \
             --argjson files "$FILES_JSON" \
             '{
               class: $class,
@@ -249,6 +261,7 @@ jobs:
               branch: $branch,
               version: $version,
               commit: $commit,
+              created: $created,
               files: $files
             }' > "$JSON_FILE"
 
