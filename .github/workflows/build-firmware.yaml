@@ -1,6 +1,14 @@
 name: 🛠️ Build Firmware
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        type: choice
+        description: "Select environment"
+        options:
+          - dev
+          - production
 
 env:
   VERSION_ESP_Core: 2.0.11
@@ -9,7 +17,7 @@ env:
 jobs:
 
   ConfigureAndBuild:
-    environment: production
+    environment: ${{ inputs.target_env }}
 
     name: Build all firmware
     runs-on: ubuntu-24.04
