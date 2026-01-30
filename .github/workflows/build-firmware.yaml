@@ -16,44 +16,18 @@ env:
 
 jobs:
 
+  load-matrix:
+    uses: ./.github/workflows/generate-matrix.yaml
+
   ConfigureAndBuild:
+    needs: load-matrix
     environment: ${{ inputs.target_env }}
 
     name: Build all firmware
     runs-on: ubuntu-24.04
 
     strategy:
-      matrix:
-        application:
-          - Controller
-          - Hardware-Registration-and-Configuration
-          
-        product_hex:
-          - "0x08062305"
-          - "0x32322304"
-          - "0x08062505"
-          - "0x32322505"
-
-        include:
-          - product_hex: "0x08062305"
-            name: FFC0806-2305
-            partition_size_config: "0x80000"
-            partition_size_www: "0x2E0000"
-
-          - product_hex: "0x32322304"
-            name: FFC3232-2304
-            partition_size_config: "0x80000"
-            partition_size_www: "0x2E0000"
-
-          - product_hex: "0x08062505"
-            name: FFC0806-2505
-            partition_size_config: "0x80000"
-            partition_size_www: "0x2E0000"
-            
-          - product_hex: "0x32322505"
-            name: FFC3232-2505
-            partition_size_config: "0x80000"
-            partition_size_www: "0x2E0000"
+      matrix: ${{ fromJson(needs.load-matrix.outputs.matrix) }}
 
     steps:
       - name: Set and Adjust Build Variables
@@ -177,7 +151,7 @@ jobs:
           arduino-cli lib install --git-url https://github.com/nickgammon/Regexp.git#0.1.1
 
       - name: Create Output Directory
-        run: mkdir -p "${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}"
+        run: mkdir -p "${{ env.ARTIFACT_ROOT }}/${{ matrix.product_id }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}"
 
       - name: Compile Application
         run: |
@@ -186,7 +160,7 @@ jobs:
           BRANCH="${{ env.BRANCH }}"
           COMMIT_HASH="${{ env.COMMIT_HASH }}"
           APPLICATION="${{ matrix.application }}"
-          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${APPLICATION}/${BRANCH}-${COMMIT_HASH}"
+          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.product_id }}/${APPLICATION}/${BRANCH}-${COMMIT_HASH}"
           mkdir -p "$OUTDIR"
 
           if [ "$VERSION" = "DEBUG" ]; then
@@ -212,8 +186,8 @@ jobs:
         run: |
           set -e
 
-          ARDUINO_DIR=$(arduino-cli config dump --format json | jq -r .directories.data)
-          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}"
+          ARDUINO_DIR=$(arduino-cli config dump --format json | jq -r '.config.directories.data')
+          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.product_id }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}"
           mkdir -p "$OUTDIR"
 
           ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/mklittlefs \
@@ -229,7 +203,7 @@ jobs:
       - name: Generate manifest JSON
         run: |
           ROOT="${{ env.ARTIFACT_ROOT }}"
-          NAME="${{ matrix.name }}"
+          NAME="${{ matrix.product_id }}"
           APPLICATION="${{ matrix.application }}"
           BRANCH="${{ env.BRANCH }}"
           VERSION="${{ env.VERSION }}"
@@ -255,7 +229,7 @@ jobs:
           # Build the final JSON object
           jq -nc \
             --arg class "CONTROLLER" \
-            --arg product_id "${{ matrix.name }}" \
+            --arg product_id "${{ matrix.product_id }}" \
             --arg application "${{ matrix.application }}" \
             --arg branch "${{ env.BRANCH }}" \
             --arg version "${{ env.VERSION }}" \
@@ -278,8 +252,8 @@ jobs:
         with:
           retention-days: 1
           if-no-files-found: error
-          name: ${{ matrix.name }}-${{ matrix.application }}-${{ env.BRANCH }}-${{ env.COMMIT_HASH }}
-          path: ${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}/*
+          name: ${{ matrix.product_id }}-${{ matrix.application }}-${{ env.BRANCH }}-${{ env.COMMIT_HASH }}
+          path: ${{ env.ARTIFACT_ROOT }}/${{ matrix.product_id }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}/*
 
       - name: Upload ZIP to S3
         uses: NotCoffee418/s3-zip-upload@v1.5
@@ -289,5 +263,5 @@ jobs:
           BUCKET_NAME: ${{ secrets.S3_FIRMWARE_BUCKET_NAME }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           SOURCE_MODE: ZIP
-          SOURCE_PATH: ${{ env.ARTIFACT_ROOT }}/${{ matrix.name }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}
-          DEST_FILE: incoming/${{ matrix.name }}-${{ matrix.application }}-${{ env.BRANCH }}-${{ env.COMMIT_HASH }}.zip
+          SOURCE_PATH: ${{ env.ARTIFACT_ROOT }}/${{ matrix.product_id }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}
+          DEST_FILE: incoming/${{ matrix.product_id }}-${{ matrix.application }}-${{ env.BRANCH }}-${{ env.COMMIT_HASH }}.zip
