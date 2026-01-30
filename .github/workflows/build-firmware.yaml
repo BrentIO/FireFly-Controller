@@ -122,7 +122,7 @@ jobs:
 
       - name: Create symlink for boards.local.txt
         run: |
-          ARDUINO_DIR=$(arduino-cli config dump --format json | jq -r .directories.data)
+          ARDUINO_DIR=$(arduino-cli config dump --format json | jq -r '.config.directories.data')
           ln -s ${{ github.workspace }}/boards.local.txt ${ARDUINO_DIR}/packages/esp32/hardware/esp32/$VERSION_ESP_Core/boards.local.txt
 
       - name: Enable Unsafe Installation Flag to Enable Git Installs
