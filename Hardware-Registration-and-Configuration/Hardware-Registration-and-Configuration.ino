@@ -222,27 +222,27 @@ void setup() {
   */
   httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/eeprom", http_handleEEPROM_POST));
   httpServer.on("/api/eeprom", http_handleEEPROM);
-  httpServer.on("^\/api\/mcu$", http_handleMCU);
-  httpServer.on("^\/api\/mcu\/reboot$", http_handleReboot);
+  httpServer.on("^/api/mcu$", http_handleMCU);
+  httpServer.on("^/api/mcu/reboot$", http_handleReboot);
   httpServer.on("/api/partitions", http_handlePartitions);
   httpServer.on("/api/peripherals", http_handlePeripherals);
   httpServer.on("/api/version", http_handleVersion);
   httpServer.on("/api/events", http_handleEventLog);
   httpServer.on("/api/errors", http_handleErrorLog);
-  httpServer.on("^\/api\/network\/([a-z_]+)$", http_handleNetworkInterface);
+  httpServer.on("^/api/network/([a-z_]+)$", http_handleNetworkInterface);
   httpServer.on("/api/network", http_handleNetworkInterfaceAll);
   httpServer.on("/auth", http_handleAuth);
 
   if(configFS_isMounted){
-    httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
+    httpServer.on("^/certs/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced));
   }else{
     log_e("configFS is not mounted");
-    httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_configFSNotMunted);
+    httpServer.on("^/certs/([a-z0-9_.]+)$", http_configFSNotMunted);
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_configFSNotMunted);
-    httpServer.on("^\/api\/ota\/.+$", http_configFSNotMunted);
+    httpServer.on("^/api/ota/.+$", http_configFSNotMunted);
   }
 
   if(wwwFS_isMounted){

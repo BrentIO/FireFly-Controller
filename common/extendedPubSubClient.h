@@ -42,7 +42,7 @@
     
     //Ex: FireFly/circuits/12345678/set
     #define MQTT_TOPIC_OUTPUT_SET_PATTERN WORD_FIREFLY_SLASH "circuits/%s/set"              //%s = Output ID
-    #define MQTT_TOPIC_OUTPUT_SET_REGEX "^FireFly\/circuits\/([A-Za-z0-9~!@#$%^&*()_+-=|]+)\/set$"
+    #define MQTT_TOPIC_OUTPUT_SET_REGEX "^FireFly/circuits/([A-Za-z0-9~!@#$%^&*()_+-=|]+)/set$"
     #define MQTT_TOPIC_OUTPUT_SET_LENGTH WORD_LENGTH_FIREFLY + WORD_LENGTH_SLASH + WORD_LENGTH_CIRCUITS + WORD_LENGTH_SLASH + OUTPUT_ID_MAX_LENGTH + WORD_LENGTH_SLASH + WORD_LENGTH_SET
     
     //Ex: FireFly/circuits/12345678/state
@@ -158,7 +158,7 @@
 
     //Ex: FireFly/00000000-0000-4000-0000-000000000000/http-server/set
     #define MQTT_TOPIC_HTTP_SERVER_SET_PATTERN WORD_FIREFLY_SLASH "%s/http-server/set"       //%s = Controller UUID
-    #define MQTT_TOPIC_HTTP_SERVER_SET_REGEX "^FireFly\/[0-9a-f-]+\/http[-]server\/set$"
+    #define MQTT_TOPIC_HTTP_SERVER_SET_REGEX "^FireFly/[0-9a-f-]+/http[-]server/set$"
     #define MQTT_TOPIC_HTTP_SERVER_SET_PATTERN_LENGTH WORD_LENGTH_FIREFLY + WORD_LENGTH_SLASH + UUID_LENGTH + WORD_LENGTH_SLASH + WORD_LENGTH_HTTP_DASH_SERVER + WORD_LENGTH_DASH + WORD_LENGTH_SET
 
     //Ex: switch.FireFly-00000000-0000-4000-0000-000000000000-http_server
@@ -174,7 +174,7 @@
 
     //Ex: FireFly/00000000-0000-4000-0000-000000000000/update/set
     #define MQTT_TOPIC_UPDATE_SET_PATTERN WORD_FIREFLY_SLASH "%s/update/set"       //%s = Controller UUID
-    #define MQTT_TOPIC_UPDATE_SET_REGEX "^FireFly\/[0-9a-f-]+\/update\/set$"
+    #define MQTT_TOPIC_UPDATE_SET_REGEX "^FireFly/[0-9a-f-]+/update/set$"
     #define MQTT_TOPIC_UPDATE_SET_PATTERN_LENGTH WORD_LENGTH_FIREFLY + WORD_LENGTH_SLASH + UUID_LENGTH + WORD_LENGTH_SLASH + WORD_LENGTH_UPDATE + WORD_LENGTH_SLASH + WORD_LENGTH_SET
 
     //Ex: homeassistant/update/FireFly-00000000-0000-4000-0000-000000000000-update/config

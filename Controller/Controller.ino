@@ -336,16 +336,16 @@ void setup() {
   httpServer.on("/files", http_handleFileList_GET);
 
   if(configFS_isMounted){
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers_PUT, 65536,65535));
-    httpServer.on("^\/api/controllers$", ASYNC_HTTP_ANY, http_handleListControllers);
-    httpServer.on("^\/api/controllers\/([0-9a-f-]+)$", http_handleControllers);
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("^\/api/clients\/([0-9a-f-]+)$", http_handleClients_PUT, 65536,65535));
-    httpServer.on("^\/api/clients$", ASYNC_HTTP_ANY, http_handleListClients);
-    httpServer.on("^\/api/clients\/([0-9a-f-]+)$", http_handleClients);
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("^/api/controllers/([0-9a-f-]+)$", http_handleControllers_PUT, 65536,65535));
+    httpServer.on("^/api/controllers$", ASYNC_HTTP_ANY, http_handleListControllers);
+    httpServer.on("^/api/controllers/([0-9a-f-]+)$", http_handleControllers);
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("^/api/clients/([0-9a-f-]+)$", http_handleClients_PUT, 65536,65535));
+    httpServer.on("^/api/clients$", ASYNC_HTTP_ANY, http_handleListClients);
+    httpServer.on("^/api/clients/([0-9a-f-]+)$", http_handleClients);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/backup", http_handleBackup_PUT, 65536,65535));
     httpServer.on("/backup", http_handleBackup);
     httpServer.on("/api/provisioning", http_handleProvisioning);
-    httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
+    httpServer.on("^/certs/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
     httpServer.on("/api/ota/app", ASYNC_HTTP_OPTIONS, http_options);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced_POST));
@@ -355,7 +355,7 @@ void setup() {
     setup_OtaFirmware();
   }else{
     log_e("configFS is not mounted");
-    httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_configFSNotMunted);
+    httpServer.on("^/certs/([a-z0-9_.]+)$", http_configFSNotMunted);
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_configFSNotMunted);
     httpServer.on("/api/controllers", http_configFSNotMunted);
     httpServer.on("/api/clients", http_configFSNotMunted);
