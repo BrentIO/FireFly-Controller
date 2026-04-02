@@ -2296,6 +2296,12 @@ void setup_OtaFirmware(){
 
   url.replace("$$app$$", APPLICATION_NAME);
 
+  if(url.indexOf("current_version=") == -1){
+    url += (url.indexOf('?') == -1 ? "?" : "&");
+    url += "current_version=";
+    url += VERSION;
+  }
+
   if(!url.startsWith("http:") && !url.startsWith("https:")){
     eventLog.createEvent("OTA cfg inv proto");
     return;
