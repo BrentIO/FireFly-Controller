@@ -26,6 +26,10 @@ jobs:
     name: Build all firmware
     runs-on: ubuntu-24.04
 
+    permissions:
+      id-token: write
+      contents: read
+
     strategy:
       matrix: ${{ fromJson(needs.load-matrix.outputs.matrix) }}
 
@@ -255,14 +259,21 @@ jobs:
           name: ${{ matrix.product_id }}-${{ matrix.application }}-${{ env.BRANCH }}-${{ env.COMMIT_HASH }}
           path: ${{ env.ARTIFACT_ROOT }}/${{ matrix.product_id }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}/*
 
+      - name: Configure AWS Credentials
+        if: ${{ !env.ACT }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Upload ZIP to S3
         if: ${{ !env.ACT }}
-        uses: NotCoffee418/s3-zip-upload@v1.5
-        env:
-          AWS_SECRET_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
-          BUCKET_NAME: ${{ secrets.S3_FIRMWARE_BUCKET_NAME }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          SOURCE_MODE: ZIP
-          SOURCE_PATH: ${{ env.ARTIFACT_ROOT }}/${{ matrix.product_id }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}
-          DEST_FILE: incoming/${{ matrix.product_id }}-${{ matrix.application }}-${{ env.BRANCH }}-${{ env.COMMIT_HASH }}.zip
+        run: |
+          OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.product_id }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}"
+          DEST_KEY="incoming/${{ matrix.product_id }}-${{ matrix.application }}-${{ env.BRANCH }}-${{ env.COMMIT_HASH }}.zip"
+
+          cd "$OUTDIR"
+          zip -r /tmp/firmware-upload.zip .
+
+          aws s3 cp /tmp/firmware-upload.zip \
+            "s3://${{ secrets.S3_FIRMWARE_BUCKET_NAME }}/${DEST_KEY}"
