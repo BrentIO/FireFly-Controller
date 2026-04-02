@@ -256,6 +256,7 @@ jobs:
           path: ${{ env.ARTIFACT_ROOT }}/${{ matrix.product_id }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}/*
 
       - name: Upload ZIP to S3
+        if: ${{ !env.ACT }}
         uses: NotCoffee418/s3-zip-upload@v1.5
         env:
           AWS_SECRET_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
