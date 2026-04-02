@@ -1324,7 +1324,7 @@ void getMacAddress(esp_mac_type_t type, char *buff) {
 */
 void failureHandler_oled(uint8_t address, managerOled::failureReason failureReason){
 
-  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+  char text[OLED_CHARACTERS_PER_LINE+1];
 
   if(failureReason == managerOled::failureReason::ADDRESS_OFFLINE){
       snprintf(text, OLED_CHARACTERS_PER_LINE+1, "OLED 0x%02X offline", address);
@@ -1342,7 +1342,7 @@ void failureHandler_oled(uint8_t address, managerOled::failureReason failureReas
 */
 void failureHandler_eeprom(uint8_t address, managerExternalEEPROM::failureReason failureReason){
 
-  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+  char text[OLED_CHARACTERS_PER_LINE+1];
 
   if(failureReason == managerExternalEEPROM::failureReason::ADDRESS_OFFLINE){
       snprintf(text, OLED_CHARACTERS_PER_LINE+1, "ExEEPROM 0x%02X offline", address);
@@ -1360,8 +1360,8 @@ void failureHandler_eeprom(uint8_t address, managerExternalEEPROM::failureReason
  * Callback function which handles failures of any input 
 */
 void failureHandler_inputs(uint8_t address, managerInputs::failureReason failureReason){
-	
-	char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+
+	char text[OLED_CHARACTERS_PER_LINE+1];
 
   if(failureReason == managerInputs::failureReason::ADDRESS_OFFLINE){
       snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Inpt ctl 0x%02X offline", address);
@@ -1379,7 +1379,7 @@ void failureHandler_inputs(uint8_t address, managerInputs::failureReason failure
 */
 void failureHandler_outputs(uint8_t address, nsOutputs::failureReason failureReason){
 
-  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+  char text[OLED_CHARACTERS_PER_LINE+1];
 
   if(failureReason == nsOutputs::failureReason::ADDRESS_OFFLINE){
       snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out ctl 0x%02X offline", address);
@@ -1397,7 +1397,7 @@ void failureHandler_outputs(uint8_t address, nsOutputs::failureReason failureRea
 */
 void failureHandler_temperatureSensors(uint8_t address, managerTemperatureSensors::failureReason failureReason){
 
-  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+  char text[OLED_CHARACTERS_PER_LINE+1];
 
   if(failureReason == managerTemperatureSensors::failureReason::ADDRESS_OFFLINE){
       snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Temp sen 0x%02X offline", address);
