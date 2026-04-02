@@ -1,1 +1,1 @@
-Documentation available at [https://brentio.github.io/FireFly/](https://brentio.github.io/FireFly/)
+Documentation available at [https://docs.fireflylx.com](https://docs.fireflylx.com)
