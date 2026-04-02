@@ -222,27 +222,27 @@ void setup() {
   */
   httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/eeprom", http_handleEEPROM_POST));
   httpServer.on("/api/eeprom", http_handleEEPROM);
-  httpServer.on("^\/api\/mcu$", http_handleMCU);
-  httpServer.on("^\/api\/mcu\/reboot$", http_handleReboot);
+  httpServer.on("^/api/mcu$", http_handleMCU);
+  httpServer.on("^/api/mcu/reboot$", http_handleReboot);
   httpServer.on("/api/partitions", http_handlePartitions);
   httpServer.on("/api/peripherals", http_handlePeripherals);
   httpServer.on("/api/version", http_handleVersion);
   httpServer.on("/api/events", http_handleEventLog);
   httpServer.on("/api/errors", http_handleErrorLog);
-  httpServer.on("^\/api\/network\/([a-z_]+)$", http_handleNetworkInterface);
+  httpServer.on("^/api/network/([a-z_]+)$", http_handleNetworkInterface);
   httpServer.on("/api/network", http_handleNetworkInterfaceAll);
   httpServer.on("/auth", http_handleAuth);
 
   if(configFS_isMounted){
-    httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_handleCert);
+    httpServer.on("^/certs/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced));
   }else{
     log_e("configFS is not mounted");
-    httpServer.on("^\/certs\/([a-z0-9_.]+)$", http_configFSNotMunted);
+    httpServer.on("^/certs/([a-z0-9_.]+)$", http_configFSNotMunted);
     httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_configFSNotMunted);
-    httpServer.on("^\/api\/ota\/.+$", http_configFSNotMunted);
+    httpServer.on("^/api/ota/.+$", http_configFSNotMunted);
   }
 
   if(wwwFS_isMounted){
@@ -1324,7 +1324,7 @@ void getMacAddress(esp_mac_type_t type, char *buff) {
 */
 void failureHandler_oled(uint8_t address, managerOled::failureReason failureReason){
 
-  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+  char text[OLED_CHARACTERS_PER_LINE+1];
 
   if(failureReason == managerOled::failureReason::ADDRESS_OFFLINE){
       snprintf(text, OLED_CHARACTERS_PER_LINE+1, "OLED 0x%02X offline", address);
@@ -1342,7 +1342,7 @@ void failureHandler_oled(uint8_t address, managerOled::failureReason failureReas
 */
 void failureHandler_eeprom(uint8_t address, managerExternalEEPROM::failureReason failureReason){
 
-  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+  char text[OLED_CHARACTERS_PER_LINE+1];
 
   if(failureReason == managerExternalEEPROM::failureReason::ADDRESS_OFFLINE){
       snprintf(text, OLED_CHARACTERS_PER_LINE+1, "ExEEPROM 0x%02X offline", address);
@@ -1360,8 +1360,8 @@ void failureHandler_eeprom(uint8_t address, managerExternalEEPROM::failureReason
  * Callback function which handles failures of any input 
 */
 void failureHandler_inputs(uint8_t address, managerInputs::failureReason failureReason){
-	
-	char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+
+	char text[OLED_CHARACTERS_PER_LINE+1];
 
   if(failureReason == managerInputs::failureReason::ADDRESS_OFFLINE){
       snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Inpt ctl 0x%02X offline", address);
@@ -1379,7 +1379,7 @@ void failureHandler_inputs(uint8_t address, managerInputs::failureReason failure
 */
 void failureHandler_outputs(uint8_t address, nsOutputs::failureReason failureReason){
 
-  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+  char text[OLED_CHARACTERS_PER_LINE+1];
 
   if(failureReason == nsOutputs::failureReason::ADDRESS_OFFLINE){
       snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Out ctl 0x%02X offline", address);
@@ -1397,7 +1397,7 @@ void failureHandler_outputs(uint8_t address, nsOutputs::failureReason failureRea
 */
 void failureHandler_temperatureSensors(uint8_t address, managerTemperatureSensors::failureReason failureReason){
 
-  char *text = new char[OLED_CHARACTERS_PER_LINE+1];
+  char text[OLED_CHARACTERS_PER_LINE+1];
 
   if(failureReason == managerTemperatureSensors::failureReason::ADDRESS_OFFLINE){
       snprintf(text, OLED_CHARACTERS_PER_LINE+1, "Temp sen 0x%02X offline", address);

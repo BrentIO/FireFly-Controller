@@ -83,7 +83,7 @@
                     this->_wifi->softAP("FireFly-Provisioning");
 
                     this->_wifi->onEvent(
-                        [&](WiFiEvent_t event, WiFiEventInfo_t info ) {
+                        [this](WiFiEvent_t event, WiFiEventInfo_t info ) {
                           char macAddress[18] = {0};
                           sprintf(macAddress, "%02x:%02x:%02x:%02x:%02x:%02x", info.wifi_ap_staconnected.mac[0],info.wifi_ap_staconnected.mac[1],info.wifi_ap_staconnected.mac[2],info.wifi_ap_staconnected.mac[3], info.wifi_ap_staconnected.mac[4], info.wifi_ap_staconnected.mac[5]);
                           this->isMacAllowed(macAddress);

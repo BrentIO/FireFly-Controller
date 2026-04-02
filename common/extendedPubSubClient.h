@@ -42,7 +42,7 @@
     
     //Ex: FireFly/circuits/12345678/set
     #define MQTT_TOPIC_OUTPUT_SET_PATTERN WORD_FIREFLY_SLASH "circuits/%s/set"              //%s = Output ID
-    #define MQTT_TOPIC_OUTPUT_SET_REGEX "^FireFly\/circuits\/([A-Za-z0-9~!@#$%^&*()_+-=|]+)\/set$"
+    #define MQTT_TOPIC_OUTPUT_SET_REGEX "^FireFly/circuits/([A-Za-z0-9~!@#$%^&*()_+-=|]+)/set$"
     #define MQTT_TOPIC_OUTPUT_SET_LENGTH WORD_LENGTH_FIREFLY + WORD_LENGTH_SLASH + WORD_LENGTH_CIRCUITS + WORD_LENGTH_SLASH + OUTPUT_ID_MAX_LENGTH + WORD_LENGTH_SLASH + WORD_LENGTH_SET
     
     //Ex: FireFly/circuits/12345678/state
@@ -158,7 +158,7 @@
 
     //Ex: FireFly/00000000-0000-4000-0000-000000000000/http-server/set
     #define MQTT_TOPIC_HTTP_SERVER_SET_PATTERN WORD_FIREFLY_SLASH "%s/http-server/set"       //%s = Controller UUID
-    #define MQTT_TOPIC_HTTP_SERVER_SET_REGEX "^FireFly\/[0-9a-f-]+\/http[-]server\/set$"
+    #define MQTT_TOPIC_HTTP_SERVER_SET_REGEX "^FireFly/[0-9a-f-]+/http[-]server/set$"
     #define MQTT_TOPIC_HTTP_SERVER_SET_PATTERN_LENGTH WORD_LENGTH_FIREFLY + WORD_LENGTH_SLASH + UUID_LENGTH + WORD_LENGTH_SLASH + WORD_LENGTH_HTTP_DASH_SERVER + WORD_LENGTH_DASH + WORD_LENGTH_SET
 
     //Ex: switch.FireFly-00000000-0000-4000-0000-000000000000-http_server
@@ -174,7 +174,7 @@
 
     //Ex: FireFly/00000000-0000-4000-0000-000000000000/update/set
     #define MQTT_TOPIC_UPDATE_SET_PATTERN WORD_FIREFLY_SLASH "%s/update/set"       //%s = Controller UUID
-    #define MQTT_TOPIC_UPDATE_SET_REGEX "^FireFly\/[0-9a-f-]+\/update\/set$"
+    #define MQTT_TOPIC_UPDATE_SET_REGEX "^FireFly/[0-9a-f-]+/update/set$"
     #define MQTT_TOPIC_UPDATE_SET_PATTERN_LENGTH WORD_LENGTH_FIREFLY + WORD_LENGTH_SLASH + UUID_LENGTH + WORD_LENGTH_SLASH + WORD_LENGTH_UPDATE + WORD_LENGTH_SLASH + WORD_LENGTH_SET
 
     //Ex: homeassistant/update/FireFly-00000000-0000-4000-0000-000000000000-update/config
@@ -246,7 +246,7 @@
             using PubSubClient::PubSubClient; /* Inherit the base PubSubClient */
             char topic_availability[MQTT_TOPIC_CONTROLLER_AVAILABILITY_LENGTH + 1]; /* Topic name for availability, which will be used as the last will topic name as well */
             int64_t lastReconnectAttemptTime = 0; /* The time (millis() or equivalent) when the last reconnection was be attempted */
-            LinkedList<const char*> subscriptions; /* List of MQTT subscriptions */
+            LinkedList<String> subscriptions; /* List of MQTT subscriptions */
             char username[MQTT_USERNAME_MAX_LENGTH + 1]; /* MQTT username to use when authenticating */
             char password[MQTT_PASSWORD_MAX_LENGTH + 1]; /* MQTT password to use when authenticating */
             bool enabled = false; /* Enabled only if credentials and configuration exists */
@@ -280,8 +280,7 @@
              * Adds a new subscription to the list and automatically subscribes to the topic 
              */
             void addSubscription(const char* topic){
-                char* topic_to_add = strdup(topic);
-                this->subscriptions.add(topic_to_add);
+                this->subscriptions.add(String(topic));
                 this->subscribe(topic);
             }
 
@@ -291,8 +290,8 @@
              */
             void resubscribe(){
                 for(int i=0; i < this->subscriptions.size(); i++){
-                    if(!this->subscribe(this->subscriptions.get(i))){
-                        log_e("FAILED to subscribe to %s", this->subscriptions.get(i));
+                    if(!this->subscribe(this->subscriptions.get(i).c_str())){
+                        log_e("FAILED to subscribe to %s", this->subscriptions.get(i).c_str());
                     }
                 }
             }

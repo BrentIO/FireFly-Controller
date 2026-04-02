@@ -13,6 +13,7 @@ on:
 env:
   VERSION_ESP_Core: 2.0.11
   ARTIFACT_ROOT: /home/runner/artifacts
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
 
