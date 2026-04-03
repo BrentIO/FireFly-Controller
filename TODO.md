@@ -1,37 +1,23 @@
 # FireFly-Controller To-Do
 
 ## Docs Inconsistencies to Fix (FireFly-Docs repo)
-- [ ] `auxillary_data.json` referenced in docs does not exist — rename to `devices.json`
-- [ ] Visual token validity: docs say "~1 hour", code (`common.js`) is 30 minutes
+- [x] `auxillary_data.json` referenced in docs does not exist — renamed to `devices.json`
 
 ## Backlog
 
 ### Do First (before any PRs)
 - [x] **Local act build setup** — complete
 
-- [ ] **PR-10 (first PR)** — OIDC for S3 upload (FireFly-Cloud already operational; enables automatic Cloud delivery from every build)
-  - [x] Add `permissions: id-token: write` + `contents: read` to `ConfigureAndBuild` job
-  - [x] Replace `NotCoffee418/s3-zip-upload` step with `aws-actions/configure-aws-credentials@v4` (OIDC) + `aws s3 cp`
-  - [ ] Create AWS IAM OIDC identity provider + role with `s3:PutObject`, trust restricted to this repo — add `AWS_ROLE_ARN` secret to repo
-  - [ ] Delete `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` secrets from repo settings (after role is working)
+- [x] **PR-10** — OIDC for S3 upload — complete
 
 ### Critical / Do Next
-- [ ] **PR-12A** — Defect fixes: memory leaks
-  - [ ] Replace `new char[]` with stack allocation in 5 failure handler callbacks (`Hardware-Registration-and-Configuration.ino` lines 1327, 1345, 1364, 1382, 1400)
-  - [ ] Fix `strdup` leak in `extendedPubSubClient.h:283` `addSubscription()` — change `LinkedList<const char*>` to `LinkedList<String>`
-  - [ ] Fix lambda `[&]` → `[this]` in `provisioningMode.h:85`; deregister event handler in `setInactive()`
+- [x] **PR-12A** — Defect fixes: memory leaks + Node.js 24 opt-in — complete
 
-- [ ] **PR-1** — Fix OTA `current_version` mismatch
-  - [ ] Append `?current_version=VERSION` to manifest URL in `Controller.ino` `setupOTA()` (~line 2304) so Cloud lambda doesn't return 400
+- [x] **PR-1** — Fix OTA `current_version` mismatch — complete
 
-- [ ] **PR-10** — OIDC for S3 upload
-  - [ ] Replace long-lived AWS keys with OIDC role assumption in `build-firmware.yaml`
-  - [ ] Create IAM OIDC provider + role in AWS
-  - [ ] Delete `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` secrets from repo
+- [x] **PR-9a** — Update libraries (non-core) — complete
 
-- [ ] **PR-9a** — Update libraries (non-core)
-  - [ ] Check latest versions of: Adafruit_BusIO, Adafruit-GFX, Adafruit_SSD1306, ArduinoStreamUtils, PCA95x5, PCT2075, Ethernet, LinkedList, NTPClient, PCA9685_RT, Regexp
-  - [ ] Update Arduino CLI from 0.35.3 to 1.x stable
+- [x] **PR-19** — Fix build matrix (flat include-only list for all product × application combinations) — complete
 
 - [ ] **PR-12B** — Defect fixes: strcpy → strlcpy hardening
   - [ ] `extendedPubSubClient.h` setters (lines 266, 270, 274, 302, 307)
@@ -79,8 +65,15 @@
   - [ ] Update `wifi.html` to POST to controller endpoint
   - [ ] Add mDNS (`firefly-XXXXXX.local`) via `ESPmDNS`
 
+### Research
+- [ ] **Temperature sensor graph smoothing** — research options before implementing
+  - Missing `state_class: measurement` in auto-discovery (`Controller.ino` ~line 3069) — likely worth adding regardless
+  - Options: firmware-side EMA in `common/temperature.h`, HA `filter` integration, or tuning `TEMPERATURE_SENSOR_DEGREES_VARIATION_ALLOWED` (currently 0.125°C in `common/hardware.h`)
+
 ### Large / Later
 - [ ] **PR-9b** — Update ESP32 core 3.x + async stack libraries (depends on PR-5, PR-6)
+  - [x] Fix `BrentIO/esp32FOTA`: rebased onto upstream v0.3.0, tagged `2026.4.1`. Includes mbedtls fix for IDF 5.x.
+  - [ ] Fix `BrentIO/AsyncWebServer_ESP32_W5500`: uses `IPv6Address` which was removed in ESP32 core 3.x. Prerequisite for 3.x upgrade.
   - [ ] Update AsyncTCP, ESPAsyncWebServer, AsyncWebServer_ESP32_W5500, esp32FOTA, pubsubclient
   - [ ] Test W5500 async compatibility with core 3.x
   - [ ] Adjust `mklittlefs` glob in CI if toolchain path changes
