@@ -33,6 +33,7 @@
   - [ ] Add `inputs_count` / `outputs_count` to each device in `devices.yaml`
   - [ ] Generate `database.js` `controller_products` array from `devices.yaml` in CI (pre-build step)
   - [ ] Publish `devices.yaml` as a CI artifact for Cloud/Docs repos
+  - [ ] Update FireFly-Docs `controller/development_environment/index.md`: rename `devices.json` → `devices.yaml` in repo tree (line 225) and in "Adding a new hardware version" section (line 283)
 
 - [ ] **PR-5** — Update ArduinoJSON to v7 (42 usages in Controller.ino, 13 in Hardware-Reg.ino)
   - [ ] Replace all `DynamicJsonDocument(N)` / `StaticJsonDocument<N>` → `JsonDocument`
