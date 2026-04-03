@@ -460,11 +460,6 @@
     #endif
 
 
-    #ifndef EEPROM_EXTERNAL_MODEL
-        #error EEPROM_EXTERNAL_MODEL not set
-    #endif
-
-
     #ifndef TEMPERATURE_SENSOR_MODEL
         #error TEMPERATURE_SENSOR_MODEL not set
     #endif
