@@ -11,7 +11,7 @@ on:
           - production
 
 env:
-  VERSION_ESP_Core: 2.0.17
+  VERSION_ESP_Core: 3.3.7
   ARTIFACT_ROOT: /home/runner/artifacts
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -144,7 +144,7 @@ jobs:
           arduino-cli lib install --git-url https://github.com/BrentIO/AsyncTCP.git#2024.2.1
           arduino-cli lib install --git-url https://github.com/BrentIO/AsyncWebServer_ESP32_W5500.git#2025.5.2
           arduino-cli lib install --git-url https://github.com/BrentIO/ESPAsyncWebServer.git#2024.7.1
-          arduino-cli lib install --git-url https://github.com/BrentIO/esp32FOTA.git#2025.11.2
+          arduino-cli lib install --git-url https://github.com/BrentIO/esp32FOTA.git#2026.4.1
           arduino-cli lib install --git-url https://github.com/BrentIO/PCA95x5.git#2023.10.2
           arduino-cli lib install --git-url https://github.com/BrentIO/PCT2075.git#2023.10.3
           arduino-cli lib install --git-url https://github.com/BrentIO/pubsubclient.git#2025.4.1
@@ -153,7 +153,7 @@ jobs:
           arduino-cli lib install --git-url https://github.com/ivanseidel/LinkedList.git#v1.3.3
           arduino-cli lib install --git-url https://github.com/arduino-libraries/NTPClient.git#3.2.1
           arduino-cli lib install --git-url https://github.com/RobTillaart/PCA9685_RT.git#0.7.3
-          arduino-cli lib install --git-url https://github.com/nickgammon/Regexp.git#v1.1
+          arduino-cli lib install --git-url https://github.com/nickgammon/Regexp.git#0.1.1
 
       - name: Create Output Directory
         run: mkdir -p "${{ env.ARTIFACT_ROOT }}/${{ matrix.product_id }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}"
