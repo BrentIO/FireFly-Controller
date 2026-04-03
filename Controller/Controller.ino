@@ -182,6 +182,27 @@ void setup() {
   eventLog.setCallback_error(&eventHandler_eventLogErrorEvent);
   eventLog.setCallback_resolveError(&eventHandler_eventLogResolvedErrorEvent);
 
+  /* Start device identity (NVS) */
+  deviceIdentity.begin();
+
+  if(deviceIdentity.enabled == true){
+
+    oled.setProductID(deviceIdentity.data.product_id);
+    oled.setUUID(deviceIdentity.data.uuid);
+
+    log_d("NVS UUID: %s", deviceIdentity.data.uuid);
+    log_d("NVS Product ID: %s", deviceIdentity.data.product_id);
+    log_d("NVS Key: %s", deviceIdentity.data.key);
+
+    if(deviceIdentity.data.product_hex != 0 && deviceIdentity.data.product_hex != PRODUCT_HEX){
+      eventLog.createEvent("HW/FW mismatch", EventLog::LOG_LEVEL_ERROR);
+      log_e("Firmware/Hardware mismatch\nHW: 0x%08X\nFW: 0x%08X",
+            deviceIdentity.data.product_hex,
+            (uint32_t)PRODUCT_HEX);
+      log_e("Sleeping now");
+      esp_deep_sleep_start();
+    }
+  }
 
   /* Startup the front panel */
   frontPanel.setCallback_publisher(&eventHandler_frontPanelButtonPress);
@@ -244,28 +265,6 @@ void setup() {
   #endif
 
   reportMemoryUsage("Ethernet started.");
-
-  /* Start device identity (NVS) */
-  deviceIdentity.begin();
-
-  if(deviceIdentity.enabled == true){
-
-    oled.setProductID(deviceIdentity.data.product_id);
-    oled.setUUID(deviceIdentity.data.uuid);
-
-    log_d("NVS UUID: %s", deviceIdentity.data.uuid);
-    log_d("NVS Product ID: %s", deviceIdentity.data.product_id);
-    log_d("NVS Key: %s", deviceIdentity.data.key);
-
-    if(deviceIdentity.data.product_hex != 0 && deviceIdentity.data.product_hex != PRODUCT_HEX){
-      char text[OLED_CHARACTERS_PER_LINE+1];
-      eventLog.createEvent("Firmware Mismatch", EventLog::LOG_LEVEL_ERROR);
-      snprintf(text, sizeof(text), "HW: 0x%08X", deviceIdentity.data.product_hex);
-      eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
-      snprintf(text, sizeof(text), "FW: 0x%08X", (uint32_t)PRODUCT_HEX);
-      eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
-    }
-  }
 
   reportMemoryUsage("Starting Inputs.");
 
