@@ -30,7 +30,7 @@
 #define APPLICATION_NAME "FireFly Controller"
 
 #include "common/hardware.h"
-#include "common/externalEEPROM.h"
+#include "common/deviceIdentity.h"
 #include "common/oled.h"
 #include "common/frontPanel.h"
 #include "common/inputs.h"
@@ -52,7 +52,7 @@ uint64_t lastTimeMemoryBroadcast = 0; /* The last time memory usage was broadcas
 volatile uint64_t lastTimeHttpServerUsed = 0;  /* The last time the HTTP server responded to a request */
 bool httpServerIsActive = false; /* If the HTTP server has been started */
 AsyncWebServer httpServer(80);
-managerExternalEEPROM externalEEPROM; /* External EEPROM instance */
+managerDeviceIdentity deviceIdentity; /* Device identity instance */
 managerOled oled; /* OLED instance */
 managerFrontPanel frontPanel; /* Front panel instance */
 managerInputs inputs; /* Inputs collection */
@@ -245,18 +245,26 @@ void setup() {
 
   reportMemoryUsage("Ethernet started.");
 
-  /* Start external EEPROM */
-  externalEEPROM.setCallback_failure(&failureHandler_eeprom);
-  externalEEPROM.begin();
+  /* Start device identity (NVS) */
+  deviceIdentity.begin();
 
-  if(externalEEPROM.enabled == true){
+  if(deviceIdentity.enabled == true){
 
-    oled.setProductID(externalEEPROM.data.product_id);
-    oled.setUUID(externalEEPROM.data.uuid);
+    oled.setProductID(deviceIdentity.data.product_id);
+    oled.setUUID(deviceIdentity.data.uuid);
 
-    log_d("EEPROM UUID: %s", externalEEPROM.data.uuid);
-    log_d("EEPROM Product ID: %s", externalEEPROM.data.product_id);
-    log_d("EEPROM Key: %s", externalEEPROM.data.key);
+    log_d("NVS UUID: %s", deviceIdentity.data.uuid);
+    log_d("NVS Product ID: %s", deviceIdentity.data.product_id);
+    log_d("NVS Key: %s", deviceIdentity.data.key);
+
+    if(deviceIdentity.data.product_hex != 0 && deviceIdentity.data.product_hex != PRODUCT_HEX){
+      char text[OLED_CHARACTERS_PER_LINE+1];
+      eventLog.createEvent("Firmware Mismatch", EventLog::LOG_LEVEL_ERROR);
+      snprintf(text, sizeof(text), "HW: 0x%08X", deviceIdentity.data.product_hex);
+      eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
+      snprintf(text, sizeof(text), "FW: 0x%08X", (uint32_t)PRODUCT_HEX);
+      eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
+    }
   }
 
   reportMemoryUsage("Starting Inputs.");
@@ -460,7 +468,7 @@ void loop() {
 */
 void eventHandler_temperature(const char* location, float value){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
@@ -472,7 +480,7 @@ void eventHandler_temperature(const char* location, float value){
   eventLog.createEvent(oledText);
 
   char topic[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, externalEEPROM.data.uuid, location);
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, deviceIdentity.data.uuid, location);
 
   mqttClient.publish(topic, temperature, true);
 };
@@ -749,21 +757,6 @@ void eventHandler_eventLogResolvedErrorEvent(){
 /** 
  * Callback function which handles failures of the external EERPOM 
 */
-void failureHandler_eeprom(uint8_t address, managerExternalEEPROM::failureReason failureReason){
-
-  char text[OLED_CHARACTERS_PER_LINE+1];
-
-  if(failureReason == managerExternalEEPROM::failureReason::ADDRESS_OFFLINE){
-      snprintf(text, sizeof(text), "ExEEPROM 0x%02X offline", address);
-  }else{
-      snprintf(text, sizeof(text), "ExEEPROM 0x%02X fail %i", address, failureReason);
-  }
-  
-  eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
-  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
-
-}
-
 
 /** 
  * Callback function which handles failures of any input 
@@ -833,12 +826,12 @@ void updateNTPTime(bool force){
  */
 void setControllerNameOnOLED(){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
 
-  String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
+  String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + deviceIdentity.data.uuid;
 
   if(configFS.exists(filename)){
     StaticJsonDocument<16> filter;
@@ -983,12 +976,12 @@ void http_handleVersion(AsyncWebServerRequest *request){
 
   resetHTPServerUsage();
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     http_error(request, "Cannot connect to external EEPROM");
     return;
   }
 
-  if(strcmp(externalEEPROM.data.uuid, "") == 0){
+  if(strcmp(deviceIdentity.data.uuid, "") == 0){
     http_error(request, "Invalid EEPROM data");
     return;
   }
@@ -998,8 +991,8 @@ void http_handleVersion(AsyncWebServerRequest *request){
  
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<192> doc;
-  doc["uuid"] = externalEEPROM.data.uuid;
-  doc["product_id"] = externalEEPROM.data.product_id;
+  doc["uuid"] = deviceIdentity.data.uuid;
+  doc["product_id"] = deviceIdentity.data.product_id;
   doc["product_hex"] = product_hex;
   doc["application"] = VERSION;
 
@@ -2243,7 +2236,7 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
 */
 void setup_OtaFirmware(){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
@@ -2251,7 +2244,7 @@ void setup_OtaFirmware(){
     return;
   }
 
-  String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
+  String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + deviceIdentity.data.uuid;
 
   if(!configFS.exists(filename)){
     return;
@@ -2260,8 +2253,8 @@ void setup_OtaFirmware(){
   otaFirmware.setSPIFFsPartitionLabel("www");
   otaFirmware.setCertFileSystem(nullptr);
 
-  otaFirmware.setExtraHTTPHeader("uuid", externalEEPROM.data.uuid);
-  otaFirmware.setExtraHTTPHeader("product_id", externalEEPROM.data.product_id);
+  otaFirmware.setExtraHTTPHeader("uuid", deviceIdentity.data.uuid);
+  otaFirmware.setExtraHTTPHeader("product_id", deviceIdentity.data.product_id);
 
   StaticJsonDocument<16> filter;
   filter["ota"] = true;
@@ -2290,8 +2283,8 @@ void setup_OtaFirmware(){
 
   String url = doc["ota"]["url"];
 
-  if(externalEEPROM.enabled == true){
-    url.replace("$$pid$$", externalEEPROM.data.product_id);
+  if(deviceIdentity.enabled == true){
+    url.replace("$$pid$$", deviceIdentity.data.product_id);
   }
 
   url.replace("$$app$$", APPLICATION_NAME);
@@ -2394,7 +2387,7 @@ void otaFirmware_checkPending(){
 */
 void eventHandler_otaFirmwareProgress(size_t progress, size_t size){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
@@ -2410,7 +2403,7 @@ void eventHandler_otaFirmwareProgress(size_t progress, size_t size){
   oled.setProgressBar(percentage);
 
   char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
 
   StaticJsonDocument<32> doc;
   doc["in_progress"] = true;
@@ -2429,7 +2422,7 @@ void eventHandler_otaFirmwareProgress(size_t progress, size_t size){
 */
 void eventHandler_otaFirmwareFailed(int partition){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
@@ -2437,7 +2430,7 @@ void eventHandler_otaFirmwareFailed(int partition){
   eventLog.createEvent("OTA firmware failed", EventLog::LOG_LEVEL_NOTIFICATION);
 
   char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
 
   StaticJsonDocument<16> doc;
   doc["in_progress"] = false;
@@ -2474,7 +2467,7 @@ void setupIO(){
 
   bool isOK = true;
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     eventLog.createEvent("No I/O setup (EEPROM)", EventLog::LOG_LEVEL_ERROR);
     return;
   }
@@ -2484,7 +2477,7 @@ void setupIO(){
     return;
   }
 
-  String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
+  String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + deviceIdentity.data.uuid;
 
   if(!configFS.exists(filename)){
     eventLog.createEvent("No I/O file to read");
@@ -2745,13 +2738,13 @@ void mqtt_reconnect(){
     return;
   }
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
   if((esp_timer_get_time() - mqttClient.lastReconnectAttemptTime >= (uint64_t)MQTT_RECONNECT_WAIT_MILLISECONDS * 1000ULL) || mqttClient.lastReconnectAttemptTime == 0){
 
-    if(mqttClient.connect(externalEEPROM.data.uuid, mqttClient.username, mqttClient.password, mqttClient.topic_availability, 2, true, "offline")) {
+    if(mqttClient.connect(deviceIdentity.data.uuid, mqttClient.username, mqttClient.password, mqttClient.topic_availability, 2, true, "offline")) {
         mqttClient.lastReconnectAttemptTime = 0;
         return;
     }
@@ -2766,18 +2759,18 @@ void mqtt_reconnect(){
  */
 void setupMQTT(){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
   char topic_availability[sizeof(mqttClient.topic_availability)+1];
-  snprintf(topic_availability, sizeof(topic_availability), MQTT_TOPIC_CONTROLLER_AVAILABILITY_PATTERN, externalEEPROM.data.uuid);
+  snprintf(topic_availability, sizeof(topic_availability), MQTT_TOPIC_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid);
   strcpy(mqttClient.topic_availability, topic_availability);
   mqttClient.setCallback(eventHandler_mqttMessageReceived);
   mqttClient.setCallback_Connect(eventHandler_mqttConnect);
   mqttClient.setCallback_Disconnect(eventHandler_mqttDisconnect);
 
-  String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid;
+  String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + deviceIdentity.data.uuid;
 
   if(!configFS.exists(filename)){
     return;
@@ -2864,8 +2857,8 @@ void setupMQTT(){
   username.replace("$$mac$$", macOnly);
   username.replace("$$mac_dashes$$", macDashes);
   username.replace("$$mac_colons$$", macColons);
-  if(externalEEPROM.enabled == true){
-    username.replace("$$uuid$$", externalEEPROM.data.uuid);
+  if(deviceIdentity.enabled == true){
+    username.replace("$$uuid$$", deviceIdentity.data.uuid);
   }
   mqttClient.setUsername(username.c_str());
 
@@ -2873,7 +2866,7 @@ void setupMQTT(){
   password.replace("$$mac$$", macOnly);
   password.replace("$$mac_dashes$$", macDashes);
   password.replace("$$mac_colons$$", macColons);
-  password.replace("$$uuid$$", externalEEPROM.data.uuid);
+  password.replace("$$uuid$$", deviceIdentity.data.uuid);
   mqttClient.setPassword(password.c_str());
 
   mqttClient.enabled = true;
@@ -2916,7 +2909,7 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
   if(ms.Match(MQTT_TOPIC_UPDATE_SET_REGEX)){ //This is an update command request
 
     char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-    snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+    snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
 
     StaticJsonDocument<16> doc;
     doc["in_progress"] = true;
@@ -3046,7 +3039,7 @@ void eventHandler_mqttDisconnect(int8_t errorNumber){
  */
 void mqtt_autoDiscovery_temperature(){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
@@ -3057,16 +3050,16 @@ void mqtt_autoDiscovery_temperature(){
     DynamicJsonDocument doc(1024);
 
     char topic[MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_LENGTH+1];
-    snprintf(topic, sizeof(topic), MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid, sensorLocation);
+    snprintf(topic, sizeof(topic), MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid, sensorLocation);
 
     char unique_id[MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-    snprintf(unique_id, sizeof(unique_id), MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid, sensorLocation);
+    snprintf(unique_id, sizeof(unique_id), MQTT_TEMPERATURE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, deviceIdentity.data.uuid, sensorLocation);
 
     char default_entity_id[MQTT_TEMPERATURE_DEFAULT_ENTITY_ID_LENGTH+1];
-    snprintf(default_entity_id, sizeof(default_entity_id), MQTT_TEMPERATURE_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid, sensorLocation);
+    snprintf(default_entity_id, sizeof(default_entity_id), MQTT_TEMPERATURE_DEFAULT_ENTITY_ID_PATTERN, deviceIdentity.data.uuid, sensorLocation);
 
     char state_topic[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
-    snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, externalEEPROM.data.uuid, sensorLocation);
+    snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, deviceIdentity.data.uuid, sensorLocation);
 
     doc["name"] = sensorLocation;
     doc["unique_id"] = unique_id;
@@ -3077,7 +3070,7 @@ void mqtt_autoDiscovery_temperature(){
 
     JsonObject device = doc.createNestedObject("device");
     JsonArray identifiers = device.createNestedArray("identifiers");
-    identifiers.add(externalEEPROM.data.uuid);
+    identifiers.add(deviceIdentity.data.uuid);
 
     if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
       device["name"] =  mqttClient.autoDiscovery.deviceName;
@@ -3085,8 +3078,8 @@ void mqtt_autoDiscovery_temperature(){
 
     device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
     device["model"] = APPLICATION_NAME;
-    device["model_id"] = externalEEPROM.data.product_id;
-    device["serial_number"] = externalEEPROM.data.uuid;
+    device["model_id"] = deviceIdentity.data.product_id;
+    device["serial_number"] = deviceIdentity.data.uuid;
     device["sw_version"] = VERSION;
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -3110,7 +3103,7 @@ void mqtt_autoDiscovery_temperature(){
  */
 void mqtt_publishTemperatures(){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
@@ -3124,7 +3117,7 @@ void mqtt_publishTemperatures(){
     snprintf(temperature, sizeof(temperature), "%.2f", temperatureSensors.getCurrentTemp(i));
 
     char topic[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
-    snprintf(topic, sizeof(topic), MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, externalEEPROM.data.uuid, temperatureSensors.getSensorLocation(i));
+    snprintf(topic, sizeof(topic), MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, deviceIdentity.data.uuid, temperatureSensors.getSensorLocation(i));
 
     mqttClient.publish(topic, temperature, true);
   }
@@ -3136,11 +3129,11 @@ void mqtt_publishTemperatures(){
  */
 void mqtt_autoDiscovery_outputs(){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
-  if(!configFS.exists(CONFIGFS_PATH_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid)){
+  if(!configFS.exists(CONFIGFS_PATH_CONTROLLERS + (String)"/" + deviceIdentity.data.uuid)){
     log_v("Controller config file does not exist");
     return;
   };
@@ -3156,7 +3149,7 @@ void mqtt_autoDiscovery_outputs(){
 
   DynamicJsonDocument controllerDoc(12288); //Supports up to 32 ports
 
-  File controllerFile = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/" + externalEEPROM.data.uuid, "r");
+  File controllerFile = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/" + deviceIdentity.data.uuid, "r");
   DeserializationError errorControllerFileDeserialization = deserializeJson(controllerDoc, controllerFile, DeserializationOption::Filter(controllerFilterDoc));
   controllerFile.close();
 
@@ -3259,7 +3252,7 @@ void mqtt_autoDiscovery_outputs(){
       device["name"] = output.value()["id"].as<const char*>();
     }
 
-    device["via_device"] = externalEEPROM.data.uuid;
+    device["via_device"] = deviceIdentity.data.uuid;
 
     if(output.value().containsKey("area")){
       device["suggested_area"] =  output.value()["area"].as<const char*>();
@@ -3286,23 +3279,23 @@ void mqtt_autoDiscovery_outputs(){
  */
 void mqtt_autoDiscovery_start_time(){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
   DynamicJsonDocument doc(1024);
 
   char topic[MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid);
 
   char unique_id[MQTT_TIME_START_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, sizeof(unique_id), MQTT_TIME_START_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+  snprintf(unique_id, sizeof(unique_id), MQTT_TIME_START_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, deviceIdentity.data.uuid);
 
   char default_entity_id[MQTT_TIME_START_DEFAULT_ENTITY_ID_LENGTH+1];
-  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_TIME_START_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid);
+  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_TIME_START_DEFAULT_ENTITY_ID_PATTERN, deviceIdentity.data.uuid);
 
   char state_topic[MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_TIME_START_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_TIME_START_STATE_PATTERN, deviceIdentity.data.uuid);
 
   doc["name"] = "Start Time";
   doc["unique_id"] = unique_id;
@@ -3312,7 +3305,7 @@ void mqtt_autoDiscovery_start_time(){
 
   JsonObject device = doc.createNestedObject("device");
   JsonArray identifiers = device.createNestedArray("identifiers");
-  identifiers.add(externalEEPROM.data.uuid);
+  identifiers.add(deviceIdentity.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
     device["name"] =  mqttClient.autoDiscovery.deviceName;
@@ -3320,8 +3313,8 @@ void mqtt_autoDiscovery_start_time(){
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
   device["model"] = APPLICATION_NAME;
-  device["model_id"] = externalEEPROM.data.product_id;
-  device["serial_number"] = externalEEPROM.data.uuid;
+  device["model_id"] = deviceIdentity.data.product_id;
+  device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -3346,7 +3339,7 @@ void mqtt_autoDiscovery_start_time(){
  */
 void mqtt_publishStartTime(){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
@@ -3355,7 +3348,7 @@ void mqtt_publishStartTime(){
   }
 
   char state_topic[MQTT_TOPIC_TIME_START_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_TIME_START_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_TIME_START_STATE_PATTERN, deviceIdentity.data.uuid);
 
   char start_time[21];
   snprintf(start_time, sizeof(start_time), "%llu", bootTime);
@@ -3369,23 +3362,23 @@ void mqtt_publishStartTime(){
  */
 void mqtt_autoDiscovery_mac_address(){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
   DynamicJsonDocument doc(1024);
 
   char topic[MQTT_TOPIC_MAC_ADDRESS_AUTO_DISCOVERY_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_MAC_ADDRESS_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_MAC_ADDRESS_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid);
 
   char unique_id[MQTT_MAC_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, sizeof(unique_id), MQTT_MAC_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+  snprintf(unique_id, sizeof(unique_id), MQTT_MAC_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, deviceIdentity.data.uuid);
 
   char default_entity_id[MQTT_MAC_ADDRESS_DEFAULT_ENTITY_ID_LENGTH+1];
-  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_MAC_ADDRESS_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid);
+  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_MAC_ADDRESS_DEFAULT_ENTITY_ID_PATTERN, deviceIdentity.data.uuid);
 
   char state_topic[MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN, deviceIdentity.data.uuid);
 
   doc["name"] = "MAC Address";
   doc["unique_id"] = unique_id;
@@ -3395,7 +3388,7 @@ void mqtt_autoDiscovery_mac_address(){
 
   JsonObject device = doc.createNestedObject("device");
   JsonArray identifiers = device.createNestedArray("identifiers");
-  identifiers.add(externalEEPROM.data.uuid);
+  identifiers.add(deviceIdentity.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
     device["name"] =  mqttClient.autoDiscovery.deviceName;
@@ -3403,8 +3396,8 @@ void mqtt_autoDiscovery_mac_address(){
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
   device["model"] = APPLICATION_NAME;
-  device["model_id"] = externalEEPROM.data.product_id;
-  device["serial_number"] = externalEEPROM.data.uuid;
+  device["model_id"] = deviceIdentity.data.product_id;
+  device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -3427,7 +3420,7 @@ void mqtt_autoDiscovery_mac_address(){
  */
 void mqtt_publishMACAddress(){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
@@ -3436,7 +3429,7 @@ void mqtt_publishMACAddress(){
   }
 
   char state_topic[MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_MAC_ADDRESS_STATE_PATTERN, deviceIdentity.data.uuid);
 
   uint8_t ethMac[6];
   esp_read_mac(ethMac, ESP_MAC_ETH);
@@ -3455,16 +3448,16 @@ void mqtt_autoDiscovery_ip_address(){
   DynamicJsonDocument doc(1024);
 
   char topic[MQTT_TOPIC_IP_ADDRESS_AUTO_DISCOVERY_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_IP_ADDRESS_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_IP_ADDRESS_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid);
 
   char unique_id[MQTT_IP_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, sizeof(unique_id), MQTT_IP_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+  snprintf(unique_id, sizeof(unique_id), MQTT_IP_ADDRESS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, deviceIdentity.data.uuid);
 
   char default_entity_id[MQTT_IP_ADDRESS_DEFAULT_ENTITY_ID_LENGTH+1];
-  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_IP_ADDRESS_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid);
+  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_IP_ADDRESS_DEFAULT_ENTITY_ID_PATTERN, deviceIdentity.data.uuid);
 
   char state_topic[MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN, deviceIdentity.data.uuid);
 
   doc["name"] = "IP Address";
   doc["unique_id"] = unique_id;
@@ -3474,7 +3467,7 @@ void mqtt_autoDiscovery_ip_address(){
 
   JsonObject device = doc.createNestedObject("device");
   JsonArray identifiers = device.createNestedArray("identifiers");
-  identifiers.add(externalEEPROM.data.uuid);
+  identifiers.add(deviceIdentity.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
     device["name"] =  mqttClient.autoDiscovery.deviceName;
@@ -3482,8 +3475,8 @@ void mqtt_autoDiscovery_ip_address(){
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
   device["model"] = APPLICATION_NAME;
-  device["model_id"] = externalEEPROM.data.product_id;
-  device["serial_number"] = externalEEPROM.data.uuid;
+  device["model_id"] = deviceIdentity.data.product_id;
+  device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -3506,7 +3499,7 @@ void mqtt_autoDiscovery_ip_address(){
  */
 void mqtt_publishIPAddress(){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
@@ -3515,7 +3508,7 @@ void mqtt_publishIPAddress(){
   }
 
   char state_topic[MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_IP_ADDRESS_STATE_PATTERN, deviceIdentity.data.uuid);
 
   #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
     mqttClient.publish(state_topic, ETH.localIP().toString().c_str(), true);
@@ -3530,23 +3523,23 @@ void mqtt_publishIPAddress(){
  */
 void mqtt_autoDiscovery_count_errors(){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
   DynamicJsonDocument doc(1024);
 
   char topic[MQTT_TOPIC_COUNT_ERRORS_AUTO_DISCOVERY_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_COUNT_ERRORS_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_COUNT_ERRORS_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid);
 
   char unique_id[MQTT_COUNT_ERRORS_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, sizeof(unique_id), MQTT_COUNT_ERRORS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+  snprintf(unique_id, sizeof(unique_id), MQTT_COUNT_ERRORS_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, deviceIdentity.data.uuid);
 
   char default_entity_id[MQTT_COUNT_ERRORS_DEFAULT_ENTITY_ID_LENGTH+1];
-  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_COUNT_ERRORS_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid);
+  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_COUNT_ERRORS_DEFAULT_ENTITY_ID_PATTERN, deviceIdentity.data.uuid);
 
   char state_topic[MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN, deviceIdentity.data.uuid);
 
   doc["name"] = "Error Count";
   doc["unique_id"] = unique_id;
@@ -3556,7 +3549,7 @@ void mqtt_autoDiscovery_count_errors(){
 
   JsonObject device = doc.createNestedObject("device");
   JsonArray identifiers = device.createNestedArray("identifiers");
-  identifiers.add(externalEEPROM.data.uuid);
+  identifiers.add(deviceIdentity.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
     device["name"] =  mqttClient.autoDiscovery.deviceName;
@@ -3564,8 +3557,8 @@ void mqtt_autoDiscovery_count_errors(){
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
   device["model"] = APPLICATION_NAME;
-  device["model_id"] = externalEEPROM.data.product_id;
-  device["serial_number"] = externalEEPROM.data.uuid;
+  device["model_id"] = deviceIdentity.data.product_id;
+  device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -3588,7 +3581,7 @@ void mqtt_autoDiscovery_count_errors(){
  */
 void mqtt_publishCountErrors(){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
@@ -3597,7 +3590,7 @@ void mqtt_publishCountErrors(){
   }
 
   char state_topic[MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_COUNT_ERRORS_STATE_PATTERN, deviceIdentity.data.uuid);
 
   char count[3];
   snprintf(count, sizeof(count), "%i", eventLog.getErrors()->size());
@@ -3611,27 +3604,27 @@ void mqtt_publishCountErrors(){
  */
 void mqtt_autoDiscovery_update(){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
   
   char topic[MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid);
 
   char unique_id[MQTT_UPDATE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, sizeof(unique_id), MQTT_UPDATE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+  snprintf(unique_id, sizeof(unique_id), MQTT_UPDATE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, deviceIdentity.data.uuid);
 
   char default_entity_id[MQTT_UPDATE_DEFAULT_ENTITY_ID_LENGTH+1];
-  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_UPDATE_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid);
+  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_UPDATE_DEFAULT_ENTITY_ID_PATTERN, deviceIdentity.data.uuid);
 
   char state_topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
 
   char command_topic[MQTT_TOPIC_UPDATE_SET_PATTERN_LENGTH+1];
-  snprintf(command_topic, sizeof(command_topic), MQTT_TOPIC_UPDATE_SET_PATTERN, externalEEPROM.data.uuid);
+  snprintf(command_topic, sizeof(command_topic), MQTT_TOPIC_UPDATE_SET_PATTERN, deviceIdentity.data.uuid);
 
   char availability_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
-  snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, externalEEPROM.data.uuid);
+  snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid);
 
   DynamicJsonDocument doc(1024);
 
@@ -3642,7 +3635,7 @@ void mqtt_autoDiscovery_update(){
 
   JsonObject device = doc.createNestedObject("device");
   JsonArray identifiers = device.createNestedArray("identifiers");
-  identifiers.add(externalEEPROM.data.uuid);
+  identifiers.add(deviceIdentity.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
     device["name"] =  mqttClient.autoDiscovery.deviceName;
@@ -3650,8 +3643,8 @@ void mqtt_autoDiscovery_update(){
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
   device["model"] = APPLICATION_NAME;
-  device["model_id"] = externalEEPROM.data.product_id;
-  device["serial_number"] = externalEEPROM.data.uuid;
+  device["model_id"] = deviceIdentity.data.product_id;
+  device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -3684,7 +3677,7 @@ void mqtt_autoDiscovery_update(){
  */
 void mqtt_publishUpdateAvailable(JsonVariant &updateDoc){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
@@ -3715,7 +3708,7 @@ void mqtt_publishUpdateAvailable(JsonVariant &updateDoc){
   mqttDoc["update_percentage"] = NULL;
 
   char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
 
   mqttClient.beginPublish(topic, measureJson(mqttDoc), false); //Don't retain
   BufferingPrint bufferedClient(mqttClient, 32);
@@ -3733,19 +3726,19 @@ void mqtt_autoDiscovery_http_server(){
   DynamicJsonDocument doc(1024);
 
   char topic[MQTT_TOPIC_HTTP_SERVER_AUTO_DISCOVERY_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_HTTP_SERVER_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_HTTP_SERVER_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid);
 
   char unique_id[MQTT_HTTP_SERVER_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, sizeof(unique_id), MQTT_HTTP_SERVER_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+  snprintf(unique_id, sizeof(unique_id), MQTT_HTTP_SERVER_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, deviceIdentity.data.uuid);
 
   char default_entity_id[MQTT_HTTP_SERVER_DEFAULT_ENTITY_ID_LENGTH+1];
-  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_HTTP_SERVER_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid);
+  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_HTTP_SERVER_DEFAULT_ENTITY_ID_PATTERN, deviceIdentity.data.uuid);
 
   char state_topic[MQTT_TOPIC_HTTP_SERVER_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HTTP_SERVER_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HTTP_SERVER_STATE_PATTERN, deviceIdentity.data.uuid);
 
   char command_topic[MQTT_TOPIC_HTTP_SERVER_SET_PATTERN_LENGTH+1];
-  snprintf(command_topic, sizeof(command_topic), MQTT_TOPIC_HTTP_SERVER_SET_PATTERN, externalEEPROM.data.uuid);
+  snprintf(command_topic, sizeof(command_topic), MQTT_TOPIC_HTTP_SERVER_SET_PATTERN, deviceIdentity.data.uuid);
 
   doc["name"] = "HTTP Server";
   doc["unique_id"] = unique_id;
@@ -3754,7 +3747,7 @@ void mqtt_autoDiscovery_http_server(){
 
   JsonObject device = doc.createNestedObject("device");
   JsonArray identifiers = device.createNestedArray("identifiers");
-  identifiers.add(externalEEPROM.data.uuid);
+  identifiers.add(deviceIdentity.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
     device["name"] =  mqttClient.autoDiscovery.deviceName;
@@ -3762,8 +3755,8 @@ void mqtt_autoDiscovery_http_server(){
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
   device["model"] = APPLICATION_NAME;
-  device["model_id"] = externalEEPROM.data.product_id;
-  device["serial_number"] = externalEEPROM.data.uuid;
+  device["model_id"] = deviceIdentity.data.product_id;
+  device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -3794,7 +3787,7 @@ void mqtt_autoDiscovery_http_server(){
  */
 void mqtt_publishHttpServerStateChanged(boolean state){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
@@ -3803,7 +3796,7 @@ void mqtt_publishHttpServerStateChanged(boolean state){
   }
 
   char state_topic[MQTT_TOPIC_HTTP_SERVER_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HTTP_SERVER_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HTTP_SERVER_STATE_PATTERN, deviceIdentity.data.uuid);
 
   char value_char[4];
   if(state == true){
@@ -3824,16 +3817,16 @@ void mqtt_autoDiscovery_heapFree(){
   DynamicJsonDocument doc(1024);
 
   char topic[MQTT_TOPIC_HEAP_FREE_AUTO_DISCOVERY_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_HEAP_FREE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_HEAP_FREE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid);
 
   char unique_id[MQTT_HEAP_FREE_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, sizeof(unique_id), MQTT_HEAP_FREE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+  snprintf(unique_id, sizeof(unique_id), MQTT_HEAP_FREE_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, deviceIdentity.data.uuid);
 
   char default_entity_id[MQTT_HEAP_FREE_DEFAULT_ENTITY_ID_LENGTH+1];
-  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_HEAP_FREE_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid);
+  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_HEAP_FREE_DEFAULT_ENTITY_ID_PATTERN, deviceIdentity.data.uuid);
 
   char state_topic[MQTT_TOPIC_HEAP_FREE_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_FREE_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_FREE_STATE_PATTERN, deviceIdentity.data.uuid);
 
   doc["name"] = "Heap Free";
   doc["unique_id"] = unique_id;
@@ -3847,7 +3840,7 @@ void mqtt_autoDiscovery_heapFree(){
 
   JsonObject device = doc.createNestedObject("device");
   JsonArray identifiers = device.createNestedArray("identifiers");
-  identifiers.add(externalEEPROM.data.uuid);
+  identifiers.add(deviceIdentity.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
     device["name"] =  mqttClient.autoDiscovery.deviceName;
@@ -3855,8 +3848,8 @@ void mqtt_autoDiscovery_heapFree(){
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
   device["model"] = APPLICATION_NAME;
-  device["model_id"] = externalEEPROM.data.product_id;
-  device["serial_number"] = externalEEPROM.data.uuid;
+  device["model_id"] = deviceIdentity.data.product_id;
+  device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -3880,7 +3873,7 @@ void mqtt_autoDiscovery_heapFree(){
  */
 void mqtt_publish_heapFree(){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
@@ -3889,7 +3882,7 @@ void mqtt_publish_heapFree(){
   }
 
   char state_topic[MQTT_TOPIC_HEAP_FREE_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_FREE_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_FREE_STATE_PATTERN, deviceIdentity.data.uuid);
 
   char buf[12];
   sprintf(buf, "%u", ESP.getFreeHeap());
@@ -3906,16 +3899,16 @@ void mqtt_autoDiscovery_heapLargestFreeBlock(){
   DynamicJsonDocument doc(1024);
 
   char topic[MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_AUTO_DISCOVERY_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, externalEEPROM.data.uuid);
+  snprintf(topic, sizeof(topic), MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid);
 
   char unique_id[MQTT_HEAP_LARGEST_FREE_BLOCK_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-  snprintf(unique_id, sizeof(unique_id), MQTT_HEAP_LARGEST_FREE_BLOCK_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, externalEEPROM.data.uuid);
+  snprintf(unique_id, sizeof(unique_id), MQTT_HEAP_LARGEST_FREE_BLOCK_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, deviceIdentity.data.uuid);
 
   char default_entity_id[MQTT_HEAP_LARGEST_FREE_BLOCK_DEFAULT_ENTITY_ID_LENGTH+1];
-  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_HEAP_LARGEST_FREE_BLOCK_DEFAULT_ENTITY_ID_PATTERN, externalEEPROM.data.uuid);
+  snprintf(default_entity_id, sizeof(default_entity_id), MQTT_HEAP_LARGEST_FREE_BLOCK_DEFAULT_ENTITY_ID_PATTERN, deviceIdentity.data.uuid);
 
   char state_topic[MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_STATE_PATTERN, deviceIdentity.data.uuid);
 
   doc["name"] = "Heap Largest Free Block";
   doc["unique_id"] = unique_id;
@@ -3929,7 +3922,7 @@ void mqtt_autoDiscovery_heapLargestFreeBlock(){
 
   JsonObject device = doc.createNestedObject("device");
   JsonArray identifiers = device.createNestedArray("identifiers");
-  identifiers.add(externalEEPROM.data.uuid);
+  identifiers.add(deviceIdentity.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
     device["name"] =  mqttClient.autoDiscovery.deviceName;
@@ -3937,8 +3930,8 @@ void mqtt_autoDiscovery_heapLargestFreeBlock(){
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
   device["model"] = APPLICATION_NAME;
-  device["model_id"] = externalEEPROM.data.product_id;
-  device["serial_number"] = externalEEPROM.data.uuid;
+  device["model_id"] = deviceIdentity.data.product_id;
+  device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -3962,7 +3955,7 @@ void mqtt_autoDiscovery_heapLargestFreeBlock(){
  */
 void mqtt_publish_heapLargestFreeBlock(){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
@@ -3971,7 +3964,7 @@ void mqtt_publish_heapLargestFreeBlock(){
   }
 
   char state_topic[MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_STATE_PATTERN, externalEEPROM.data.uuid);
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_STATE_PATTERN, deviceIdentity.data.uuid);
 
   char buf[12];
   sprintf(buf, "%lu", (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
@@ -3995,7 +3988,7 @@ void mqtt_publishMemoryUsage(){
  */
 void mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus status){
 
-  if(externalEEPROM.enabled == false){
+  if(deviceIdentity.enabled == false){
     return;
   }
 
@@ -4004,7 +3997,7 @@ void mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus stat
   }
 
   char availability_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
-  snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, externalEEPROM.data.uuid);
+  snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid);
 
   if(status == esp32FOTA::lastHTTPCheckStatus::SUCCESS || status == esp32FOTA::lastHTTPCheckStatus::SUCCESS_NO_UPDATE_AVAILABLE){
     mqttClient.publish(availability_topic, "online");
@@ -4019,7 +4012,7 @@ void mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus stat
     mqttDoc["latest_version"] = VERSION;
 
     char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-    snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, externalEEPROM.data.uuid);
+    snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
 
     mqttClient.beginPublish(topic, measureJson(mqttDoc), false); //Don't retain
     BufferingPrint bufferedClient(mqttClient, 32);

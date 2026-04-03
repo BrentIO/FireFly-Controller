@@ -15,8 +15,7 @@
     /* Define hardware enumeration constants */
     #define ENUM_IO_EXTENDER_MODEL_PCA9995 0 /* NXP Semiconductors PCA9555 16-bit I2C-bus and SMBus I/O port with interrupt */
     #define ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685 0 /* NXP Semiconductors PCA9685 16-channel, 12-bit PWM Fm+ I2C-bus LED controller */
-    #define ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX 0 /* Microchip Technology 24LCXXX Family I2C Serial EEPROM */
-    #define ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 0 /* NXP Semiconductors PCT2075 I2C-bus Fm+, 1 °C accuracy, digital temperature sensor and thermal watchdog */
+#define ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 0 /* NXP Semiconductors PCT2075 I2C-bus Fm+, 1 °C accuracy, digital temperature sensor and thermal watchdog */
     #define ENUM_OLED_MODEL_SSD1306_128_32 0 /* Vishay SSD1306 128x32px Graphic OLED Display */
     #define ENUM_ETHERNET_MODEL_W5500 1 /* WIZnet W5500 hardwired TCP/IP embedded Ethernet controller */
     #define ENUM_ETHERNET_MODEL_NONE 0 /* For hardware without Ethernet */
@@ -41,11 +40,6 @@
         #define OUTPUT_CONTROLLER_COUNT 2 /* The number of output controllers */
         #define OUTPUT_CONTROLLER_ADDRESSES {0x40,0x42} /* DEFECT on this model I2C addresses for the output controllers */
         #define OUTPUT_CONTROLLER_PORTS {2,1,3,4,6,5,7,8,10,9,11,12,14,13,15,16} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
-
-        /* External EEPROM */
-        #define EEPROM_EXTERNAL_MODEL ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX /* External EEPROM controller model */
-        #define EEPROM_EXTERNAL_WRITE_PROTECT_PIN 23 /* EEPROM write protect pin.  When low, write protect is disabled */
-        #define EEPROM_EXTERNAL_ADDRESS 0x50 /* I2C addresses of the external EEPROM */
 
         /* Temperature Sensor */
         #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
@@ -84,11 +78,6 @@
         #define OUTPUT_CONTROLLER_ADDRESSES {0x40,0x41} /* I2C addresses for the output controllers */
         #define OUTPUT_CONTROLLER_PORTS {2,1,3,4,6,5,7,8,10,9,11,12,14,13,15,16} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
 
-        /* External EEPROM */
-        #define EEPROM_EXTERNAL_MODEL ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX /* External EEPROM controller model */
-        #define EEPROM_EXTERNAL_WRITE_PROTECT_PIN 23 /* EEPROM write protect pin.  When low, write protect is disabled */
-        #define EEPROM_EXTERNAL_ADDRESS 0x50 /* I2C addresses of the external EEPROM */
-
         /* Temperature Sensor */
         #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
         #define TEMPERATURE_SENSOR_COUNT 1 /* The number of temperature sensors */
@@ -126,11 +115,6 @@
         #define OUTPUT_CONTROLLER_COUNT_PINS 6 /* Special for this model */
         #define OUTPUT_CONTROLLER_ADDRESSES {0x40} /* I2C addresses for the output controllers */
         #define OUTPUT_CONTROLLER_PORTS {1,2,4,3,5,6} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
-
-        /* External EEPROM */
-        #define EEPROM_EXTERNAL_MODEL ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX /* External EEPROM controller model */
-        #define EEPROM_EXTERNAL_WRITE_PROTECT_PIN 23 /* EEPROM write protect pin.  When low, write protect is disabled */
-        #define EEPROM_EXTERNAL_ADDRESS 0x50 /* I2C addresses of the external EEPROM */
 
         /* Temperature Sensor */
         #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
@@ -178,11 +162,6 @@
         #define OUTPUT_CONTROLLER_ADDRESSES {0x40,0x41} /* I2C addresses for the output controllers */
         #define OUTPUT_CONTROLLER_PORTS {2,1,3,4,6,5,7,8,10,9,11,12,14,13,15,16} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
 
-        /* External EEPROM */
-        #define EEPROM_EXTERNAL_MODEL ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX /* External EEPROM controller model */
-        #define EEPROM_EXTERNAL_WRITE_PROTECT_PIN 23 /* EEPROM write protect pin.  When low, write protect is disabled */
-        #define EEPROM_EXTERNAL_ADDRESS 0x50 /* I2C addresses of the external EEPROM */
-
         /* Temperature Sensor */
         #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
         #define TEMPERATURE_SENSOR_COUNT 1 /* The number of temperature sensors */
@@ -229,11 +208,6 @@
         #define OUTPUT_CONTROLLER_COUNT_PINS 6 /* Special for this model */
         #define OUTPUT_CONTROLLER_ADDRESSES {0x40} /* I2C addresses for the output controllers */
         #define OUTPUT_CONTROLLER_PORTS {1,2,4,3,5,6} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
-
-        /* External EEPROM */
-        #define EEPROM_EXTERNAL_MODEL ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX /* External EEPROM controller model */
-        #define EEPROM_EXTERNAL_WRITE_PROTECT_PIN 23 /* EEPROM write protect pin.  When low, write protect is disabled */
-        #define EEPROM_EXTERNAL_ADDRESS 0x50 /* I2C addresses of the external EEPROM */
 
         /* Temperature Sensor */
         #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
@@ -311,16 +285,6 @@
 
         #ifndef OUTPUT_CONTROLLER_COUNT_PINS
             #define OUTPUT_CONTROLLER_COUNT_PINS 16 /* The number of pins on each output controller. */
-        #endif
-
-    #endif
-
-
-    #if EEPROM_EXTERNAL_MODEL == ENUM_EEPROM_EXTERNAL_MODEL_24LCXXX
-        #include <I2C_eeprom.h>
-
-        #ifndef EEPROM_EXTERNAL_SIZE
-            #define EEPROM_EXTERNAL_SIZE 256 /* Six of the external EEPROM.  NOTE: Divide the device size in Kbits by 8. */
         #endif
 
     #endif
@@ -493,11 +457,6 @@
 
     #ifndef OUTPUT_CONTROLLER_MODEL
         #error OUTPUT_CONTROLLER_MODEL not set
-    #endif
-
-
-    #ifndef EEPROM_EXTERNAL_MODEL
-        #error EEPROM_EXTERNAL_MODEL not set
     #endif
 
 

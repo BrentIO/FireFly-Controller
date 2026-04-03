@@ -31,7 +31,7 @@
 #define APPLICATION_NAME "HW Reg and Config"
 
 #include "common/hardware.h"
-#include "common/externalEEPROM.h"
+#include "common/deviceIdentity.h"
 #include "common/oled.h"
 #include "common/frontPanel.h"
 #include "common/inputs.h"
@@ -47,7 +47,7 @@
 
 unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
 AsyncWebServer httpServer(80);
-managerExternalEEPROM externalEEPROM; /* External EEPROM instance */
+managerDeviceIdentity deviceIdentity; /* Device identity instance */
 managerOled oled; /* OLED instance */
 managerFrontPanel frontPanel; /* Front panel instance */
 managerInputs inputs; /* Inputs collection */
@@ -165,17 +165,16 @@ void setup() {
 
 
   /* Start external EEPROM */
-  externalEEPROM.setCallback_failure(&failureHandler_eeprom);
-  externalEEPROM.begin();
+  deviceIdentity.begin();
 
-  if(externalEEPROM.enabled == true){
+  if(deviceIdentity.enabled == true){
 
-    oled.setProductID(externalEEPROM.data.product_id);
-    oled.setUUID(externalEEPROM.data.uuid);
+    oled.setProductID(deviceIdentity.data.product_id);
+    oled.setUUID(deviceIdentity.data.uuid);
 
-    log_i("EEPROM UUID: %s", externalEEPROM.data.uuid);
-    log_i("EEPROM Product ID: %s", externalEEPROM.data.product_id);
-    log_i("EEPROM Key: %s", externalEEPROM.data.key);
+    log_i("NVS UUID: %s", deviceIdentity.data.uuid);
+    log_i("NVS Product ID: %s", deviceIdentity.data.product_id);
+    log_i("NVS Key: %s", deviceIdentity.data.key);
   }
 
 
@@ -788,7 +787,6 @@ void http_handlePeripherals(AsyncWebServerRequest *request){
   nsOutputs::managerOutputs::healthResult outputHealth = outputs.health();
   managerTemperatureSensors::healthResult temperatureHealth = temperatureSensors.health();
   structHealth oledHealth = oled.health();
-  structHealth externalEepromHealth = externalEEPROM.health();
 
 
   for(int i=0; i < inputHealth.count; i++){
@@ -821,11 +819,10 @@ void http_handlePeripherals(AsyncWebServerRequest *request){
   oledObj["type"] = "OLED";
   oledObj["online"] = oledHealth.enabled;
 
-  JsonObject externalEepromObj = array.createNestedObject();
-  sprintf(address, "0x%02X", externalEepromHealth.address);
-  externalEepromObj["address"] = address;
-  externalEepromObj["type"] = "EEPROM";
-  externalEepromObj["online"] = externalEepromHealth.enabled;
+  JsonObject nvsObj = array.createNestedObject();
+  nvsObj["address"] = "0x00";
+  nvsObj["type"] = "NVS";
+  nvsObj["online"] = true;
 
   serializeJson(doc, *response);
   request->send(response);
@@ -1035,21 +1032,16 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
 */
 void http_handleEEPROM_GET(AsyncWebServerRequest *request){
 
-  if(externalEEPROM.enabled == false){
-    http_error(request, "Cannot connect to external EEPROM");
-    return;
-  }
-
-  if(strcmp(externalEEPROM.data.uuid, "") == 0){
+  if(strcmp(deviceIdentity.data.uuid, "") == 0){
     http_notFound(request);
     return;
   }
  
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   StaticJsonDocument<256> doc;
-  doc["uuid"] = externalEEPROM.data.uuid;
-  doc["product_id"] = externalEEPROM.data.product_id;
-  doc["key"] = externalEEPROM.data.key;
+  doc["uuid"] = deviceIdentity.data.uuid;
+  doc["product_id"] = deviceIdentity.data.product_id;
+  doc["key"] = deviceIdentity.data.key;
 
   serializeJson(doc, *response);
   request->send(response);
@@ -1062,18 +1054,13 @@ void http_handleEEPROM_GET(AsyncWebServerRequest *request){
 */
 void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
 
-  if (externalEEPROM.enabled == false){
-    http_error(request, "Cannot connect to external EEPROM");
-    return;
-  }
-
-  if(strcmp(externalEEPROM.data.uuid, "") == 0){
+  if(strcmp(deviceIdentity.data.uuid, "") == 0){
     http_notFound(request);
     return;
   }
 
-  if(externalEEPROM.destroy() == false){
-    http_error(request, "Error during EEPROM delete");
+  if(deviceIdentity.destroy() == false){
+    http_error(request, "Error during NVS delete");
     return;
   }
 
@@ -1082,7 +1069,7 @@ void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
 
   request->send(204);
 
-  eventLog.createEvent("Deleted EEPROM", EventLog::LOG_LEVEL_NOTIFICATION);
+  eventLog.createEvent("Deleted device identity", EventLog::LOG_LEVEL_NOTIFICATION);
 }
 
 
@@ -1102,13 +1089,8 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
       return;
     }
 
-  if (externalEEPROM.enabled == false){
-    http_error(request, "Cannot connect to external EEPROM");
-    return;
-  }
-
-  if(strcmp(externalEEPROM.data.uuid, "") != 0){
-    http_badRequest(request, "EEPROM already configured");
+  if(strcmp(deviceIdentity.data.uuid, "") != 0){
+    http_badRequest(request, "Device already provisioned");
     return;
   }
 
@@ -1119,12 +1101,12 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  if(strlen(doc["uuid"])!=(sizeof(externalEEPROM.data.uuid)-1)){
+  if(strlen(doc["uuid"])!=(sizeof(deviceIdentity.data.uuid)-1)){
     http_badRequest(request, "Field uuid is not exactly 36 characters");
     return;
   }
 
-  managerExternalEEPROM::deviceType postedData;
+  managerDeviceIdentity::deviceType postedData;
 
   strlcpy(postedData.uuid, doc["uuid"], sizeof(postedData.uuid));
 
@@ -1158,6 +1140,7 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
   }
 
   strlcpy(postedData.key, doc["key"], sizeof(postedData.key));
+  postedData.product_hex = PRODUCT_HEX;
 
   ms.Target(postedData.key);
 
@@ -1166,19 +1149,19 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  externalEEPROM.data = postedData;
+  deviceIdentity.data = postedData;
 
-  if(externalEEPROM.write() == false){
-    http_error(request, "Error during EEPROM write");
+  if(deviceIdentity.write() == false){
+    http_error(request, "Error during NVS write");
     return;
   }
 
-  oled.setProductID(externalEEPROM.data.product_id);
-  oled.setUUID(externalEEPROM.data.uuid);
+  oled.setProductID(deviceIdentity.data.product_id);
+  oled.setUUID(deviceIdentity.data.uuid);
 
   request->send(201);
 
-  eventLog.createEvent("Wrote EEPROM", EventLog::LOG_LEVEL_NOTIFICATION);
+  eventLog.createEvent("Wrote device identity", EventLog::LOG_LEVEL_NOTIFICATION);
 }
 
 
@@ -1337,27 +1320,8 @@ void failureHandler_oled(uint8_t address, managerOled::failureReason failureReas
 }
 
 
-/** 
- * Callback function which handles failures of the external EERPOM 
-*/
-void failureHandler_eeprom(uint8_t address, managerExternalEEPROM::failureReason failureReason){
-
-  char text[OLED_CHARACTERS_PER_LINE+1];
-
-  if(failureReason == managerExternalEEPROM::failureReason::ADDRESS_OFFLINE){
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "ExEEPROM 0x%02X offline", address);
-  }else{
-      snprintf(text, OLED_CHARACTERS_PER_LINE+1, "ExEEPROM 0x%02X fail %i", address, failureReason);
-  }
-  
-  eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
-  frontPanel.setStatus(managerFrontPanel::status::FAILURE);
-
-}
-
-
-/** 
- * Callback function which handles failures of any input 
+/**
+ * Callback function which handles failures of any input
 */
 void failureHandler_inputs(uint8_t address, managerInputs::failureReason failureReason){
 
