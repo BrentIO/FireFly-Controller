@@ -263,15 +263,15 @@
                  * @param value the new root name to use, without a trailing slash
                  */
                 void setHomeAssistantRoot(const char* value){
-                    strcpy(homeAssistantRoot, value);
+                    strlcpy(homeAssistantRoot, value, sizeof(homeAssistantRoot));
                 }
 
                 void setDeviceName(const char* value){
-                    strcpy(deviceName, value);
+                    strlcpy(deviceName, value, sizeof(deviceName));
                 }
 
                 void setSuggestedArea(const char* value){
-                    strcpy(suggestedArea, value);
+                    strlcpy(suggestedArea, value, sizeof(suggestedArea));
                 }
             } autoDiscovery;
 
@@ -298,12 +298,12 @@
 
 
             void setUsername(const char* value){
-                strcpy(username, value);
+                strlcpy(username, value, sizeof(username));
             }
 
 
             void setPassword(const char* value){
-                strcpy(password, value);
+                strlcpy(password, value, sizeof(password));
             }
 
     };
