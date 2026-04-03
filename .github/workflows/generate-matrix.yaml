@@ -21,7 +21,7 @@ jobs:
 
       - id: build
         run: |
-          MATRIX=$(jq -c '
+          MATRIX=$(yq -o=json devices.yaml | jq -c '
             {
               include: [
                 .applications[] as $app |
@@ -44,6 +44,6 @@ jobs:
                   }
               ]
             }
-          ' devices.json)
+          ')
 
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
