@@ -195,10 +195,12 @@ void setup() {
     log_d("NVS Key: %s", deviceIdentity.data.key);
 
     if(deviceIdentity.data.product_hex != 0 && deviceIdentity.data.product_hex != PRODUCT_HEX){
-      eventLog.createEvent("HW/FW mismatch", EventLog::LOG_LEVEL_ERROR);
-      log_e("Firmware/Hardware mismatch\nHW: 0x%08X\nFW: 0x%08X",
+      
+      char text[(OLED_CHARACTERS_PER_LINE*3)+1];
+      snprintf(text, sizeof(text), "HW/FW mismatch\nHW: 0x%08X\nFW: 0x%08X",
             deviceIdentity.data.product_hex,
             (uint32_t)PRODUCT_HEX);
+      eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
       log_e("Sleeping now");
       esp_deep_sleep_start();
     }
