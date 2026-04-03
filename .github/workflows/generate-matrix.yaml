@@ -23,11 +23,12 @@ jobs:
         run: |
           MATRIX=$(jq -c '
             {
-              application: .applications,
               include: [
+                .applications[] as $app |
                 .devices[]
                 | select(.status == "ACTIVE")
                 | {
+                    application: $app,
                     product_hex: .product_hex,
                     product_id: .product_id,
                     partition_size_config: (
