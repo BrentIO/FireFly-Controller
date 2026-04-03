@@ -103,6 +103,16 @@ jobs:
           echo "Updated version.json:"
           cat "${{ github.workspace }}/${{ matrix.application }}/www/version.json"
 
+      - name: Generate controller_products in database.js from devices.yaml
+        if: matrix.application == 'Controller'
+        run: |
+          PRODUCTS=$(yq -o=json ${{ github.workspace }}/devices.yaml \
+            | jq -c '[.devices[] | select(.status != "RETIRED") | {pid: .product_id, inputs: {count: .inputs_count}, outputs: {count: .outputs_count}}]')
+          sed -i "s|^var controller_products = .*;|var controller_products = ${PRODUCTS};|" \
+            "${{ github.workspace }}/Controller/www/database.js"
+          echo "Updated controller_products:"
+          grep "^var controller_products" "${{ github.workspace }}/Controller/www/database.js"
+
       - name: Install Arduino CLI
         if: ${{ !env.ACT }}
         uses: arduino/setup-arduino-cli@v2
