@@ -201,6 +201,7 @@ void setup() {
             deviceIdentity.data.product_hex,
             (uint32_t)PRODUCT_HEX);
       eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
+      sleep(300);
       log_e("Sleeping now");
       esp_deep_sleep_start();
     }
