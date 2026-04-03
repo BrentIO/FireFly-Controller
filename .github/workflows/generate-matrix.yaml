@@ -1,4 +1,4 @@
-name: Generate Firmware and Device Matrix
+name: 📋 Generate Firmware and Device Matrix
 
 on:
   workflow_call:
