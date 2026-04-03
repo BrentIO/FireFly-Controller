@@ -11,7 +11,7 @@ on:
           - production
 
 env:
-  VERSION_ESP_Core: 3.3.7
+  VERSION_ESP_Core: 2.0.17
   ARTIFACT_ROOT: /home/runner/artifacts
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
