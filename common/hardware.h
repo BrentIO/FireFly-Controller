@@ -9,6 +9,8 @@
         #error Build failed, missing ESP32 definition. Ensure it was set in ./.vscode/arduino.json {"buildPreferences":[["build.extra_flags","-DESP32"]]}
     #endif
 
+    #include <esp_mac.h>
+
 
     /* Define hardware enumeration constants */
     #define ENUM_IO_EXTENDER_MODEL_PCA9995 0 /* NXP Semiconductors PCA9555 16-bit I2C-bus and SMBus I/O port with interrupt */
