@@ -515,13 +515,14 @@ namespace nsOutputs{
             /**
              * Gets the port's ID, which is used for MQTT
              * @param port as the physical port number to get
-             * @param id as a pointer to a char* (with size of OUTPUT_ID_MAX_LENGTH + 1) where the unique ID will be written
+             * @param id as a pointer to a char* where the unique ID will be written
+             * @param maxLen the size of the buffer pointed to by id, including the null terminator
              */
-            void getPortId(uint8_t port, char* &id){
+            void getPortId(uint8_t port, char* &id, size_t maxLen){
 
                 for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
                     if(this->outputs[i].port == port){
-                        strcpy(id, this->outputs[i].id);
+                        strlcpy(id, this->outputs[i].id, maxLen);
                     }
                 }
             }

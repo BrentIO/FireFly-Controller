@@ -1126,7 +1126,7 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
   managerExternalEEPROM::deviceType postedData;
 
-  strcpy(postedData.uuid, doc["uuid"]);
+  strlcpy(postedData.uuid, doc["uuid"], sizeof(postedData.uuid));
 
   ms.Target(postedData.uuid);
 
@@ -1145,7 +1145,7 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  strcpy(postedData.product_id, doc["product_id"]);
+  strlcpy(postedData.product_id, doc["product_id"], sizeof(postedData.product_id));
 
   if(!doc.containsKey("key")){
     http_badRequest(request, "Field key is required");
@@ -1157,7 +1157,7 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  strcpy(postedData.key, doc["key"]);
+  strlcpy(postedData.key, doc["key"], sizeof(postedData.key));
 
   ms.Target(postedData.key);
 
