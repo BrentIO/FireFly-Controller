@@ -19,7 +19,7 @@
 
 - [x] **PR-19** — Fix build matrix (flat include-only list for all product × application combinations) — complete
 
-- [ ] **Defect (FireFly-Cloud)** — `config.bin` is flashed during OTA even when "Factory Reset" was not checked in the UI; fix should be in FireFly-Cloud
+- [x] **Defect (FireFly-Cloud)** — `config.bin` is flashed during OTA even when "Factory Reset" was not checked in the UI — fixed in FireFly-Cloud#174
 
 - [ ] **PR-12B** — Defect fixes: strcpy → strlcpy hardening
   - [ ] `extendedPubSubClient.h` setters (lines 266, 270, 274, 302, 307)
