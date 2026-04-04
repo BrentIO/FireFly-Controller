@@ -2556,13 +2556,13 @@ bool setup_outputs(String filename){
 
     outputs.setPortId(outputPortNumber, output.value()["id"]);
 
-    !if(output.value()["type"].isNull()){
+    if(!output.value()["type"].isNull()){
       if(strcmp(output.value()["type"], "VARIABLE") == 0){
         outputs.setPortType(outputPortNumber, nsOutputs::outputPin::VARIABLE);
       }
     }
 
-    !if(output.value()["enabled"].isNull()){
+    if(!output.value()["enabled"].isNull()){
       outputs.enablePort(outputPortNumber, output.value()["enabled"].as<boolean>());
     }
 
@@ -3175,7 +3175,7 @@ void mqtt_autoDiscovery_outputs(){
     char devicePlatform[WORD_LENGTH_INTEGRATION+1];
     strcpy(devicePlatform,"switch"); //Default
 
-    !if(output.value()["icon"].isNull()){
+    if(!output.value()["icon"].isNull()){
 
       if(output.value()["icon"].as<String>().indexOf("light") != -1){
         strcpy(devicePlatform,"light");
@@ -3200,7 +3200,7 @@ void mqtt_autoDiscovery_outputs(){
 
     bool isVariableOutput = false;
 
-    !if(output.value()["type"].isNull()){
+    if(!output.value()["type"].isNull()){
       if(strcmp(output.value()["type"].as<const char*>(), "VARIABLE") == 0){
         isVariableOutput = true;
       }
@@ -3227,7 +3227,7 @@ void mqtt_autoDiscovery_outputs(){
     mqttDoc["unique_id"] = unique_id;
     mqttDoc["default_entity_id"] = default_entity_id;
 
-    !if(output.value()["icon"].isNull()){
+    if(!output.value()["icon"].isNull()){
         mqttDoc["icon"] = output.value()["icon"].as<const char*>();
     }
 
@@ -3244,7 +3244,7 @@ void mqtt_autoDiscovery_outputs(){
     JsonArray identifiers = device["identifiers"].to<JsonArray>();
     identifiers.add(unique_id);
 
-    !if(output.value()["name"].isNull()){
+    if(!output.value()["name"].isNull()){
       device["name"] = output.value()["name"].as<const char*>();
     }else{
       device["name"] = output.value()["id"].as<const char*>();
@@ -3252,7 +3252,7 @@ void mqtt_autoDiscovery_outputs(){
 
     device["via_device"] = deviceIdentity.data.uuid;
 
-    !if(output.value()["area"].isNull()){
+    if(!output.value()["area"].isNull()){
       device["suggested_area"] =  output.value()["area"].as<const char*>();
     }
     mqttDoc["state_topic"] = state_topic;
