@@ -1,7 +1,3 @@
-applications:
-  - Controller
-  - Hardware-Registration-and-Configuration
-
 devices:
   - product_hex: "0x32322211"
     product_id: FFC3232-2211
