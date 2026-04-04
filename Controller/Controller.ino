@@ -195,14 +195,9 @@ void setup() {
     log_d("NVS Key: %s", deviceIdentity.data.key);
 
     if(deviceIdentity.data.product_hex != 0 && deviceIdentity.data.product_hex != PRODUCT_HEX){
-      
-      char text[(OLED_CHARACTERS_PER_LINE*3)+1];
-      snprintf(text, sizeof(text), "HW/FW mismatch\nHW: 0x%08X\nFW: 0x%08X",
-            deviceIdentity.data.product_hex,
-            (uint32_t)PRODUCT_HEX);
-      eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
-      oled.setPage(managerOled::PAGE_ERROR);
-      log_e("Sleeping now");
+      oled.setMismatchHex(deviceIdentity.data.product_hex, (uint32_t)PRODUCT_HEX);
+      oled.setPage(managerOled::PAGE_HW_FW_MISMATCH);
+      log_e("HW/FW product_hex mismatch (HW: 0x%08X, FW: 0x%08X). Sleeping.", deviceIdentity.data.product_hex, (uint32_t)PRODUCT_HEX);
       esp_deep_sleep_start();
     }
   }

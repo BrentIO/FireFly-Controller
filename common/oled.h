@@ -41,6 +41,7 @@
                 PAGE_ERROR_INTRO = 60,
                 PAGE_AUTH_TOKEN = 7,
                 PAGE_AUTH_TOKEN_INTRO = 70,
+                PAGE_HW_FW_MISMATCH = 253,
                 PAGE_OTA_IN_PROGRESS = 254,
                 PAGE_FACTORY_RESET = 255
             };
@@ -67,6 +68,8 @@
             boolean _isSleeping = false;
             boolean _isDimmed = false;
             int _factory_reset_value = 0;
+            uint32_t _mismatch_hw_hex = 0;
+            uint32_t _mismatch_fw_hex = 0;
             EventLog *_eventLog;
             authorizationToken *_authorizationToken;
             unsigned long _timeLastAction = 0;
@@ -995,6 +998,34 @@
             }
 
 
+            void _showPage_HWFWMismatch(){
+
+                if(this->_initialized != true){
+                    return;
+                }
+
+                this->_activePage = PAGE_HW_FW_MISMATCH;
+                this->_wake();
+                this->_clear();
+
+                #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
+                    this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); //Inverted text
+                    this->hardware.setCursor(0, 0);
+                    this->hardware.println("        ERROR        ");
+                    this->hardware.setTextColor(SSD1306_WHITE);
+                    this->hardware.setCursor(0, 9);
+                    this->hardware.println("Firmware Mismatch");
+                    char buf[22];
+                    snprintf(buf, sizeof(buf), "HW: 0x%08X", this->_mismatch_hw_hex);
+                    this->hardware.println(buf);
+                    snprintf(buf, sizeof(buf), "FW: 0x%08X", this->_mismatch_fw_hex);
+                    this->hardware.println(buf);
+                #endif
+
+                this->_commit();
+            }
+
+
             void _showPage_OTA_In_Progress(){
 
                 if(this->_initialized != true){
@@ -1106,6 +1137,12 @@
                 returnValue.enabled = this->_initialized;
 
                 return returnValue;
+            }
+
+
+            void setMismatchHex(uint32_t hwHex, uint32_t fwHex){
+                _mismatch_hw_hex = hwHex;
+                _mismatch_fw_hex = fwHex;
             }
 
 
@@ -1280,6 +1317,10 @@
                         _showPage_Auth_Token();
                         break;
 
+
+                    case PAGE_HW_FW_MISMATCH:
+                        _showPage_HWFWMismatch();
+                        break;
 
                     case PAGE_OTA_IN_PROGRESS:
                         _showPage_OTA_In_Progress();
