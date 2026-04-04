@@ -301,6 +301,10 @@
              #define TEMPERATURE_SENSOR_DEGREES_VARIATION_ALLOWED 0.125 /* Number of degrees allowed variance between temperature reads before the new value is stored and reported. Default 0.125. */
         #endif
 
+        #ifndef TEMPERATURE_SENSOR_EMA_ALPHA
+            #define TEMPERATURE_SENSOR_EMA_ALPHA 0.2f /* EMA smoothing factor applied before publishing (0–1). Lower = smoother graph, slower response. Default 0.2. */
+        #endif
+
     #endif
 
 

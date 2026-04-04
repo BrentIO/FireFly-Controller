@@ -95,7 +95,9 @@ class managerTemperatureSensors{
                 PCT2075 hardware = PCT2075(address); /* Reference to the hardware. */
             #endif
 
-            float previousRead = 0; /* Previous read temperature in degrees celsius. Default 0 */
+            float previousRead = 0; /* Last published EMA temperature in degrees celsius. Default 0 */
+            float ema = 0; /* Current exponential moving average. Default 0 */
+            bool emaInitialized = false; /* True once the EMA has been seeded with a real reading */
             unsigned long timePreviousRead = 0; /* Time (millis) when the sensor was last read. Default 0 */
             const char* location; /* Physical location of the sensor */
             bool enabled = true; /* Indicates if the sensor is enabled. Default true */
@@ -264,13 +266,20 @@ class managerTemperatureSensors{
                         }
                     #endif
                     
-                    //Check if the delta between the two reads is more than the TEMPERATURE_SENSOR_DEGREES_VARIATION_ALLOWED
-                    if(abs(currentRead - temperatureSensors[i].previousRead) > TEMPERATURE_SENSOR_DEGREES_VARIATION_ALLOWED){
+                    //Update the EMA; seed with the first real reading
+                    if(!temperatureSensors[i].emaInitialized){
+                        temperatureSensors[i].ema = currentRead;
+                        temperatureSensors[i].emaInitialized = true;
+                    } else {
+                        temperatureSensors[i].ema = TEMPERATURE_SENSOR_EMA_ALPHA * currentRead
+                                                  + (1.0f - TEMPERATURE_SENSOR_EMA_ALPHA) * temperatureSensors[i].ema;
+                    }
 
-                        //Store the new temperature reading
-                        temperatureSensors[i].previousRead = currentRead;
+                    //Publish if the smoothed value has drifted enough from the last published value
+                    if(abs(temperatureSensors[i].ema - temperatureSensors[i].previousRead) > TEMPERATURE_SENSOR_DEGREES_VARIATION_ALLOWED){
 
-                        //Publish an event for the change
+                        temperatureSensors[i].previousRead = temperatureSensors[i].ema;
+
                         if(this->ptrPublisherCallback){
                             this->ptrPublisherCallback(temperatureSensors[i].location, temperatureSensors[i].previousRead);
                         }
