@@ -919,12 +919,12 @@
 
                         int8_t iteratorOledStart = 0;
 
-                        if(this->_eventLog->getEvents()->size() > OLED_NUMBER_OF_LINES){ 
-                            iteratorOledStart = this->_eventLog->getEvents()->size()-OLED_NUMBER_OF_LINES;
+                        if(this->_eventLog->getEventCount() > OLED_NUMBER_OF_LINES){
+                            iteratorOledStart = this->_eventLog->getEventCount()-OLED_NUMBER_OF_LINES;
                         }
 
-                        for(int8_t i = iteratorOledStart; i < this->_eventLog->getEvents()->size(); i++){
-                            this->hardware.println(this->_eventLog->getEvents()->get(i).text);
+                        for(int8_t i = iteratorOledStart; i < this->_eventLog->getEventCount(); i++){
+                            this->hardware.println(this->_eventLog->getEvent(i).text);
                         }
                     }
 

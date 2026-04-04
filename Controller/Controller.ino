@@ -1895,7 +1895,7 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
   resetHTPServerUsage();
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
-  SpiRamJsonDocument doc;  //Supports approx 128 controllers, 128 clients, and 64 files in www
+  JsonDocument doc(&spiRamAllocator);  //Supports approx 128 controllers, 128 clients, and 64 files in www
   JsonObject root = doc.to<JsonObject>();
   JsonObject configObject = root["config"].to<JsonObject>();
   JsonObject wwwObject = root["www"].to<JsonObject>();
@@ -2598,7 +2598,7 @@ bool setup_inputs(String filename){
   filter_ports_channels["offset"] = true;
   filter_ports_channels["actions"] = true;
 
-  SpiRamJsonDocument doc; //Supports up to 32 ports
+  JsonDocument doc(&spiRamAllocator); //Supports up to 32 ports
 
   File file = configFS.open(filename, "r");
 
@@ -3150,7 +3150,7 @@ void mqtt_autoDiscovery_outputs(){
   filter_outputs__["icon"] = true;
   filter_outputs__["type"] = true;
 
-  SpiRamJsonDocument controllerDoc; //Supports up to 32 ports
+  JsonDocument controllerDoc(&spiRamAllocator); //Supports up to 32 ports
 
   File controllerFile = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/" + deviceIdentity.data.uuid, "r");
   DeserializationError errorControllerFileDeserialization = deserializeJson(controllerDoc, controllerFile, DeserializationOption::Filter(controllerFilterDoc));
