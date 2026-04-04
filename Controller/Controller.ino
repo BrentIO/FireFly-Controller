@@ -3064,6 +3064,7 @@ void mqtt_autoDiscovery_temperature(){
     doc["icon"] = "mdi:thermometer";
     doc["device_class"] = "temperature";
     doc["unit_of_measurement"] = "°C";
+    doc["state_class"] = "measurement";
 
     JsonObject device = doc.createNestedObject("device");
     JsonArray identifiers = device.createNestedArray("identifiers");
