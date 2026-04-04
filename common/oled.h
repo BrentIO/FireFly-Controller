@@ -1011,7 +1011,7 @@
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                     this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); //Inverted text
                     this->hardware.setCursor(0, 0);
-                    this->hardware.println("FW/HW Mismatch");
+                    this->hardware.println("HW/FW Mismatch");
                     this->hardware.setTextColor(SSD1306_WHITE);
                     this->hardware.setCursor(0, 9);
                     char buf[22];
