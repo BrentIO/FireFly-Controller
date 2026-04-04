@@ -1019,7 +1019,7 @@
                     this->hardware.println(buf);
                     snprintf(buf, sizeof(buf), "FW: 0x%08X", this->_mismatch_fw_hex);
                     this->hardware.println(buf);
-                    this->hardware.println("System Halted");
+                    this->hardware.println(" ** System Halted ** ");
                 #endif
 
                 this->_commit();
