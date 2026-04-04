@@ -1011,15 +1011,15 @@
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
                     this->hardware.setTextColor(SSD1306_BLACK, SSD1306_WHITE); //Inverted text
                     this->hardware.setCursor(0, 0);
-                    this->hardware.println("        ERROR        ");
+                    this->hardware.println("FW/HW Mismatch");
                     this->hardware.setTextColor(SSD1306_WHITE);
                     this->hardware.setCursor(0, 9);
-                    this->hardware.println("Firmware Mismatch");
                     char buf[22];
                     snprintf(buf, sizeof(buf), "HW: 0x%08X", this->_mismatch_hw_hex);
                     this->hardware.println(buf);
                     snprintf(buf, sizeof(buf), "FW: 0x%08X", this->_mismatch_fw_hex);
                     this->hardware.println(buf);
+                    this->hardware.println("System Halted");
                 #endif
 
                 this->_commit();
