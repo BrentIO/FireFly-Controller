@@ -831,10 +831,10 @@ void setControllerNameOnOLED(){
   String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + deviceIdentity.data.uuid;
 
   if(configFS.exists(filename)){
-    StaticJsonDocument<16> filter;
+    JsonDocument filter;
     filter["name"] = true;
 
-    StaticJsonDocument<64> doc;
+    JsonDocument doc;
 
     File file = configFS.open(filename, "r");
 
@@ -879,7 +879,7 @@ void http_unauthorized(AsyncWebServerRequest *request) {
 void http_error(AsyncWebServerRequest *request, String message){
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
-  StaticJsonDocument<256> doc;
+  JsonDocument doc;
   doc["message"] = message;
 
   serializeJson(doc, *response);
@@ -894,7 +894,7 @@ void http_error(AsyncWebServerRequest *request, String message){
 void http_badRequest(AsyncWebServerRequest *request, String message){
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
-  StaticJsonDocument<256> doc;
+  JsonDocument doc;
   doc["message"] = message;
 
   serializeJson(doc, *response);
@@ -909,7 +909,7 @@ void http_badRequest(AsyncWebServerRequest *request, String message){
 void http_forbiddenRequest(AsyncWebServerRequest *request, String message){
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
-  StaticJsonDocument<256> doc;
+  JsonDocument doc;
   doc["message"] = message;
 
   serializeJson(doc, *response);
@@ -987,7 +987,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
   sprintf(product_hex, "0x%08X", PRODUCT_HEX);
  
   AsyncResponseStream *response = request->beginResponseStream("application/json");
-  StaticJsonDocument<192> doc;
+  JsonDocument doc;
   doc["uuid"] = deviceIdentity.data.uuid;
   doc["product_id"] = deviceIdentity.data.product_id;
   doc["product_hex"] = product_hex;
@@ -1031,10 +1031,10 @@ void http_handleEventLog(AsyncWebServerRequest *request){
   }
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
-  StaticJsonDocument<EVENT_LOG_MAXIMUM_ENTRIES * 100> doc;
+  JsonDocument doc;
 
   for(int i=0; i < eventLog.getEvents()->size(); i++){
-    JsonObject entry = doc.createNestedObject();
+    JsonObject entry = doc.add<JsonObject>();
     entry["time"] = eventLog.getEvents()->get(i).timestamp;
 
     switch(eventLog.getEvents()->get(i).level){
@@ -1096,10 +1096,10 @@ void http_handleErrorLog(AsyncWebServerRequest *request){
   }
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
-  StaticJsonDocument<EVENT_LOG_MAXIMUM_ENTRIES * 64> doc;
+  JsonDocument doc;
 
   for(int i=0; i < eventLog.getErrors()->size(); i++){
-    JsonObject entry = doc.createNestedObject();
+    JsonObject entry = doc.add<JsonObject>();
 
     entry["text"] = eventLog.getErrors()->get(i);
   }
@@ -1305,7 +1305,7 @@ void http_handleListControllers(AsyncWebServerRequest *request){
   resetHTPServerUsage();
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
-  DynamicJsonDocument doc(8192);  //Supports 128 UUID's
+  JsonDocument doc;  //Supports 128 UUID's
   JsonArray array = doc.to<JsonArray>();
 
   File root = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/");
@@ -1406,8 +1406,8 @@ boolean authClientWithMacAddress(const char* uuid, const char* macAddress){
       return false;
     }
 
-    StaticJsonDocument<256> doc;
-    StaticJsonDocument<16> filter;
+    JsonDocument doc;
+    JsonDocument filter;
     filter["mac"] = true;
 
     File file = configFS.open(filename);
@@ -1538,7 +1538,7 @@ void http_handleListClients(AsyncWebServerRequest *request){
   resetHTPServerUsage();
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
-  DynamicJsonDocument doc(8192);  //Supports 128 UUID's
+  JsonDocument doc;  //Supports 128 UUID's
   JsonArray array = doc.to<JsonArray>();
 
   File root = configFS.open(CONFIGFS_PATH_CLIENTS + (String)"/");
@@ -1604,7 +1604,7 @@ void http_handleProvisioning(AsyncWebServerRequest *request){
 
 void http_handleProvisioning_GET(AsyncWebServerRequest *request){
 
-  StaticJsonDocument<16> doc;
+  JsonDocument doc;
   doc["enabled"] = provisioningMode.getStatus();
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   serializeJson(doc, *response);
@@ -1622,8 +1622,8 @@ void http_handleProvisioning_PUT(AsyncWebServerRequest *request){
 
   request->send(202);
 
-  StaticJsonDocument<256> doc;
-  StaticJsonDocument<16> filter;
+  JsonDocument doc;
+  JsonDocument filter;
   filter["mac"] = true;
 
   File root = configFS.open(CONFIGFS_PATH_CLIENTS + (String)"/");
@@ -1853,7 +1853,7 @@ void listDirToJsonArray(fs::FS &fs, const char *dirname, JsonArray &array) {
     if(file.isDirectory()) {
       listDirToJsonArray(fs, file.path(), array);
     } else {
-      JsonObject entry = array.createNestedObject();
+      JsonObject entry = array.add<JsonObject>();
       entry["path"] = (String)file.path();
       entry["size"] = file.size();
     }
@@ -1890,15 +1890,15 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
   resetHTPServerUsage();
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
-  DynamicJsonDocument doc(49152);  //Supports approx 128 controllers, 128 clients, and 64 files in www
+  JsonDocument doc;  //Supports approx 128 controllers, 128 clients, and 64 files in www
   JsonObject root = doc.to<JsonObject>();
-  JsonObject configObject = root.createNestedObject("config");
-  JsonObject wwwObject = root.createNestedObject("www");
+  JsonObject configObject = root["config"].to<JsonObject>();
+  JsonObject wwwObject = root["www"].to<JsonObject>();
 
   if(configFS_isMounted){
     configObject["total"] = configFS.totalBytes();
     configObject["used"] = configFS.usedBytes();
-    JsonArray fileList = configObject.createNestedArray("files");
+    JsonArray fileList = configObject["files"].to<JsonArray>();
     listDirToJsonArray(configFS, "/", fileList);
   }else{
     configObject["error"] = "File system not mounted";
@@ -1907,7 +1907,7 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
   if(wwwFS_isMounted){
     wwwObject["total"] = wwwFS.totalBytes();
     wwwObject["used"] = wwwFS.usedBytes();
-    JsonArray fileList = wwwObject.createNestedArray("files");
+    JsonArray fileList = wwwObject["files"].to<JsonArray>();
     listDirToJsonArray(wwwFS, "/", fileList);
   }else{
     wwwObject["error"] = "File system not mounted";
@@ -1963,7 +1963,7 @@ void http_handleCerts_GET(AsyncWebServerRequest *request){
   resetHTPServerUsage();
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
-  StaticJsonDocument<768> doc;
+  JsonDocument doc;
   JsonArray array = doc.to<JsonArray>();
 
   File root = configFS.open(CONFIGFS_PATH_CERTS + (String)"/");
@@ -1971,7 +1971,7 @@ void http_handleCerts_GET(AsyncWebServerRequest *request){
   File file = root.openNextFile();
   while(file){
       if(!file.isDirectory()){
-          JsonObject fileInstance = array.createNestedObject();
+          JsonObject fileInstance = array.add<JsonObject>();
           fileInstance["file"] = (String)file.name();
           fileInstance["size"] = file.size();
       }
@@ -2178,7 +2178,7 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
 
   resetHTPServerUsage();
 
-  if(!doc.containsKey("url")){
+  if(doc["url"].isNull()){
     http_badRequest(request, "Field url is required");
     return;
   }
@@ -2197,7 +2197,7 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
   }
 
   if(newFirmwareRequest.url.startsWith("https:")){
-    if(!doc.containsKey("certificate")){
+    if(doc["certificate"].isNull()){
       http_badRequest(request, "https requires certificate");
       return;
     }
@@ -2253,10 +2253,10 @@ void setup_OtaFirmware(){
   otaFirmware.setExtraHTTPHeader("uuid", deviceIdentity.data.uuid);
   otaFirmware.setExtraHTTPHeader("product_id", deviceIdentity.data.product_id);
 
-  StaticJsonDocument<16> filter;
+  JsonDocument filter;
   filter["ota"] = true;
 
-  StaticJsonDocument<256> doc;
+  JsonDocument doc;
 
   File file = configFS.open(filename, "r");
 
@@ -2269,11 +2269,11 @@ void setup_OtaFirmware(){
     return;
   }
 
-  if(!doc.containsKey("ota")){
+  if(doc["ota"].isNull()){
     return;
   }
 
-  if(!doc["ota"].containsKey("url")){
+  if(doc["ota"]["url"].isNull()){
     eventLog.createEvent("OTA cfg no url");
     return;
   }
@@ -2300,7 +2300,7 @@ void setup_OtaFirmware(){
   otaFirmware.setManifestURL(url.c_str());
 
   if(url.startsWith("https")){
-    if(!doc["ota"].containsKey("certificate")){
+    if(doc["ota"]["certificate"].isNull()){
       eventLog.createEvent("OTA cfg no cert");
       return;
     }
@@ -2402,7 +2402,7 @@ void eventHandler_otaFirmwareProgress(size_t progress, size_t size){
   char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
   snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
 
-  StaticJsonDocument<32> doc;
+  JsonDocument doc;
   doc["in_progress"] = true;
   doc["update_percentage"] = int(percentage*100);
 
@@ -2429,7 +2429,7 @@ void eventHandler_otaFirmwareFailed(int partition){
   char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
   snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
 
-  StaticJsonDocument<16> doc;
+  JsonDocument doc;
   doc["in_progress"] = false;
 
   char buffer[256];
@@ -2506,14 +2506,14 @@ void setupIO(){
 bool setup_outputs(String filename){
 
   boolean isOK = true;
-  StaticJsonDocument<112> filter;
+  JsonDocument filter;
 
-  JsonObject filter_outputs__ = filter["outputs"].createNestedObject("*");
+  JsonObject filter_outputs__ = filter["outputs"]["*"].to<JsonObject>();
   filter_outputs__["id"] = true;
   filter_outputs__["type"] = true;
   filter_outputs__["enabled"] = true;
 
-  DynamicJsonDocument doc(3072); //Supports up to 32 ports
+  JsonDocument doc; //Supports up to 32 ports
 
   File file = configFS.open(filename, "r");
 
@@ -2546,7 +2546,7 @@ bool setup_outputs(String filename){
       continue;
     }
 
-    if(!output.value().containsKey("id")){
+    if(output.value()["id"].isNull()){
       char text[OLED_CHARACTERS_PER_LINE+1];
       snprintf(text, sizeof(text), "Out prt %s no id", output.key().c_str());
       eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
@@ -2556,13 +2556,13 @@ bool setup_outputs(String filename){
 
     outputs.setPortId(outputPortNumber, output.value()["id"]);
 
-    if(output.value().containsKey("type")){
+    !if(output.value()["type"].isNull()){
       if(strcmp(output.value()["type"], "VARIABLE") == 0){
         outputs.setPortType(outputPortNumber, nsOutputs::outputPin::VARIABLE);
       }
     }
 
-    if(output.value().containsKey("enabled")){
+    !if(output.value()["enabled"].isNull()){
       outputs.enablePort(outputPortNumber, output.value()["enabled"].as<boolean>());
     }
 
@@ -2582,18 +2582,18 @@ bool setup_outputs(String filename){
 bool setup_inputs(String filename){
 
   boolean isOK = true;
-  StaticJsonDocument<160> filter;
+  JsonDocument filter;
 
-  JsonObject filter_ports = filter["ports"].createNestedObject("*");
+  JsonObject filter_ports = filter["ports"]["*"].to<JsonObject>();
   filter_ports["id"] = true;
 
-  JsonObject filter_ports_channels = filter_ports["channels"].createNestedObject("*");
+  JsonObject filter_ports_channels = filter_ports["channels"]["*"].to<JsonObject>();
   filter_ports_channels["type"] = true;
   filter_ports_channels["enabled"] = true;
   filter_ports_channels["offset"] = true;
   filter_ports_channels["actions"] = true;
 
-  DynamicJsonDocument doc(32768); //Supports up to 32 ports
+  JsonDocument doc; //Supports up to 32 ports
 
   File file = configFS.open(filename, "r");
 
@@ -2666,7 +2666,7 @@ bool setup_inputs(String filename){
 
         inputAction newInputAction;
 
-        if(port_value_channel_value_action.containsKey("action")){
+        if(!port_value_channel_value_action["action"].isNull()){
         
           if(strcmp(port_value_channel_value_action["action"], "INCREASE") == 0){
             newInputAction.action = INCREASE;
@@ -2694,7 +2694,7 @@ bool setup_inputs(String filename){
           }
         }
 
-        if(!port_value_channel_value_action.containsKey("change_state")){
+        if(port_value_channel_value_action["change_state"].isNull()){
           newInputAction.changeState = managerInputs::changeState::CHANGE_STATE_SHORT_DURATION;
         }else{
           if(strcmp(port_value_channel_value_action["change_state"], "LONG") == 0){
@@ -2775,12 +2775,12 @@ void setupMQTT(){
 
   File file = configFS.open(filename, "r");
 
-  StaticJsonDocument<48> filter;
+  JsonDocument filter;
   filter["name"] = true;
   filter["area"] = true;
   filter["mqtt"] = true;
 
-  DynamicJsonDocument doc(512);
+  JsonDocument doc;
 
   DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
 
@@ -2793,15 +2793,15 @@ void setupMQTT(){
     return;
   }
 
-  if(doc.containsKey("name")){
+  if(!doc["name"].isNull()){
     mqttClient.autoDiscovery.setDeviceName(doc["name"].as<String>().c_str());
   }
 
-  if(doc.containsKey("area")){
+  if(!doc["area"].isNull()){
     mqttClient.autoDiscovery.setSuggestedArea(doc["area"].as<String>().c_str());
   }
 
-  if(!doc.containsKey("mqtt")){
+  if(doc["mqtt"].isNull()){
     char text[OLED_CHARACTERS_PER_LINE+1];
     snprintf(text, sizeof(text), "MQTT obj missing");
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
@@ -2811,28 +2811,28 @@ void setupMQTT(){
   JsonObject mqtt = doc["mqtt"];
   uint16_t port = 1883;
 
-  if(!mqtt.containsKey("host")){
+  if(mqtt["host"].isNull()){
     char text[OLED_CHARACTERS_PER_LINE+1];
     snprintf(text, sizeof(text), "MQTT host missing");
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return;
   }
 
-  if(!mqtt.containsKey("username")){
+  if(mqtt["username"].isNull()){
     char text[OLED_CHARACTERS_PER_LINE+1];
     snprintf(text, sizeof(text), "MQTT user missing");
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return;
   }
 
-  if(!mqtt.containsKey("password")){
+  if(mqtt["password"].isNull()){
     char text[OLED_CHARACTERS_PER_LINE+1];
     snprintf(text, sizeof(text), "MQTT pass missing");
     eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
     return;
   }
 
-  if(mqtt.containsKey("port")){
+  if(!mqtt["port"].isNull()){
     port = mqtt["port"];
   }
 
@@ -2908,7 +2908,7 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
     char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
     snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
 
-    StaticJsonDocument<16> doc;
+    JsonDocument doc;
     doc["in_progress"] = true;
   
     char buffer[256];
@@ -3044,7 +3044,7 @@ void mqtt_autoDiscovery_temperature(){
 
     const char* sensorLocation = temperatureSensors.getSensorLocation(i);
 
-    DynamicJsonDocument doc(1024);
+    JsonDocument doc;
 
     char topic[MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_LENGTH+1];
     snprintf(topic, sizeof(topic), MQTT_TOPIC_TEMPERATURE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid, sensorLocation);
@@ -3066,8 +3066,8 @@ void mqtt_autoDiscovery_temperature(){
     doc["unit_of_measurement"] = "°C";
     doc["state_class"] = "measurement";
 
-    JsonObject device = doc.createNestedObject("device");
-    JsonArray identifiers = device.createNestedArray("identifiers");
+    JsonObject device = doc["device"].to<JsonObject>();
+    JsonArray identifiers = device["identifiers"].to<JsonArray>();
     identifiers.add(deviceIdentity.data.uuid);
 
     if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3136,16 +3136,16 @@ void mqtt_autoDiscovery_outputs(){
     return;
   };
 
-  StaticJsonDocument<128> controllerFilterDoc;
+  JsonDocument controllerFilterDoc;
 
-  JsonObject filter_outputs__ = controllerFilterDoc["outputs"].createNestedObject("*");
+  JsonObject filter_outputs__ = controllerFilterDoc["outputs"]["*"].to<JsonObject>();
   filter_outputs__["id"] = true;
   filter_outputs__["name"] = true;
   filter_outputs__["area"] = true;
   filter_outputs__["icon"] = true;
   filter_outputs__["type"] = true;
 
-  DynamicJsonDocument controllerDoc(12288); //Supports up to 32 ports
+  JsonDocument controllerDoc; //Supports up to 32 ports
 
   File controllerFile = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/" + deviceIdentity.data.uuid, "r");
   DeserializationError errorControllerFileDeserialization = deserializeJson(controllerDoc, controllerFile, DeserializationOption::Filter(controllerFilterDoc));
@@ -3168,14 +3168,14 @@ void mqtt_autoDiscovery_outputs(){
       continue;
     }
 
-    if(!output.value().containsKey("id")){
+    if(output.value()["id"].isNull()){
       continue;
     }
 
     char devicePlatform[WORD_LENGTH_INTEGRATION+1];
     strcpy(devicePlatform,"switch"); //Default
 
-    if(output.value().containsKey("icon")){
+    !if(output.value()["icon"].isNull()){
 
       if(output.value()["icon"].as<String>().indexOf("light") != -1){
         strcpy(devicePlatform,"light");
@@ -3200,13 +3200,13 @@ void mqtt_autoDiscovery_outputs(){
 
     bool isVariableOutput = false;
 
-    if(output.value().containsKey("type")){
+    !if(output.value()["type"].isNull()){
       if(strcmp(output.value()["type"].as<const char*>(), "VARIABLE") == 0){
         isVariableOutput = true;
       }
     }
 
-    DynamicJsonDocument mqttDoc(1024);
+    JsonDocument mqttDoc;
 
     char autodiscovery_topic[MQTT_TOPIC_OUTPUT_AUTO_DISCOVERY_LENGTH+1];
     snprintf(autodiscovery_topic, sizeof(autodiscovery_topic), MQTT_TOPIC_OUTPUT_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, devicePlatform, output.value()["id"].as<const char*>());
@@ -3227,7 +3227,7 @@ void mqtt_autoDiscovery_outputs(){
     mqttDoc["unique_id"] = unique_id;
     mqttDoc["default_entity_id"] = default_entity_id;
 
-    if(output.value().containsKey("icon")){
+    !if(output.value()["icon"].isNull()){
         mqttDoc["icon"] = output.value()["icon"].as<const char*>();
     }
 
@@ -3240,11 +3240,11 @@ void mqtt_autoDiscovery_outputs(){
 
     mqttDoc["state_value_template"] = "{% if value|int > 0 %}ON{% else %}OFF{% endif %}";
 
-    JsonObject device = mqttDoc.createNestedObject("device");
-    JsonArray identifiers = device.createNestedArray("identifiers");
+    JsonObject device = mqttDoc["device"].to<JsonObject>();
+    JsonArray identifiers = device["identifiers"].to<JsonArray>();
     identifiers.add(unique_id);
 
-    if(output.value().containsKey("name")){
+    !if(output.value()["name"].isNull()){
       device["name"] = output.value()["name"].as<const char*>();
     }else{
       device["name"] = output.value()["id"].as<const char*>();
@@ -3252,7 +3252,7 @@ void mqtt_autoDiscovery_outputs(){
 
     device["via_device"] = deviceIdentity.data.uuid;
 
-    if(output.value().containsKey("area")){
+    !if(output.value()["area"].isNull()){
       device["suggested_area"] =  output.value()["area"].as<const char*>();
     }
     mqttDoc["state_topic"] = state_topic;
@@ -3281,7 +3281,7 @@ void mqtt_autoDiscovery_start_time(){
     return;
   }
 
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
 
   char topic[MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_LENGTH+1];
   snprintf(topic, sizeof(topic), MQTT_TOPIC_TIME_START_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid);
@@ -3301,8 +3301,8 @@ void mqtt_autoDiscovery_start_time(){
   doc["icon"] = "mdi:calendar-clock";
   doc["entity_category"] = "diagnostic";
 
-  JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
+  JsonObject device = doc["device"].to<JsonObject>();
+  JsonArray identifiers = device["identifiers"].to<JsonArray>();
   identifiers.add(deviceIdentity.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3364,7 +3364,7 @@ void mqtt_autoDiscovery_mac_address(){
     return;
   }
 
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
 
   char topic[MQTT_TOPIC_MAC_ADDRESS_AUTO_DISCOVERY_LENGTH+1];
   snprintf(topic, sizeof(topic), MQTT_TOPIC_MAC_ADDRESS_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid);
@@ -3384,8 +3384,8 @@ void mqtt_autoDiscovery_mac_address(){
   doc["icon"] = "mdi:ethernet";
   doc["entity_category"] = "diagnostic";
 
-  JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
+  JsonObject device = doc["device"].to<JsonObject>();
+  JsonArray identifiers = device["identifiers"].to<JsonArray>();
   identifiers.add(deviceIdentity.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3443,7 +3443,7 @@ void mqtt_publishMACAddress(){
  */
 void mqtt_autoDiscovery_ip_address(){
 
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
 
   char topic[MQTT_TOPIC_IP_ADDRESS_AUTO_DISCOVERY_LENGTH+1];
   snprintf(topic, sizeof(topic), MQTT_TOPIC_IP_ADDRESS_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid);
@@ -3463,8 +3463,8 @@ void mqtt_autoDiscovery_ip_address(){
   doc["icon"] = "mdi:ip";
   doc["entity_category"] = "diagnostic";
 
-  JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
+  JsonObject device = doc["device"].to<JsonObject>();
+  JsonArray identifiers = device["identifiers"].to<JsonArray>();
   identifiers.add(deviceIdentity.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3525,7 +3525,7 @@ void mqtt_autoDiscovery_count_errors(){
     return;
   }
 
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
 
   char topic[MQTT_TOPIC_COUNT_ERRORS_AUTO_DISCOVERY_LENGTH+1];
   snprintf(topic, sizeof(topic), MQTT_TOPIC_COUNT_ERRORS_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid);
@@ -3545,8 +3545,8 @@ void mqtt_autoDiscovery_count_errors(){
   doc["icon"] = "mdi:alert";
   doc["entity_category"] = "diagnostic";
 
-  JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
+  JsonObject device = doc["device"].to<JsonObject>();
+  JsonArray identifiers = device["identifiers"].to<JsonArray>();
   identifiers.add(deviceIdentity.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3624,15 +3624,15 @@ void mqtt_autoDiscovery_update(){
   char availability_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
   snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid);
 
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
 
   doc["name"] = "Firmware";
   doc["unique_id"] = unique_id;
   doc["default_entity_id"] = default_entity_id;
   doc["icon"] = "mdi:update";
 
-  JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
+  JsonObject device = doc["device"].to<JsonObject>();
+  JsonArray identifiers = device["identifiers"].to<JsonArray>();
   identifiers.add(deviceIdentity.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3649,9 +3649,9 @@ void mqtt_autoDiscovery_update(){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
   }
 
-  JsonArray availability = doc.createNestedArray("availability"); //Note, this is different from others
-  JsonObject update_specific = availability.createNestedObject();
-  JsonObject controller_level = availability.createNestedObject();
+  JsonArray availability = doc["availability"].to<JsonArray>(); //Note, this is different from others
+  JsonObject update_specific = availability.add<JsonObject>();
+  JsonObject controller_level = availability.add<JsonObject>();
   update_specific["topic"] = availability_topic;
   controller_level["topic"] = mqttClient.topic_availability;
   doc["availability_mode"] = "all";
@@ -3685,20 +3685,20 @@ void mqtt_publishUpdateAvailable(JsonVariant &updateDoc){
 
   eventLog.createEvent("OTA update available");
 
-  DynamicJsonDocument mqttDoc(256);
+  JsonDocument mqttDoc;
 
   mqttDoc["installed_version"] = VERSION;
   mqttDoc["latest_version"] = updateDoc["version"].as<const char*>();
 
-  if(updateDoc.containsKey("title")){
+  if(!updateDoc["title"].isNull()){
     mqttDoc["title"] = updateDoc["title"].as<const char*>();
   }
 
-  if(updateDoc.containsKey("release_summary")){
+  if(!updateDoc["release_summary"].isNull()){
     mqttDoc["release_summary"] = updateDoc["release_summary"].as<const char*>();
   }
 
-  if(updateDoc.containsKey("release_url")){
+  if(!updateDoc["release_url"].isNull()){
     mqttDoc["release_url"] = updateDoc["release_url"].as<const char*>();
   }
 
@@ -3721,7 +3721,7 @@ void mqtt_publishUpdateAvailable(JsonVariant &updateDoc){
  */
 void mqtt_autoDiscovery_http_server(){
 
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
 
   char topic[MQTT_TOPIC_HTTP_SERVER_AUTO_DISCOVERY_LENGTH+1];
   snprintf(topic, sizeof(topic), MQTT_TOPIC_HTTP_SERVER_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid);
@@ -3743,8 +3743,8 @@ void mqtt_autoDiscovery_http_server(){
   doc["default_entity_id"] = default_entity_id;
   doc["icon"] = "mdi:web";
 
-  JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
+  JsonObject device = doc["device"].to<JsonObject>();
+  JsonArray identifiers = device["identifiers"].to<JsonArray>();
   identifiers.add(deviceIdentity.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3812,7 +3812,7 @@ void mqtt_publishHttpServerStateChanged(boolean state){
  */
 void mqtt_autoDiscovery_heapFree(){
 
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
 
   char topic[MQTT_TOPIC_HEAP_FREE_AUTO_DISCOVERY_LENGTH+1];
   snprintf(topic, sizeof(topic), MQTT_TOPIC_HEAP_FREE_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid);
@@ -3836,8 +3836,8 @@ void mqtt_autoDiscovery_heapFree(){
   doc["device_class"] = "data_size";
   doc["state_class"] = "measurement";
 
-  JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
+  JsonObject device = doc["device"].to<JsonObject>();
+  JsonArray identifiers = device["identifiers"].to<JsonArray>();
   identifiers.add(deviceIdentity.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -3894,7 +3894,7 @@ void mqtt_publish_heapFree(){
  */
 void mqtt_autoDiscovery_heapLargestFreeBlock(){
 
-  DynamicJsonDocument doc(1024);
+  JsonDocument doc;
 
   char topic[MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_AUTO_DISCOVERY_LENGTH+1];
   snprintf(topic, sizeof(topic), MQTT_TOPIC_HEAP_LARGEST_FREE_BLOCK_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid);
@@ -3918,8 +3918,8 @@ void mqtt_autoDiscovery_heapLargestFreeBlock(){
   doc["device_class"] = "data_size";
   doc["state_class"] = "measurement";
 
-  JsonObject device = doc.createNestedObject("device");
-  JsonArray identifiers = device.createNestedArray("identifiers");
+  JsonObject device = doc["device"].to<JsonObject>();
+  JsonArray identifiers = device["identifiers"].to<JsonArray>();
   identifiers.add(deviceIdentity.data.uuid);
 
   if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
@@ -4004,7 +4004,7 @@ void mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus stat
   }
 
   if(status == esp32FOTA::lastHTTPCheckStatus::SUCCESS_NO_UPDATE_AVAILABLE){
-    DynamicJsonDocument mqttDoc(256);
+    JsonDocument mqttDoc;
 
     mqttDoc["installed_version"] = VERSION;
     mqttDoc["latest_version"] = VERSION;
