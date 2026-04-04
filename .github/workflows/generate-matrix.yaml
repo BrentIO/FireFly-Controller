@@ -24,7 +24,7 @@ jobs:
           MATRIX=$(yq -o=json devices.yaml | jq -c '
             {
               include: [
-                .applications[] as $app |
+                ["Controller", "Hardware-Registration-and-Configuration"][] as $app |
                 .devices[]
                 | select(.status == "ACTIVE")
                 | {
