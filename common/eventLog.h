@@ -28,7 +28,10 @@
 
         private:
 
-            LinkedList<eventLogEntry> _eventLog;
+            eventLogEntry* _buffer; /* PSRAM-backed circular buffer for event log entries; falls back to heap if PSRAM unavailable */
+            uint16_t _head = 0; /* Index of the oldest entry in the circular buffer */
+            uint16_t _count = 0; /* Number of valid entries currently stored */
+
             LinkedList<const char*> _errors;
             NTPClient* _timeClient;
 
@@ -60,11 +63,12 @@
 
             /**
              * Creates a new event log handler
-             * 
+             *
              * @param timeClient An NTP client that can be used when logging events
             */
             EventLog(NTPClient *timeClient){
                 _timeClient = timeClient;
+                _buffer = (eventLogEntry*)ps_malloc(EVENT_LOG_MAXIMUM_ENTRIES * sizeof(eventLogEntry));
             };
 
             /**
@@ -73,7 +77,7 @@
             void setCallback_info(void (*userDefinedCallback)()) {
                 this->_ptrInfoCallback = userDefinedCallback; }
 
-          
+
             /**
              * Sets a callback function when a new notification event is entered into the event log
             */
@@ -119,11 +123,16 @@
                     log_i("New event log entry: [%s]", newEvent.text);
                 }
 
-                if(this->_eventLog.size() >= EVENT_LOG_MAXIMUM_ENTRIES){
-                    this->_eventLog.shift();
-                }
+                uint16_t insertIndex = (_head + _count) % EVENT_LOG_MAXIMUM_ENTRIES;
 
-                this->_eventLog.add(newEvent);
+                if(_count < EVENT_LOG_MAXIMUM_ENTRIES){
+                    _buffer[insertIndex] = newEvent;
+                    _count++;
+                } else {
+                    /* Buffer full: overwrite oldest entry and advance head */
+                    _buffer[_head] = newEvent;
+                    _head = (_head + 1) % EVENT_LOG_MAXIMUM_ENTRIES;
+                }
 
                 switch(newEvent.level){
 
@@ -162,10 +171,17 @@
             }
 
             /**
-             * Retrieves the list of events from the event log
+             * Returns the number of events currently stored in the event log
             */
-            LinkedList<eventLogEntry>* getEvents(){
-                return &_eventLog;
+            uint16_t getEventCount(){
+                return _count;
+            }
+
+            /**
+             * Returns the event at logical index i (0 = oldest, count-1 = newest)
+            */
+            eventLogEntry getEvent(uint16_t i){
+                return _buffer[(_head + i) % EVENT_LOG_MAXIMUM_ENTRIES];
             }
 
             /**
@@ -175,11 +191,11 @@
                 return &_errors;
             }
 
-            /** 
+            /**
              * Resolves an error that was previously logged
-             * 
+             *
              * @param text Descriptive text of the original error that should be resolved
-             * 
+             *
             */
             void resolveError(const char* text){
 
@@ -197,11 +213,11 @@
                 }
             }
 
-            /** 
+            /**
              * Resolves an error that was previously logged
-             * 
+             *
              * @param text Descriptive text of the original error that should be resolved
-             * 
+             *
             */
             void resolveError(const __FlashStringHelper *text){
                 resolveError((char*)text);

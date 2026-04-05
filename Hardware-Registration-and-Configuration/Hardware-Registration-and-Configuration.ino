@@ -1175,7 +1175,7 @@ void http_handleEventLog(AsyncWebServerRequest *request){
     return;
   }
 
-  if(eventLog.getEvents()->size() == 0){
+  if(eventLog.getEventCount() == 0){
     request->send(200, "application/json","[]");
     return;
   }
@@ -1183,11 +1183,11 @@ void http_handleEventLog(AsyncWebServerRequest *request){
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   JsonDocument doc;
 
-  for(int i=0; i < eventLog.getEvents()->size(); i++){
+  for(uint16_t i=0; i < eventLog.getEventCount(); i++){
     JsonObject entry = doc.add<JsonObject>();
-    entry["time"] = eventLog.getEvents()->get(i).timestamp;
+    entry["time"] = eventLog.getEvent(i).timestamp;
 
-    switch(eventLog.getEvents()->get(i).level){
+    switch(eventLog.getEvent(i).level){
       case EventLog::LOG_LEVEL_ERROR:
         entry["level"] = "error";
         break;
@@ -1205,7 +1205,7 @@ void http_handleEventLog(AsyncWebServerRequest *request){
         break;
     }
 
-    entry["text"] = eventLog.getEvents()->get(i).text;
+    entry["text"] = eventLog.getEvent(i).text;
   }
  
   serializeJson(doc, *response);

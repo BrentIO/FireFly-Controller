@@ -40,6 +40,7 @@
 #include "common/authorizationToken.h"
 #include "common/otaConfig.h"
 #include <ArduinoJson.h>
+#include "common/psramAllocator.h"
 #include "AsyncJson.h"
 #include <StreamUtils.h>
 #include <NTPClient.h>
@@ -157,6 +158,10 @@ void reportMemoryUsage(const char* tag) {
 void setup() {
 
   reportMemoryUsage("Setup begin.");
+
+  if(!psramFound()){
+    eventLog.createEvent("No PSRAM found", EventLog::LOG_LEVEL_ERROR);
+  }
 
   eventLog.createEvent("Event log started");
   
@@ -1025,7 +1030,7 @@ void http_handleEventLog(AsyncWebServerRequest *request){
 
   resetHTPServerUsage();
 
-  if(eventLog.getEvents()->size() == 0){
+  if(eventLog.getEventCount() == 0){
     request->send(200, "application/json","[]");
     return;
   }
@@ -1033,11 +1038,11 @@ void http_handleEventLog(AsyncWebServerRequest *request){
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   JsonDocument doc;
 
-  for(int i=0; i < eventLog.getEvents()->size(); i++){
+  for(uint16_t i=0; i < eventLog.getEventCount(); i++){
     JsonObject entry = doc.add<JsonObject>();
-    entry["time"] = eventLog.getEvents()->get(i).timestamp;
+    entry["time"] = eventLog.getEvent(i).timestamp;
 
-    switch(eventLog.getEvents()->get(i).level){
+    switch(eventLog.getEvent(i).level){
       case EventLog::LOG_LEVEL_ERROR:
         entry["level"] = "error";
         break;
@@ -1055,7 +1060,7 @@ void http_handleEventLog(AsyncWebServerRequest *request){
         break;
     }
 
-    entry["text"] = eventLog.getEvents()->get(i).text;
+    entry["text"] = eventLog.getEvent(i).text;
   }
  
   serializeJson(doc, *response);
@@ -1890,7 +1895,7 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
   resetHTPServerUsage();
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
-  JsonDocument doc;  //Supports approx 128 controllers, 128 clients, and 64 files in www
+  JsonDocument doc(&spiRamAllocator);  //Supports approx 128 controllers, 128 clients, and 64 files in www
   JsonObject root = doc.to<JsonObject>();
   JsonObject configObject = root["config"].to<JsonObject>();
   JsonObject wwwObject = root["www"].to<JsonObject>();
@@ -2593,7 +2598,7 @@ bool setup_inputs(String filename){
   filter_ports_channels["offset"] = true;
   filter_ports_channels["actions"] = true;
 
-  JsonDocument doc; //Supports up to 32 ports
+  JsonDocument doc(&spiRamAllocator); //Supports up to 32 ports
 
   File file = configFS.open(filename, "r");
 
@@ -3145,7 +3150,7 @@ void mqtt_autoDiscovery_outputs(){
   filter_outputs__["icon"] = true;
   filter_outputs__["type"] = true;
 
-  JsonDocument controllerDoc; //Supports up to 32 ports
+  JsonDocument controllerDoc(&spiRamAllocator); //Supports up to 32 ports
 
   File controllerFile = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/" + deviceIdentity.data.uuid, "r");
   DeserializationError errorControllerFileDeserialization = deserializeJson(controllerDoc, controllerFile, DeserializationOption::Filter(controllerFilterDoc));

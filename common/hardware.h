@@ -196,7 +196,7 @@
 
 
     #ifndef EVENT_LOG_MAXIMUM_ENTRIES
-        #define EVENT_LOG_MAXIMUM_ENTRIES 20 /* Maximum number of entries the event log will retain. */
+        #define EVENT_LOG_MAXIMUM_ENTRIES 100 /* Maximum number of entries the event log will retain. */
     #endif
 
 
@@ -284,8 +284,8 @@
         #error WIFI_MODEL and ETHERNET_MODEL are both set to NONE
     #endif
 
-    #if EVENT_LOG_MAXIMUM_ENTRIES > 255
-        #error EVENT_LOG_MAXIMUM_ENTRIES cannot be > 255 because it depends on size uint8_t
+    #if EVENT_LOG_MAXIMUM_ENTRIES > 65535
+        #error EVENT_LOG_MAXIMUM_ENTRIES cannot be > 65535 because it depends on size uint16_t
     #endif
 
 
