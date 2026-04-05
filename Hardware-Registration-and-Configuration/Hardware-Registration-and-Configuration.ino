@@ -234,13 +234,13 @@ void setup() {
 
   if(configFS_isMounted){
     httpServer.on("^/certs/([a-z0-9_.]+)$", http_handleCert);
-    httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
+    httpServer.on("^/certs$", HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced));
   }else{
     log_e("configFS is not mounted");
     httpServer.on("^/certs/([a-z0-9_.]+)$", http_configFSNotMunted);
-    httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_configFSNotMunted);
+    httpServer.on("^/certs$", HTTP_ANY, http_configFSNotMunted);
     httpServer.on("^/api/ota/.+$", http_configFSNotMunted);
   }
 
@@ -504,15 +504,15 @@ void http_handleCerts(AsyncWebServerRequest *request){
 
   switch(request->method()){
 
-    case ASYNC_HTTP_OPTIONS:
+    case HTTP_OPTIONS:
       http_options(request);
       break;
 
-    case ASYNC_HTTP_POST:
+    case HTTP_POST:
 
       break; //http_handleCerts_Upload handles all authorization and responses
 
-    case ASYNC_HTTP_GET:
+    case HTTP_GET:
       http_handleCerts_GET(request);
       break;
 
@@ -539,7 +539,7 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
     return;
   }
 
-  if(request->method()!= ASYNC_HTTP_POST){
+  if(request->method()!= HTTP_POST){
     http_methodNotAllowed(request);
     return;
   }
@@ -573,11 +573,11 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
 void http_handleCert(AsyncWebServerRequest *request){
   switch(request->method()){
 
-    case ASYNC_HTTP_OPTIONS:
+    case HTTP_OPTIONS:
       http_options(request);
       break;
 
-    case ASYNC_HTTP_GET:
+    case HTTP_GET:
 
         if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
@@ -592,7 +592,7 @@ void http_handleCert(AsyncWebServerRequest *request){
       http_handleCert_GET(request);
       break;
 
-    case ASYNC_HTTP_DELETE:
+    case HTTP_DELETE:
 
       if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
@@ -710,7 +710,7 @@ void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
 */
 void http_handlePartitions(AsyncWebServerRequest *request){
 
-  if(request->method() != ASYNC_HTTP_GET){
+  if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -751,7 +751,7 @@ void http_handlePartitions(AsyncWebServerRequest *request){
 */
 void http_handleVersion(AsyncWebServerRequest *request){
 
-  if(request->method() != ASYNC_HTTP_GET){
+  if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -773,7 +773,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
 */
 void http_handlePeripherals(AsyncWebServerRequest *request){
 
-  if(request->method() != ASYNC_HTTP_GET){
+  if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -834,7 +834,7 @@ void http_handlePeripherals(AsyncWebServerRequest *request){
 */
 void http_handleMCU(AsyncWebServerRequest *request){
 
-  if(request->method() != ASYNC_HTTP_GET){
+  if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -875,7 +875,7 @@ void http_handleReboot(AsyncWebServerRequest *request){
     return;
   }
 
-  if(request->method()!= ASYNC_HTTP_POST){
+  if(request->method()!= HTTP_POST){
     http_methodNotAllowed(request);
     return;
   }
@@ -892,7 +892,7 @@ void http_handleReboot(AsyncWebServerRequest *request){
 */
 void http_handleNetworkInterface(AsyncWebServerRequest *request){
 
-  if(request->method() != ASYNC_HTTP_GET){
+  if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -939,7 +939,7 @@ void http_handleNetworkInterface(AsyncWebServerRequest *request){
 */
 void http_handleNetworkInterfaceAll(AsyncWebServerRequest *request){
 
-  if(request->method() != ASYNC_HTTP_GET){
+  if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -982,11 +982,11 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
 
   switch(request->method()){
 
-    case ASYNC_HTTP_OPTIONS:
+    case HTTP_OPTIONS:
       http_options(request);
       break;
 
-    case ASYNC_HTTP_POST:
+    case HTTP_POST:
 
       if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
@@ -1001,11 +1001,11 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
       http_badRequest(request, "Request requires a body"); //If there is no body in the request, it lands here
       break;
 
-    case ASYNC_HTTP_GET:
+    case HTTP_GET:
       http_handleEEPROM_GET(request);
       break;
 
-    case ASYNC_HTTP_DELETE:
+    case HTTP_DELETE:
 
       if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
@@ -1170,7 +1170,7 @@ void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
 */
 void http_handleEventLog(AsyncWebServerRequest *request){
 
-  if(request->method() != ASYNC_HTTP_GET){
+  if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -1218,7 +1218,7 @@ void http_handleEventLog(AsyncWebServerRequest *request){
 */
 void http_handleErrorLog(AsyncWebServerRequest *request){
 
-  if(request->method() != ASYNC_HTTP_GET){
+  if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -1273,7 +1273,7 @@ void http_handleCerts_GET(AsyncWebServerRequest *request){
  * Creates a long-term authorization with the given visual token
 */
 void http_handleAuth(AsyncWebServerRequest *request){
-  if(request->method() != ASYNC_HTTP_POST){
+  if(request->method() != HTTP_POST){
     http_methodNotAllowed(request);
     return;
   }

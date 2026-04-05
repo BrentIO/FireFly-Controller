@@ -349,12 +349,12 @@ void setup() {
     AsyncCallbackJsonWebHandler* controllersHandler = new AsyncCallbackJsonWebHandler("^/api/controllers/([0-9a-f-]+)$", http_handleControllers_PUT);
     controllersHandler->setMaxContentLength(65535);
     httpServer.addHandler(controllersHandler);
-    httpServer.on("^/api/controllers$", ASYNC_HTTP_ANY, http_handleListControllers);
+    httpServer.on("^/api/controllers$", HTTP_ANY, http_handleListControllers);
     httpServer.on("^/api/controllers/([0-9a-f-]+)$", http_handleControllers);
     AsyncCallbackJsonWebHandler* clientsHandler = new AsyncCallbackJsonWebHandler("^/api/clients/([0-9a-f-]+)$", http_handleClients_PUT);
     clientsHandler->setMaxContentLength(65535);
     httpServer.addHandler(clientsHandler);
-    httpServer.on("^/api/clients$", ASYNC_HTTP_ANY, http_handleListClients);
+    httpServer.on("^/api/clients$", HTTP_ANY, http_handleListClients);
     httpServer.on("^/api/clients/([0-9a-f-]+)$", http_handleClients);
     AsyncCallbackJsonWebHandler* backupHandler = new AsyncCallbackJsonWebHandler("/backup", http_handleBackup_PUT);
     backupHandler->setMaxContentLength(65535);
@@ -362,17 +362,17 @@ void setup() {
     httpServer.on("/backup", http_handleBackup);
     httpServer.on("/api/provisioning", http_handleProvisioning);
     httpServer.on("^/certs/([a-z0-9_.]+)$", http_handleCert);
-    httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
-    httpServer.on("/api/ota/app", ASYNC_HTTP_OPTIONS, http_options);
+    httpServer.on("^/certs$", HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
+    httpServer.on("/api/ota/app", HTTP_OPTIONS, http_options);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced_POST));
-    httpServer.on("/api/ota/spiffs", ASYNC_HTTP_OPTIONS, http_options);
+    httpServer.on("/api/ota/spiffs", HTTP_OPTIONS, http_options);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced_POST));
     httpServer.on("/ui/version", http_handleUIVersion);
     setup_OtaFirmware();
   }else{
     log_e("configFS is not mounted");
     httpServer.on("^/certs/([a-z0-9_.]+)$", http_configFSNotMunted);
-    httpServer.on("^/certs$", ASYNC_HTTP_ANY, http_configFSNotMunted);
+    httpServer.on("^/certs$", HTTP_ANY, http_configFSNotMunted);
     httpServer.on("/api/controllers", http_configFSNotMunted);
     httpServer.on("/api/clients", http_configFSNotMunted);
     httpServer.on("/backup", http_configFSNotMunted);
@@ -962,7 +962,7 @@ void http_configFSNotMunted(AsyncWebServerRequest *request){
 */
 void http_handleVersion(AsyncWebServerRequest *request){
 
-  if(request->method() == ASYNC_HTTP_OPTIONS){
+  if(request->method() == HTTP_OPTIONS){
     http_options(request);
     return;
   }
@@ -977,7 +977,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
     return;
   }
 
-  if(request->method() != ASYNC_HTTP_GET){
+  if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -1014,7 +1014,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
 */
 void http_handleEventLog(AsyncWebServerRequest *request){
 
-  if(request->method() == ASYNC_HTTP_OPTIONS){
+  if(request->method() == HTTP_OPTIONS){
     http_options(request);
     return;
   }
@@ -1029,7 +1029,7 @@ void http_handleEventLog(AsyncWebServerRequest *request){
     return;
   }
 
-  if(request->method() != ASYNC_HTTP_GET){
+  if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -1079,7 +1079,7 @@ void http_handleEventLog(AsyncWebServerRequest *request){
 */
 void http_handleErrorLog(AsyncWebServerRequest *request){
 
-  if(request->method() == ASYNC_HTTP_OPTIONS){
+  if(request->method() == HTTP_OPTIONS){
     http_options(request);
     return;
   }
@@ -1094,7 +1094,7 @@ void http_handleErrorLog(AsyncWebServerRequest *request){
     return;
   }
 
-  if(request->method() != ASYNC_HTTP_GET){
+  if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -1127,11 +1127,11 @@ void http_handleAuth(AsyncWebServerRequest *request){
 
   switch(request->method()){
 
-    case ASYNC_HTTP_OPTIONS:
+    case HTTP_OPTIONS:
       http_options(request);
       break;
 
-    case ASYNC_HTTP_POST:
+    case HTTP_POST:
       if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
         return;
@@ -1160,15 +1160,15 @@ void http_handleAuth(AsyncWebServerRequest *request){
 void http_handleControllers(AsyncWebServerRequest *request){
   switch(request->method()){
 
-    case ASYNC_HTTP_OPTIONS:
+    case HTTP_OPTIONS:
       http_options(request);
       break;
 
-    case ASYNC_HTTP_GET:
+    case HTTP_GET:
       http_handleControllers_GET(request);
       break;
 
-    case ASYNC_HTTP_DELETE:
+    case HTTP_DELETE:
       http_handleControllers_DELETE(request);
       break;
 
@@ -1246,7 +1246,7 @@ void http_handleControllers_DELETE(AsyncWebServerRequest *request){
 */
 void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc){
 
-  if(request->method() == ASYNC_HTTP_OPTIONS){
+  if(request->method() == HTTP_OPTIONS){
     http_options(request);
     return;
   }
@@ -1261,7 +1261,7 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
     return;
   }
 
-  if(request->method() != ASYNC_HTTP_PUT){
+  if(request->method() != HTTP_PUT){
     http_methodNotAllowed(request);
     return;
   }
@@ -1293,7 +1293,7 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
 */
 void http_handleListControllers(AsyncWebServerRequest *request){
 
-  if(request->method() == ASYNC_HTTP_OPTIONS){
+  if(request->method() == HTTP_OPTIONS){
     http_options(request);
     return;
   }
@@ -1308,7 +1308,7 @@ void http_handleListControllers(AsyncWebServerRequest *request){
     return;
   }
 
-  if(request->method() != ASYNC_HTTP_GET){
+  if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -1342,15 +1342,15 @@ void http_handleListControllers(AsyncWebServerRequest *request){
 void http_handleClients(AsyncWebServerRequest *request){
   switch(request->method()){
 
-    case ASYNC_HTTP_OPTIONS:
+    case HTTP_OPTIONS:
       http_options(request);
       break;
 
-    case ASYNC_HTTP_GET:
+    case HTTP_GET:
       http_handleClients_GET(request);
       break;
 
-    case ASYNC_HTTP_DELETE:
+    case HTTP_DELETE:
       http_handleClients_DELETE(request);
       break;
 
@@ -1479,7 +1479,7 @@ void http_handleClients_DELETE(AsyncWebServerRequest *request){
 */
 void http_handleClients_PUT(AsyncWebServerRequest *request, JsonVariant doc){
 
-  if(request->method() == ASYNC_HTTP_OPTIONS){
+  if(request->method() == HTTP_OPTIONS){
     http_options(request);
     return;
   }
@@ -1494,7 +1494,7 @@ void http_handleClients_PUT(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  if(request->method() != ASYNC_HTTP_PUT){
+  if(request->method() != HTTP_PUT){
     http_methodNotAllowed(request);
     return;
   }
@@ -1526,7 +1526,7 @@ void http_handleClients_PUT(AsyncWebServerRequest *request, JsonVariant doc){
 */
 void http_handleListClients(AsyncWebServerRequest *request){
 
-  if(request->method() == ASYNC_HTTP_OPTIONS){
+  if(request->method() == HTTP_OPTIONS){
     http_options(request);
     return;
   }
@@ -1541,7 +1541,7 @@ void http_handleListClients(AsyncWebServerRequest *request){
     return;
   }
 
-  if(request->method() != ASYNC_HTTP_GET){
+  if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -1574,7 +1574,7 @@ void http_handleListClients(AsyncWebServerRequest *request){
  */
 void http_handleProvisioning(AsyncWebServerRequest *request){
 
-  if(request->method() == ASYNC_HTTP_OPTIONS){
+  if(request->method() == HTTP_OPTIONS){
     http_options(request);
     return;
   }
@@ -1591,17 +1591,17 @@ void http_handleProvisioning(AsyncWebServerRequest *request){
   
   switch(request->method()){
 
-    case ASYNC_HTTP_PUT:
+    case HTTP_PUT:
       resetHTPServerUsage();
       http_handleProvisioning_PUT(request);
       break;
 
-    case ASYNC_HTTP_GET:
+    case HTTP_GET:
       resetHTPServerUsage();
       http_handleProvisioning_GET(request);
       break;
 
-    case ASYNC_HTTP_DELETE:
+    case HTTP_DELETE:
       resetHTPServerUsage();
       http_handleProvisioning_DELETE(request);
       break;
@@ -1687,15 +1687,15 @@ void eventHandler_rogueClient(const char* macAddress){
 void http_handleBackup(AsyncWebServerRequest *request){
   switch(request->method()){
 
-    case ASYNC_HTTP_OPTIONS:
+    case HTTP_OPTIONS:
       http_options(request);
       break;
 
-    case ASYNC_HTTP_GET:
+    case HTTP_GET:
       http_handleBackup_GET(request);
       break;
 
-    case ASYNC_HTTP_DELETE:
+    case HTTP_DELETE:
       http_handleBackup_DELETE(request);
       break;
 
@@ -1747,7 +1747,7 @@ void http_handleBackup_PUT(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  if(request->method() != ASYNC_HTTP_PUT){
+  if(request->method() != HTTP_PUT){
     http_methodNotAllowed(request);
     return;
   }
@@ -1804,11 +1804,11 @@ void http_handleBackup_DELETE(AsyncWebServerRequest *request){
 void http_handleUIVersion(AsyncWebServerRequest *request){
   switch(request->method()){
 
-    case ASYNC_HTTP_OPTIONS:
+    case HTTP_OPTIONS:
       http_options(request);
       break;
 
-    case ASYNC_HTTP_GET:
+    case HTTP_GET:
       http_handleUIVersion_GET(request);
       break;
 
@@ -1878,7 +1878,7 @@ void listDirToJsonArray(fs::FS &fs, const char *dirname, JsonArray &array) {
  */
 void http_handleFileList_GET(AsyncWebServerRequest *request){
 
-  if(request->method() == ASYNC_HTTP_OPTIONS){
+  if(request->method() == HTTP_OPTIONS){
     http_options(request);
     return;
   }
@@ -1893,7 +1893,7 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
     return;
   }
 
-  if(request->method() != ASYNC_HTTP_GET){
+  if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
     return;
   }
@@ -1936,15 +1936,15 @@ void http_handleCerts(AsyncWebServerRequest *request){
 
   switch(request->method()){
 
-    case ASYNC_HTTP_OPTIONS:
+    case HTTP_OPTIONS:
       http_options(request);
       break;
 
-    case ASYNC_HTTP_POST:
+    case HTTP_POST:
 
       break; //http_handleCerts_Upload handles all authorization and responses
 
-    case ASYNC_HTTP_GET:
+    case HTTP_GET:
       http_handleCerts_GET(request);
       break;
 
@@ -2000,7 +2000,7 @@ void http_handleCerts_GET(AsyncWebServerRequest *request){
 */
 void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
 
-  if(request->method() == ASYNC_HTTP_OPTIONS){
+  if(request->method() == HTTP_OPTIONS){
     http_options(request);
     return;
   }
@@ -2015,7 +2015,7 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
     return;
   }
 
-  if(request->method()!= ASYNC_HTTP_POST){
+  if(request->method()!= HTTP_POST){
     http_methodNotAllowed(request);
     return;
   }
@@ -2055,11 +2055,11 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
 void http_handleCert(AsyncWebServerRequest *request){
   switch(request->method()){
 
-    case ASYNC_HTTP_OPTIONS:
+    case HTTP_OPTIONS:
       http_options(request);
       break;
 
-    case ASYNC_HTTP_GET:
+    case HTTP_GET:
 
         if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
@@ -2074,7 +2074,7 @@ void http_handleCert(AsyncWebServerRequest *request){
       http_handleCert_GET(request);
       break;
 
-    case ASYNC_HTTP_DELETE:
+    case HTTP_DELETE:
 
       if(!request->hasHeader("visual-token")){
         http_unauthorized(request);
@@ -2182,7 +2182,7 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
     return;
   }
 
-  if(request->method() != ASYNC_HTTP_POST){
+  if(request->method() != HTTP_POST){
     http_methodNotAllowed(request);
     return;
   }
