@@ -346,13 +346,19 @@ void setup() {
   httpServer.on("/files", http_handleFileList_GET);
 
   if(configFS_isMounted){
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("^/api/controllers/([0-9a-f-]+)$", http_handleControllers_PUT, 65536,65535));
+    AsyncCallbackJsonWebHandler* controllersHandler = new AsyncCallbackJsonWebHandler("^/api/controllers/([0-9a-f-]+)$", http_handleControllers_PUT);
+    controllersHandler->setMaxContentLength(65535);
+    httpServer.addHandler(controllersHandler);
     httpServer.on("^/api/controllers$", ASYNC_HTTP_ANY, http_handleListControllers);
     httpServer.on("^/api/controllers/([0-9a-f-]+)$", http_handleControllers);
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("^/api/clients/([0-9a-f-]+)$", http_handleClients_PUT, 65536,65535));
+    AsyncCallbackJsonWebHandler* clientsHandler = new AsyncCallbackJsonWebHandler("^/api/clients/([0-9a-f-]+)$", http_handleClients_PUT);
+    clientsHandler->setMaxContentLength(65535);
+    httpServer.addHandler(clientsHandler);
     httpServer.on("^/api/clients$", ASYNC_HTTP_ANY, http_handleListClients);
     httpServer.on("^/api/clients/([0-9a-f-]+)$", http_handleClients);
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/backup", http_handleBackup_PUT, 65536,65535));
+    AsyncCallbackJsonWebHandler* backupHandler = new AsyncCallbackJsonWebHandler("/backup", http_handleBackup_PUT);
+    backupHandler->setMaxContentLength(65535);
+    httpServer.addHandler(backupHandler);
     httpServer.on("/backup", http_handleBackup);
     httpServer.on("/api/provisioning", http_handleProvisioning);
     httpServer.on("^/certs/([a-z0-9_.]+)$", http_handleCert);
