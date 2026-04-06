@@ -152,7 +152,6 @@ paths:
               https:
                 value:
                   url: https://www.somewhere.com/firmware.bin
-                  certificate: mycert.pem
       responses:
         '202':
           description: Request accepted
@@ -187,7 +186,6 @@ paths:
               https:
                 value:
                   url: https://www.somewhere.com/spiffs.bin
-                  certificate: mycert.pem
       responses:
         '202':
           description: Request accepted
@@ -1017,14 +1015,8 @@ components:
           description: URL for the firmware update server
           minLength: 1
           maxLength: 128
-          examples: 
+          examples:
             - http://www.somewhere.com/firmware.json
-        certificate:
-          type: string
-          description: File name for the certificate that should be used when https is specified.  The existence of the certificate will not be checked until the OTA config is reloaded (typically on reboot)
-          examples: 
-            - mycert.pem
-          maxLength: 31
       required:
         - url
 
@@ -1037,13 +1029,6 @@ components:
           minLength: 1
           maxLength: 128
           description: URL for the binary file to flash
-        certificate:
-          type: string
-          description: File name for the certificate that should be used when https is specified
-          minLength: 1
-          maxLength: 31
-          examples: 
-            - mycert.pem
       required:
         - url
 
@@ -1491,4 +1476,3 @@ components:
     ota_https:
       value:
         url: https://www.somewhere.com/firmware.json
-        certificate: mycert.pem
