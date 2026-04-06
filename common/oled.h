@@ -1015,9 +1015,9 @@
                     this->hardware.setTextColor(SSD1306_WHITE);
                     this->hardware.setCursor(0, 9);
                     char buf[22];
-                    snprintf(buf, sizeof(buf), "HW: 0x%08X", this->_mismatch_hw_hex);
+                    snprintf(buf, sizeof(buf), "HW: 0x%08X", (unsigned int)this->_mismatch_hw_hex);
                     this->hardware.println(buf);
-                    snprintf(buf, sizeof(buf), "FW: 0x%08X", this->_mismatch_fw_hex);
+                    snprintf(buf, sizeof(buf), "FW: 0x%08X", (unsigned int)this->_mismatch_fw_hex);
                     this->hardware.println(buf);
                     this->hardware.println(" ** System Halted ** ");
                 #endif

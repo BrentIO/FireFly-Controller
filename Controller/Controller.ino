@@ -2642,7 +2642,8 @@ bool setup_inputs(String filename){
 
     uint8_t i = 0;
 
-    for (JsonPair port_value_channel : port.value()["channels"].as<JsonObject>()){
+    JsonObject channels = port.value()["channels"].as<JsonObject>();
+    for (JsonPair port_value_channel : channels){
 
       if(i > IO_EXTENDER_COUNT_CHANNELS_PER_PORT){
         char text[OLED_CHARACTERS_PER_LINE+1];
@@ -2672,7 +2673,8 @@ bool setup_inputs(String filename){
         inputs.setOffset(portChannel, port_value_channel.value()["offset"].as<uint8_t>());
       }
 
-      for (JsonObject port_value_channel_value_action : port_value_channel.value()["actions"].as<JsonArray>()) {
+      JsonArray actions = port_value_channel.value()["actions"].as<JsonArray>();
+      for (JsonObject port_value_channel_value_action : actions) {
 
         bool actionIsOK = false;
 
@@ -3895,7 +3897,7 @@ void mqtt_publish_heapFree(){
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_HEAP_FREE_STATE_PATTERN, deviceIdentity.data.uuid);
 
   char buf[12];
-  sprintf(buf, "%u", ESP.getFreeHeap());
+  sprintf(buf, "%u", (unsigned int)ESP.getFreeHeap());
 
   mqttClient.publish(state_topic, buf, false);
 }
