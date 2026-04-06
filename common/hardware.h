@@ -138,7 +138,6 @@
 
     #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
         #include <SPI.h>
-        #define ASYNCWEBSERVER_REGEX 1          /* Required for regex route patterns (^/api/...$) */
         #include <ETH.h>                        /* Arduino ESP32 core 3.x native W5500 ETHClass */
         #include <AsyncTCP.h>
         #include <ESPAsyncWebServer.h>
@@ -179,9 +178,6 @@
         #include <WiFi.h>
 
         #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
-            #ifndef ASYNCWEBSERVER_REGEX
-                #define ASYNCWEBSERVER_REGEX 1  /* Required for regex route patterns (^/api/...$) */
-            #endif
             #include <ESPAsyncWebServer.h>
             #include <AsyncTCP.h>
             #include <LittleFS.h>
