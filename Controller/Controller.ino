@@ -2268,6 +2268,11 @@ void refreshCertBundle(){
 
   _certBundleSize = bundle.length();
 
+  if(_certBundleSize == 0){
+    log_i("No user certs found; will use bundled Mozilla root CAs");
+    return;
+  }
+
   _certBundle = (char*)ps_malloc(_certBundleSize + 1);
   if(_certBundle == nullptr){
     _certBundle = (char*)malloc(_certBundleSize + 1);

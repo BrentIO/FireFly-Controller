@@ -64,6 +64,7 @@ EventLog eventLog(&timeClient); /* Event Log instance */
 uint64_t ntpSleepUntil = 0;
 
 void updateNTPTime(bool force = false);
+void refreshCertBundle();
 
 exEsp32FOTA otaFirmware(APPLICATION_NAME, VERSION, false); /* OTA firmware update class */
 
@@ -71,6 +72,10 @@ fs::LittleFSFS wwwFS;
 fs::LittleFSFS configFS;
 bool wwwFS_isMounted = false;
 bool configFS_isMounted = false;
+
+char* _certBundle = nullptr;            /* PSRAM-backed concatenated PEM bundle for OTA TLS */
+size_t _certBundleSize = 0;             /* Byte length of _certBundle, excluding null terminator */
+CryptoMemAsset* _certBundleAsset = nullptr; /* Asset pointer into _certBundle for esp32FOTA */
 
 #define CONFIGFS_PATH_CERTS "/certs"
 
@@ -216,7 +221,9 @@ void setup() {
     eventLog.createEvent("configFS mount fail", EventLog::LOG_LEVEL_ERROR);
     log_e("An Error has occurred while mounting configFS");
   }
-  
+
+  refreshCertBundle();
+
   /* Configure the web server.  
     IMPORTANT: *** Sequence below matters, they are sorted specific to generic *** 
   */
@@ -330,9 +337,12 @@ void otaFirmware_checkPending(){
 
     bool updateSuccess = false;
 
-    if(otaFirmware.pending[i].url.startsWith("https")){
-      otaFirmware.pending[i].certificate = CONFIGFS_PATH_CERTS + (String)"/" + otaFirmware.pending[i].certificate;
-      otaFirmware.setRootCA(new CryptoFileAsset(otaFirmware.pending[i].certificate.c_str(), &configFS));
+    if(otaFirmware.pending[i].url.startsWith("https:")){
+      if(_certBundleAsset != nullptr){
+        otaFirmware.setRootCA(_certBundleAsset);
+      } else {
+        otaFirmware.useBundledCerts();
+      }
     }
 
     switch(otaFirmware.pending[i].type){
@@ -563,6 +573,7 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
     
   if(final){
     request->_tempFile.close();
+    refreshCertBundle();
     request->send(201);
   }
 }
@@ -640,6 +651,7 @@ void http_handleCert_DELETE(AsyncWebServerRequest *request){
 
   if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0))){
     configFS.remove(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0));
+    refreshCertBundle();
     request->send(204);
   }else{
     request->send(404);
@@ -669,28 +681,10 @@ void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
 
   forcedOtaUpdateConfig newFirmwareRequest;
   newFirmwareRequest.url = doc["url"].as<String>();
-  newFirmwareRequest.certificate = doc["certificate"].as<String>();
 
   if(!newFirmwareRequest.url.startsWith("http")){
     http_badRequest(request, "Bad url; http or https required");
     return;
-  }
-
-  if(newFirmwareRequest.url.startsWith("https")){
-    if(doc["certificate"].isNull()){
-      http_badRequest(request, "https requires certificate");
-      return;
-    }
-
-    if(newFirmwareRequest.certificate == ""){
-      http_badRequest(request, "Certificate cannot be empty");
-      return;
-    }
-
-    if(!configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + newFirmwareRequest.certificate)){
-      http_badRequest(request, "Certificate does not exist");
-      return;
-    }
   }
 
   if(request->url().endsWith("app")){
@@ -1451,6 +1445,53 @@ void eventHandler_visualAuthChanged(){
   if(oled.getPage() == managerOled::PAGE_AUTH_TOKEN){
     oled.setPage(managerOled::PAGE_EVENT_LOG);
   }
+}
+
+
+/**
+ * Concatenates all user-uploaded certificates from configFS into a PSRAM-backed PEM bundle.
+ * If no certificates are uploaded, _certBundleAsset remains nullptr, which signals callers
+ * to use the ESP-IDF built-in Mozilla root CA bundle instead.
+*/
+void refreshCertBundle(){
+
+  if(_certBundle != nullptr){ free(_certBundle); _certBundle = nullptr; }
+  if(_certBundleAsset != nullptr){ delete _certBundleAsset; _certBundleAsset = nullptr; }
+  _certBundleSize = 0;
+
+  String bundle = "";
+
+  if(configFS_isMounted){
+    File certsDir = configFS.open(CONFIGFS_PATH_CERTS);
+    if(certsDir && certsDir.isDirectory()){
+      File certFile = certsDir.openNextFile();
+      while(certFile){
+        if(!certFile.isDirectory()){
+          while(certFile.available()){ bundle += (char)certFile.read(); }
+        }
+        certFile = certsDir.openNextFile();
+      }
+    }
+  }
+
+  _certBundleSize = bundle.length();
+
+  if(_certBundleSize == 0){
+    log_i("No user certs found; will use bundled Mozilla root CAs");
+    return;
+  }
+
+  _certBundle = (char*)ps_malloc(_certBundleSize + 1);
+  if(_certBundle == nullptr){ _certBundle = (char*)malloc(_certBundleSize + 1); }
+  if(_certBundle == nullptr){
+    log_e("Failed to allocate cert bundle");
+    _certBundleSize = 0;
+    return;
+  }
+
+  memcpy(_certBundle, bundle.c_str(), _certBundleSize + 1);
+  _certBundleAsset = new CryptoMemAsset("bundle", _certBundle, _certBundleSize);
+  log_i("Cert bundle built: %u bytes", (unsigned int)_certBundleSize);
 }
 
 
