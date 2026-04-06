@@ -39,7 +39,6 @@
 #include "common/eventLog.h"
 #include "common/authorizationToken.h"
 #include "common/otaConfig.h"
-#include "common/rootCA.h"
 #include <ArduinoJson.h>
 #include "common/psramAllocator.h"
 #include "AsyncJson.h"
@@ -2250,10 +2249,8 @@ void refreshCertBundle(){
 
   _certBundleSize = 0;
 
-  /* Start with built-in root CAs */
-  String bundle = String(AMAZON_ROOT_CA_1) + String(STARFIELD_ROOT_G2);
-
-  /* Append any user-uploaded certs from configFS */
+  /* Concatenate any user-uploaded certs from configFS */
+  String bundle = "";
   if(configFS_isMounted){
     File certsDir = configFS.open(CONFIGFS_PATH_CERTS);
     if(certsDir && certsDir.isDirectory()){
@@ -2361,7 +2358,11 @@ void setup_OtaFirmware(){
   otaFirmware.setManifestURL(url.c_str());
 
   if(url.startsWith("https")){
-    otaFirmware.setRootCA(_certBundleAsset);
+    if(_certBundleAsset != nullptr){
+      otaFirmware.setRootCA(_certBundleAsset);
+    } else {
+      otaFirmware.useBundledCerts();
+    }
   }
 
   otaFirmware.setProgressCb(eventHandler_otaFirmwareProgress);
@@ -2398,8 +2399,12 @@ void otaFirmware_checkPending(){
 
     bool updateSuccess = false;
 
-    if(otaFirmware.pending.get(i).url.startsWith("https:") && _certBundleAsset != nullptr){
-      forceFirmwareUpdate.setRootCA(_certBundleAsset);
+    if(otaFirmware.pending.get(i).url.startsWith("https:")){
+      if(_certBundleAsset != nullptr){
+        forceFirmwareUpdate.setRootCA(_certBundleAsset);
+      } else {
+        forceFirmwareUpdate.useBundledCerts();
+      }
     }
 
     switch(otaFirmware.pending.get(i).type){
