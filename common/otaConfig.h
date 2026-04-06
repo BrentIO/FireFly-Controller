@@ -21,7 +21,6 @@
     
     struct forcedOtaUpdateConfig{
         String url;
-        String certificate;
         otaUpdateType type;
     };
 
