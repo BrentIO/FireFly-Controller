@@ -237,7 +237,8 @@ void setup() {
 
     uint8_t ethMac[6];
     esp_read_mac(ethMac, ESP_MAC_ETH);
-    if(!ETH.begin(SPI_MISO_PIN, SPI_MOSI_PIN, SPI_SCK_PIN, ETHERNET_PIN, ETHERNET_PIN_INTERRUPT, SPI_CLOCK_MHZ, ETH_SPI_HOST, ethMac)){
+    if(!ETH.begin(ETH_PHY_W5500, 1, ETHERNET_PIN, ETHERNET_PIN_INTERRUPT, ETHERNET_PIN_RESET,
+                  ETH_SPI_HOST, SPI_SCK_PIN, SPI_MISO_PIN, SPI_MOSI_PIN, SPI_CLOCK_MHZ)){
       eventLog.resolveError("Ethernet begin fail");
       return;
     }
