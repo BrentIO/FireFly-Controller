@@ -5,7 +5,7 @@
 #include "authorizationToken.h"
 
 #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
-    #include <AsyncWebServer_ESP32_W5500.h>
+    #include <ETH.h>
 #endif
 
 #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
@@ -61,7 +61,7 @@
             #endif
 
             #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
-                ESP32_W5500 *_ethernetInfo;
+                ETHClass *_ethernetInfo;
             #endif
 
             pages _activePage = PAGE_EVENT_LOG;
@@ -1015,9 +1015,9 @@
                     this->hardware.setTextColor(SSD1306_WHITE);
                     this->hardware.setCursor(0, 9);
                     char buf[22];
-                    snprintf(buf, sizeof(buf), "HW: 0x%08X", this->_mismatch_hw_hex);
+                    snprintf(buf, sizeof(buf), "HW: 0x%08X", (unsigned int)this->_mismatch_hw_hex);
                     this->hardware.println(buf);
-                    snprintf(buf, sizeof(buf), "FW: 0x%08X", this->_mismatch_fw_hex);
+                    snprintf(buf, sizeof(buf), "FW: 0x%08X", (unsigned int)this->_mismatch_fw_hex);
                     this->hardware.println(buf);
                     this->hardware.println(" ** System Halted ** ");
                 #endif
@@ -1068,7 +1068,7 @@
 
             #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
 
-                void setEthernetInfo(ESP32_W5500 *value){
+                void setEthernetInfo(ETHClass *value){
                     this->_ethernetInfo = value;
                 }
 

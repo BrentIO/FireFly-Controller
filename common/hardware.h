@@ -138,15 +138,12 @@
 
     #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
         #include <SPI.h>
-        #include <Ethernet.h>
-        #include <EthernetUdp.h>
-        #include <AsyncWebServer_ESP32_W5500.h>
+        #include <ETH.h>                        /* Arduino ESP32 core 3.x native W5500 ETHClass */
         #include <AsyncTCP.h>
+        #include <ESPAsyncWebServer.h>
         #include <LittleFS.h>
         #include <Regexp.h>
 
-        #define _ETHERNET_WEBSERVER_LOGLEVEL_ CORE_DEBUG_LEVEL /* Match the Ethernet debug level to the core debug level */
-       
         #ifndef SPI_SCK_PIN
             #error SPI_SCK_PIN not set
         #endif
@@ -163,6 +160,12 @@
             #error ETHERNET_PIN not set
         #endif
 
+        #ifndef SPI_CLOCK_MHZ
+            #define SPI_CLOCK_MHZ 25 /* Default W5500 SPI clock speed in MHz; override in device header if needed */
+        #endif
+
+        #include "ethernet.h"
+
     #endif
 
 
@@ -175,9 +178,7 @@
         #include <WiFi.h>
 
         #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
-            #ifndef _AsyncWebServer_ESP32_W5500_H_
-                #include <ESPAsyncWebServer.h>
-            #endif
+            #include <ESPAsyncWebServer.h>
             #include <AsyncTCP.h>
             #include <LittleFS.h>
             #include <Regexp.h>
