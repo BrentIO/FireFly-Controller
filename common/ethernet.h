@@ -11,6 +11,8 @@
 #ifndef ethernet_h
 #define ethernet_h
 
+    #include <WiFi.h>  /* Required for WiFiEvent_t, WiFiEventInfo_t, and WiFi.onEvent() */
+
     static volatile bool _eth_connected = false;
     static void (*_eth_cb_connected)()    = nullptr;
     static void (*_eth_cb_disconnected)() = nullptr;
