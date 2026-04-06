@@ -29,7 +29,7 @@ firefly_controller.build.flash_mode=dio
 firefly_controller.build.flash_size=16MB
 firefly_controller.build.boot=dio
 firefly_controller.build.partitions=default
-firefly_controller.build.defines=
+firefly_controller.build.defines=-DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue -mfix-esp32-psram-cache-strategy=memw
 
 firefly_controller.menu.FlashFreq.80=80MHz
 firefly_controller.menu.FlashFreq.80.build.flash_freq=80m

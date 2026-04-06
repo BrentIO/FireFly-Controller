@@ -69,6 +69,9 @@
             EventLog(NTPClient *timeClient){
                 _timeClient = timeClient;
                 _buffer = (eventLogEntry*)ps_malloc(EVENT_LOG_MAXIMUM_ENTRIES * sizeof(eventLogEntry));
+                if(_buffer == nullptr){
+                    _buffer = (eventLogEntry*)malloc(EVENT_LOG_MAXIMUM_ENTRIES * sizeof(eventLogEntry));
+                }
             };
 
             /**
