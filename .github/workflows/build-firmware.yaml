@@ -282,6 +282,7 @@ jobs:
             --arg version "${{ env.VERSION }}" \
             --arg commit "${{ env.COMMIT_HASH }}" \
             --arg created "$CREATED_ISO" \
+            --arg bootloader_addr "${{ matrix.bootloader_addr }}" \
             --argjson files "$FILES_JSON" \
             '{
               class: $class,
@@ -291,6 +292,7 @@ jobs:
               version: $version,
               commit: $commit,
               created: $created,
+              bootloader_addr: $bootloader_addr,
               files: $files
             }' > "$JSON_FILE"
 
