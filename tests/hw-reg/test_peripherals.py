@@ -1,7 +1,7 @@
 import requests
 
 
-VALID_PERIPHERAL_TYPES = {"INPUT", "OUTPUT", "TEMPERATURE", "OLED", "EEPROM"}
+VALID_PERIPHERAL_TYPES = {"INPUT", "OUTPUT", "TEMPERATURE", "OLED", "EEPROM", "NVS"}
 
 
 class TestPeripherals:
