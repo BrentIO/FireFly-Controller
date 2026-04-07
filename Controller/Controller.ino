@@ -52,6 +52,7 @@ uint64_t bootTime = 0; /* Approximate Epoch time the device booted */
 uint64_t lastTimeMemoryBroadcast = 0; /* The last time memory usage was broadcast */
 volatile uint64_t lastTimeHttpServerUsed = 0;  /* The last time the HTTP server responded to a request */
 bool httpServerIsActive = false; /* If the HTTP server has been started */
+bool _mqttWasConnected = false; /* Tracks prior MQTT connected state to detect disconnect transitions */
 AsyncWebServer httpServer(80);
 managerDeviceIdentity deviceIdentity; /* Device identity instance */
 managerOled oled; /* OLED instance */
@@ -466,9 +467,15 @@ void loop() {
 
   #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
     if(ESP32_W5500_isConnected()){
-      if(!mqttClient.loop() && mqttClient.enabled == true){
+      bool _mqttLoopResult = mqttClient.loop();
+      if(!_mqttLoopResult && mqttClient.enabled == true){
+        if(_mqttWasConnected){
+          mqtt_onDisconnect();
+        }
         mqtt_reconnect();
-      };
+      } else {
+        _mqttWasConnected = _mqttLoopResult && mqttClient.enabled;
+      }
     }
   #endif
 
@@ -2790,6 +2797,28 @@ bool setup_inputs(String filename){
  * Attempts to reconnect to MQTT.  If the reconnect is not successful, the process will sleep until the timer elapses.
  * 
  */
+void mqtt_onDisconnect(){
+  char text[OLED_CHARACTERS_PER_LINE+1];
+
+  switch(mqttClient.state()){
+    case -4: snprintf(text, sizeof(text), "MQTT conn timeout");    break;
+    case -3: snprintf(text, sizeof(text), "MQTT conn lost");       break;
+    case -2: snprintf(text, sizeof(text), "MQTT conn fail");       break;
+    case -1: snprintf(text, sizeof(text), "MQTT conn disconnect"); break;
+    case  1: snprintf(text, sizeof(text), "MQTT bad protocol");    break;
+    case  2: snprintf(text, sizeof(text), "MQTT bad client ID");   break;
+    case  3: snprintf(text, sizeof(text), "MQTT unavailable");     break;
+    case  4: snprintf(text, sizeof(text), "MQTT bad creds");       break;
+    case  5: snprintf(text, sizeof(text), "MQTT unauthorized");    break;
+    default: snprintf(text, sizeof(text), "Unknown MQTT state");   break;
+  }
+
+  eventLog.createEvent(text);
+  eventLog.createEvent("MQTT disconnected", EventLog::LOG_LEVEL_ERROR);
+  _mqttWasConnected = false;
+}
+
+
 void mqtt_reconnect(){
 
   if(!mqttClient.enabled){
@@ -2804,6 +2833,31 @@ void mqtt_reconnect(){
 
     if(mqttClient.connect(deviceIdentity.data.uuid, mqttClient.username, mqttClient.password, mqttClient.topic_availability, 2, true, "offline")) {
         mqttClient.lastReconnectAttemptTime = 0;
+        _mqttWasConnected = true;
+        eventLog.createEvent("MQTT connected");
+        eventLog.resolveError("MQTT disconnected");
+        mqttClient.publish(mqttClient.topic_availability, "online", true);
+        mqttClient.resubscribe();
+        if(!mqttClient.autoDiscovery.sent){
+          mqtt_autoDiscovery_update();
+          mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus::NEVER_ATTEMPTED);
+          mqtt_autoDiscovery_temperature();
+          mqtt_autoDiscovery_outputs();
+          mqtt_autoDiscovery_start_time();
+          mqtt_autoDiscovery_ip_address();
+          mqtt_autoDiscovery_mac_address();
+          mqtt_autoDiscovery_count_errors();
+          mqtt_autoDiscovery_http_server();
+          mqtt_autoDiscovery_heapFree();
+          mqtt_autoDiscovery_heapLargestFreeBlock();
+          mqttClient.autoDiscovery.sent = true;
+        }
+        mqtt_publishTemperatures();
+        mqtt_publishStartTime();
+        mqtt_publishIPAddress();
+        mqtt_publishMACAddress();
+        mqtt_publishCountErrors();
+        mqtt_publishHttpServerStateChanged(httpServerIsActive);
         return;
     }
 
@@ -2825,8 +2879,6 @@ void setupMQTT(){
   snprintf(topic_availability, sizeof(topic_availability), MQTT_TOPIC_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid);
   strcpy(mqttClient.topic_availability, topic_availability);
   mqttClient.setCallback(eventHandler_mqttMessageReceived);
-  mqttClient.setCallback_Connect(eventHandler_mqttConnect);
-  mqttClient.setCallback_Disconnect(eventHandler_mqttDisconnect);
 
   String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + deviceIdentity.data.uuid;
 
@@ -3003,95 +3055,6 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
 /**
  * Handles MQTT connection events
  */
-void eventHandler_mqttConnect(){
-  eventLog.createEvent("MQTT connected");
-  eventLog.resolveError("MQTT disconnected");
-  mqttClient.publish(mqttClient.topic_availability, "online", true);
-  mqttClient.resubscribe();
-
-  if(!mqttClient.autoDiscovery.sent){
-    mqtt_autoDiscovery_update();
-    mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus::NEVER_ATTEMPTED);
-    mqtt_autoDiscovery_temperature();
-    mqtt_autoDiscovery_outputs();
-    mqtt_autoDiscovery_start_time();
-    mqtt_autoDiscovery_ip_address();
-    mqtt_autoDiscovery_mac_address();
-    mqtt_autoDiscovery_count_errors();
-    mqtt_autoDiscovery_http_server();
-    mqtt_autoDiscovery_heapFree();
-    mqtt_autoDiscovery_heapLargestFreeBlock();
-    mqttClient.autoDiscovery.sent = true;
-  }
-
-  mqtt_publishTemperatures();
-  mqtt_publishStartTime();
-  mqtt_publishIPAddress();
-  mqtt_publishMACAddress();
-  mqtt_publishCountErrors();
-  mqtt_publishHttpServerStateChanged(httpServerIsActive);
-
-}
-
-
-/**
- * Handles MQTT disconnect events
- */
-void eventHandler_mqttDisconnect(int8_t errorNumber){
-  char text[OLED_CHARACTERS_PER_LINE+1];
-
-  switch(errorNumber){
-
-    case -4:
-      snprintf(text, sizeof(text), "MQTT conn timeout");
-      break;
-
-    case -3:
-      snprintf(text, sizeof(text), "MQTT conn lost");
-      break;
-
-    case -2:
-      snprintf(text, sizeof(text), "MQTT conn fail");
-      break;
-
-    case -1:
-      snprintf(text, sizeof(text), "MQTT conn disconnect");
-      break;
-
-    case 0:
-      snprintf(text, sizeof(text), "MQTT connected");
-      break;
-
-    case 1:
-      snprintf(text, sizeof(text), "MQTT bad protocol");
-      break;
-
-    case 2:
-      snprintf(text, sizeof(text), "MQTT bad client ID");
-      break;
-
-    case 3:
-      snprintf(text, sizeof(text), "MQTT unavailable");
-      break;
-
-    case 4:
-      snprintf(text, sizeof(text), "MQTT bad creds");
-      break;
-
-    case 5:
-      snprintf(text, sizeof(text), "MQTT unauthorized");
-      break;
-
-    default:
-      snprintf(text, sizeof(text), "Unknown MQTT state");
-      break;
-  }
-
-  eventLog.createEvent(text);
-  eventLog.createEvent("MQTT disconnected", EventLog::LOG_LEVEL_ERROR);
-}
-
-
 /**
  * Handles temperature sensor auto discovery broadcasts
  */
