@@ -1,0 +1,24 @@
+services:
+  controller:
+    build: .
+    stdin_open: true
+    tty: true
+    environment:
+      - DEVICE_IP=${DEVICE_IP}
+      - VISUAL_TOKEN=${VISUAL_TOKEN:-}
+      - NO_AUTH=${NO_AUTH:-false}
+    volumes:
+      - ./results:/tests/results
+    command: sh -c "pytest controller/ -v --html=results/controller-$(date +%s).html --self-contained-html"
+
+  hw-reg:
+    build: .
+    stdin_open: true
+    tty: true
+    environment:
+      - DEVICE_IP=${DEVICE_IP}
+      - VISUAL_TOKEN=${VISUAL_TOKEN:-}
+      - NO_AUTH=${NO_AUTH:-false}
+    volumes:
+      - ./results:/tests/results
+    command: sh -c "pytest hw-reg/ -v --html=results/hw-reg-$(date +%s).html --self-contained-html"
