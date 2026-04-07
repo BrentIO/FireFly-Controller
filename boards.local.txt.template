@@ -17,7 +17,7 @@ firefly_controller.serial.disableDTR=true
 firefly_controller.serial.disableRTS=true
 
 firefly_controller.build.tarch=xtensa
-firefly_controller.build.bootloader_addr=0x1000
+firefly_controller.build.bootloader_addr={{BOOTLOADER_ADDR}}
 firefly_controller.build.target=esp32
 firefly_controller.build.mcu=esp32
 firefly_controller.build.core=esp32
@@ -38,7 +38,7 @@ firefly_controller.menu.FlashFreq.40.build.flash_freq=40m
 
 firefly_controller.menu.PartitionScheme.default=16MB Flash (6.25MB APP/OTA [ota_0/ota_1], 512KB SPIFFS [config], 2.875MB SPIFFS [spiffs])
 firefly_controller.menu.PartitionScheme.default.build.partitions=default
-firefly_controller.menu.PartitionScheme.default.upload.maximum_size=6553600
+firefly_controller.menu.PartitionScheme.default.upload.maximum_size={{APP_PARTITION_MAX_SIZE}}
 
 firefly_controller.menu.UploadSpeed.921600=921600
 firefly_controller.menu.UploadSpeed.921600.upload.speed=921600

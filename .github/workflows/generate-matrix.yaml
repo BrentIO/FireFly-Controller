@@ -31,6 +31,12 @@ jobs:
                     application: $app,
                     product_hex: .product_hex,
                     product_id: .product_id,
+                    bootloader_addr: .bootloader_addr,
+                    partition_size_app: (
+                      .partition_scheme[]
+                      | select(.label == "app0")
+                      | .size
+                    ),
                     partition_size_config: (
                       .partition_scheme[]
                       | select(.label == "config")
