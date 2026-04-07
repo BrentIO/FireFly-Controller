@@ -244,7 +244,7 @@
 
         public:
             using PubSubClient::PubSubClient; /* Inherit the base PubSubClient */
-            char serverDomain[256]; /* Heap-safe copy of the broker hostname, prevents dangling pointer when caller's String goes out of scope */
+            char serverFqdn[256]; /* Heap-safe copy of the broker FQDN, prevents dangling pointer when caller's String goes out of scope */
             char topic_availability[MQTT_TOPIC_CONTROLLER_AVAILABILITY_LENGTH + 1]; /* Topic name for availability, which will be used as the last will topic name as well */
             int64_t lastReconnectAttemptTime = 0; /* The time (millis() or equivalent) when the last reconnection was be attempted */
             LinkedList<String> subscriptions; /* List of MQTT subscriptions */
@@ -308,9 +308,9 @@
             }
 
 
-            PubSubClient& setServer(const char* domain, uint16_t port){
-                strlcpy(serverDomain, domain, sizeof(serverDomain));
-                return PubSubClient::setServer(serverDomain, port);
+            PubSubClient& setServer(const char* fqdn, uint16_t port){
+                strlcpy(serverFqdn, fqdn, sizeof(serverFqdn));
+                return PubSubClient::setServer(serverFqdn, port);
             }
 
     };
