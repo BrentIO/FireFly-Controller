@@ -227,7 +227,9 @@ void setup() {
   /* Configure the web server.  
     IMPORTANT: *** Sequence below matters, they are sorted specific to generic *** 
   */
-  httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/identity", http_handleIdentity_POST));
+  AsyncCallbackJsonWebHandler *jsonHandler_handleIdentity_POST = new AsyncCallbackJsonWebHandler("/api/identity", http_handleIdentity_POST);
+  jsonHandler_handleIdentity_POST->setMethod(HTTP_POST);
+  httpServer.addHandler(jsonHandler_handleIdentity_POST);
   httpServer.on("/api/identity", http_handleIdentity);
   httpServer.on("^/api/mcu$", http_handleMCU);
   httpServer.on("^/api/mcu/reboot$", http_handleReboot);
@@ -712,7 +714,7 @@ void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
 
 
 /**
- * Handles partitions requests for the internal EEPROM
+ * Handles partitions requests
 */
 void http_handlePartitions(AsyncWebServerRequest *request){
 
