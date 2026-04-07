@@ -5,10 +5,10 @@ on:
     inputs:
       target_env:
         type: choice
-        description: "Select environment"
+        description: "Select destination environment"
         options:
-          - dev
           - production
+          - dev
 
 env:
   VERSION_ESP_Core: 3.3.7
