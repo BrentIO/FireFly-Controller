@@ -886,11 +886,11 @@ void http_handleReboot(AsyncWebServerRequest *request){
     return;
   }
 
+  request->onDisconnect([]() {
+      ESP.restart();
+  });
+
   request->send(204);
-
-  delay(500); // Allow the HTTP response to be transmitted before rebooting
-
-  ESP.restart();
 
 }
 
