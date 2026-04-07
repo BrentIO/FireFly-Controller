@@ -9,7 +9,7 @@ services:
       - NO_AUTH=${NO_AUTH:-false}
     volumes:
       - ./results:/tests/results
-    command: pytest controller/ -v --html=results/controller-report.html --self-contained-html
+    command: sh -c "pytest controller/ -v --html=results/controller-$(date +%s).html --self-contained-html"
 
   hw-reg:
     build: .
@@ -21,4 +21,4 @@ services:
       - NO_AUTH=${NO_AUTH:-false}
     volumes:
       - ./results:/tests/results
-    command: pytest hw-reg/ -v --html=results/hw-reg-report.html --self-contained-html
+    command: sh -c "pytest hw-reg/ -v --html=results/hw-reg-$(date +%s).html --self-contained-html"
