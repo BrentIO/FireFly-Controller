@@ -470,22 +470,7 @@ void loop() {
       bool _mqttLoopResult = mqttClient.loop();
       if(!_mqttLoopResult && mqttClient.enabled == true){
         if(_mqttWasConnected){
-          char text[OLED_CHARACTERS_PER_LINE+1];
-          switch(mqttClient.state()){
-            case -4: snprintf(text, sizeof(text), "MQTT conn timeout");    break;
-            case -3: snprintf(text, sizeof(text), "MQTT conn lost");       break;
-            case -2: snprintf(text, sizeof(text), "MQTT conn fail");       break;
-            case -1: snprintf(text, sizeof(text), "MQTT conn disconnect"); break;
-            case  1: snprintf(text, sizeof(text), "MQTT bad protocol");    break;
-            case  2: snprintf(text, sizeof(text), "MQTT bad client ID");   break;
-            case  3: snprintf(text, sizeof(text), "MQTT unavailable");     break;
-            case  4: snprintf(text, sizeof(text), "MQTT bad creds");       break;
-            case  5: snprintf(text, sizeof(text), "MQTT unauthorized");    break;
-            default: snprintf(text, sizeof(text), "Unknown MQTT state");   break;
-          }
-          eventLog.createEvent(text);
-          eventLog.createEvent("MQTT disconnected", EventLog::LOG_LEVEL_ERROR);
-          _mqttWasConnected = false;
+          mqtt_onDisconnect();
         }
         mqtt_reconnect();
       } else {
@@ -2812,6 +2797,28 @@ bool setup_inputs(String filename){
  * Attempts to reconnect to MQTT.  If the reconnect is not successful, the process will sleep until the timer elapses.
  * 
  */
+void mqtt_onDisconnect(){
+  char text[OLED_CHARACTERS_PER_LINE+1];
+
+  switch(mqttClient.state()){
+    case -4: snprintf(text, sizeof(text), "MQTT conn timeout");    break;
+    case -3: snprintf(text, sizeof(text), "MQTT conn lost");       break;
+    case -2: snprintf(text, sizeof(text), "MQTT conn fail");       break;
+    case -1: snprintf(text, sizeof(text), "MQTT conn disconnect"); break;
+    case  1: snprintf(text, sizeof(text), "MQTT bad protocol");    break;
+    case  2: snprintf(text, sizeof(text), "MQTT bad client ID");   break;
+    case  3: snprintf(text, sizeof(text), "MQTT unavailable");     break;
+    case  4: snprintf(text, sizeof(text), "MQTT bad creds");       break;
+    case  5: snprintf(text, sizeof(text), "MQTT unauthorized");    break;
+    default: snprintf(text, sizeof(text), "Unknown MQTT state");   break;
+  }
+
+  eventLog.createEvent(text);
+  eventLog.createEvent("MQTT disconnected", EventLog::LOG_LEVEL_ERROR);
+  _mqttWasConnected = false;
+}
+
+
 void mqtt_reconnect(){
 
   if(!mqttClient.enabled){
