@@ -113,6 +113,40 @@ jobs:
           echo "Updated controller_products:"
           grep "^var controller_products" "${{ github.workspace }}/Controller/www/database.js"
 
+      - name: Generate partitions.csv from devices.yaml
+        run: |
+          set -e
+          echo "# Name,   Type, SubType, Offset, Size, Flags" \
+            > ${{ github.workspace }}/${{ matrix.application }}/partitions.csv
+
+          yq -o=json ${{ github.workspace }}/devices.yaml | jq -r \
+            --arg hex "${{ matrix.product_hex }}" '
+            def type_name: if . == 0 then "app" elif . == 1 then "data" else tostring end;
+            def subtype_name:
+              if . == "nvs"      then "nvs"
+              elif . == "otadata" then "ota"
+              elif . == "app0"    then "ota_0"
+              elif . == "app1"    then "ota_1"
+              elif . == "coredump" then "coredump"
+              else "spiffs" end;
+            .devices[]
+            | select(.product_hex == $hex)
+            | .partition_scheme[]
+            | "\(.label),\t\(.type | type_name),\t\(.label | subtype_name),\t\(.address),\t\(.size),"
+          ' >> ${{ github.workspace }}/${{ matrix.application }}/partitions.csv
+
+          echo "Generated partitions.csv for ${{ matrix.product_id }}:"
+          cat ${{ github.workspace }}/${{ matrix.application }}/partitions.csv
+
+      - name: Generate boards.local.txt from template
+        run: |
+          APP_SIZE_DEC=$(( ${{ matrix.partition_size_app }} ))
+          sed \
+            -e "s|{{BOOTLOADER_ADDR}}|${{ matrix.bootloader_addr }}|g" \
+            -e "s|{{APP_PARTITION_MAX_SIZE}}|${APP_SIZE_DEC}|g" \
+            ${{ github.workspace }}/boards.local.txt.template \
+            > ${{ github.workspace }}/boards.local.txt
+
       - name: Install Arduino CLI
         if: ${{ !env.ACT }}
         uses: arduino/setup-arduino-cli@v2
