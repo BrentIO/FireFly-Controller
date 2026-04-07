@@ -1,8 +1,8 @@
 /**
  * Hardware Registration and Configuration.ino
  * 
- * Application allows for the reading of the external EEPROM, as well as programming of the external EEPROM data.  This is
- * separated from the main program to ensure the EEPROM can't be accidentally configured and lose the device information.
+ * Application allows for the reading of the device identity, as well as programming of the device identity data.  This is
+ * separated from the main program to ensure the device identity can't be accidentally configured and lose the device information.
  * 
  * Exposes a set of API's that are described in the swagger.yaml file.
  * 
@@ -170,7 +170,7 @@ void setup() {
   #endif
 
 
-  /* Start external EEPROM */
+  /* Start device identity (NVS) */
   deviceIdentity.begin();
 
   if(deviceIdentity.enabled == true){
@@ -227,8 +227,8 @@ void setup() {
   /* Configure the web server.  
     IMPORTANT: *** Sequence below matters, they are sorted specific to generic *** 
   */
-  httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/eeprom", http_handleEEPROM_POST));
-  httpServer.on("/api/eeprom", http_handleEEPROM);
+  httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/identity", http_handleIdentity_POST));
+  httpServer.on("/api/identity", http_handleIdentity);
   httpServer.on("^/api/mcu$", http_handleMCU);
   httpServer.on("^/api/mcu/reboot$", http_handleReboot);
   httpServer.on("/api/partitions", http_handlePartitions);
@@ -524,6 +524,17 @@ void http_handleCerts(AsyncWebServerRequest *request){
       break; //http_handleCerts_Upload handles all authorization and responses
 
     case HTTP_GET:
+
+      if(!request->hasHeader("visual-token")){
+        http_unauthorized(request);
+        return;
+      }
+
+      if(!authToken.authenticate(request->header("visual-token").c_str())){
+        http_unauthorized(request);
+        return;
+      }
+
       http_handleCerts_GET(request);
       break;
 
@@ -877,6 +888,8 @@ void http_handleReboot(AsyncWebServerRequest *request){
 
   request->send(204);
 
+  delay(500); // Allow the HTTP response to be transmitted before rebooting
+
   ESP.restart();
 
 }
@@ -971,9 +984,9 @@ void http_handleNetworkInterfaceAll(AsyncWebServerRequest *request){
 
 
 /**
- * Handles all requests for the external EEPROM
+ * Handles all requests for device identity
 */
-void http_handleEEPROM(AsyncWebServerRequest *request){
+void http_handleIdentity(AsyncWebServerRequest *request){
 
   switch(request->method()){
 
@@ -997,7 +1010,18 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
       break;
 
     case HTTP_GET:
-      http_handleEEPROM_GET(request);
+
+      if(!request->hasHeader("visual-token")){
+        http_unauthorized(request);
+        return;
+      }
+
+      if(!authToken.authenticate(request->header("visual-token").c_str())){
+        http_unauthorized(request);
+        return;
+      }
+
+      http_handleIdentity_GET(request);
       break;
 
     case HTTP_DELETE:
@@ -1012,7 +1036,7 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
         return;
       }
 
-      http_handleEEPROM_DELETE(request);
+      http_handleIdentity_DELETE(request);
       break;
 
     default:
@@ -1023,9 +1047,9 @@ void http_handleEEPROM(AsyncWebServerRequest *request){
 
 
 /**
- * Handles GET requests for the external EEPROM
+ * Handles GET requests for device identity
 */
-void http_handleEEPROM_GET(AsyncWebServerRequest *request){
+void http_handleIdentity_GET(AsyncWebServerRequest *request){
 
   if(strcmp(deviceIdentity.data.uuid, "") == 0){
     http_notFound(request);
@@ -1044,10 +1068,10 @@ void http_handleEEPROM_GET(AsyncWebServerRequest *request){
 
 
 /**
- * Handles DELETE requests for the external EEPROM, which destroys its data.
+ * Handles DELETE requests for device identity, which destroys its data.
  * The response is synchronous to the operation completing
 */
-void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
+void http_handleIdentity_DELETE(AsyncWebServerRequest *request){
 
   if(strcmp(deviceIdentity.data.uuid, "") == 0){
     http_notFound(request);
@@ -1069,10 +1093,10 @@ void http_handleEEPROM_DELETE(AsyncWebServerRequest *request){
 
 
 /**
- * Handles POST requests for the external EEPROM, which writes data to the EEPROM.
+ * Handles POST requests for device identity, which writes the identity data to NVS.
  * The response is synchronous to the operation completing
 */
-void http_handleEEPROM_POST(AsyncWebServerRequest *request, JsonVariant doc){
+void http_handleIdentity_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
     if(!request->hasHeader("visual-token")){
       http_unauthorized(request);
