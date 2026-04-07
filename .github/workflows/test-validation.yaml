@@ -1,0 +1,34 @@
+name: Test Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-tests:
+    name: Validate test scripts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r tests/requirements.txt
+
+      - name: Validate Controller test collection
+        env:
+          DEVICE_IP: "192.0.2.1"
+        run: pytest tests/controller/ --collect-only
+
+      - name: Validate HW-Reg test collection
+        env:
+          DEVICE_IP: "192.0.2.1"
+        run: pytest tests/hw-reg/ --collect-only
