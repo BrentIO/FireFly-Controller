@@ -712,7 +712,7 @@ void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
 
 
 /**
- * Handles partitions requests for the internal EEPROM
+ * Handles partitions requests
 */
 void http_handlePartitions(AsyncWebServerRequest *request){
 
