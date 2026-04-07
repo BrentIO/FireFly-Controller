@@ -1,8 +1,10 @@
-# To build on M3 mac, cd to directory where this file is located, run:
-#    docker build \
-#  --platform linux/arm64 \
-#  -t act-arduino-ubuntu-24-04 \
-#  .
+# Build from the REPO ROOT (not from .act/) so that libraries.yaml is in the build context:
+#
+# Apple Silicon:
+#   docker build --no-cache --platform=linux/arm64 -t act-arduino-ubuntu-24-04:latest -f .act/dockerfile .
+#
+# Intel:
+#   docker build --no-cache --platform=linux/amd64 -t act-arduino-ubuntu-24-04:latest -f .act/dockerfile .
 
 FROM ghcr.io/catthehacker/ubuntu:act-24.04
 LABEL act="act-arduino-ubuntu-24-04"
@@ -41,8 +43,10 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install yq (mikefarah) for YAML parsing
-RUN curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.45.1/yq_linux_arm64 \
-    -o /usr/local/bin/yq && chmod +x /usr/local/bin/yq
+ARG TARGETARCH
+RUN if [ "$TARGETARCH" = "arm64" ]; then YQ_ARCH="arm64"; else YQ_ARCH="amd64"; fi && \
+    curl -fsSL "https://github.com/mikefarah/yq/releases/download/v4.45.1/yq_linux_${YQ_ARCH}" \
+      -o /usr/local/bin/yq && chmod +x /usr/local/bin/yq
 
 # Install Node.js 18 (GitHub runner default)
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
@@ -95,22 +99,9 @@ RUN for H in /github/home /home/runner; do \
 # ---------------------------------------------------------
 # Install required Arduino libraries INTO BOTH HOME PATHS
 # ---------------------------------------------------------
+COPY libraries.yaml /tmp/libraries.yaml
 RUN for H in /github/home /home/runner; do \
       HOME=$H arduino-cli config set library.enable_unsafe_install true && \
-      HOME=$H arduino-cli lib install --git-url https://github.com/adafruit/Adafruit_BusIO.git#1.17.4 && \
-      HOME=$H arduino-cli lib install --git-url https://github.com/adafruit/Adafruit-GFX-Library.git#1.12.5 && \
-      HOME=$H arduino-cli lib install --git-url https://github.com/adafruit/Adafruit_SSD1306.git#2.5.16 && \
-      HOME=$H arduino-cli lib install --git-url https://github.com/bblanchon/ArduinoJson.git#v7.4.1 && \
-      HOME=$H arduino-cli lib install --git-url https://github.com/bblanchon/ArduinoStreamUtils.git#v1.9.2 && \
-      HOME=$H arduino-cli lib install --git-url https://github.com/ESP32Async/AsyncTCP.git#v3.4.9 && \
-      HOME=$H arduino-cli lib install --git-url https://github.com/ESP32Async/ESPAsyncWebServer.git#v3.9.6 && \
-      HOME=$H arduino-cli lib install --git-url https://github.com/BrentIO/esp32FOTA.git#2026.4.1 && \
-      HOME=$H arduino-cli lib install --git-url https://github.com/BrentIO/PCA95x5.git#2023.10.2 && \
-      HOME=$H arduino-cli lib install --git-url https://github.com/BrentIO/PCT2075.git#2023.10.3 && \
-      HOME=$H arduino-cli lib install --git-url https://github.com/thingsboard/pubsubclient.git#v2.12.1 && \
-      HOME=$H arduino-cli lib install --git-url https://github.com/arduino-libraries/Ethernet.git#2.0.2 && \
-      HOME=$H arduino-cli lib install --git-url https://github.com/ivanseidel/LinkedList.git#v1.3.3 && \
-      HOME=$H arduino-cli lib install --git-url https://github.com/arduino-libraries/NTPClient.git#3.2.1 && \
-      HOME=$H arduino-cli lib install --git-url https://github.com/RobTillaart/PCA9685_RT.git#0.7.3 && \
-      HOME=$H arduino-cli lib install --git-url https://github.com/nickgammon/Regexp.git#0.1.1; \
+      yq -r '.libraries[] | .url + ".git#" + .version' /tmp/libraries.yaml | \
+        xargs -I{} sh -c "HOME=$H arduino-cli lib install --git-url {}"; \
     done
