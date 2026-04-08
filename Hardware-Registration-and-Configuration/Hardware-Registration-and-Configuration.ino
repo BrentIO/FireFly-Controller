@@ -694,6 +694,9 @@ void http_handleIdentity_GET(AsyncWebServerRequest *request){
   JsonDocument doc;
   doc["uuid"] = deviceIdentity.data.uuid;
   doc["product_id"] = deviceIdentity.data.product_id;
+  char product_hex_str[11] = {0};
+  sprintf(product_hex_str, "0x%08X", deviceIdentity.data.product_hex);
+  doc["product_hex"] = product_hex_str;
   doc["key"] = deviceIdentity.data.key;
 
   serializeJson(doc, *response);
@@ -782,6 +785,27 @@ void http_handleIdentity_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
   strlcpy(postedData.product_id, doc["product_id"], sizeof(postedData.product_id));
 
+  if(doc["product_hex"].isNull()){
+    http_badRequest(request, "Field product_hex is required");
+    return;
+  }
+
+  if(strlen(doc["product_hex"]) != 10){
+    http_badRequest(request, "Field product_hex must be exactly 10 characters");
+    return;
+  }
+
+  char product_hex_buf[11];
+  strlcpy(product_hex_buf, doc["product_hex"], sizeof(product_hex_buf));
+  ms.Target(product_hex_buf);
+
+  if(ms.MatchCount("^0x[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]$") != 1){
+    http_badRequest(request, "Invalid product_hex, see docs");
+    return;
+  }
+
+  postedData.product_hex = (uint32_t)strtoul(product_hex_buf + 2, NULL, 16);
+
   if(doc["key"].isNull()){
     http_badRequest(request, "Field key is required");
     return;
@@ -793,7 +817,6 @@ void http_handleIdentity_POST(AsyncWebServerRequest *request, JsonVariant doc){
   }
 
   strlcpy(postedData.key, doc["key"], sizeof(postedData.key));
-  postedData.product_hex = PRODUCT_HEX;
 
   ms.Target(postedData.key);
 
