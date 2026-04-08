@@ -40,7 +40,7 @@ devices:
 
   - product_hex: "0x32322304"
     product_id: FFC3232-2304
-    status: ACTIVE
+    status: INACTIVE
     bootloader_addr: "0x1000"
     partition_scheme:
       - type: 1
