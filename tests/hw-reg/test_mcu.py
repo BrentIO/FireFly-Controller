@@ -13,4 +13,5 @@ class TestMCU:
         assert "revision" in body
         assert "flash_chip_size" in body
         assert "boot_time" in body
+        assert "psram_size" in body
 
