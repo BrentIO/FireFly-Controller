@@ -2,16 +2,19 @@
   <AppLayout>
     <div>
       <div class="flex items-center justify-between mb-6">
-        <h2 class="text-xl font-semibold text-gray-900">Event Log</h2>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Event Log</h2>
         <button
-          class="px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+          class="px-3 py-1.5 text-sm font-medium bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           @click="load"
         >
           Refresh
         </button>
       </div>
-      <div v-if="loading" class="text-gray-500 text-sm">Loading…</div>
-      <div v-else class="bg-white rounded-lg shadow overflow-hidden">
+      <div v-if="loading" class="text-gray-500 dark:text-gray-400 text-sm">Loading…</div>
+      <div
+        v-else
+        class="bg-white dark:bg-gray-900 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10 overflow-hidden"
+      >
         <SortableTable
           :columns="columns"
           :rows="rows"
@@ -20,7 +23,7 @@
         >
           <template #level="{ row }">
             <span
-              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
               :class="levelClass(row.level)"
             >
               {{ levelLabel(row.level) }}
@@ -56,14 +59,12 @@ const columns = [
 ]
 
 const LEVEL_CLASSES = {
-  info:    'bg-blue-100 text-blue-800',
-  notify:  'bg-amber-100 text-amber-800',
-  error:   'bg-red-100 text-red-800',
-  unknown: 'bg-gray-100 text-gray-800'
+  info:    'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
+  notify:  'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300',
+  error:   'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300',
+  unknown: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
 }
-const LEVEL_LABELS = {
-  info: 'Info', notify: 'Notification', error: 'Error', unknown: 'Unknown'
-}
+const LEVEL_LABELS = { info: 'Info', notify: 'Notification', error: 'Error', unknown: 'Unknown' }
 
 function levelClass(l) { return LEVEL_CLASSES[l] ?? LEVEL_CLASSES.unknown }
 function levelLabel(l) { return LEVEL_LABELS[l] ?? 'Unknown' }

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen bg-gray-100">
+  <div class="flex h-screen bg-gray-50 dark:bg-gray-950">
     <SideNav />
     <main class="flex-1 overflow-auto p-6">
       <slot />

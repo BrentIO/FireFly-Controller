@@ -1,15 +1,18 @@
 <template>
   <AppLayout>
     <div class="max-w-2xl">
-      <h2 class="text-xl font-semibold text-gray-900 mb-6">Error Log</h2>
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Error Log</h2>
 
-      <div v-if="loading" class="text-gray-500 text-sm">Loading…</div>
+      <div v-if="loading" class="text-gray-500 dark:text-gray-400 text-sm">Loading…</div>
 
-      <div v-else-if="rows.length === 0" class="text-gray-500 text-sm">
+      <p v-else-if="rows.length === 0" class="text-gray-500 dark:text-gray-400 text-sm">
         No errors.
-      </div>
+      </p>
 
-      <div v-else class="bg-white rounded-lg shadow overflow-hidden">
+      <div
+        v-else
+        class="bg-white dark:bg-gray-900 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10 overflow-hidden"
+      >
         <SortableTable :columns="columns" :rows="rows" :page-size="10" />
       </div>
     </div>
@@ -30,9 +33,7 @@ const { setNavError } = useAppState()
 const rows = ref([])
 const loading = ref(true)
 
-const columns = [
-  { key: 'text', label: 'Text', sortable: false }
-]
+const columns = [{ key: 'text', label: 'Text', sortable: false }]
 
 async function load() {
   loading.value = true

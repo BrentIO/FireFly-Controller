@@ -1,13 +1,16 @@
 <template>
   <AppLayout>
     <div class="max-w-2xl">
-      <h2 class="text-xl font-semibold text-gray-900 mb-6">Network</h2>
-      <div v-if="loading" class="text-gray-500 text-sm">Loading…</div>
-      <div v-else class="bg-white rounded-lg shadow overflow-hidden">
+      <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Network</h2>
+      <div v-if="loading" class="text-gray-500 dark:text-gray-400 text-sm">Loading…</div>
+      <div
+        v-else
+        class="bg-white dark:bg-gray-900 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10 overflow-hidden"
+      >
         <SortableTable
           :columns="columns"
           :rows="rows"
-          :default-sort="{ key: 'interface', dir: 'asc' }"
+          :default-sort="{ key: 'interfaceLabel', dir: 'asc' }"
         />
       </div>
     </div>
@@ -30,14 +33,14 @@ const loading = ref(true)
 
 const INTERFACE_LABELS = {
   bluetooth: 'Bluetooth',
-  ethernet: 'Ethernet',
-  wifi: 'WiFi',
-  wifi_ap: 'WiFi AP'
+  ethernet:  'Ethernet',
+  wifi:      'WiFi',
+  wifi_ap:   'WiFi AP'
 }
 
 const columns = [
   { key: 'interfaceLabel', label: 'Interface' },
-  { key: 'mac_address', label: 'MAC Address' }
+  { key: 'mac_address',    label: 'MAC Address' }
 ]
 
 async function load() {

@@ -3,13 +3,13 @@
     <div
       v-for="toast in toasts"
       :key="toast.id"
-      class="flex items-start justify-between rounded-md px-4 py-3 shadow-lg text-sm text-white"
+      class="flex items-start justify-between rounded-lg px-4 py-3 shadow-lg text-sm text-white"
       :class="toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'"
     >
       <span>{{ toast.message }}</span>
       <button
         v-if="toast.type === 'error'"
-        class="ml-3 font-bold leading-none"
+        class="ml-3 font-bold leading-none opacity-80 hover:opacity-100"
         @click="removeToast(toast.id)"
       >
         &times;
