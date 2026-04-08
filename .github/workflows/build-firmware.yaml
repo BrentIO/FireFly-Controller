@@ -83,6 +83,7 @@ jobs:
           head -n 10  ${{ github.workspace }}/${{ matrix.application }}/www/swagger.yaml
 
       - name: Update UI version (version.json)
+        if: ${{ matrix.application == 'Controller' }}
         run: |
           BRANCH="${{ env.BRANCH }}"
           COMMIT_HASH="${{ env.COMMIT_HASH }}"
@@ -210,6 +211,21 @@ jobs:
               --warnings more --clean \
               --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=0 -DVERSION=\"${VERSION}\" -DCOMMIT_HASH=\"${COMMIT_HASH}\" -I${{ github.workspace }}" \
               --output-dir "$OUTDIR"
+          fi
+
+      - name: Build Vue UI
+        if: ${{ matrix.application == 'Hardware-Registration-and-Configuration' }}
+        run: |
+          cd $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/ui
+          npm ci
+          VITE_UI_VERSION="${BRANCH} (${COMMIT_HASH})" npm run build
+          cp $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/swagger.yaml \
+             $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/www/swagger.yaml
+          gzip -r -9 $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/www
+          TOTAL=$(du -sb $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/www | cut -f1)
+          if [ "$TOTAL" -gt 2097152 ]; then
+            echo "ERROR: www/ exceeds 2MB (${TOTAL} bytes)"
+            exit 1
           fi
 
       - name: Create Empty Directory for Use by LittleFS

@@ -19,7 +19,7 @@ tags:
   - name: Network
     description: Operations for network communications
   - name: Partitions
-    description: Operations for the internal EEPROM partition information
+    description: Operations for the internal partition information
   - name: Peripherals
     description: Operations for the on-board peripherals
   - name: MCU
@@ -175,8 +175,8 @@ paths:
     get:
       tags:
         - Partitions
-      summary: Internal EEPROM partition schema
-      description: Retrieve internal EEPROM partition schema information from the MCU
+      summary: Internal partition schema
+      description: Retrieve internal partition schema information from the MCU
       responses:
         '200':
           description: OK
@@ -395,6 +395,11 @@ components:
           description: Device product ID, which includes the board revision code
           example: FFC3232-2211
           maxLength: 32
+        product_hex:
+          type: string
+          description: Device product hexadecimal identifier
+          example: '0x32322304'
+          pattern: '^0x[0-9A-Fa-f]{8}$'
         key:
           type: string
           description: String of random characters used for authentication
@@ -405,6 +410,7 @@ components:
       required:
         - uuid
         - product_id
+        - product_hex
         - key
     mcuInfo:
       type: object
