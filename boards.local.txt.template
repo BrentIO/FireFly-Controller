@@ -21,8 +21,7 @@ firefly_controller.build.bootloader_addr={{BOOTLOADER_ADDR}}
 firefly_controller.build.target=esp32
 firefly_controller.build.mcu=esp32
 firefly_controller.build.core=esp32
-#firefly_controller.build.variant=esp32
-firefly_controller.build.variant=esp32wrover
+firefly_controller.build.variant=esp32
 firefly_controller.build.board=esp32
 
 firefly_controller.build.f_cpu=240000000L
