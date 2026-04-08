@@ -39,7 +39,6 @@
 #include "common/outputs.h"
 #include "common/eventLog.h"
 #include "common/authorizationToken.h"
-#include "common/otaConfig.h"
 #include <ArduinoJson.h>
 #include "AsyncJson.h"
 #include <NTPClient.h>
@@ -64,20 +63,9 @@ EventLog eventLog(&timeClient); /* Event Log instance */
 uint64_t ntpSleepUntil = 0;
 
 void updateNTPTime(bool force = false);
-void refreshCertBundle();
-
-exEsp32FOTA otaFirmware(APPLICATION_NAME, VERSION, false); /* OTA firmware update class */
 
 fs::LittleFSFS wwwFS;
-fs::LittleFSFS configFS;
 bool wwwFS_isMounted = false;
-bool configFS_isMounted = false;
-
-char* _certBundle = nullptr;            /* PSRAM-backed concatenated PEM bundle for OTA TLS */
-size_t _certBundleSize = 0;             /* Byte length of _certBundle, excluding null terminator */
-CryptoMemAsset* _certBundleAsset = nullptr; /* Asset pointer into _certBundle for esp32FOTA */
-
-#define CONFIGFS_PATH_CERTS "/certs"
 
 
 /**
@@ -203,26 +191,12 @@ void setup() {
   if (wwwFS.begin(false, "/wwwFS", (uint8_t)10U, "www"))
   {
     wwwFS_isMounted = true;
-    otaFirmware.setSPIFFsPartitionLabel("www");
-    otaFirmware.setCertFileSystem(nullptr);
   }
   else{
     eventLog.createEvent("wwwFS mount fail", EventLog::LOG_LEVEL_ERROR);
     log_e("An Error has occurred while mounting www");
   }
 
-
-    /* Start LittleFS for config */
-  if (configFS.begin(false, "/configFS", (uint8_t)10U, "config"))
-  {
-    configFS_isMounted = true;
-  }
-  else{
-    eventLog.createEvent("configFS mount fail", EventLog::LOG_LEVEL_ERROR);
-    log_e("An Error has occurred while mounting configFS");
-  }
-
-  refreshCertBundle();
 
   /* Configure the web server.  
     IMPORTANT: *** Sequence below matters, they are sorted specific to generic *** 
@@ -242,21 +216,8 @@ void setup() {
   httpServer.on("/api/network", http_handleNetworkInterfaceAll);
   httpServer.on("/auth", http_handleAuth);
 
-  if(configFS_isMounted){
-    httpServer.on("^/certs/([a-z0-9_.]+)$", http_handleCert);
-    httpServer.on("^/certs$", HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced));
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced));
-  }else{
-    log_e("configFS is not mounted");
-    httpServer.on("^/certs/([a-z0-9_.]+)$", http_configFSNotMunted);
-    httpServer.on("^/certs$", HTTP_ANY, http_configFSNotMunted);
-    httpServer.on("^/api/ota/.+$", http_configFSNotMunted);
-  }
-
   if(wwwFS_isMounted){
     httpServer.serveStatic("/", wwwFS, "/", "public, max-age=86400");
-    httpServer.rewrite("/ui/version", "/version.json");
     httpServer.rewrite("/", "/index.html");
   }
 
@@ -265,6 +226,11 @@ void setup() {
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*"); //Ignore CORS
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "visual-token, Content-Type"); //Ignore CORS
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE"); //Ignore CORS
+
+  String serverHeader = String(APPLICATION_NAME);
+  serverHeader.replace(" ", "-");
+  serverHeader += "/" + String(VERSION);
+  DefaultHeaders::Instance().addHeader("Server", serverHeader);
 
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
@@ -289,10 +255,6 @@ void setup() {
   #endif
 
   oled.setPage(managerOled::PAGE_EVENT_LOG);
-
-  otaFirmware.setProgressCb(eventHandler_otaFirmwareProgress);
-  otaFirmware.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
-  otaFirmware.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
 }
 
 
@@ -302,8 +264,6 @@ void setup() {
 void loop() {
 
   updateNTPTime();
-
-  otaFirmware_checkPending();
 
   oled.loop();
   authToken.loop(); 
@@ -319,97 +279,6 @@ void frontPanelButtonPress(){
   log_v("Front Panel button was pressed");
 
   oled.nextPage();
-}
-
-
-/**
- * Checks if there are any pending OTA firmware updates in the queue.  This is necessary to allow the async web server to raise requests to the main loop.
-*/
-void otaFirmware_checkPending(){
-
-  if(otaFirmware.pending.size() == 0){
-    return;
-  }
-
-  if(otaFirmware.updateInProcess == true){
-    return;
-  }
-
-  for(int i=0; i < otaFirmware.pending.size(); i++){
-
-    bool updateSuccess = false;
-
-    if(otaFirmware.pending[i].url.startsWith("https:")){
-      if(_certBundleAsset != nullptr){
-        otaFirmware.setRootCA(_certBundleAsset);
-      } else {
-        otaFirmware.useBundledCerts();
-      }
-    }
-
-    switch(otaFirmware.pending[i].type){
-
-      case OTA_UPDATE_APP:
-        eventLog.createEvent("OTA app forced");
-        updateSuccess = otaFirmware.forceUpdate(otaFirmware.pending[i].url.c_str(), false);
-        break;
-
-
-      case OTA_UPDATE_SPIFFS:
-        eventLog.createEvent("OTA SPIFFS forced");
-        updateSuccess = otaFirmware.forceUpdateSPIFFS(otaFirmware.pending[i].url.c_str(), false);
-        break;
-    }
-
-    if(!updateSuccess){
-      eventLog.createEvent("OTA update failed", EventLog::LOG_LEVEL_NOTIFICATION);
-    }
-
-    otaFirmware.pending.remove(i);
-  }
-
-}
-
-
-/**
- * A callback function to report firmware upgrade progress, which draws a status on the OLED
- * @param progress The number of bytes that have been processed so far
- * @param size The total size of the update in bytes 
-*/
-void eventHandler_otaFirmwareProgress(size_t progress, size_t size){
-
-  if(progress == 0){
-    eventLog.createEvent("OTA update started", EventLog::LOG_LEVEL_NOTIFICATION);
-    oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
-  }
-
-  oled.setProgressBar(((float)progress/(float)size));
-}
-
-
-/**
- * Callback function to report that the update has failed
- * @param partition inherited from esp32FOTA library
-*/
-void eventHandler_otaFirmwareFailed(int partition){
-  log_i("Failed partition: [%i]", partition);
-  eventLog.createEvent("OTA update failed", EventLog::LOG_LEVEL_NOTIFICATION);
-}
-
-
-/**
- * A callback function for when the firmware update has finished
-*/
-void eventHandler_otaFirmwareFinished(int partition, bool needs_restart){
-
-  log_i("Finished Partition: [%i] needs restart: [%s]", partition, needs_restart ? "true":"false");
-
-  eventLog.createEvent("OTA update finished", EventLog::LOG_LEVEL_NOTIFICATION);
-
-  if(needs_restart){
-      eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
-      delay(5000);
-  }
 }
 
 
@@ -468,249 +337,11 @@ void http_badRequest(AsyncWebServerRequest *request, String message){
 
 
 /**
- * Sends a 403 response indicating an invalid request from the caller
-*/
-void http_forbiddenRequest(AsyncWebServerRequest *request, String message){
-
-  AsyncResponseStream *response = request->beginResponseStream("application/json");
-  JsonDocument doc;
-  doc["message"] = message;
-
-  serializeJson(doc, *response);
-  response->setCode(403);
-  request->send(response);
-}
-
-
-/**
  * Sends a 200 response for any OPTIONS requests
 */
 void http_options(AsyncWebServerRequest *request) {
   request->send(200);
 };
-
-
-/**
- * Generic handler to return HTTP/500 responses when the configFS file system has not been mounted
-*/
-void http_configFSNotMunted(AsyncWebServerRequest *request){
-
-  if(!request->hasHeader("visual-token")){
-        http_unauthorized(request);
-        return;
-  }
-
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
-    http_unauthorized(request);
-    return;
-  }
-
-  http_error(request, "file system not mounted");
-
-}
-
-
-/**
- * Handles /certs requests
-*/
-void http_handleCerts(AsyncWebServerRequest *request){
-
-  switch(request->method()){
-
-    case HTTP_OPTIONS:
-      http_options(request);
-      break;
-
-    case HTTP_POST:
-
-      break; //http_handleCerts_Upload handles all authorization and responses
-
-    case HTTP_GET:
-
-      if(!request->hasHeader("visual-token")){
-        http_unauthorized(request);
-        return;
-      }
-
-      if(!authToken.authenticate(request->header("visual-token").c_str())){
-        http_unauthorized(request);
-        return;
-      }
-
-      http_handleCerts_GET(request);
-      break;
-
-    default:
-      http_methodNotAllowed(request);
-      break;
-  }
-
-}
-
-
-/**
- * Handles certificate uploads.  If the certificate already exists, a 403 is returned to the client
-*/
-void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
-
-  if(!request->hasHeader("visual-token")){
-        http_unauthorized(request);
-        return;
-  }
-
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
-    http_unauthorized(request);
-    return;
-  }
-
-  if(request->method()!= HTTP_POST){
-    http_methodNotAllowed(request);
-    return;
-  }
-
-  if(!index){
-
-    if(!configFS.exists(CONFIGFS_PATH_CERTS)){
-      configFS.mkdir(CONFIGFS_PATH_CERTS);
-    }
-
-    if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + filename)){
-      http_forbiddenRequest(request, "Certificate already exists");
-      return;
-    }
-
-    request->_tempFile = configFS.open(CONFIGFS_PATH_CERTS + (String)"/" + filename, "w");
-  }
-
-  request->_tempFile.write(data,len);
-    
-  if(final){
-    request->_tempFile.close();
-    refreshCertBundle();
-    request->send(201);
-  }
-}
-
-
-/**
- * Handles /certs/{file} requests
-*/
-void http_handleCert(AsyncWebServerRequest *request){
-  switch(request->method()){
-
-    case HTTP_OPTIONS:
-      http_options(request);
-      break;
-
-    case HTTP_GET:
-
-        if(!request->hasHeader("visual-token")){
-        http_unauthorized(request);
-        return;
-      }
-
-      if(!authToken.authenticate(request->header("visual-token").c_str())){
-        http_unauthorized(request);
-        return;
-      }
-
-      http_handleCert_GET(request);
-      break;
-
-    case HTTP_DELETE:
-
-      if(!request->hasHeader("visual-token")){
-        http_unauthorized(request);
-        return;
-      }
-
-      if(!authToken.authenticate(request->header("visual-token").c_str())){
-        http_unauthorized(request);
-        return;
-      }
-
-      http_handleCert_DELETE(request);
-      break;
-
-    default:
-      http_methodNotAllowed(request);
-      break;
-  }
-
-}
-
-
-/** 
- * Handles retrieving a specific certificate
-*/
-void http_handleCert_GET(AsyncWebServerRequest *request){
-
-  if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0))){
-
-    AsyncWebServerResponse *response = request->beginResponse(configFS, CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0), "text/plain");
-    response->setCode(200);
-    request->send(response);
-
-  }else{
-    request->send(404);
-  }
-}
-
-
-/**
- * Handles deleting a specific certificate
-*/
-void http_handleCert_DELETE(AsyncWebServerRequest *request){
-
-  if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0))){
-    configFS.remove(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0));
-    refreshCertBundle();
-    request->send(204);
-  }else{
-    request->send(404);
-  }
-}
-
-
-/**
- * Handles force OTA force update requests using the payload provided
-*/
-void http_handleOTA_forced(AsyncWebServerRequest *request, JsonVariant doc){
-
-  if(!request->hasHeader("visual-token")){
-      http_unauthorized(request);
-      return;
-  }
-
-  if(!authToken.authenticate(request->header("visual-token").c_str(), true)){
-    http_unauthorized(request);
-    return;
-  }
-
-   if(doc["url"].isNull()){
-    http_badRequest(request, "Field url is required");
-    return;
-  }
-
-  forcedOtaUpdateConfig newFirmwareRequest;
-  newFirmwareRequest.url = doc["url"].as<String>();
-
-  if(!newFirmwareRequest.url.startsWith("http")){
-    http_badRequest(request, "Bad url; http or https required");
-    return;
-  }
-
-  if(request->url().endsWith("app")){
-      newFirmwareRequest.type = OTA_UPDATE_APP;
-
-  }else{
-    newFirmwareRequest.type = OTA_UPDATE_SPIFFS;
-  }
-
-  otaFirmware.pending.add(newFirmwareRequest);
-
-  request->send(202);
-}
 
 
 /**
@@ -852,6 +483,7 @@ void http_handleMCU(AsyncWebServerRequest *request){
   doc["chip_model"] = ESP.getChipModel();
   doc["revision"] = (String)ESP.getChipRevision();
   doc["flash_chip_size"] = ESP.getFlashChipSize();
+  doc["psram_size"] = ESP.getPsramSize();
 
   if(bootTime !=0){
       doc["boot_time"] = bootTime;
@@ -1263,33 +895,6 @@ void http_handleErrorLog(AsyncWebServerRequest *request){
 }
 
 
-/** 
- * Retrieves a list of certificates
-*/
-void http_handleCerts_GET(AsyncWebServerRequest *request){
-
-  AsyncResponseStream *response = request->beginResponseStream("application/json");
-  JsonDocument doc;
-  JsonArray array = doc.to<JsonArray>();
-
-  File root = configFS.open(CONFIGFS_PATH_CERTS);
-
-  File file = root.openNextFile();
-  while(file){
-      if(!file.isDirectory()){
-          JsonObject fileInstance = array.add<JsonObject>();
-          fileInstance["file"] = (String)file.name();
-          fileInstance["size"] = file.size();
-      }
-      file = root.openNextFile();
-    }
-
-  serializeJson(doc, *response);
-  request->send(response);
-
-}
-
-
 /**
  * Creates a long-term authorization with the given visual token
 */
@@ -1471,53 +1076,6 @@ void eventHandler_visualAuthChanged(){
   if(oled.getPage() == managerOled::PAGE_AUTH_TOKEN){
     oled.setPage(managerOled::PAGE_EVENT_LOG);
   }
-}
-
-
-/**
- * Concatenates all user-uploaded certificates from configFS into a PSRAM-backed PEM bundle.
- * If no certificates are uploaded, _certBundleAsset remains nullptr, which signals callers
- * to use the ESP-IDF built-in Mozilla root CA bundle instead.
-*/
-void refreshCertBundle(){
-
-  if(_certBundle != nullptr){ free(_certBundle); _certBundle = nullptr; }
-  if(_certBundleAsset != nullptr){ delete _certBundleAsset; _certBundleAsset = nullptr; }
-  _certBundleSize = 0;
-
-  String bundle = "";
-
-  if(configFS_isMounted){
-    File certsDir = configFS.open(CONFIGFS_PATH_CERTS);
-    if(certsDir && certsDir.isDirectory()){
-      File certFile = certsDir.openNextFile();
-      while(certFile){
-        if(!certFile.isDirectory()){
-          while(certFile.available()){ bundle += (char)certFile.read(); }
-        }
-        certFile = certsDir.openNextFile();
-      }
-    }
-  }
-
-  _certBundleSize = bundle.length();
-
-  if(_certBundleSize == 0){
-    log_i("No user certs found; will use bundled Mozilla root CAs");
-    return;
-  }
-
-  _certBundle = (char*)ps_malloc(_certBundleSize + 1);
-  if(_certBundle == nullptr){ _certBundle = (char*)malloc(_certBundleSize + 1); }
-  if(_certBundle == nullptr){
-    log_e("Failed to allocate cert bundle");
-    _certBundleSize = 0;
-    return;
-  }
-
-  memcpy(_certBundle, bundle.c_str(), _certBundleSize + 1);
-  _certBundleAsset = new CryptoMemAsset("bundle", _certBundle, _certBundleSize);
-  log_i("Cert bundle built: %u bytes", (unsigned int)_certBundleSize);
 }
 
 
