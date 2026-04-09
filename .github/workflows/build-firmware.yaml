@@ -142,9 +142,20 @@ jobs:
       - name: Generate boards.local.txt from template
         run: |
           APP_SIZE_DEC=$(( ${{ matrix.partition_size_app }} ))
+
+          if [ "${{ matrix.application }}" = "Hardware-Registration-and-Configuration" ]; then
+            FLASH_MODE="dio"
+            BOOT_MODE="dio"
+          else
+            FLASH_MODE="qio"
+            BOOT_MODE="qio"
+          fi
+
           sed \
             -e "s|{{BOOTLOADER_ADDR}}|${{ matrix.bootloader_addr }}|g" \
             -e "s|{{APP_PARTITION_MAX_SIZE}}|${APP_SIZE_DEC}|g" \
+            -e "s|{{FLASH_MODE}}|${FLASH_MODE}|g" \
+            -e "s|{{BOOT_MODE}}|${BOOT_MODE}|g" \
             ${{ github.workspace }}/boards.local.txt.template \
             > ${{ github.workspace }}/boards.local.txt
 
