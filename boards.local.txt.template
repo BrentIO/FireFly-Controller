@@ -25,9 +25,9 @@ firefly_controller.build.variant=esp32
 firefly_controller.build.board=ESP32_DEV
 
 firefly_controller.build.f_cpu=240000000L
-firefly_controller.build.flash_mode=qio
+firefly_controller.build.flash_mode=dio
 firefly_controller.build.flash_size=16MB
-firefly_controller.build.boot=qio
+firefly_controller.build.boot=dio
 firefly_controller.build.partitions=default
 firefly_controller.build.defines=-DBOARD_HAS_PSRAM
 firefly_controller.build.psram_type=qspi
