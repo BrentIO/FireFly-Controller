@@ -87,6 +87,7 @@ void setup() {
       delay(100);
       ESP.restart();
     }
+    log_i("VDD_SDIO eFuse: set");
   #endif
 
   eventLog.createEvent("Event log started");
