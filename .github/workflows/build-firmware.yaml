@@ -146,9 +146,11 @@ jobs:
           if [ "${{ matrix.application }}" = "Hardware-Registration-and-Configuration" ]; then
             FLASH_MODE="dio"
             BOOT_MODE="dio"
+            FLASH_FREQ="80m"
           else
             FLASH_MODE="qio"
             BOOT_MODE="qio"
+            FLASH_FREQ="40m"
           fi
 
           sed \
@@ -156,6 +158,7 @@ jobs:
             -e "s|{{APP_PARTITION_MAX_SIZE}}|${APP_SIZE_DEC}|g" \
             -e "s|{{FLASH_MODE}}|${FLASH_MODE}|g" \
             -e "s|{{BOOT_MODE}}|${BOOT_MODE}|g" \
+            -e "s|{{FLASH_FREQ}}|${FLASH_FREQ}|g" \
             ${{ github.workspace }}/boards.local.txt.template \
             > ${{ github.workspace }}/boards.local.txt
 
