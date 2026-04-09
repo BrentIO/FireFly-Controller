@@ -33,10 +33,6 @@ firefly_controller.build.partitions=default
 firefly_controller.build.defines=-DBOARD_HAS_PSRAM
 firefly_controller.build.psram_type=qspi
 
-firefly_controller.menu.FlashFreq.80=80MHz
-firefly_controller.menu.FlashFreq.80.build.flash_freq=80m
-firefly_controller.menu.FlashFreq.40=40MHz
-firefly_controller.menu.FlashFreq.40.build.flash_freq=40m
 
 firefly_controller.menu.PartitionScheme.default=16MB Flash (6.25MB APP/OTA [ota_0/ota_1], 512KB SPIFFS [config], 2.875MB SPIFFS [spiffs])
 firefly_controller.menu.PartitionScheme.default.build.partitions=default
