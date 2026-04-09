@@ -166,7 +166,7 @@ void setup() {
   reportMemoryUsage("Setup begin.");
 
   if(!psramFound()){
-    eventLog.createEvent("No PSRAM found", EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("No PSRAM found", EventLog::LOG_LEVEL_INFO);
   }
 
   eventLog.createEvent("Event log started");
