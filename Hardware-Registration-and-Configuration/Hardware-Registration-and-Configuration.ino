@@ -80,9 +80,9 @@ void setup() {
 
   #if BURN_VDD_SDIO_EFUSE
     if (!esp_efuse_read_field_bit(ESP_EFUSE_XPD_SDIO_REG) ||
-        !esp_efuse_read_field_bit(ESP_EFUSE_VDD_SDIO_TIEH)) {
+        !esp_efuse_read_field_bit(ESP_EFUSE_XPD_SDIO_TIEH)) {
       esp_efuse_write_field_bit(ESP_EFUSE_XPD_SDIO_REG);
-      esp_efuse_write_field_bit(ESP_EFUSE_VDD_SDIO_TIEH);
+      esp_efuse_write_field_bit(ESP_EFUSE_XPD_SDIO_TIEH);
       log_i("VDD_SDIO eFuse burned; rebooting");
       delay(100);
       ESP.restart();
