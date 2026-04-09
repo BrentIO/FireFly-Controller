@@ -150,7 +150,7 @@ jobs:
           else
             FLASH_MODE="qout"
             BOOT_MODE="qout"
-            FLASH_FREQ="40m"
+            FLASH_FREQ="80m"
           fi
 
           sed \
