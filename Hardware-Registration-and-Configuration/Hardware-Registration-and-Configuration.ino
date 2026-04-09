@@ -79,8 +79,10 @@ bool wwwFS_isMounted = false;
 void setup() {
 
   #if BURN_VDD_SDIO_EFUSE
-    if (!esp_efuse_read_field_bit(ESP_EFUSE_XPD_SDIO_REG) ||
+    if (!esp_efuse_read_field_bit(ESP_EFUSE_XPD_SDIO_FORCE) ||
+        !esp_efuse_read_field_bit(ESP_EFUSE_XPD_SDIO_REG) ||
         !esp_efuse_read_field_bit(ESP_EFUSE_XPD_SDIO_TIEH)) {
+      esp_efuse_write_field_bit(ESP_EFUSE_XPD_SDIO_FORCE);
       esp_efuse_write_field_bit(ESP_EFUSE_XPD_SDIO_REG);
       esp_efuse_write_field_bit(ESP_EFUSE_XPD_SDIO_TIEH);
       log_i("VDD_SDIO eFuse burned; rebooting");
