@@ -148,8 +148,8 @@ jobs:
             BOOT_MODE="dio"
             FLASH_FREQ="80m"
           else
-            FLASH_MODE="qio"
-            BOOT_MODE="qio"
+            FLASH_MODE="qout"
+            BOOT_MODE="qout"
             FLASH_FREQ="40m"
           fi
 
