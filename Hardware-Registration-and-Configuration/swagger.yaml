@@ -364,7 +364,7 @@ components:
         - OUTPUT
         - TEMPERATURE
         - OLED
-        - EEPROM
+        - NVS
     peripheralOnline:
       type: boolean
       description: If the peripheral was found to be online
@@ -469,7 +469,7 @@ components:
         text:
           type: string
           description: Descriptive text about the event
-          example: EEPROM Failure
+          example: No I/O ConfigFS offline
     applicationVersion:
       type: string
       description: Software version
