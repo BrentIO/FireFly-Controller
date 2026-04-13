@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4">
     <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10 w-full max-w-sm p-8">
       <h1 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Hardware Configuration</h1>
       <form @submit.prevent="submit">
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Authorization Token
+          Visual Auth Token
         </label>
         <input
           v-model="token"
