@@ -928,7 +928,7 @@ components:
           type: string
           description: Descriptive text about the event
           examples: 
-            - EEPROM Failure
+            - NVS failure
 
 
     ##########################################################
