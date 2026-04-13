@@ -24,7 +24,7 @@ jobs:
     needs: load-matrix
     environment: ${{ inputs.target_env }}
 
-    name: Build all firmware
+    name: Build ${{ matrix.application }} (${{ matrix.product_id }})
     runs-on: ubuntu-24.04
 
     permissions:
@@ -201,7 +201,7 @@ jobs:
       - name: Create Output Directory
         run: mkdir -p "${{ env.ARTIFACT_ROOT }}/${{ matrix.product_id }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}"
 
-      - name: Compile Application
+      - name: Compile ${{ matrix.application }} (${{ matrix.product_id }})
         run: |
           set -e
 
