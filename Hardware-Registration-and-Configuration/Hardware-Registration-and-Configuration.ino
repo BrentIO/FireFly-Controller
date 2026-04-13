@@ -713,7 +713,7 @@ void http_handleIdentity_GET(AsyncWebServerRequest *request){
   doc["uuid"] = deviceIdentity.data.uuid;
   doc["product_id"] = deviceIdentity.data.product_id;
   char product_hex_str[11] = {0};
-  sprintf(product_hex_str, "0x%08X", deviceIdentity.data.product_hex);
+  sprintf(product_hex_str, "0x%08lX", deviceIdentity.data.product_hex);
   doc["product_hex"] = product_hex_str;
   doc["key"] = deviceIdentity.data.key;
 
