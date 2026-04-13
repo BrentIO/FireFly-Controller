@@ -30,6 +30,11 @@
 #endif
 #define APPLICATION_NAME "HW Reg and Config"
 
+#if BURN_VDD_SDIO_EFUSE
+  #include "esp_efuse.h"
+  #include "esp_efuse_table.h"
+#endif
+
 #include "common/hardware.h"
 #include "common/deviceIdentity.h"
 #include "common/oled.h"
@@ -73,6 +78,19 @@ bool wwwFS_isMounted = false;
 */
 void setup() {
 
+  #if BURN_VDD_SDIO_EFUSE
+    if (!esp_efuse_read_field_bit(ESP_EFUSE_XPD_SDIO_FORCE) ||
+        !esp_efuse_read_field_bit(ESP_EFUSE_XPD_SDIO_REG) ||
+        !esp_efuse_read_field_bit(ESP_EFUSE_XPD_SDIO_TIEH)) {
+      esp_efuse_write_field_bit(ESP_EFUSE_XPD_SDIO_FORCE);
+      esp_efuse_write_field_bit(ESP_EFUSE_XPD_SDIO_REG);
+      esp_efuse_write_field_bit(ESP_EFUSE_XPD_SDIO_TIEH);
+      log_i("VDD_SDIO eFuse burned; rebooting");
+      delay(100);
+      ESP.restart();
+    }
+    log_i("VDD_SDIO eFuse: set");
+  #endif
 
   eventLog.createEvent("Event log started");
 

@@ -29,6 +29,8 @@
 
 #define APPLICATION_NAME "FireFly Controller"
 
+#include "esp_efuse.h"
+#include "esp_efuse_table.h"
 #include "common/hardware.h"
 #include "common/deviceIdentity.h"
 #include "common/oled.h"
@@ -166,8 +168,12 @@ void setup() {
   reportMemoryUsage("Setup begin.");
 
   if(!psramFound()){
-    eventLog.createEvent("No PSRAM found", EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("No PSRAM found", EventLog::LOG_LEVEL_INFO);
   }
+
+  log_i("VDD_SDIO eFuse: %s",
+    (esp_efuse_read_field_bit(ESP_EFUSE_XPD_SDIO_REG) &&
+     esp_efuse_read_field_bit(ESP_EFUSE_XPD_SDIO_TIEH)) ? "set" : "not set");
 
   eventLog.createEvent("Event log started");
   

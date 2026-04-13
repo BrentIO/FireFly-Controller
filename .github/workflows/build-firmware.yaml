@@ -142,9 +142,23 @@ jobs:
       - name: Generate boards.local.txt from template
         run: |
           APP_SIZE_DEC=$(( ${{ matrix.partition_size_app }} ))
+
+          if [ "${{ matrix.application }}" = "Hardware-Registration-and-Configuration" ]; then
+            FLASH_MODE="dio"
+            BOOT_MODE="dio"
+            FLASH_FREQ="80m"
+          else
+            FLASH_MODE="qio"
+            BOOT_MODE="dio"
+            FLASH_FREQ="40m"
+          fi
+
           sed \
             -e "s|{{BOOTLOADER_ADDR}}|${{ matrix.bootloader_addr }}|g" \
             -e "s|{{APP_PARTITION_MAX_SIZE}}|${APP_SIZE_DEC}|g" \
+            -e "s|{{FLASH_MODE}}|${FLASH_MODE}|g" \
+            -e "s|{{BOOT_MODE}}|${BOOT_MODE}|g" \
+            -e "s|{{FLASH_FREQ}}|${FLASH_FREQ}|g" \
             ${{ github.workspace }}/boards.local.txt.template \
             > ${{ github.workspace }}/boards.local.txt
 
@@ -197,19 +211,24 @@ jobs:
           OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.product_id }}/${APPLICATION}/${BRANCH}-${COMMIT_HASH}"
           mkdir -p "$OUTDIR"
 
+          EFUSE_FLAG=""
+          if [ "$APPLICATION" = "Hardware-Registration-and-Configuration" ] && [ "${{ matrix.burn_vdd_sdio_efuse }}" = "true" ]; then
+            EFUSE_FLAG=" -DBURN_VDD_SDIO_EFUSE=1"
+          fi
+
           if [ "$VERSION" = "DEBUG" ]; then
             echo "Building DEBUG firmware ($BRANCH)"
             arduino-cli compile \
               -b esp32:esp32:firefly_controller ./${APPLICATION} \
               --warnings more --clean \
-              --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -I${{ github.workspace }}" \
+              --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -I${{ github.workspace }}${EFUSE_FLAG}" \
               --output-dir "$OUTDIR"
           else
             echo "Building RELEASE firmware"
             arduino-cli compile \
               -b esp32:esp32:firefly_controller ./${APPLICATION} \
               --warnings more --clean \
-              --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=0 -DVERSION=\"${VERSION}\" -DCOMMIT_HASH=\"${COMMIT_HASH}\" -I${{ github.workspace }}" \
+              --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=0 -DVERSION=\"${VERSION}\" -DCOMMIT_HASH=\"${COMMIT_HASH}\" -I${{ github.workspace }}${EFUSE_FLAG}" \
               --output-dir "$OUTDIR"
           fi
 

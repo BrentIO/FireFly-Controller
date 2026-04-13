@@ -40,7 +40,7 @@ devices:
 
   - product_hex: "0x32322304"
     product_id: FFC3232-2304
-    status: ACTIVE
+    status: INACTIVE
     bootloader_addr: "0x1000"
     partition_scheme:
       - type: 1
@@ -85,6 +85,7 @@ devices:
     bootloader_addr: "0x1000"
     inputs_count: 8
     outputs_count: 6
+    burn_vdd_sdio_efuse: true
     partition_scheme:
       - type: 1
         subtype: 2
@@ -128,6 +129,7 @@ devices:
     bootloader_addr: "0x1000"
     inputs_count: 8
     outputs_count: 6
+    burn_vdd_sdio_efuse: true
     partition_scheme:
       - type: 1
         subtype: 2
@@ -171,6 +173,7 @@ devices:
     bootloader_addr: "0x1000"
     inputs_count: 32
     outputs_count: 32
+    burn_vdd_sdio_efuse: true
     partition_scheme:
       - type: 1
         subtype: 2
