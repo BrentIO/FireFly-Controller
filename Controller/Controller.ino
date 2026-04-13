@@ -214,7 +214,7 @@ void setup() {
     if(deviceIdentity.data.product_hex != 0 && deviceIdentity.data.product_hex != PRODUCT_HEX){
       oled.setMismatchHex(deviceIdentity.data.product_hex, (uint32_t)PRODUCT_HEX);
       oled.setPage(managerOled::PAGE_HW_FW_MISMATCH);
-      log_e("HW/FW product_hex mismatch (HW: 0x%08X, FW: 0x%08X). Sleeping.", deviceIdentity.data.product_hex, (uint32_t)PRODUCT_HEX);
+      log_e("HW/FW product_hex mismatch (HW: 0x%08lX, FW: 0x%08lX). Sleeping.", deviceIdentity.data.product_hex, (uint32_t)PRODUCT_HEX);
       esp_deep_sleep_start();
     }
   }
