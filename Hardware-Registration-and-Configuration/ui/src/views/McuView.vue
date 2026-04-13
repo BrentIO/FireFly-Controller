@@ -11,7 +11,7 @@
       >
         <div v-for="row in rows" :key="row.label" class="flex px-6 py-4">
           <span class="w-40 text-sm font-medium text-gray-500 dark:text-gray-400">{{ row.label }}</span>
-          <span class="text-sm text-gray-900 dark:text-gray-100">{{ row.value }}</span>
+          <span class="text-sm" :class="row.error ? 'text-red-500 dark:text-red-400 font-medium' : 'text-gray-900 dark:text-gray-100'">{{ row.value }}</span>
         </div>
       </div>
 
@@ -56,14 +56,13 @@ const showConfirm = ref(false)
 
 const rows = computed(() => {
   if (!mcu.value) return []
-  const psram = mcu.value.psram_size > 0
-    ? `${(mcu.value.psram_size / 1048576).toFixed(1)} MB`
-    : 'No PSRAM'
+  const psramError = mcu.value.psram_size === 0
+  const psram = psramError ? 'Not detected' : `${(mcu.value.psram_size / 1048576).toFixed(1)} MB`
   return [
     { label: 'Chip Model',  value: mcu.value.chip_model },
     { label: 'Revision',    value: mcu.value.revision },
     { label: 'Flash Size',  value: `${(mcu.value.flash_chip_size / 1048576).toFixed(1)} MB` },
-    { label: 'PSRAM',       value: psram },
+    { label: 'PSRAM',       value: psram, error: psramError },
     { label: 'Boot Time',   value: new Date(mcu.value.boot_time * 1000).toLocaleString() }
   ]
 })
@@ -74,7 +73,7 @@ async function load() {
     const res = await apiFetch('/mcu')
     if (res.ok) {
       mcu.value = await res.json()
-      setNavError('mcu', false)
+      setNavError('mcu', mcu.value.psram_size === 0)
     } else {
       addToast('error', `MCU fetch failed (${res.status})`)
       setNavError('mcu', true)
