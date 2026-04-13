@@ -1006,12 +1006,12 @@ void http_handleVersion(AsyncWebServerRequest *request){
   resetHTPServerUsage();
 
   if(deviceIdentity.enabled == false){
-    http_error(request, "Cannot connect to external EEPROM");
+    http_error(request, "Device identity unavailable");
     return;
   }
 
   if(strcmp(deviceIdentity.data.uuid, "") == 0){
-    http_error(request, "Invalid EEPROM data");
+    http_error(request, "Device identity invalid");
     return;
   }
 
@@ -2537,7 +2537,7 @@ void setupIO(){
   bool isOK = true;
 
   if(deviceIdentity.enabled == false){
-    eventLog.createEvent("No I/O setup (EEPROM)", EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("No I/O setup (NVS)", EventLog::LOG_LEVEL_ERROR);
     return;
   }
 
