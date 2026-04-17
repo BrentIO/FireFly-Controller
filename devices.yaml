@@ -85,8 +85,6 @@ devices:
     bootloader_addr: "0x1000"
     inputs_count: 8
     outputs_count: 6
-    #bootloader_mode: dio
-    bootloader_mode: qio #will probably boot loop
     burn_vdd_sdio_efuse: true
     partition_scheme:
       - type: 1
@@ -131,7 +129,6 @@ devices:
     bootloader_addr: "0x1000"
     inputs_count: 8
     outputs_count: 6
-    bootloader_mode: dio
     burn_vdd_sdio_efuse: true
     partition_scheme:
       - type: 1
@@ -176,7 +173,6 @@ devices:
     bootloader_addr: "0x1000"
     inputs_count: 32
     outputs_count: 32
-    bootloader_mode: dio
     burn_vdd_sdio_efuse: true
     partition_scheme:
       - type: 1
@@ -221,7 +217,6 @@ devices:
     bootloader_addr: "0x1000"
     inputs_count: 32
     outputs_count: 32
-    bootloader_mode: qio
     burn_vdd_sdio_efuse: true
     partition_scheme:
     - type: 1

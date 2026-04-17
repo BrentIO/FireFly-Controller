@@ -32,7 +32,6 @@ jobs:
                     product_hex: .product_hex,
                     product_id: .product_id,
                     bootloader_addr: .bootloader_addr,
-                    bootloader_mode: (.bootloader_mode // "dio"),
                     burn_vdd_sdio_efuse: (.burn_vdd_sdio_efuse // false),
                     partition_size_app: (
                       .partition_scheme[]

@@ -143,11 +143,7 @@ jobs:
         run: |
           APP_SIZE_DEC=$(( ${{ matrix.partition_size_app }} ))
 
-          # Both applications use the same bootloader mode so no reflash is needed
-          # when transitioning between HW-Reg and Controller on the same device.
-          # bootloader_mode is set per-device in devices.yaml (qio for boards that
-          # support it, dio for boards whose flash chip is QIO-incompatible).
-          BOOT_MODE="${{ matrix.bootloader_mode }}"
+          BOOT_MODE="qio"
           FLASH_MODE="dio"
           FLASH_FREQ="80m"
 
