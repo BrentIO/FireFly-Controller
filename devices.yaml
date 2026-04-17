@@ -210,3 +210,47 @@ devices:
         address: "0xff0000"
         size: "0x10000"
         label: coredump
+
+  - product_hex: "0x32322603"
+    product_id: FFC3232-2603
+    status: ACTIVE
+    bootloader_addr: "0x1000"
+    inputs_count: 32
+    outputs_count: 32
+    burn_vdd_sdio_efuse: false
+    partition_scheme:
+    - type: 1
+      subtype: 2
+      address: "0x9000"
+      size: "0x5000"
+      label: nvs
+    - type: 1
+      subtype: 0
+      address: "0xe000"
+      size: "0x2000"
+      label: otadata
+    - type: 0
+      subtype: 16
+      address: "0x10000"
+      size: "0x640000"
+      label: app0
+    - type: 0
+      subtype: 17
+      address: "0x650000"
+      size: "0x640000"
+      label: app1
+    - type: 1
+      subtype: 130
+      address: "0xc90000"
+      size: "0x80000"
+      label: config
+    - type: 1
+      subtype: 130
+      address: "0xd10000"
+      size: "0x2e0000"
+      label: www
+    - type: 1
+      subtype: 3
+      address: "0xff0000"
+      size: "0x10000"
+      label: coredump
