@@ -78,7 +78,7 @@ bool wwwFS_isMounted = false;
 */
 void setup() {
 
-  /*#if BURN_VDD_SDIO_EFUSE
+  #if BURN_VDD_SDIO_EFUSE
     if (!esp_efuse_read_field_bit(ESP_EFUSE_XPD_SDIO_FORCE) ||
         !esp_efuse_read_field_bit(ESP_EFUSE_XPD_SDIO_REG) ||
         !esp_efuse_read_field_bit(ESP_EFUSE_XPD_SDIO_TIEH)) {
@@ -90,7 +90,7 @@ void setup() {
       ESP.restart();
     }
     log_i("VDD_SDIO eFuse: set");
-  #endif*/
+  #endif
 
   eventLog.createEvent("Event log started");
 
