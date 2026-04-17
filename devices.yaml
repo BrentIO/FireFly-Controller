@@ -217,7 +217,7 @@ devices:
     bootloader_addr: "0x1000"
     inputs_count: 32
     outputs_count: 32
-    burn_vdd_sdio_efuse: false
+    burn_vdd_sdio_efuse: true
     partition_scheme:
     - type: 1
       subtype: 2
