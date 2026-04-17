@@ -1,7 +1,12 @@
-# Arduino libraries used by FireFly Controller firmware.
-# This is the single source of truth for library names, versions, and URLs.
+# Arduino cores and libraries used by FireFly Controller firmware.
+# This is the single source of truth for core/library names, versions, and URLs.
 # Changes here are automatically propagated to FireFly-Docs on production builds.
 # URL must not include a .git suffix.
+
+cores:
+  - name: "esp32:esp32"
+    version: "3.3.8"
+    url: "https://github.com/espressif/arduino-esp32"
 
 libraries:
   - name: "Adafruit_BusIO"

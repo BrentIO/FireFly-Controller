@@ -86,20 +86,21 @@ RUN echo "Building for architecture: $TARGETARCH" && \
 # ---------------------------------------------------------
 # Configure Arduino CLI + ESP32 core for BOTH ACT HOME paths
 # ---------------------------------------------------------
-RUN for H in /github/home /home/runner; do \
+COPY libraries.yaml /tmp/libraries.yaml
+RUN ESP32_CORE=$(yq -r '.cores[] | select(.name == "esp32:esp32") | .version' /tmp/libraries.yaml) && \
+    for H in /github/home /home/runner; do \
       mkdir -p $H/.arduino15 && \
       HOME=$H arduino-cli config init && \
       HOME=$H arduino-cli config set directories.data $H/.arduino15 && \
       HOME=$H arduino-cli config set board_manager.additional_urls \
         https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json && \
       HOME=$H arduino-cli core update-index && \
-      HOME=$H arduino-cli core install esp32:esp32@3.3.7; \
+      HOME=$H arduino-cli core install esp32:esp32@${ESP32_CORE}; \
     done
 
 # ---------------------------------------------------------
 # Install required Arduino libraries INTO BOTH HOME PATHS
 # ---------------------------------------------------------
-COPY libraries.yaml /tmp/libraries.yaml
 RUN for H in /github/home /home/runner; do \
       HOME=$H arduino-cli config set library.enable_unsafe_install true && \
       yq -r '.libraries[] | .url + ".git#" + .version' /tmp/libraries.yaml | \

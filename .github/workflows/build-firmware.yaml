@@ -11,7 +11,6 @@ on:
           - dev
 
 env:
-  VERSION_ESP_Core: 3.3.8
   ARTIFACT_ROOT: /home/runner/artifacts
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -161,6 +160,9 @@ jobs:
         uses: arduino/setup-arduino-cli@v2
         with:
           version: 1.4.1
+
+      - name: Read ESP32 core version
+        run: echo "VERSION_ESP_Core=$(yq -r '.cores[] | select(.name == "esp32:esp32") | .version' ${{ github.workspace }}/libraries.yaml)" >> $GITHUB_ENV
 
       - name: Initialize the Arduino CLI Installation
         if: ${{ !env.ACT }}
@@ -357,6 +359,19 @@ jobs:
         run: |
           echo "BRANCH=$GITHUB_REF_NAME" >> $GITHUB_ENV
 
+      - name: Generate core table
+        id: core_table
+        run: |
+          TABLE=$(yq -r '
+            .cores
+            | sort_by(.name)
+            | .[]
+            | "| [" + .name + "](" + .url + ") | " + .version + " |"
+          ' libraries.yaml)
+          echo "table<<EOF" >> $GITHUB_OUTPUT
+          echo "$TABLE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Generate library table
         id: table
         run: |
@@ -377,9 +392,10 @@ jobs:
           token: ${{ secrets.FIREFLY_DOCS_TOKEN }}
           path: FireFly-Docs
 
-      - name: Update library table and open PR
+      - name: Update core and library tables and open PR
         env:
           GH_TOKEN: ${{ secrets.FIREFLY_DOCS_TOKEN }}
+          CORE_TABLE: ${{ steps.core_table.outputs.table }}
           LIBRARY_TABLE: ${{ steps.table.outputs.table }}
         run: |
           cd FireFly-Docs
@@ -393,35 +409,52 @@ jobs:
           import re, os
           path = "controller/development_environment/index.md"
           content = open(path).read()
-          table = os.environ["LIBRARY_TABLE"]
-          new_block = (
-              "<!-- LIBRARY-TABLE-START -->\n"
-              "| Library | Version |\n"
-              "| ------- | ------- |\n"
-              + table + "\n"
-              "<!-- LIBRARY-TABLE-END -->"
+
+          core_table = os.environ["CORE_TABLE"]
+          new_core_block = (
+              "<!-- CORE-TABLE-START -->\n"
+              "| Core | Version |\n"
+              "| ---- | ------- |\n"
+              + core_table + "\n"
+              "<!-- CORE-TABLE-END -->"
           )
-          result = re.sub(
-              r"<!-- LIBRARY-TABLE-START -->.*?<!-- LIBRARY-TABLE-END -->",
-              new_block,
+          content = re.sub(
+              r"<!-- CORE-TABLE-START -->.*?<!-- CORE-TABLE-END -->",
+              new_core_block,
               content,
               flags=re.DOTALL
           )
-          open(path, "w").write(result)
+
+          library_table = os.environ["LIBRARY_TABLE"]
+          new_library_block = (
+              "<!-- LIBRARY-TABLE-START -->\n"
+              "| Library | Version |\n"
+              "| ------- | ------- |\n"
+              + library_table + "\n"
+              "<!-- LIBRARY-TABLE-END -->"
+          )
+          content = re.sub(
+              r"<!-- LIBRARY-TABLE-START -->.*?<!-- LIBRARY-TABLE-END -->",
+              new_library_block,
+              content,
+              flags=re.DOTALL
+          )
+
+          open(path, "w").write(content)
           PYEOF
 
           git add controller/development_environment/index.md
           if git diff --cached --quiet; then
-            echo "Library table unchanged, skipping PR"
+            echo "Core and library tables unchanged, skipping PR"
             exit 0
           fi
 
-          git commit -m "Update library versions from FireFly-Controller ${{ env.BRANCH }}"
+          git commit -m "Update core and library versions from FireFly-Controller ${{ env.BRANCH }}"
           git push origin "$SYNC_BRANCH"
 
           gh pr create \
             --repo BrentIO/FireFly-Docs \
-            --title "Update library versions from FireFly-Controller ${{ env.BRANCH }}" \
-            --body "Automated library version sync triggered by production build of \`${{ env.BRANCH }}\`." \
+            --title "Update core and library versions from FireFly-Controller ${{ env.BRANCH }}" \
+            --body "Automated core and library version sync triggered by production build of \`${{ env.BRANCH }}\`." \
             --base main \
             --head "$SYNC_BRANCH"
