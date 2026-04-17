@@ -371,9 +371,7 @@ void setup() {
     httpServer.addHandler(clientsHandler);
     httpServer.on("^/api/clients$", HTTP_ANY, http_handleListClients);
     httpServer.on("^/api/clients/([0-9a-f-]+)$", http_handleClients);
-    AsyncCallbackJsonWebHandler* backupHandler = new AsyncCallbackJsonWebHandler("/backup", http_handleBackup_PUT);
-    backupHandler->setMaxContentLength(131072);
-    httpServer.addHandler(backupHandler);
+    httpServer.on("/backup", HTTP_PUT, http_handleBackup_PUT, nullptr, http_handleBackup_PUT_body);
     httpServer.on("/backup", http_handleBackup);
     httpServer.on("/api/provisioning", http_handleProvisioning);
     httpServer.on("^/certs/([a-z0-9_.]+)$", http_handleCert);
@@ -1753,38 +1751,76 @@ void http_handleBackup_GET(AsyncWebServerRequest *request){
 }
 
 
+static File _backupUploadFile;
+static bool _backupUploadAuthorized = false;
+static size_t _backupUploadBytesExpected = 0;
+static size_t _backupUploadBytesWritten = 0;
+
+/**
+ * Body handler for streaming Backup PUTs directly to LittleFS
+*/
+void http_handleBackup_PUT_body(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
+
+  if(index == 0){
+    _backupUploadAuthorized = false;
+    _backupUploadBytesExpected = total;
+    _backupUploadBytesWritten = 0;
+
+    if(!request->hasHeader("visual-token") || !authToken.authenticate(request->header("visual-token").c_str())){
+      return;
+    }
+
+    if(configFS.exists("/backup.upload_in_progress")){
+      configFS.remove("/backup.upload_in_progress");
+    }
+
+    _backupUploadFile = configFS.open("/backup.upload_in_progress", "w");
+    if(!_backupUploadFile){
+      return;
+    }
+
+    _backupUploadAuthorized = true;
+  }
+
+  if(_backupUploadAuthorized && _backupUploadFile){
+    _backupUploadFile.write(data, len);
+    _backupUploadBytesWritten += len;
+  }
+}
+
 /**
  * Handles Backup PUTs
 */
-void http_handleBackup_PUT(AsyncWebServerRequest *request, JsonVariant doc){
+void http_handleBackup_PUT(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader("visual-token")){
-        http_unauthorized(request);
-        return;
-  }
-
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
-    http_unauthorized(request);
+  if(!_backupUploadAuthorized){
+    if(_backupUploadFile){
+      _backupUploadFile.close();
+      configFS.remove("/backup.upload_in_progress");
+    }
+    if(!request->hasHeader("visual-token") || !authToken.authenticate(request->header("visual-token").c_str())){
+      http_unauthorized(request);
+    }else{
+      http_error(request, "Unable to open the file for writing");
+    }
     return;
   }
 
-  if(request->method() != HTTP_PUT){
-    http_methodNotAllowed(request);
+  _backupUploadFile.close();
+
+  if(_backupUploadBytesExpected > 0 && _backupUploadBytesWritten != _backupUploadBytesExpected){
+    configFS.remove("/backup.upload_in_progress");
+    http_error(request, "Incomplete transfer");
     return;
   }
+
+  if(configFS.exists("/backup")){
+    configFS.remove("/backup");
+  }
+
+  configFS.rename("/backup.upload_in_progress", "/backup");
 
   resetHTPServerUsage();
-  File file = configFS.open("/backup", "w");
-
-  if(!file){
-    file.close();
-    http_error(request, "Unable to open the file for writing");
-    return;
-  }
-
-  serializeJson(doc, file);
-  file.close();  
-
   request->send(204);
 }
 
