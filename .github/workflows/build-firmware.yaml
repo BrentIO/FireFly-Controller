@@ -214,19 +214,21 @@ jobs:
             EFUSE_FLAG=" -DBURN_VDD_SDIO_EFUSE=1"
           fi
 
+          PSRAM_FLAGS="-DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue -mfix-esp32-psram-cache-strategy=memw"
+
           if [ "$VERSION" = "DEBUG" ]; then
             echo "Building DEBUG firmware ($BRANCH)"
             arduino-cli compile \
               -b esp32:esp32:firefly_controller ./${APPLICATION} \
               --warnings more --clean \
-              --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -I${{ github.workspace }}${EFUSE_FLAG}" \
+              --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -I${{ github.workspace }}${EFUSE_FLAG} ${PSRAM_FLAGS}" \
               --output-dir "$OUTDIR"
           else
             echo "Building RELEASE firmware"
             arduino-cli compile \
               -b esp32:esp32:firefly_controller ./${APPLICATION} \
               --warnings more --clean \
-              --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=0 -DVERSION=\"${VERSION}\" -DCOMMIT_HASH=\"${COMMIT_HASH}\" -I${{ github.workspace }}${EFUSE_FLAG}" \
+              --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=0 -DVERSION=\"${VERSION}\" -DCOMMIT_HASH=\"${COMMIT_HASH}\" -I${{ github.workspace }}${EFUSE_FLAG} ${PSRAM_FLAGS}" \
               --output-dir "$OUTDIR"
           fi
 
