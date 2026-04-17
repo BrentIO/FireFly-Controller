@@ -143,18 +143,13 @@ jobs:
         run: |
           APP_SIZE_DEC=$(( ${{ matrix.partition_size_app }} ))
 
-          if [ "${{ matrix.application }}" = "Hardware-Registration-and-Configuration" ]; then
-            FLASH_MODE="dio"
-            BOOT_MODE="dio"
-            FLASH_FREQ="80m"
-          else
-            # Arduino ESP32 QIO convention: build.flash_mode=dio, build.boot=qio
-            # (flash_mode controls app image header; boot selects the bootloader)
-            # Previous attempts had these inverted, which caused boot loops on old boards.
-            FLASH_MODE="dio"
-            BOOT_MODE="qio"
-            FLASH_FREQ="40m"
-          fi
+          # Both applications use the same bootloader mode so no reflash is needed
+          # when transitioning between HW-Reg and Controller on the same device.
+          # bootloader_mode is set per-device in devices.yaml (qio for boards that
+          # support it, dio for boards whose flash chip is QIO-incompatible).
+          BOOT_MODE="${{ matrix.bootloader_mode }}"
+          FLASH_MODE="dio"
+          FLASH_FREQ="80m"
 
           sed \
             -e "s|{{BOOTLOADER_ADDR}}|${{ matrix.bootloader_addr }}|g" \
