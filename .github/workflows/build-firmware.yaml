@@ -148,8 +148,11 @@ jobs:
             BOOT_MODE="dio"
             FLASH_FREQ="80m"
           else
-            FLASH_MODE="qio"
-            BOOT_MODE="dio"
+            # Arduino ESP32 QIO convention: build.flash_mode=dio, build.boot=qio
+            # (flash_mode controls app image header; boot selects the bootloader)
+            # Previous attempts had these inverted, which caused boot loops on old boards.
+            FLASH_MODE="dio"
+            BOOT_MODE="qio"
             FLASH_FREQ="40m"
           fi
 
