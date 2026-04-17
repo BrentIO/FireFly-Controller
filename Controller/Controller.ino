@@ -372,7 +372,7 @@ void setup() {
     httpServer.on("^/api/clients$", HTTP_ANY, http_handleListClients);
     httpServer.on("^/api/clients/([0-9a-f-]+)$", http_handleClients);
     AsyncCallbackJsonWebHandler* backupHandler = new AsyncCallbackJsonWebHandler("/backup", http_handleBackup_PUT);
-    backupHandler->setMaxContentLength(65535);
+    backupHandler->setMaxContentLength(131072);
     httpServer.addHandler(backupHandler);
     httpServer.on("/backup", http_handleBackup);
     httpServer.on("/api/provisioning", http_handleProvisioning);
@@ -1337,7 +1337,7 @@ void http_handleListControllers(AsyncWebServerRequest *request){
   resetHTPServerUsage();
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
-  JsonDocument doc;  //Supports 128 UUID's
+  JsonDocument doc(&spiRamAllocator);  //Supports 128 UUID's
   JsonArray array = doc.to<JsonArray>();
 
   File root = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/");
@@ -1570,7 +1570,7 @@ void http_handleListClients(AsyncWebServerRequest *request){
   resetHTPServerUsage();
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
-  JsonDocument doc;  //Supports 128 UUID's
+  JsonDocument doc(&spiRamAllocator);  //Supports 128 UUID's
   JsonArray array = doc.to<JsonArray>();
 
   File root = configFS.open(CONFIGFS_PATH_CLIENTS + (String)"/");
