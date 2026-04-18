@@ -500,8 +500,19 @@ void http_handleMCU(AsyncWebServerRequest *request){
   JsonDocument doc;
   doc["chip_model"] = ESP.getChipModel();
   doc["revision"] = (String)ESP.getChipRevision();
+  doc["cpu_freq_mhz"] = ESP.getCpuFreqMHz();
+  doc["chip_cores"] = ESP.getChipCores();
+  doc["sdk_version"] = ESP.getSdkVersion();
   doc["flash_chip_size"] = ESP.getFlashChipSize();
+  doc["flash_chip_speed"] = ESP.getFlashChipSpeed() / 1000000;
+  doc["flash_chip_mode"] = (int)ESP.getFlashChipMode();
+  doc["free_heap"] = ESP.getFreeHeap();
   doc["psram_size"] = ESP.getPsramSize();
+  doc["free_psram"] = ESP.getFreePsram();
+
+  esp_chip_info_t chip_info;
+  esp_chip_info(&chip_info);
+  doc["chip_features"] = chip_info.features;
 
   if(bootTime !=0){
       doc["boot_time"] = bootTime;
