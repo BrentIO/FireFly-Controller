@@ -382,6 +382,14 @@ paths:
                   enabled:
                     type: boolean
                     description: Indicates if provisioning mode is enabled on the device
+                  ssid:
+                    type: string
+                    description: SoftAP SSID; present only when enabled is true
+                    example: FireFly-Provisioning
+                  password:
+                    type: string
+                    description: WPA2 SoftAP password derived from device BSSID; present only when enabled is true
+                    example: A6B5C4D3E2F1
         '401':
           description: Unauthorized
         '500':
@@ -442,6 +450,91 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/error_message'
+
+
+  /api/provisioning/nonce:
+    get:
+      tags:
+        - Controllers
+      summary: Retrieve a single-use session nonce for client provisioning
+      description: Returns a cryptographically random single-use nonce. No authentication required. Returns 409 if provisioning mode is not active. The nonce is regenerated on each call.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nonce:
+                    type: integer
+                    format: int64
+                    description: Single-use session nonce; must be passed as the x-nonce header in the subsequent GET /api/provisioning/client call
+                    example: 3819273645
+        '405':
+          description: Method Not Allowed
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Provisioning mode inactive
+
+  /api/provisioning/client:
+    get:
+      tags:
+        - Controllers
+      summary: Retrieve a client configuration during active provisioning
+      description: Returns the full client configuration JSON for the device identified by the mac-address header. Requires provisioning mode to be active, a valid unused nonce, and a MAC address that matches a registered client record. The nonce is invalidated after a successful response.
+      security:
+        - macAddress: []
+      parameters:
+        - in: header
+          name: x-nonce
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: Single-use nonce obtained from GET /api/provisioning/nonce
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/client'
+        '401':
+          description: Unauthorized — missing or invalid mac-address or x-nonce header
+        '403':
+          description: Forbidden — MAC address not in the provisioning allowlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Request will not be fulfilled
+        '404':
+          description: Not Found — no client record matches the provided MAC address
+        '405':
+          description: Method Not Allowed
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Provisioning mode inactive
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: File system not mounted
 
 
 ##########################################################

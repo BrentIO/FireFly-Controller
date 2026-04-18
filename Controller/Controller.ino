@@ -374,6 +374,8 @@ void setup() {
     httpServer.on("/backup", HTTP_PUT, http_handleBackup_PUT, nullptr, http_handleBackup_PUT_body);
     httpServer.on("/backup", http_handleBackup);
     httpServer.on("/api/provisioning", http_handleProvisioning);
+    httpServer.on("/api/provisioning/nonce", http_handleProvisioningNonce);
+    httpServer.on("/api/provisioning/client", http_handleProvisioningClient);
     httpServer.on("^/certs/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
     httpServer.on("/api/ota/app", HTTP_OPTIONS, http_options);
@@ -929,6 +931,21 @@ void http_badRequest(AsyncWebServerRequest *request, String message){
 
   serializeJson(doc, *response);
   response->setCode(400);
+  request->send(response);
+}
+
+
+/**
+ * Sends a 409 response indicating a resource conflict (e.g. provisioning mode inactive)
+*/
+void http_conflict(AsyncWebServerRequest *request, String message){
+
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
+  JsonDocument doc;
+  doc["message"] = message;
+
+  serializeJson(doc, *response);
+  response->setCode(409);
   request->send(response);
 }
 
@@ -1636,6 +1653,14 @@ void http_handleProvisioning_GET(AsyncWebServerRequest *request){
 
   JsonDocument doc;
   doc["enabled"] = provisioningMode.getStatus();
+
+  if(provisioningMode.getStatus()){
+    doc["ssid"] = "FireFly-Provisioning";
+    char password[13];
+    provisioningMode.getSoftAPPassword(password);
+    doc["password"] = password;
+  }
+
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   serializeJson(doc, *response);
 
@@ -1698,6 +1723,127 @@ void eventHandler_rogueClient(const char* macAddress){
   snprintf(oledText, sizeof(oledText), "!RC %s", macAddress);
   eventLog.createEvent(oledText, EventLog::LOG_LEVEL_NOTIFICATION);
 };
+
+
+/// @brief Scans client config files to find the UUID whose stored MAC matches the given MAC address
+/// @param mac MAC address in xx:xx:xx:xx:xx:xx format (lowercase)
+/// @return The UUID string if found, empty string if not found
+String findClientUuidByMac(const char* mac){
+
+  JsonDocument doc;
+  JsonDocument filter;
+  filter["mac"] = true;
+
+  File root = configFS.open(CONFIGFS_PATH_CLIENTS + (String)"/");
+  File file = root.openNextFile();
+
+  while(file){
+
+    if(!file.isDirectory()){
+      DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
+
+      if(!error){
+        String storedMac = doc["mac"].as<String>();
+        storedMac.toLowerCase();
+        String incomingMac = String(mac);
+        incomingMac.toLowerCase();
+
+        if(storedMac == incomingMac){
+          String uuid = file.name();
+          file.close();
+          root.close();
+          return uuid;
+        }
+      }
+    }
+
+    file = root.openNextFile();
+  }
+
+  return String();
+}
+
+
+void http_handleProvisioningNonce(AsyncWebServerRequest *request){
+
+  if(request->method() == HTTP_OPTIONS){
+    http_options(request);
+    return;
+  }
+
+  if(request->method() != HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  if(provisioningMode.getStatus() != true){
+    http_conflict(request, "Provisioning mode inactive");
+    return;
+  }
+
+  JsonDocument doc;
+  doc["nonce"] = provisioningMode.generateNonce();
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
+  serializeJson(doc, *response);
+  request->send(response);
+}
+
+
+void http_handleProvisioningClient(AsyncWebServerRequest *request){
+
+  if(request->method() == HTTP_OPTIONS){
+    http_options(request);
+    return;
+  }
+
+  if(request->method() != HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  if(provisioningMode.getStatus() != true){
+    http_conflict(request, "Provisioning mode inactive");
+    return;
+  }
+
+  if(!request->hasHeader("mac-address")){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(!request->hasHeader("x-nonce")){
+    http_unauthorized(request);
+    return;
+  }
+
+  uint32_t nonce = (uint32_t)strtoul(request->header("x-nonce").c_str(), nullptr, 10);
+
+  if(!provisioningMode.isNonceValid(nonce)){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(!configFS_isMounted){
+    http_error(request, "File system not mounted");
+    return;
+  }
+
+  String mac = request->header("mac-address");
+  mac.toLowerCase();
+
+  String uuid = findClientUuidByMac(mac.c_str());
+
+  if(uuid.isEmpty()){
+    http_notFound(request);
+    return;
+  }
+
+  provisioningMode.invalidateNonce();
+
+  String filename = CONFIGFS_PATH_CLIENTS + (String)"/" + uuid;
+  AsyncWebServerResponse *response = request->beginResponse(configFS, filename, "application/json");
+  request->send(response);
+}
 
 
 /**
