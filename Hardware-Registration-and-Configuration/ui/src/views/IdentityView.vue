@@ -14,7 +14,7 @@
           v-if="hasIdentity"
           class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-300 text-sm rounded-lg px-4 py-3"
         >
-          This device has a device identity. Fields are read-only.
+          This device has a device identity stored in eFuse. Identity is permanent and cannot be changed.
         </div>
 
         <!-- UUID -->
@@ -62,31 +62,6 @@
           </select>
         </div>
 
-        <!-- Key -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Key</label>
-          <div class="flex gap-2">
-            <input
-              v-model="form.key"
-              type="text"
-              minlength="64"
-              maxlength="64"
-              :disabled="hasIdentity"
-              class="block flex-1 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm font-mono disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="64-character alphanumeric key"
-              required
-            />
-            <button
-              v-if="!hasIdentity"
-              type="button"
-              class="px-3 py-2 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
-              @click="generateKey"
-            >
-              Generate
-            </button>
-          </div>
-        </div>
-
         <div class="flex gap-3 pt-2">
           <button
             v-if="!hasIdentity"
@@ -96,36 +71,15 @@
           >
             {{ saving ? 'Saving…' : 'Save' }}
           </button>
-          <button
-            v-if="hasIdentity"
-            type="button"
-            :disabled="deleting"
-            class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-            @click="showConfirm = true"
-          >
-            {{ deleting ? 'Deleting…' : 'Delete Identity' }}
-          </button>
         </div>
       </form>
     </div>
-
-    <ConfirmModal
-      :show="showConfirm"
-      title="Delete Device Identity"
-      message="This action cannot be undone."
-      :details="{ UUID: form.uuid, 'Product ID': currentProductId }"
-      confirm-label="Delete"
-      variant="danger"
-      @confirm="deleteIdentity"
-      @cancel="showConfirm = false"
-    />
   </AppLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '../components/AppLayout.vue'
-import ConfirmModal from '../components/ConfirmModal.vue'
 import { apiFetch } from '../composables/useApi'
 import { useToast } from '../composables/useToast'
 import { useAppState } from '../composables/useAppState'
@@ -138,20 +92,13 @@ const { setNavError, setIdentityLoaded } = useAppState()
 
 const loading = ref(true)
 const saving = ref(false)
-const deleting = ref(false)
 const hasIdentity = ref(false)
-const showConfirm = ref(false)
 
-const form = ref({ uuid: '', product_hex: '', key: '' })
+const form = ref({ uuid: '', product_hex: '' })
 
 const sortedDevices = computed(() =>
   [...devices].sort((a, b) => a.product_id.localeCompare(b.product_id))
 )
-
-const currentProductId = computed(() => {
-  const d = devices.find(d => d.product_hex === form.value.product_hex)
-  return d?.product_id ?? form.value.product_hex
-})
 
 function generateUUID() {
   // crypto.randomUUID() requires a secure context (HTTPS); device serves HTTP.
@@ -164,20 +111,13 @@ function generateUUID() {
   form.value.uuid = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
-function generateKey() {
-  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-  const arr = new Uint8Array(64)
-  crypto.getRandomValues(arr)
-  form.value.key = Array.from(arr).map(b => chars[b % chars.length]).join('')
-}
-
 async function load() {
   loading.value = true
   try {
     const res = await apiFetch('/identity')
     if (res.status === 200) {
       const data = await res.json()
-      form.value = { uuid: data.uuid, product_hex: data.product_hex, key: data.key }
+      form.value = { uuid: data.uuid, product_hex: data.product_hex }
       hasIdentity.value = true
       setNavError('identity', false)
     } else if (res.status === 404) {
@@ -205,12 +145,11 @@ async function save() {
       body: JSON.stringify({
         uuid: form.value.uuid,
         product_id: selected?.product_id ?? '',
-        product_hex: form.value.product_hex,
-        key: form.value.key
+        product_hex: form.value.product_hex
       })
     })
     if (res.status === 201) {
-      addToast('success', 'Identity saved')
+      addToast('success', 'Identity burned to eFuse')
       setIdentityLoaded(true)
       await load()
     } else {
@@ -223,30 +162,6 @@ async function save() {
     setNavError('identity', true)
   } finally {
     saving.value = false
-  }
-}
-
-async function deleteIdentity() {
-  showConfirm.value = false
-  deleting.value = true
-  try {
-    const res = await apiFetch('/identity', { method: 'DELETE' })
-    if (res.status === 204) {
-      addToast('success', 'Identity deleted')
-      setIdentityLoaded(false)
-      form.value = { uuid: '', product_hex: '', key: '' }
-      hasIdentity.value = false
-      setNavError('identity', false)
-    } else {
-      const body = await res.json().catch(() => ({}))
-      addToast('error', body.message ?? `Delete failed (${res.status})`)
-      setNavError('identity', true)
-    }
-  } catch (_) {
-    addToast('error', 'Delete error')
-    setNavError('identity', true)
-  } finally {
-    deleting.value = false
   }
 }
 

@@ -209,7 +209,7 @@ void setup() {
 
     log_d("NVS UUID: %s", deviceIdentity.data.uuid);
     log_d("NVS Product ID: %s", deviceIdentity.data.product_id);
-    log_d("NVS Key: %s", deviceIdentity.data.key);
+    log_d("eFuse master key loaded");
 
     if(deviceIdentity.data.product_hex != 0 && deviceIdentity.data.product_hex != PRODUCT_HEX){
       oled.setMismatchHex(deviceIdentity.data.product_hex, (uint32_t)PRODUCT_HEX);
