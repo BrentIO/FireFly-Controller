@@ -94,18 +94,22 @@ class managerDeviceIdentity {
                 return false;
             }
 
-            if (esp_efuse_write_block(EFUSE_BLK1, uuidBytes, EFUSE_UUID_OFFSET_BITS, EFUSE_UUID_SIZE_BITS) != ESP_OK) {
-                log_e("Failed to write UUID to eFuse BLOCK1");
+            // Batch all three writes so they commit atomically — no partial burns on failure
+            esp_efuse_batch_write_begin();
+
+            esp_err_t err = ESP_OK;
+            err |= esp_efuse_write_block(EFUSE_BLK1, uuidBytes,        EFUSE_UUID_OFFSET_BITS,  EFUSE_UUID_SIZE_BITS);
+            err |= esp_efuse_write_block(EFUSE_BLK1, &data.product_hex, EFUSE_PHEX_OFFSET_BITS, EFUSE_PHEX_SIZE_BITS);
+            err |= esp_efuse_write_block(EFUSE_BLK3, data.key,          EFUSE_KEY_OFFSET_BITS,  EFUSE_KEY_SIZE_BITS);
+
+            if (err != ESP_OK) {
+                log_e("eFuse staging failed; cancelling batch");
+                esp_efuse_batch_write_cancel();
                 return false;
             }
 
-            if (esp_efuse_write_block(EFUSE_BLK1, &data.product_hex, EFUSE_PHEX_OFFSET_BITS, EFUSE_PHEX_SIZE_BITS) != ESP_OK) {
-                log_e("Failed to write product_hex to eFuse BLOCK1");
-                return false;
-            }
-
-            if (esp_efuse_write_block(EFUSE_BLK3, data.key, EFUSE_KEY_OFFSET_BITS, EFUSE_KEY_SIZE_BITS) != ESP_OK) {
-                log_e("Failed to write master key to eFuse BLOCK3");
+            if (esp_efuse_batch_write_commit() != ESP_OK) {
+                log_e("eFuse batch commit failed");
                 return false;
             }
 
