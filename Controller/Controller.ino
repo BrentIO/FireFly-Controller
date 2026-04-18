@@ -2734,7 +2734,7 @@ void setupIO(){
   bool isOK = true;
 
   if(deviceIdentity.enabled == false){
-    eventLog.createEvent("No I/O setup (NVS)", EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("No I/O setup (eFuse)", EventLog::LOG_LEVEL_ERROR);
     return;
   }
 
