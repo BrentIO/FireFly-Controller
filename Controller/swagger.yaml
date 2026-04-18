@@ -471,6 +471,14 @@ paths:
                     format: int64
                     description: Single-use session nonce; must be passed as the x-nonce header in the subsequent GET /api/provisioning/client call
                     example: 3819273645
+        '403':
+          description: Forbidden — request did not arrive via the provisioning SoftAP network
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Only accessible via provisioning network
         '405':
           description: Method Not Allowed
         '409':
@@ -508,7 +516,7 @@ paths:
         '401':
           description: Unauthorized — missing or invalid mac-address or x-nonce header
         '403':
-          description: Forbidden — MAC address not in the provisioning allowlist
+          description: Forbidden — request did not arrive via the provisioning SoftAP network, or MAC address not in the provisioning allowlist
           content:
             application/json:
               schema:

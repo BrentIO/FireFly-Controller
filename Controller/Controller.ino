@@ -1764,6 +1764,11 @@ String findClientUuidByMac(const char* mac){
 }
 
 
+bool isRequestViaSoftAP(AsyncWebServerRequest *request){
+  return request->client()->localIP() == WiFi.softAPIP();
+}
+
+
 void http_handleProvisioningNonce(AsyncWebServerRequest *request){
 
   if(request->method() == HTTP_OPTIONS){
@@ -1773,6 +1778,11 @@ void http_handleProvisioningNonce(AsyncWebServerRequest *request){
 
   if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
+    return;
+  }
+
+  if(!isRequestViaSoftAP(request)){
+    http_forbiddenRequest(request, "Only accessible via provisioning network");
     return;
   }
 
@@ -1798,6 +1808,11 @@ void http_handleProvisioningClient(AsyncWebServerRequest *request){
 
   if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
+    return;
+  }
+
+  if(!isRequestViaSoftAP(request)){
+    http_forbiddenRequest(request, "Only accessible via provisioning network");
     return;
   }
 
