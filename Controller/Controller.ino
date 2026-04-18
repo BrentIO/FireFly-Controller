@@ -209,7 +209,7 @@ void setup() {
 
     log_d("NVS UUID: %s", deviceIdentity.data.uuid);
     log_d("NVS Product ID: %s", deviceIdentity.data.product_id);
-    log_d("NVS Key: %s", deviceIdentity.data.key);
+    log_d("eFuse master key loaded");
 
     if(deviceIdentity.data.product_hex != 0 && deviceIdentity.data.product_hex != PRODUCT_HEX){
       oled.setMismatchHex(deviceIdentity.data.product_hex, (uint32_t)PRODUCT_HEX);
@@ -2734,7 +2734,7 @@ void setupIO(){
   bool isOK = true;
 
   if(deviceIdentity.enabled == false){
-    eventLog.createEvent("No I/O setup (NVS)", EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("No I/O setup (eFuse)", EventLog::LOG_LEVEL_ERROR);
     return;
   }
 

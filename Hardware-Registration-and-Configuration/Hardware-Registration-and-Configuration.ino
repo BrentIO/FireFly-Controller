@@ -176,7 +176,7 @@ void setup() {
   #endif
 
 
-  /* Start device identity (NVS) */
+  /* Start device identity (eFuse) */
   deviceIdentity.begin();
 
   if(deviceIdentity.enabled == true){
@@ -184,9 +184,9 @@ void setup() {
     oled.setProductID(deviceIdentity.data.product_id);
     oled.setUUID(deviceIdentity.data.uuid);
 
-    log_i("NVS UUID: %s", deviceIdentity.data.uuid);
-    log_i("NVS Product ID: %s", deviceIdentity.data.product_id);
-    log_i("NVS Key: %s", deviceIdentity.data.key);
+    log_i("eFuse UUID: %s", deviceIdentity.data.uuid);
+    log_i("eFuse Product ID: %s", deviceIdentity.data.product_id);
+    log_i("eFuse master key loaded");
   }
 
 
@@ -335,6 +335,21 @@ void http_error(AsyncWebServerRequest *request, String message){
 
   serializeJson(doc, *response);
   response->setCode(500);
+  request->send(response);
+}
+
+
+/**
+ * Sends a 409 response indicating a conflict (e.g. resource already exists and cannot be overwritten)
+*/
+void http_conflict(AsyncWebServerRequest *request, String message){
+
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
+  JsonDocument doc;
+  doc["message"] = message;
+
+  serializeJson(doc, *response);
+  response->setCode(409);
   request->send(response);
 }
 
@@ -687,21 +702,6 @@ void http_handleIdentity(AsyncWebServerRequest *request){
       http_handleIdentity_GET(request);
       break;
 
-    case HTTP_DELETE:
-
-      if(!request->hasHeader("visual-token")){
-        http_unauthorized(request);
-        return;
-      }
-
-      if(!authToken.authenticate(request->header("visual-token").c_str())){
-        http_unauthorized(request);
-        return;
-      }
-
-      http_handleIdentity_DELETE(request);
-      break;
-
     default:
       http_methodNotAllowed(request);
       break;
@@ -714,11 +714,11 @@ void http_handleIdentity(AsyncWebServerRequest *request){
 */
 void http_handleIdentity_GET(AsyncWebServerRequest *request){
 
-  if(strcmp(deviceIdentity.data.uuid, "") == 0){
+  if(!deviceIdentity.enabled){
     http_notFound(request);
     return;
   }
- 
+
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   JsonDocument doc;
   doc["uuid"] = deviceIdentity.data.uuid;
@@ -726,7 +726,6 @@ void http_handleIdentity_GET(AsyncWebServerRequest *request){
   char product_hex_str[11] = {0};
   sprintf(product_hex_str, "0x%08lX", deviceIdentity.data.product_hex);
   doc["product_hex"] = product_hex_str;
-  doc["key"] = deviceIdentity.data.key;
 
   serializeJson(doc, *response);
   request->send(response);
@@ -734,33 +733,9 @@ void http_handleIdentity_GET(AsyncWebServerRequest *request){
 
 
 /**
- * Handles DELETE requests for device identity, which destroys its data.
- * The response is synchronous to the operation completing
-*/
-void http_handleIdentity_DELETE(AsyncWebServerRequest *request){
-
-  if(strcmp(deviceIdentity.data.uuid, "") == 0){
-    http_notFound(request);
-    return;
-  }
-
-  if(deviceIdentity.destroy() == false){
-    http_error(request, "Error during NVS delete");
-    return;
-  }
-
-  oled.setProductID(NULL);
-  oled.setUUID(NULL);
-
-  request->send(204);
-
-  eventLog.createEvent("Deleted device identity", EventLog::LOG_LEVEL_NOTIFICATION);
-}
-
-
-/**
- * Handles POST requests for device identity, which writes the identity data to NVS.
- * The response is synchronous to the operation completing
+ * Handles POST requests for device identity, which burns the identity data to eFuse.
+ * The response is synchronous to the operation completing.
+ * Returns 409 if identity is already provisioned (eFuse is irreversible).
 */
 void http_handleIdentity_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
@@ -774,8 +749,8 @@ void http_handleIdentity_POST(AsyncWebServerRequest *request, JsonVariant doc){
       return;
     }
 
-  if(strcmp(deviceIdentity.data.uuid, "") != 0){
-    http_badRequest(request, "Device already provisioned");
+  if(deviceIdentity.enabled){
+    http_conflict(request, "Device already provisioned; eFuse identity cannot be overwritten");
     return;
   }
 
@@ -835,29 +810,13 @@ void http_handleIdentity_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
   postedData.product_hex = (uint32_t)strtoul(product_hex_buf + 2, NULL, 16);
 
-  if(doc["key"].isNull()){
-    http_badRequest(request, "Field key is required");
-    return;
-  }
-
-  if(strlen(doc["key"])!=(sizeof(postedData.key)-1)){
-    http_badRequest(request, "Field key is not exactly 64 characters");
-    return;
-  }
-
-  strlcpy(postedData.key, doc["key"], sizeof(postedData.key));
-
-  ms.Target(postedData.key);
-
-  if(ms.MatchCount("^[0-9A-Za-z]+$")!=1){
-    http_badRequest(request, "Invalid key, see docs");
-    return;
-  }
-
   deviceIdentity.data = postedData;
 
+  // Generate master key on-device; key never leaves the chip
+  esp_fill_random(deviceIdentity.data.key, sizeof(deviceIdentity.data.key));
+
   if(deviceIdentity.write() == false){
-    http_error(request, "Error during NVS write");
+    http_error(request, "Error during eFuse write");
     return;
   }
 

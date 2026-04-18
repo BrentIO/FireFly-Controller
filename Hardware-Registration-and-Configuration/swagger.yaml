@@ -67,7 +67,7 @@ paths:
       tags:
         - Device Identity
       summary: Store the device identity
-      description: Store the device identity with the payload specified.  The response is synchronous to the operation completing
+      description: Burns the device identity to eFuse (irreversible). The master key is generated on-device and never returned. Returns 409 if identity is already provisioned.
       security:
         - visualToken: []
       requestBody:
@@ -86,7 +86,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/bad_request_message'
               example:
-                message: Device identity already configured
+                message: Field uuid is required
+        '409':
+          description: Conflict — device identity already provisioned in eFuse
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Device already provisioned; eFuse identity cannot be overwritten
         '401':
           description: Unauthorized
         '500':
@@ -101,7 +109,7 @@ paths:
       tags:
         - Device Identity
       summary: Retrieve the device identity
-      description: Retrieve the current device identity
+      description: Retrieve the current device identity. The master key is not included in the response.
       security:
         - visualToken: []
       responses:
@@ -123,28 +131,6 @@ paths:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: NVS read failure
-    delete:
-      tags:
-        - Device Identity
-      summary: Delete the device identity
-      description: Delete the device identity from NVS.  The response is synchronous to the operation completing
-      security:
-        - visualToken: []
-      responses:
-        '204':
-          description: Deleted device identity successfully
-        '401':
-          description: Unauthorized
-        '404':
-          description: No device identity configured
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: NVS delete failure
   /api/mcu:
     get:
       tags:
@@ -400,18 +386,10 @@ components:
           description: Device product hexadecimal identifier
           example: '0x32322304'
           pattern: '^0x[0-9A-Fa-f]{8}$'
-        key:
-          type: string
-          description: String of random characters used for authentication
-          minLength: 64
-          maxLength: 64
-          example: bCsCaNv1LIf0UriPsKWTOTbz2biycaNOL57fcuBjqkxrnSONcqjHt1416iJfg8QJ
-          pattern: ^[0-9A-Za-z]{64}$
       required:
         - uuid
         - product_id
         - product_hex
-        - key
     mcuInfo:
       type: object
       properties:
