@@ -423,10 +423,34 @@ components:
           type: string
           description: Chip revision
           example: 3
+        cpu_freq_mhz:
+          type: integer
+          description: CPU frequency in MHz
+          example: 240
+        chip_cores:
+          type: integer
+          description: Number of CPU cores
+          example: 2
+        sdk_version:
+          type: string
+          description: ESP-IDF SDK version string
+          example: v5.3.2
         flash_chip_size:
           type: integer
           description: Size of the flash chip in bytes
           example: 16777216
+        flash_chip_speed:
+          type: integer
+          description: Flash chip speed in MHz
+          example: 80
+        flash_chip_mode:
+          type: integer
+          description: "Flash chip mode (0=QIO, 1=QOUT, 2=DIO, 3=DOUT, 4=DQIO, 5=DQOUT)"
+          example: 0
+        free_heap:
+          type: integer
+          description: Free heap memory in bytes
+          example: 204800
         boot_time:
           type: integer
           description: Epoch time the device booted in seconds.  If unknown, number of seconds elapsed since boot will be returned
@@ -435,6 +459,14 @@ components:
           type: integer
           description: Total size of PSRAM in bytes. 0 if no PSRAM is detected
           example: 8388608
+        free_psram:
+          type: integer
+          description: Free PSRAM in bytes. 0 if no PSRAM is detected
+          example: 4194304
+        chip_features:
+          type: integer
+          description: "Bitmask of chip features (bit 0=embedded flash, bit 1=WiFi b/g/n, bit 4=BLE, bit 5=Bluetooth Classic, bit 4=embedded PSRAM)"
+          example: 50
     eventLog:
       type: array
       items:
