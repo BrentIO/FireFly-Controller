@@ -22,6 +22,8 @@ tags:
     description: Operations for the internal partition information
   - name: Peripherals
     description: Operations for the on-board peripherals
+  - name: Cloud Registration
+    description: Operations for managing device registration with FireFly-Cloud
   - name: MCU
     description: Operations for the main control unit
   - name: Version
@@ -131,6 +133,101 @@ paths:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: NVS read failure
+  /api/registration:
+    get:
+      tags:
+        - Cloud Registration
+      summary: Retrieve cloud registration status
+      description: Returns the in-RAM registration state from the last boot check. Returns 409 if device identity is not provisioned.
+      security:
+        - visualToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/registrationStatus'
+              example:
+                registered: true
+                checked_at: 1714000000
+        '401':
+          description: Unauthorized
+        '409':
+          description: Conflict — device identity not provisioned in eFuse
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Device identity not provisioned
+    post:
+      tags:
+        - Cloud Registration
+      summary: Register device with FireFly-Cloud
+      description: Derives the ECDSA P-256 public key from the eFuse master key and registers the device with FireFly-Cloud. Requires a one-time Registration Key obtained from FireFly-Cloud.
+      security:
+        - visualToken: []
+      parameters:
+        - in: header
+          name: X-Registration-Key
+          required: true
+          schema:
+            type: string
+            minLength: 6
+            maxLength: 6
+          description: One-time 6-character alphanumeric registration key obtained from FireFly-Cloud
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/registrationRequest'
+      responses:
+        '204':
+          description: Device registered successfully
+        '400':
+          description: Bad Request — X-Registration-Key header missing or not 6 characters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+              example:
+                message: X-Registration-Key header is required and must be 6 characters
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — registration key is invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Invalid or expired registration key
+        '409':
+          description: Conflict — device identity not provisioned in eFuse
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Device identity not provisioned
+        '502':
+          description: Bad Gateway — FireFly-Cloud request failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Cloud registration request failed
+        '503':
+          description: Service Unavailable — device clock not synchronized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Clock not synchronized
   /api/mcu:
     get:
       tags:
@@ -422,9 +519,17 @@ components:
           description: Flash chip speed in MHz
           example: 80
         flash_chip_mode:
-          type: integer
-          description: "Flash chip mode (0=QIO, 1=QOUT, 2=DIO, 3=DOUT, 4=DQIO, 5=DQOUT)"
-          example: 0
+          type: string
+          description: Flash chip mode
+          enum:
+            - QIO
+            - QOUT
+            - DIO
+            - DOUT
+            - FAST_READ
+            - SLOW_READ
+            - UNKNOWN
+          example: QIO
         free_heap:
           type: integer
           description: Free heap memory in bytes
@@ -442,9 +547,39 @@ components:
           description: Free PSRAM in bytes. 0 if no PSRAM is detected
           example: 4194304
         chip_features:
+          type: array
+          description: List of chip feature strings
+          items:
+            type: string
+            enum:
+              - Embedded-Flash
+              - WiFi-bgn
+              - BLE
+              - BT
+              - Embedded-PSRAM
+              - IEEE-802.15.4
+          example:
+            - Embedded-Flash
+            - WiFi-bgn
+            - BLE
+    registrationStatus:
+      type: object
+      properties:
+        registered:
+          type: boolean
+          description: Whether the device is registered with FireFly-Cloud
+          example: true
+        checked_at:
           type: integer
-          description: "Bitmask of chip features (bit 0=embedded flash, bit 1=WiFi b/g/n, bit 4=BLE, bit 5=Bluetooth Classic, bit 4=embedded PSRAM)"
-          example: 50
+          description: Epoch time of the last registration check. 0 if not yet checked
+          example: 1714000000
+    registrationRequest:
+      type: object
+      properties:
+        url:
+          type: string
+          description: FireFly-Cloud base URL. Defaults to https://api.fireflylx.com if omitted
+          example: https://api.fireflylx.com
     eventLog:
       type: array
       items:

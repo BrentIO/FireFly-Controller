@@ -54,33 +54,21 @@ const loading = ref(true)
 const rebooting = ref(false)
 const showConfirm = ref(false)
 
-const flashModeNames = ['QIO', 'QOUT', 'DIO', 'DOUT', 'DQIO', 'DQOUT']
-
-function decodeChipFeatures(bits) {
-  const features = []
-  if (bits & (1 << 0)) features.push('Embedded Flash')
-  if (bits & (1 << 1)) features.push('WiFi 802.11 b/g/n')
-  if (bits & (1 << 4)) features.push('BLE')
-  if (bits & (1 << 5)) features.push('Bluetooth Classic')
-  return features.length ? features.join(', ') : `0x${bits.toString(16)}`
-}
-
 const rows = computed(() => {
   if (!mcu.value) return []
   const psramError = mcu.value.psram_size === 0
   const psram = psramError ? 'Not detected' : `${(mcu.value.psram_size / 1048576).toFixed(1)} MB`
   const freePsram = psramError ? 'N/A' : `${(mcu.value.free_psram / 1024).toFixed(0)} KB`
-  const flashMode = flashModeNames[mcu.value.flash_chip_mode] ?? `Mode ${mcu.value.flash_chip_mode}`
   return [
     { label: 'Chip Model',    value: mcu.value.chip_model },
     { label: 'Revision',      value: mcu.value.revision },
     { label: 'CPU Cores',     value: mcu.value.chip_cores },
     { label: 'CPU Frequency', value: `${mcu.value.cpu_freq_mhz} MHz` },
     { label: 'SDK Version',   value: mcu.value.sdk_version },
-    { label: 'Chip Features', value: decodeChipFeatures(mcu.value.chip_features) },
+    { label: 'Chip Features', value: Array.isArray(mcu.value.chip_features) ? mcu.value.chip_features.join(', ') : '' },
     { label: 'Flash Size',    value: `${(mcu.value.flash_chip_size / 1048576).toFixed(1)} MB` },
     { label: 'Flash Speed',   value: `${mcu.value.flash_chip_speed} MHz` },
-    { label: 'Flash Mode',    value: flashMode },
+    { label: 'Flash Mode',    value: mcu.value.flash_chip_mode },
     { label: 'Free Heap',     value: `${(mcu.value.free_heap / 1024).toFixed(0)} KB` },
     { label: 'PSRAM',         value: psram, error: psramError },
     { label: 'Free PSRAM',    value: freePsram },

@@ -8,7 +8,7 @@
       <form
         v-else
         class="bg-white dark:bg-gray-900 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10 p-6 space-y-5"
-        @submit.prevent="save"
+        @submit.prevent="showConfirm = true"
       >
         <div
           v-if="hasIdentity"
@@ -74,12 +74,24 @@
         </div>
       </form>
     </div>
+
+    <ConfirmModal
+      :show="showConfirm"
+      title="Burn Identity to eFuse"
+      message="This will permanently burn the device identity to eFuse. This operation is irreversible and cannot be undone."
+      :details="{ 'UUID': form.uuid, 'Product ID': devices.find(d => d.product_hex === form.product_hex)?.product_id ?? form.product_hex }"
+      confirm-label="Burn to eFuse"
+      variant="warning"
+      @confirm="showConfirm = false; save()"
+      @cancel="showConfirm = false"
+    />
   </AppLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import AppLayout from '../components/AppLayout.vue'
+import ConfirmModal from '../components/ConfirmModal.vue'
 import { apiFetch } from '../composables/useApi'
 import { useToast } from '../composables/useToast'
 import { useAppState } from '../composables/useAppState'
@@ -93,6 +105,7 @@ const { setNavError, setIdentityLoaded } = useAppState()
 const loading = ref(true)
 const saving = ref(false)
 const hasIdentity = ref(false)
+const showConfirm = ref(false)
 
 const form = ref({ uuid: '', product_hex: '' })
 
@@ -123,6 +136,13 @@ async function load() {
     } else if (res.status === 404) {
       hasIdentity.value = false
       setNavError('identity', false)
+      try {
+        const vres = await apiFetch('/version')
+        if (vres.ok) {
+          const vdata = await vres.json()
+          if (vdata.product_hex) form.value.product_hex = vdata.product_hex
+        }
+      } catch (_) {}
     } else {
       addToast('error', `Identity fetch failed (${res.status})`)
       setNavError('identity', true)

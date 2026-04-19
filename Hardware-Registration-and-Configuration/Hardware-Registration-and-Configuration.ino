@@ -48,6 +48,13 @@
 #include "AsyncJson.h"
 #include <NTPClient.h>
 #include <WiFiUdp.h>
+#include <mbedtls/sha256.h>
+#include <mbedtls/hkdf.h>
+#include <mbedtls/md.h>
+#include <mbedtls/ecdsa.h>
+#include <mbedtls/base64.h>
+#include <esp_http_client.h>
+#include <esp_crt_bundle.h>
 
 unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
 AsyncWebServer httpServer(80);
@@ -66,6 +73,21 @@ authorizationToken authToken;
 
 EventLog eventLog(&timeClient); /* Event Log instance */
 uint64_t ntpSleepUntil = 0;
+
+#define DEVICE_CLASS "CONTROLLER"
+#define FIREFLY_CLOUD_REGISTRATION_URL "https://api.fireflylx.com"
+#define REGISTRATION_APPLICATION_NAME "Hardware-Registration-and-Configuration"
+
+struct {
+  bool   registered = false;
+  time_t checkedAt  = 0;
+} _registrationState;
+
+/* Hardware RNG wrapper for mbedtls ECP/ECDSA calls */
+static int _espRng(void*, unsigned char* buf, size_t len) {
+    esp_fill_random(buf, len);
+    return 0;
+}
 
 void updateNTPTime(bool force = false);
 
@@ -220,6 +242,10 @@ void setup() {
   jsonHandler_handleIdentity_POST->setMethod(HTTP_POST);
   httpServer.addHandler(jsonHandler_handleIdentity_POST);
   httpServer.on("/api/identity", http_handleIdentity);
+  AsyncCallbackJsonWebHandler *jsonHandler_handleRegistration_POST = new AsyncCallbackJsonWebHandler("/api/registration", http_handleRegistration_POST);
+  jsonHandler_handleRegistration_POST->setMethod(HTTP_POST);
+  httpServer.addHandler(jsonHandler_handleRegistration_POST);
+  httpServer.on("/api/registration", http_handleRegistration_GET);
   httpServer.on("^/api/mcu$", http_handleMCU);
   httpServer.on("^/api/mcu/reboot$", http_handleReboot);
   httpServer.on("/api/partitions", http_handlePartitions);
@@ -239,7 +265,7 @@ void setup() {
   httpServer.onNotFound(http_notFound);
 
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*"); //Ignore CORS
-  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "visual-token, Content-Type"); //Ignore CORS
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "visual-token, Content-Type, X-Registration-Key"); //Ignore CORS
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE"); //Ignore CORS
 
   String serverHeader = String(APPLICATION_NAME);
@@ -280,8 +306,12 @@ void loop() {
 
   updateNTPTime();
 
+  if (_registrationState.checkedAt == 0 && deviceIdentity.enabled && time(nullptr) > 946684800L) {
+    checkCloudRegistration();
+  }
+
   oled.loop();
-  authToken.loop(); 
+  authToken.loop();
   frontPanel.loop();
 }
 
@@ -362,6 +392,36 @@ void http_badRequest(AsyncWebServerRequest *request, String message){
 
   serializeJson(doc, *response);
   response->setCode(400);
+  request->send(response);
+}
+
+
+/**
+ * Sends a 403 response indicating the caller is authenticated but not permitted
+*/
+void http_forbidden(AsyncWebServerRequest *request, String message){
+
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
+  JsonDocument doc;
+  doc["message"] = message;
+
+  serializeJson(doc, *response);
+  response->setCode(403);
+  request->send(response);
+}
+
+
+/**
+ * Sends a 503 response indicating the service is temporarily unavailable
+*/
+void http_serviceUnavailable(AsyncWebServerRequest *request, String message){
+
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
+  JsonDocument doc;
+  doc["message"] = message;
+
+  serializeJson(doc, *response);
+  response->setCode(503);
   request->send(response);
 }
 
@@ -517,14 +577,22 @@ void http_handleMCU(AsyncWebServerRequest *request){
   doc["sdk_version"] = ESP.getSdkVersion();
   doc["flash_chip_size"] = ESP.getFlashChipSize();
   doc["flash_chip_speed"] = ESP.getFlashChipSpeed() / 1000000;
-  doc["flash_chip_mode"] = (int)ESP.getFlashChipMode();
+  const char* flashModeNames[] = {"QIO", "QOUT", "DIO", "DOUT", "FAST_READ", "SLOW_READ"};
+  int flashModeIdx = (int)ESP.getFlashChipMode();
+  doc["flash_chip_mode"] = (flashModeIdx >= 0 && flashModeIdx <= 5) ? flashModeNames[flashModeIdx] : "UNKNOWN";
   doc["free_heap"] = ESP.getFreeHeap();
   doc["psram_size"] = ESP.getPsramSize();
   doc["free_psram"] = ESP.getFreePsram();
 
   esp_chip_info_t chip_info;
   esp_chip_info(&chip_info);
-  doc["chip_features"] = chip_info.features;
+  JsonArray featuresArr = doc["chip_features"].to<JsonArray>();
+  if (chip_info.features & CHIP_FEATURE_EMB_FLASH)  featuresArr.add("Embedded-Flash");
+  if (chip_info.features & CHIP_FEATURE_WIFI_BGN)   featuresArr.add("WiFi-bgn");
+  if (chip_info.features & CHIP_FEATURE_BLE)        featuresArr.add("BLE");
+  if (chip_info.features & CHIP_FEATURE_BT)         featuresArr.add("BT");
+  if (chip_info.features & CHIP_FEATURE_EMB_PSRAM)  featuresArr.add("Embedded-PSRAM");
+  if (chip_info.features & CHIP_FEATURE_IEEE802154) featuresArr.add("IEEE-802.15.4");
 
   if(bootTime !=0){
       doc["boot_time"] = bootTime;
@@ -538,6 +606,266 @@ void http_handleMCU(AsyncWebServerRequest *request){
 
   serializeJson(doc, *response);
   request->send(response);
+}
+
+
+/**
+ * Checks device registration status with FireFly-Cloud using a signed nonce.
+ * Called once from loop() after NTP sync. Updates _registrationState in-place.
+*/
+void checkCloudRegistration() {
+  eventLog.createEvent("Cloud reg check", EventLog::LOG_LEVEL_INFO);
+
+  uint8_t key_auth[32];
+  if (mbedtls_hkdf(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256),
+                   nullptr, 0,
+                   deviceIdentity.data.key, sizeof(deviceIdentity.data.key),
+                   (const uint8_t*)"firefly-auth-v1", 15,
+                   key_auth, 32) != 0) {
+    memset(key_auth, 0, 32);
+    _registrationState.checkedAt = time(nullptr);
+    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_ERROR);
+    return;
+  }
+
+  uint8_t nonce[32];
+  esp_fill_random(nonce, 32);
+
+  uint8_t hash[32];
+  mbedtls_sha256_context sha_ctx;
+  mbedtls_sha256_init(&sha_ctx);
+  mbedtls_sha256_starts_ret(&sha_ctx, 0);
+  mbedtls_sha256_update_ret(&sha_ctx, nonce, 32);
+  mbedtls_sha256_finish_ret(&sha_ctx, hash);
+  mbedtls_sha256_free(&sha_ctx);
+
+  mbedtls_ecdsa_context ecdsa;
+  mbedtls_ecdsa_init(&ecdsa);
+  mbedtls_ecp_group_load(&ecdsa.grp, MBEDTLS_ECP_DP_SECP256R1);
+  mbedtls_mpi_read_binary(&ecdsa.d, key_auth, 32);
+  memset(key_auth, 0, 32);
+
+  uint8_t sig[72]; size_t sigLen = 0;
+  bool signOk = (mbedtls_ecdsa_write_signature(&ecdsa, MBEDTLS_MD_SHA256,
+                                               hash, 32, sig, &sigLen,
+                                               _espRng, nullptr) == 0);
+  mbedtls_ecdsa_free(&ecdsa);
+
+  _registrationState.checkedAt = time(nullptr);
+
+  if (!signOk) {
+    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_ERROR);
+    return;
+  }
+
+  uint8_t nonceB64[48]; size_t nonceB64Len = 0;
+  uint8_t sigB64[100];  size_t sigB64Len = 0;
+  mbedtls_base64_encode(nonceB64, sizeof(nonceB64), &nonceB64Len, nonce, 32);
+  mbedtls_base64_encode(sigB64,   sizeof(sigB64),   &sigB64Len,   sig,   sigLen);
+
+  String url = FIREFLY_CLOUD_REGISTRATION_URL;
+  url += "/devices/";
+  url += deviceIdentity.data.uuid;
+  url += "/registration";
+
+  esp_http_client_config_t cfg = {};
+  cfg.url                = url.c_str();
+  cfg.crt_bundle_attach  = esp_crt_bundle_attach;
+  cfg.timeout_ms         = 10000;
+
+  esp_http_client_handle_t client = esp_http_client_init(&cfg);
+  esp_http_client_set_header(client, "X-Device-UUID",      deviceIdentity.data.uuid);
+  esp_http_client_set_header(client, "X-Device-Nonce",     (char*)nonceB64);
+  esp_http_client_set_header(client, "X-Device-Signature", (char*)sigB64);
+
+  esp_err_t err    = esp_http_client_perform(client);
+  int       status = esp_http_client_get_status_code(client);
+  esp_http_client_cleanup(client);
+
+  if (err == ESP_OK && status == 200) {
+    _registrationState.registered = true;
+    eventLog.createEvent("Cloud registered", EventLog::LOG_LEVEL_INFO);
+  } else if (err == ESP_OK && status == 401) {
+    _registrationState.registered = false;
+  } else {
+    _registrationState.registered = false;
+    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_ERROR);
+  }
+}
+
+
+/**
+ * GET /api/registration — returns in-RAM cloud registration state
+*/
+void http_handleRegistration_GET(AsyncWebServerRequest *request) {
+  if (!request->hasHeader("visual-token") ||
+      !authToken.authenticate(request->header("visual-token").c_str())) {
+    http_unauthorized(request);
+    return;
+  }
+
+  if (!deviceIdentity.enabled) {
+    http_conflict(request, "Device not provisioned");
+    return;
+  }
+
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
+  JsonDocument doc;
+  doc["registered"] = _registrationState.registered;
+  doc["checked_at"] = (long)_registrationState.checkedAt;
+  serializeJson(doc, *response);
+  request->send(response);
+}
+
+
+/**
+ * POST /api/registration — registers device with FireFly-Cloud.
+ * Requires X-Registration-Key header (6-char one-time code) and optional { "url": "..." } body.
+*/
+void http_handleRegistration_POST(AsyncWebServerRequest *request, JsonVariant &doc) {
+  if (!request->hasHeader("visual-token") ||
+      !authToken.authenticate(request->header("visual-token").c_str())) {
+    http_unauthorized(request);
+    return;
+  }
+
+  if (!deviceIdentity.enabled) {
+    http_conflict(request, "Device not provisioned");
+    return;
+  }
+
+  if (time(nullptr) <= 946684800L) {
+    http_serviceUnavailable(request, "Clock not synchronized");
+    return;
+  }
+
+  if (!request->hasHeader("X-Registration-Key") ||
+      strlen(request->header("X-Registration-Key").c_str()) != 6) {
+    http_badRequest(request, "X-Registration-Key header is required and must be 6 characters");
+    return;
+  }
+
+  String regKey = request->header("X-Registration-Key");
+
+  String cloudUrl = FIREFLY_CLOUD_REGISTRATION_URL;
+  if (!doc.isNull() && !doc["url"].isNull()) {
+    cloudUrl = doc["url"].as<String>();
+  }
+
+  /* Derive key_auth and compute P-256 public key */
+  uint8_t key_auth[32];
+  if (mbedtls_hkdf(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256),
+                   nullptr, 0,
+                   deviceIdentity.data.key, sizeof(deviceIdentity.data.key),
+                   (const uint8_t*)"firefly-auth-v1", 15,
+                   key_auth, 32) != 0) {
+    memset(key_auth, 0, 32);
+    http_error(request, "Key derivation failed");
+    return;
+  }
+
+  mbedtls_ecp_group  grp;  mbedtls_ecp_group_init(&grp);
+  mbedtls_mpi        d;    mbedtls_mpi_init(&d);
+  mbedtls_ecp_point  Q;    mbedtls_ecp_point_init(&Q);
+
+  mbedtls_ecp_group_load(&grp, MBEDTLS_ECP_DP_SECP256R1);
+  mbedtls_mpi_read_binary(&d, key_auth, 32);
+  memset(key_auth, 0, 32);
+
+  bool keyOk = (mbedtls_ecp_mul(&grp, &Q, &d, &grp.G, _espRng, nullptr) == 0);
+
+  uint8_t pubKeyRaw[65]; size_t pubKeyLen = 0;
+  if (keyOk) {
+    keyOk = (mbedtls_ecp_point_write_binary(&grp, &Q,
+                                            MBEDTLS_ECP_PF_UNCOMPRESSED,
+                                            &pubKeyLen, pubKeyRaw, 65) == 0);
+  }
+
+  mbedtls_ecp_group_free(&grp);
+  mbedtls_mpi_free(&d);
+  mbedtls_ecp_point_free(&Q);
+
+  if (!keyOk) {
+    http_error(request, "Public key computation failed");
+    return;
+  }
+
+  uint8_t pubKeyB64[92]; size_t pubKeyB64Len = 0;
+  mbedtls_base64_encode(pubKeyB64, sizeof(pubKeyB64), &pubKeyB64Len, pubKeyRaw, pubKeyLen);
+
+  /* Build registration payload */
+  char product_hex_str[11] = {0};
+  sprintf(product_hex_str, "0x%08lX", deviceIdentity.data.product_hex);
+
+  JsonDocument payloadDoc;
+  payloadDoc["uuid"]                    = deviceIdentity.data.uuid;
+  payloadDoc["product_id"]              = deviceIdentity.data.product_id;
+  payloadDoc["product_hex"]             = product_hex_str;
+  payloadDoc["device_class"]            = DEVICE_CLASS;
+  payloadDoc["public_key"]              = (char*)pubKeyB64;
+  payloadDoc["registering_application"] = REGISTRATION_APPLICATION_NAME;
+  payloadDoc["registering_version"]     = VERSION;
+
+  JsonObject mcu = payloadDoc["mcu"].to<JsonObject>();
+  mcu["model"]           = ESP.getChipModel();
+  mcu["revision"]        = (int)ESP.getChipRevision();
+  mcu["cpu_freq_mhz"]    = ESP.getCpuFreqMHz();
+  mcu["cores"]           = ESP.getChipCores();
+  mcu["flash_chip_size"] = ESP.getFlashChipSize();
+  mcu["flash_chip_speed"]= ESP.getFlashChipSpeed() / 1000000;
+  int flashModeIdx = (int)ESP.getFlashChipMode();
+  const char* flashModeNames[] = {"QIO","QOUT","DIO","DOUT","FAST_READ","SLOW_READ"};
+  mcu["flash_chip_mode"] = (flashModeIdx >= 0 && flashModeIdx <= 5) ? flashModeNames[flashModeIdx] : "UNKNOWN";
+  mcu["psram_size"]      = ESP.getPsramSize();
+
+  esp_chip_info_t chip_info;
+  esp_chip_info(&chip_info);
+  JsonArray features = mcu["features"].to<JsonArray>();
+  if (chip_info.features & CHIP_FEATURE_EMB_FLASH)  features.add("Embedded-Flash");
+  if (chip_info.features & CHIP_FEATURE_WIFI_BGN)   features.add("WiFi-bgn");
+  if (chip_info.features & CHIP_FEATURE_BLE)        features.add("BLE");
+  if (chip_info.features & CHIP_FEATURE_BT)         features.add("BT");
+  if (chip_info.features & CHIP_FEATURE_EMB_PSRAM)  features.add("Embedded-PSRAM");
+  if (chip_info.features & CHIP_FEATURE_IEEE802154) features.add("IEEE-802.15.4");
+
+  String payload;
+  serializeJson(payloadDoc, payload);
+
+  /* POST to FireFly-Cloud */
+  String postUrl = cloudUrl + "/devices/register";
+
+  esp_http_client_config_t cfg = {};
+  cfg.url               = postUrl.c_str();
+  cfg.method            = HTTP_METHOD_POST;
+  cfg.crt_bundle_attach = esp_crt_bundle_attach;
+  cfg.timeout_ms        = 10000;
+
+  esp_http_client_handle_t client = esp_http_client_init(&cfg);
+  esp_http_client_set_header(client, "Content-Type",       "application/json");
+  esp_http_client_set_header(client, "X-Registration-Key", regKey.c_str());
+  esp_http_client_set_post_field(client, payload.c_str(), payload.length());
+
+  esp_err_t err    = esp_http_client_perform(client);
+  int       status = esp_http_client_get_status_code(client);
+  esp_http_client_cleanup(client);
+
+  if (err == ESP_OK && status == 204) {
+    _registrationState.registered = true;
+    _registrationState.checkedAt  = time(nullptr);
+    eventLog.createEvent("Cloud registered", EventLog::LOG_LEVEL_INFO);
+    request->send(204);
+  } else if (err == ESP_OK && (status == 401 || status == 403)) {
+    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_ERROR);
+    http_forbidden(request, "Invalid or expired registration key");
+  } else {
+    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_ERROR);
+    AsyncResponseStream *resp = request->beginResponseStream("application/json");
+    JsonDocument errDoc;
+    errDoc["message"] = "Cloud registration failed";
+    serializeJson(errDoc, *resp);
+    resp->setCode(502);
+    request->send(resp);
+  }
 }
 
 
