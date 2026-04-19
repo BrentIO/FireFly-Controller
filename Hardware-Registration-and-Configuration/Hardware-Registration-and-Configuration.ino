@@ -634,20 +634,20 @@ void checkCloudRegistration() {
   uint8_t hash[32];
   mbedtls_sha256_context sha_ctx;
   mbedtls_sha256_init(&sha_ctx);
-  mbedtls_sha256_starts_ret(&sha_ctx, 0);
-  mbedtls_sha256_update_ret(&sha_ctx, nonce, 32);
-  mbedtls_sha256_finish_ret(&sha_ctx, hash);
+  mbedtls_sha256_starts(&sha_ctx, 0);
+  mbedtls_sha256_update(&sha_ctx, nonce, 32);
+  mbedtls_sha256_finish(&sha_ctx, hash);
   mbedtls_sha256_free(&sha_ctx);
 
   mbedtls_ecdsa_context ecdsa;
   mbedtls_ecdsa_init(&ecdsa);
-  mbedtls_ecp_group_load(&ecdsa.grp, MBEDTLS_ECP_DP_SECP256R1);
-  mbedtls_mpi_read_binary(&ecdsa.d, key_auth, 32);
+  mbedtls_ecp_group_load(&ecdsa.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP256R1);
+  mbedtls_mpi_read_binary(&ecdsa.MBEDTLS_PRIVATE(d), key_auth, 32);
   memset(key_auth, 0, 32);
 
   uint8_t sig[72]; size_t sigLen = 0;
   bool signOk = (mbedtls_ecdsa_write_signature(&ecdsa, MBEDTLS_MD_SHA256,
-                                               hash, 32, sig, &sigLen,
+                                               hash, 32, sig, sizeof(sig), &sigLen,
                                                _espRng, nullptr) == 0);
   mbedtls_ecdsa_free(&ecdsa);
 
