@@ -15,3 +15,16 @@ class TestMCU:
         assert "boot_time" in body
         assert "psram_size" in body
 
+    def test_get_mcu_chip_features_is_list(self, base_url):
+        r = requests.get(f"{base_url}/api/mcu")
+        assert isinstance(r.json().get("chip_features"), list)
+
+    def test_get_mcu_chip_features_items_are_strings(self, base_url):
+        r = requests.get(f"{base_url}/api/mcu")
+        features = r.json().get("chip_features", [])
+        assert all(isinstance(f, str) for f in features)
+
+    def test_get_mcu_flash_chip_mode_is_string(self, base_url):
+        r = requests.get(f"{base_url}/api/mcu")
+        assert isinstance(r.json().get("flash_chip_mode"), str)
+

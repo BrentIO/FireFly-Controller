@@ -79,12 +79,13 @@ const route = useRoute()
 const uiVersion = import.meta.env.VITE_UI_VERSION ?? 'dev'
 
 const navItems = computed(() => [
-  { path: '/mcu',         label: 'MCU',            key: 'mcu' },
-  { path: '/network',     label: 'Network',         key: 'network' },
-  { path: '/identity',    label: 'Identity',        key: 'identity' },
-  { path: '/partitions',  label: 'Partition Table', key: 'partitions',  disabled: !state.identityLoaded },
-  { path: '/peripherals', label: 'Peripherals',     key: 'peripherals', disabled: !state.identityLoaded },
-  { path: '/events',      label: 'Event Log',       key: 'events' },
-  { path: '/errors',      label: 'Error Log',       key: 'errors' }
+  { path: '/mcu',          label: 'MCU',                key: 'mcu' },
+  { path: '/network',      label: 'Network',             key: 'network' },
+  { path: '/identity',     label: 'Identity',            key: 'identity' },
+  { path: '/registration', label: 'Cloud Registration',  key: 'registration', disabled: !state.identityLoaded },
+  { path: '/partitions',   label: 'Partition Table',     key: 'partitions',   disabled: !state.identityLoaded },
+  { path: '/peripherals',  label: 'Peripherals',         key: 'peripherals',  disabled: !state.identityLoaded },
+  { path: '/events',       label: 'Event Log',           key: 'events' },
+  { path: '/errors',       label: 'Error Log',           key: 'errors' }
 ])
 </script>
