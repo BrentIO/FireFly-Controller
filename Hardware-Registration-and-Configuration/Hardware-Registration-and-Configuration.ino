@@ -128,9 +128,6 @@ void setup() {
   /* Start networking */
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
-    WiFi.softAP(hostname);
-    log_i("Started SoftAP %s", WiFi.softAPSSID());
-  
     oled.setWiFiInfo(&WiFi);
 
   #endif
