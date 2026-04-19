@@ -33,6 +33,7 @@
 #include "esp_efuse_table.h"
 #include "common/hardware.h"
 #include "common/deviceIdentity.h"
+#include "common/secretEncryption.h"
 #include "common/oled.h"
 #include "common/frontPanel.h"
 #include "common/inputs.h"
@@ -57,6 +58,7 @@ bool httpServerIsActive = false; /* If the HTTP server has been started */
 bool _mqttWasConnected = false; /* Tracks prior MQTT connected state to detect disconnect transitions */
 AsyncWebServer httpServer(80);
 managerDeviceIdentity deviceIdentity; /* Device identity instance */
+SecretEncryption secretEncryption; /* File encryption instance */
 managerOled oled; /* OLED instance */
 managerFrontPanel frontPanel; /* Front panel instance */
 managerInputs inputs; /* Inputs collection */
@@ -204,6 +206,13 @@ void setup() {
 
   if(deviceIdentity.enabled == true){
 
+    if(!secretEncryption.begin(deviceIdentity.data.key, sizeof(deviceIdentity.data.key))){
+      eventLog.createEvent("Enc init fail", EventLog::LOG_LEVEL_ERROR);
+      log_e("SecretEncryption init failed");
+    } else {
+      memset(deviceIdentity.data.key, 0, sizeof(deviceIdentity.data.key));
+    }
+
     oled.setProductID(deviceIdentity.data.product_id);
     oled.setUUID(deviceIdentity.data.uuid);
 
@@ -346,6 +355,10 @@ void setup() {
   else{
     eventLog.createEvent("configFS mount fail", EventLog::LOG_LEVEL_ERROR);
     log_e("An Error has occurred while mounting configFS");
+  }
+
+  if(configFS.exists("/backup.upload_in_progress")){
+    configFS.remove("/backup.upload_in_progress");
   }
 
   refreshCertBundle();
@@ -866,15 +879,15 @@ void setControllerNameOnOLED(){
     JsonDocument filter;
     filter["name"] = true;
 
-    JsonDocument doc;
-
-    File file = configFS.open(filename, "r");
-
-    deserializeJson(doc, file, DeserializationOption::Filter(filter));
-
-    file.close();
-
-    oled.setName(doc["name"]);
+    String plaintext;
+    if(secretEncryption.decryptFromFile(configFS, filename, plaintext)){
+      JsonDocument doc;
+      deserializeJson(doc, plaintext, DeserializationOption::Filter(filter));
+      oled.setName(doc["name"]);
+    } else {
+      eventLog.createEvent("Config decrypt fail", EventLog::LOG_LEVEL_ERROR);
+      log_e("Failed to decrypt %s", filename.c_str());
+    }
 
   }
 
@@ -1239,8 +1252,12 @@ void http_handleControllers_GET(AsyncWebServerRequest *request){
     return;
   }
 
-  AsyncWebServerResponse *response = request->beginResponse(configFS, filename, "application/json");
-  request->send(response);
+  String plaintext;
+  if(!secretEncryption.decryptFromFile(configFS, filename, plaintext)){
+    http_error(request, "Unable to decrypt file");
+    return;
+  }
+  request->send(200, "application/json", plaintext);
 
 }
 
@@ -1309,16 +1326,17 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
     return;
   }
 
-  File file = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/" + request->pathArg(0) , "w");
-
-  if(!file){
-    file.close();
-    http_error(request, "Unable to open the file for writing");
+  if(!deviceIdentity.enabled){
+    http_conflict(request, "Device not provisioned");
     return;
   }
 
-  serializeJson(doc, file);
-  file.close();  
+  String jsonStr;
+  serializeJson(doc, jsonStr);
+  if(!secretEncryption.encryptToFile(configFS, CONFIGFS_PATH_CONTROLLERS + (String)"/" + request->pathArg(0), jsonStr)){
+    http_error(request, "Unable to open the file for writing");
+    return;
+  }
 
   request->send(204);
 }
@@ -1436,8 +1454,12 @@ void http_handleClients_GET(AsyncWebServerRequest *request){
     return;
   }
 
-  AsyncWebServerResponse *response = request->beginResponse(configFS, filename, "application/json");
-  request->send(response);
+  String plaintext;
+  if(!secretEncryption.decryptFromFile(configFS, filename, plaintext)){
+    http_error(request, "Unable to decrypt file");
+    return;
+  }
+  request->send(200, "application/json", plaintext);
 
 }
 
@@ -1453,19 +1475,22 @@ boolean authClientWithMacAddress(const char* uuid, const char* macAddress){
       return false;
     }
 
-    JsonDocument doc;
     JsonDocument filter;
     filter["mac"] = true;
 
-    File file = configFS.open(filename);
+    String plaintext;
+    if(!secretEncryption.decryptFromFile(configFS, filename, plaintext)){
+      eventLog.createEvent("Client decrypt fail", EventLog::LOG_LEVEL_ERROR);
+      log_e("Failed to decrypt %s", filename.c_str());
+      return false;
+    }
 
-    DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, plaintext, DeserializationOption::Filter(filter));
 
     if(error) {
       return false;
     }
-
-    file.close();
 
     if(strcmp(doc["mac"].as<std::string>().c_str(), macAddress) != 0){
       log_i("Rogue client detected Header: %s != document: %s", macAddress, doc["mac"].as<std::string>().c_str());
@@ -1542,16 +1567,17 @@ void http_handleClients_PUT(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  File file = configFS.open(CONFIGFS_PATH_CLIENTS + (String)"/" + request->pathArg(0) , "w");
-
-  if(!file){
-    file.close();
-    http_error(request, "Unable to open the file for writing");
+  if(!deviceIdentity.enabled){
+    http_conflict(request, "Device not provisioned");
     return;
   }
 
-  serializeJson(doc, file);
-  file.close();  
+  String jsonStr;
+  serializeJson(doc, jsonStr);
+  if(!secretEncryption.encryptToFile(configFS, CONFIGFS_PATH_CLIENTS + (String)"/" + request->pathArg(0), jsonStr)){
+    http_error(request, "Unable to open the file for writing");
+    return;
+  }
 
   request->send(204);
 }
@@ -1677,7 +1703,6 @@ void http_handleProvisioning_PUT(AsyncWebServerRequest *request){
 
   request->send(202);
 
-  JsonDocument doc;
   JsonDocument filter;
   filter["mac"] = true;
 
@@ -1686,19 +1711,29 @@ void http_handleProvisioning_PUT(AsyncWebServerRequest *request){
 
   while(file){
 
-      if(!file.isDirectory()){
-        DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
+    if(!file.isDirectory()){
+      String clientPath = CONFIGFS_PATH_CLIENTS + (String)"/" + file.name();
+      file.close();
 
-        if(error) {
-          log_e("deserializeJson() failed: %s", error.c_str());
-          continue;
+      String plaintext;
+      if(secretEncryption.decryptFromFile(configFS, clientPath, plaintext)){
+        JsonDocument doc;
+        DeserializationError error = deserializeJson(doc, plaintext, DeserializationOption::Filter(filter));
+        if(!error){
+          provisioningMode.addAllowedMac(doc["mac"].as<std::string>());
         }
-        provisioningMode.addAllowedMac(doc["mac"].as<std::string>());
+      } else {
+        eventLog.createEvent("Client decrypt fail", EventLog::LOG_LEVEL_ERROR);
+        log_e("Failed to decrypt %s", clientPath.c_str());
       }
+    } else {
+      file.close();
+    }
 
-      file = root.openNextFile();
+    file = root.openNextFile();
   }
 
+  root.close();
   provisioningMode.setActive();
 }
 
@@ -1730,7 +1765,6 @@ void eventHandler_rogueClient(const char* macAddress){
 /// @return The UUID string if found, empty string if not found
 String findClientUuidByMac(const char* mac){
 
-  JsonDocument doc;
   JsonDocument filter;
   filter["mac"] = true;
 
@@ -1740,26 +1774,38 @@ String findClientUuidByMac(const char* mac){
   while(file){
 
     if(!file.isDirectory()){
-      DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
+      String clientName = file.name();
+      String clientPath = CONFIGFS_PATH_CLIENTS + (String)"/" + clientName;
+      file.close();
 
-      if(!error){
-        String storedMac = doc["mac"].as<String>();
-        storedMac.toLowerCase();
-        String incomingMac = String(mac);
-        incomingMac.toLowerCase();
+      String plaintext;
+      if(secretEncryption.decryptFromFile(configFS, clientPath, plaintext)){
+        JsonDocument doc;
+        DeserializationError error = deserializeJson(doc, plaintext, DeserializationOption::Filter(filter));
 
-        if(storedMac == incomingMac){
-          String uuid = file.name();
-          file.close();
-          root.close();
-          return uuid;
+        if(!error){
+          String storedMac = doc["mac"].as<String>();
+          storedMac.toLowerCase();
+          String incomingMac = String(mac);
+          incomingMac.toLowerCase();
+
+          if(storedMac == incomingMac){
+            root.close();
+            return clientName;
+          }
         }
+      } else {
+        eventLog.createEvent("Client decrypt fail", EventLog::LOG_LEVEL_ERROR);
+        log_e("Failed to decrypt %s", clientPath.c_str());
       }
+    } else {
+      file.close();
     }
 
     file = root.openNextFile();
   }
 
+  root.close();
   return String();
 }
 
@@ -1856,8 +1902,13 @@ void http_handleProvisioningClient(AsyncWebServerRequest *request){
   provisioningMode.invalidateNonce();
 
   String filename = CONFIGFS_PATH_CLIENTS + (String)"/" + uuid;
-  AsyncWebServerResponse *response = request->beginResponse(configFS, filename, "application/json");
-  request->send(response);
+
+  String plaintext;
+  if(!secretEncryption.decryptFromFile(configFS, filename, plaintext)){
+    http_error(request, "Unable to decrypt file");
+    return;
+  }
+  request->send(200, "application/json", plaintext);
 }
 
 
@@ -1907,8 +1958,13 @@ void http_handleBackup_GET(AsyncWebServerRequest *request){
   }
 
   resetHTPServerUsage();
-  AsyncWebServerResponse *response = request->beginResponse(configFS, "/backup", "application/json");
-  request->send(response);
+
+  String plaintext;
+  if(!secretEncryption.decryptFromFile(configFS, "/backup", plaintext)){
+    http_error(request, "Unable to decrypt file");
+    return;
+  }
+  request->send(200, "application/json", plaintext);
 }
 
 
@@ -1928,6 +1984,10 @@ void http_handleBackup_PUT_body(AsyncWebServerRequest *request, uint8_t *data, s
     _backupUploadBytesWritten = 0;
 
     if(!request->hasHeader("visual-token") || !authToken.authenticate(request->header("visual-token").c_str())){
+      return;
+    }
+
+    if(!deviceIdentity.enabled){
       return;
     }
 
@@ -1975,11 +2035,38 @@ void http_handleBackup_PUT(AsyncWebServerRequest *request){
     return;
   }
 
-  if(configFS.exists("/backup")){
-    configFS.remove("/backup");
-  }
+  {
+    File tmp = configFS.open("/backup.upload_in_progress", "r");
+    if(!tmp){
+      http_error(request, "Unable to open the file for writing");
+      return;
+    }
 
-  configFS.rename("/backup.upload_in_progress", "/backup");
+    size_t sz = tmp.size();
+    uint8_t* buf = (uint8_t*)(psramFound() ? ps_malloc(sz) : malloc(sz));
+    if(!buf){
+      tmp.close();
+      configFS.remove("/backup.upload_in_progress");
+      http_error(request, "Out of memory");
+      return;
+    }
+
+    tmp.read(buf, sz);
+    tmp.close();
+    configFS.remove("/backup.upload_in_progress");
+
+    if(configFS.exists("/backup")){
+      configFS.remove("/backup");
+    }
+
+    bool ok = secretEncryption.encryptToFile(configFS, "/backup", buf, sz);
+    free(buf);
+
+    if(!ok){
+      http_error(request, "Unable to open the file for writing");
+      return;
+    }
+  }
 
   resetHTPServerUsage();
   request->send(204);
@@ -2529,11 +2616,15 @@ void setup_OtaFirmware(){
   JsonDocument filter;
   filter["ota"] = true;
 
+  String plaintext;
+  if(!secretEncryption.decryptFromFile(configFS, filename, plaintext)){
+    eventLog.createEvent("Config decrypt fail", EventLog::LOG_LEVEL_ERROR);
+    log_e("Failed to decrypt %s", filename.c_str());
+    return;
+  }
+
   JsonDocument doc;
-
-  File file = configFS.open(filename, "r");
-
-  DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
+  DeserializationError error = deserializeJson(doc, plaintext, DeserializationOption::Filter(filter));
 
   if(error) {
     char text[OLED_CHARACTERS_PER_LINE+1];
@@ -2782,11 +2873,15 @@ bool setup_outputs(String filename){
   filter_outputs__["type"] = true;
   filter_outputs__["enabled"] = true;
 
+  String plaintext;
+  if(!secretEncryption.decryptFromFile(configFS, filename, plaintext)){
+    eventLog.createEvent("Config decrypt fail", EventLog::LOG_LEVEL_ERROR);
+    log_e("Failed to decrypt %s", filename.c_str());
+    return false;
+  }
+
   JsonDocument doc; //Supports up to 32 ports
-
-  File file = configFS.open(filename, "r");
-
-  DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
+  DeserializationError error = deserializeJson(doc, plaintext, DeserializationOption::Filter(filter));
 
   if(error) {
     char text[OLED_CHARACTERS_PER_LINE+1];
@@ -2862,13 +2957,15 @@ bool setup_inputs(String filename){
   filter_ports_channels["offset"] = true;
   filter_ports_channels["actions"] = true;
 
+  String plaintext;
+  if(!secretEncryption.decryptFromFile(configFS, filename, plaintext)){
+    eventLog.createEvent("Config decrypt fail", EventLog::LOG_LEVEL_ERROR);
+    log_e("Failed to decrypt %s", filename.c_str());
+    return false;
+  }
+
   JsonDocument doc(&spiRamAllocator); //Supports up to 32 ports
-
-  File file = configFS.open(filename, "r");
-
-  DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
-
-  file.close();
+  DeserializationError error = deserializeJson(doc, plaintext, DeserializationOption::Filter(filter));
 
   if(error) {
     char text[OLED_CHARACTERS_PER_LINE+1];
@@ -3089,18 +3186,20 @@ void setupMQTT(){
     return;
   }
 
-  File file = configFS.open(filename, "r");
-
   JsonDocument filter;
   filter["name"] = true;
   filter["area"] = true;
   filter["mqtt"] = true;
 
+  String plaintext;
+  if(!secretEncryption.decryptFromFile(configFS, filename, plaintext)){
+    eventLog.createEvent("Config decrypt fail", EventLog::LOG_LEVEL_ERROR);
+    log_e("Failed to decrypt %s", filename.c_str());
+    return;
+  }
+
   JsonDocument doc;
-
-  DeserializationError error = deserializeJson(doc, file, DeserializationOption::Filter(filter));
-
-  file.close();
+  DeserializationError error = deserializeJson(doc, plaintext, DeserializationOption::Filter(filter));
 
   if(error) {
     char text[OLED_CHARACTERS_PER_LINE+1];
@@ -3372,11 +3471,15 @@ void mqtt_autoDiscovery_outputs(){
   filter_outputs__["icon"] = true;
   filter_outputs__["type"] = true;
 
-  JsonDocument controllerDoc(&spiRamAllocator); //Supports up to 32 ports
+  String plaintext;
+  if(!secretEncryption.decryptFromFile(configFS, CONFIGFS_PATH_CONTROLLERS + (String)"/" + deviceIdentity.data.uuid, plaintext)){
+    eventLog.createEvent("Config decrypt fail", EventLog::LOG_LEVEL_ERROR);
+    log_e("Failed to decrypt controller config in mqtt_autoDiscovery_outputs");
+    return;
+  }
 
-  File controllerFile = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/" + deviceIdentity.data.uuid, "r");
-  DeserializationError errorControllerFileDeserialization = deserializeJson(controllerDoc, controllerFile, DeserializationOption::Filter(controllerFilterDoc));
-  controllerFile.close();
+  JsonDocument controllerDoc(&spiRamAllocator); //Supports up to 32 ports
+  DeserializationError errorControllerFileDeserialization = deserializeJson(controllerDoc, plaintext, DeserializationOption::Filter(controllerFilterDoc));
 
   if(errorControllerFileDeserialization) {
     return;
@@ -4280,6 +4383,10 @@ void startHttpServer(){
 
     #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
+      if(configFS.exists("/backup.upload_in_progress")){
+        configFS.remove("/backup.upload_in_progress");
+      }
+
       httpServer.begin();
       httpServerIsActive = true;
 
@@ -4305,6 +4412,10 @@ void stopHttpServer(){
   }
 
   #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+
+    if(configFS.exists("/backup.upload_in_progress")){
+      configFS.remove("/backup.upload_in_progress");
+    }
 
     httpServer.end();
     httpServerIsActive = false;
