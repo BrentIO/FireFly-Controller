@@ -46,6 +46,14 @@ class TestBackup:
         r = requests.get(f"{base_url}/backup", headers=auth_headers)
         assert r.status_code == 200
 
+    def test_get_backup_content_matches_put(self, base_url, auth_headers):
+        r = requests.get(f"{base_url}/backup", headers=auth_headers)
+        assert r.json() == SAMPLE_BACKUP
+
+    def test_get_backup_returns_json_content_type(self, base_url, auth_headers):
+        r = requests.get(f"{base_url}/backup", headers=auth_headers)
+        assert "application/json" in r.headers.get("Content-Type", "")
+
     def test_delete_backup_returns_204(self, base_url, auth_headers):
         r = requests.delete(f"{base_url}/backup", headers=auth_headers)
         assert r.status_code == 204

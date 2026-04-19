@@ -40,6 +40,10 @@ class TestControllers:
         r = requests.get(f"{base_url}/api/controllers/{TEST_UUID}", headers=auth_headers)
         assert r.status_code == 200
 
+    def test_get_controller_returns_json_content_type(self, base_url, auth_headers):
+        r = requests.get(f"{base_url}/api/controllers/{TEST_UUID}", headers=auth_headers)
+        assert "application/json" in r.headers.get("Content-Type", "")
+
     def test_get_controller_has_correct_name(self, base_url, auth_headers):
         r = requests.get(f"{base_url}/api/controllers/{TEST_UUID}", headers=auth_headers)
         assert r.json().get("name") == CONTROLLER_PAYLOAD["name"]
