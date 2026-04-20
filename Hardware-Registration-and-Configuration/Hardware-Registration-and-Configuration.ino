@@ -827,6 +827,7 @@ void http_handleRegistration_POST(AsyncWebServerRequest *request, JsonVariant &d
   if (chip_info.features & CHIP_FEATURE_BT)         features.add("BT");
   if (chip_info.features & CHIP_FEATURE_EMB_PSRAM)  features.add("Embedded-PSRAM");
   if (chip_info.features & CHIP_FEATURE_IEEE802154) features.add("IEEE-802.15.4");
+  mcu["idf_version"] = esp_get_idf_version();
 
   char netMac[18] = {0};
   JsonArray network = payloadDoc["network"].to<JsonArray>();
@@ -849,6 +850,21 @@ void http_handleRegistration_POST(AsyncWebServerRequest *request, JsonVariant &d
   getMacAddress(ESP_MAC_ETH, netMac);
   netEth["interface"] = "ethernet";
   netEth["mac_address"] = netMac;
+
+  JsonArray partitions = payloadDoc["partitions"].to<JsonArray>();
+  esp_partition_iterator_t partIter = esp_partition_find(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_ANY, NULL);
+  if (partIter != NULL) {
+    do {
+      const esp_partition_t* p = esp_partition_get(partIter);
+      JsonObject jp = partitions.add<JsonObject>();
+      jp["type"]    = p->type;
+      jp["subtype"] = p->subtype;
+      jp["address"] = p->address;
+      jp["size"]    = p->size;
+      jp["label"]   = p->label;
+    } while ((partIter = esp_partition_next(partIter)));
+    esp_partition_iterator_release(partIter);
+  }
 
   String payload;
   serializeJson(payloadDoc, payload);
