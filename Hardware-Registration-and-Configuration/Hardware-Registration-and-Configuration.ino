@@ -828,6 +828,28 @@ void http_handleRegistration_POST(AsyncWebServerRequest *request, JsonVariant &d
   if (chip_info.features & CHIP_FEATURE_EMB_PSRAM)  features.add("Embedded-PSRAM");
   if (chip_info.features & CHIP_FEATURE_IEEE802154) features.add("IEEE-802.15.4");
 
+  char netMac[18] = {0};
+  JsonArray network = payloadDoc["network"].to<JsonArray>();
+  JsonObject netWifi = network.add<JsonObject>();
+  getMacAddress(ESP_MAC_WIFI_STA, netMac);
+  netWifi["interface"] = "wifi";
+  netWifi["mac_address"] = netMac;
+
+  JsonObject netAP = network.add<JsonObject>();
+  getMacAddress(ESP_MAC_WIFI_SOFTAP, netMac);
+  netAP["interface"] = "wifi_ap";
+  netAP["mac_address"] = netMac;
+
+  JsonObject netBT = network.add<JsonObject>();
+  getMacAddress(ESP_MAC_BT, netMac);
+  netBT["interface"] = "bluetooth";
+  netBT["mac_address"] = netMac;
+
+  JsonObject netEth = network.add<JsonObject>();
+  getMacAddress(ESP_MAC_ETH, netMac);
+  netEth["interface"] = "ethernet";
+  netEth["mac_address"] = netMac;
+
   String payload;
   serializeJson(payloadDoc, payload);
 
