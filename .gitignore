@@ -3,3 +3,4 @@ tests/results/
 artifacts
 .claude
 node_modules/
+Controller/ui/node_modules/
