@@ -85,27 +85,6 @@ jobs:
             head -n 10  ${{ github.workspace }}/${{ matrix.application }}/www/swagger.yaml
           fi
 
-      - name: Update UI version (version.json)
-        if: ${{ matrix.application == 'Hardware-Registration-and-Configuration' }}
-        run: |
-          BRANCH="${{ env.BRANCH }}"
-          COMMIT_HASH="${{ env.COMMIT_HASH }}"
-          VERSION="${{ env.VERSION }}"
-
-          if [ "${VERSION}" = "DEBUG" ]; then
-            UI_VERSION="${VERSION} (${COMMIT_HASH})"
-          else
-            UI_VERSION="${BRANCH} (${COMMIT_HASH})"
-          fi
-
-          jq --arg v "$UI_VERSION" '.ui = $v' \
-            "${{ github.workspace }}/${{ matrix.application }}/www/version.json" \
-            > version.json.tmp
-
-          mv version.json.tmp "${{ github.workspace }}/${{ matrix.application }}/www/version.json"
-
-          echo "Updated version.json:"
-          cat "${{ github.workspace }}/${{ matrix.application }}/www/version.json"
 
       - name: Generate controller_products in useDatabase.js from devices.yaml
         if: matrix.application == 'Controller'
