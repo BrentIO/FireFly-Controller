@@ -242,7 +242,7 @@ jobs:
         if: ${{ matrix.application == 'Controller' }}
         run: |
           cd $GITHUB_WORKSPACE/Controller/ui
-          npm ci
+          npm ci --legacy-peer-deps
           VITE_UI_VERSION="${{ env.BRANCH }} (${{ env.COMMIT_HASH }})" npm run build
           cp $GITHUB_WORKSPACE/Controller/swagger.yaml \
              $GITHUB_WORKSPACE/Controller/www/swagger.yaml
