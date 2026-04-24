@@ -35,8 +35,8 @@ export function useClients() {
     )
     if (assignedAsInput) return true
 
-    const extendedCount = await db.clients.where('extends').equals(id).count()
-    return extendedCount > 0
+    const all = await db.clients.toArray()
+    return all.some(c => c.extends === id)
   }
 
   async function getExtendedClientIds() {

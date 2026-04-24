@@ -1,8 +1,8 @@
 <template>
   <AppLayout>
-    <div class="flex items-center justify-between mb-6 print:mb-4">
+    <div class="flex flex-wrap items-center gap-3 justify-between mb-6 print:mb-4">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl">Controllers</h1>
-      <div class="flex gap-2 print:hidden">
+      <div class="flex gap-2 print:hidden flex-shrink-0">
         <button class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors" @click="checkConfig">
           Validate
         </button>
@@ -12,8 +12,8 @@
       </div>
     </div>
 
-    <div class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(22rem,1fr))]">
-      <div v-if="items.length === 0" class="text-gray-400 dark:text-gray-500 py-8">No controllers defined.</div>
+    <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+      <div v-if="items.length === 0" class="text-gray-400 dark:text-gray-500 py-8 col-span-full">No controllers defined.</div>
 
       <div v-for="ctrl in items" :key="ctrl.id"
         class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 break-inside-avoid">
@@ -32,12 +32,16 @@
 
         <!-- Auth / deploy section -->
         <div class="print:hidden border-t border-gray-100 dark:border-gray-800 pt-3 mt-3 space-y-2">
-          <div v-if="!sessions[ctrl.id]?.isAuthenticated" class="flex gap-2">
-            <input v-model="ipInputs[ctrl.id]" type="text" placeholder="192.168.1.x" class="flex-1 min-w-0 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <input v-model="tokenInputs[ctrl.id]" type="text" placeholder="Visual token" class="flex-1 min-w-0 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <button class="px-2 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex-shrink-0" @click="authenticate(ctrl.id)">Connect</button>
+          <div v-if="!sessions[ctrl.id]?.isAuthenticated" class="space-y-2">
+            <input v-model="ipInputs[ctrl.id]" type="text" placeholder="192.168.1.x"
+              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <div class="flex gap-2">
+              <input v-model="tokenInputs[ctrl.id]" type="text" placeholder="Visual token" maxlength="8"
+                class="flex-1 min-w-0 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <button class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex-shrink-0" @click="authenticate(ctrl.id)">Connect</button>
+            </div>
           </div>
-          <div v-else class="flex items-center gap-2">
+          <div v-else class="flex flex-wrap items-center gap-2">
             <span class="text-xs text-green-600 dark:text-green-400 font-medium">Connected · {{ sessions[ctrl.id].ip }}</span>
             <button class="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 underline" @click="logout(ctrl.id)">Disconnect</button>
             <button class="ml-auto px-2 py-1.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors" @click="deploy(ctrl)">Deploy</button>
@@ -57,18 +61,18 @@
             <form @submit.prevent="save" class="space-y-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name <span class="text-xs font-normal text-gray-400">(max 20 chars)</span></label>
-                <input v-model="form.name" type="text" maxlength="20" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input v-model="form.name" type="text" maxlength="20" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Area</label>
-                <select v-model.number="form.area" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select v-model.number="form.area" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">Select area…</option>
                   <option v-for="a in areas" :key="a.id" :value="a.id">{{ a.name }}</option>
                 </select>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Product</label>
-                <select v-model="form.product" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select v-model="form.product" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">Select product…</option>
                   <option v-for="p in products" :key="p.pid" :value="p.pid">{{ p.pid }}</option>
                 </select>
@@ -86,6 +90,34 @@
                 <button type="submit" class="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Save</button>
               </div>
             </form>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Validate results modal -->
+    <Teleport to="body">
+      <Transition enter-active-class="ease-out duration-200" enter-from-class="opacity-0" enter-to-class="opacity-100"
+                  leave-active-class="ease-in duration-150" leave-from-class="opacity-100" leave-to-class="opacity-0">
+        <div v-if="showValidateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" @click.self="showValidateModal = false">
+          <div class="w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6 max-h-[80vh] flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Validation Results</h3>
+              <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl leading-none" @click="showValidateModal = false">&times;</button>
+            </div>
+            <div class="overflow-y-auto flex-1 space-y-2">
+              <div v-if="validateResults.length === 0" class="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <span class="text-green-700 dark:text-green-400 font-medium text-sm">✓ Configuration is valid.</span>
+              </div>
+              <div v-for="(r, i) in validateResults" :key="i"
+                class="p-3 rounded-lg text-sm"
+                :class="r.type === 'error' ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300'">
+                <span class="font-medium mr-1">{{ r.type === 'error' ? '✗ Error:' : '⚠ Warning:' }}</span>{{ r.message }}
+              </div>
+            </div>
+            <div class="mt-4 flex justify-end">
+              <button class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors" @click="showValidateModal = false">Close</button>
+            </div>
           </div>
         </div>
       </Transition>
@@ -141,9 +173,11 @@ const { addToast } = useToast()
 
 const showModal = ref(false)
 const showEventLog = ref(false)
+const showValidateModal = ref(false)
 const editing = ref(null)
 const deleteTarget = ref(null)
 const eventLog = ref([])
+const validateResults = ref([])
 const emptyForm = () => ({ name: '', area: '', product: '', uuid: '' })
 const form = ref(emptyForm())
 
@@ -151,18 +185,27 @@ const ipInputs = reactive({})
 const tokenInputs = reactive({})
 const sessions = reactive({})
 
-function getSession(id) {
-  if (!sessions[id]) {
-    const s = useControllerSession(id)
-    sessions[id] = s.session
-    sessions[id]._ctrl = s
+// Separate non-reactive store for session controllers
+const sessionCtrls = {}
+
+function initSession(id) {
+  if (!sessionCtrls[id]) {
+    const ctrl = useControllerSession(id)
+    sessionCtrls[id] = ctrl
+    sessions[id] = ctrl.session
+    // Pre-populate IP input from stored session
+    if (ctrl.session.ip) ipInputs[id] = ctrl.session.ip
   }
-  return sessions[id]._ctrl
+}
+
+function getSessionCtrl(id) {
+  initSession(id)
+  return sessionCtrls[id]
 }
 
 onMounted(async () => {
   await Promise.all([load(), loadAreas()])
-  items.value.forEach(c => getSession(c.id))
+  items.value.forEach(c => initSession(c.id))
 })
 
 function openAdd() {
@@ -188,7 +231,7 @@ async function save() {
     }
     showModal.value = false
     await load()
-    items.value.forEach(c => getSession(c.id))
+    items.value.forEach(c => initSession(c.id))
   } catch (e) {
     addToast('error', `Failed to save: ${e.message}`)
   }
@@ -210,33 +253,33 @@ async function doDelete() {
 }
 
 async function authenticate(id) {
-  const ctrl = getSession(id)
+  const ctrl = getSessionCtrl(id)
   ctrl.setIp(ipInputs[id] ?? '')
   ctrl.setVisualToken(tokenInputs[id] ?? '')
   try {
     await ctrl.authenticate()
-    addToast('success', 'Connected successfully.')
+    addToast('success', 'Connected.')
   } catch (e) {
     addToast('error', `Connection failed: ${e.message}`)
   }
 }
 
 function logout(id) {
-  getSession(id).logout()
+  getSessionCtrl(id).logout()
 }
 
 async function deploy(ctrl) {
-  const session = getSession(ctrl.id)
+  const sessionCtrl = getSessionCtrl(ctrl.id)
   try {
     const payload = await buildControllerPayload(ctrl.id)
     const { controllerFetch } = await import('../composables/useApi')
-    const res = await controllerFetch(session.session.ip, `/controllers/${ctrl.uuid}`, {
+    const res = await controllerFetch(sessionCtrl.session.ip, `/controllers/${ctrl.uuid}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
-    }, session.session.visualToken)
+    }, sessionCtrl.session.visualToken)
     if (res.ok || res.status === 204) {
-      addToast('success', `Deployed to ${ctrl.name} successfully.`)
+      addToast('success', `Deployed to ${ctrl.name}.`)
     } else {
       addToast('error', `Deploy failed: HTTP ${res.status}`)
     }
@@ -246,15 +289,11 @@ async function deploy(ctrl) {
 }
 
 async function openEventLog(id) {
-  const session = getSession(id)
+  const sessionCtrl = getSessionCtrl(id)
   const { controllerFetch } = await import('../composables/useApi')
   try {
-    const res = await controllerFetch(session.session.ip, '/events', {}, session.session.visualToken)
-    if (res.ok) {
-      eventLog.value = await res.json()
-    } else {
-      eventLog.value = []
-    }
+    const res = await controllerFetch(sessionCtrl.session.ip, '/events', {}, sessionCtrl.session.visualToken)
+    eventLog.value = res.ok ? await res.json() : []
   } catch {
     eventLog.value = []
   }
@@ -263,10 +302,12 @@ async function openEventLog(id) {
 
 async function checkConfig() {
   const errors = await checkConfiguration()
-  if (errors.length === 0) {
-    addToast('success', 'Configuration is valid.')
-  } else {
-    errors.forEach(e => addToast('warning', e))
-  }
+  validateResults.value = errors.map(e => {
+    if (typeof e === 'string') {
+      return { type: e.toLowerCase().includes('error') ? 'error' : 'warning', message: e }
+    }
+    return { type: e.type || 'warning', message: e.message || String(e) }
+  })
+  showValidateModal.value = true
 }
 </script>

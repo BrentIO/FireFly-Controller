@@ -10,7 +10,7 @@
           </h1>
           <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ client.mac }}</p>
         </div>
-        <div class="flex gap-2 print:hidden">
+        <div class="flex gap-2 print:hidden flex-shrink-0">
           <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors" @click="openAddHid">
             Add Button/Switch
           </button>
@@ -90,16 +90,42 @@
                   </label>
                 </div>
               </div>
+
+              <!-- Color picker with swatches (buttons only) -->
               <div v-if="hidForm.type === 'button'">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color <span class="font-normal text-gray-400">(optional)</span></label>
-                <select v-model.number="hidForm.color" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="">No color</option>
-                  <option v-for="c in colors" :key="c.id" :value="c.id">{{ c.name }}</option>
-                </select>
+                <div class="relative" ref="colorDropdownRef">
+                  <button type="button"
+                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2.5 text-base text-left flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    @click="showColorDropdown = !showColorDropdown">
+                    <div v-if="selectedColor" class="w-5 h-5 rounded border border-gray-200 dark:border-gray-600 flex-shrink-0"
+                      :style="{ backgroundColor: selectedColor.hex }"></div>
+                    <span class="text-gray-900 dark:text-gray-100 flex-1">{{ selectedColor ? selectedColor.name : 'No color' }}</span>
+                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  <div v-if="showColorDropdown"
+                    class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg overflow-hidden">
+                    <button type="button"
+                      class="w-full px-3 py-2.5 text-base text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 text-left"
+                      @click="hidForm.color = ''; showColorDropdown = false">
+                      No color
+                    </button>
+                    <button type="button" v-for="c in colors" :key="c.id"
+                      class="w-full px-3 py-2.5 text-base hover:bg-gray-50 dark:hover:bg-gray-700 text-left flex items-center gap-3"
+                      @click="hidForm.color = c.id; showColorDropdown = false">
+                      <div class="w-5 h-5 rounded border border-gray-200 dark:border-gray-600 flex-shrink-0"
+                        :style="{ backgroundColor: c.hex }"></div>
+                      <span class="text-gray-900 dark:text-gray-100">{{ c.name }}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
+
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Switch Contact</label>
-                <select v-model="hidForm.switch_type" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select v-model="hidForm.switch_type" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="NORMALLY_OPEN">Normally Open (NO)</option>
                   <option value="NORMALLY_CLOSED">Normally Closed (NC)</option>
                 </select>
@@ -139,8 +165,13 @@ const { addToast } = useToast()
 
 const client = ref(null)
 const showHidModal = ref(false)
+const showColorDropdown = ref(false)
 const removeHidIdx = ref(null)
 const hidForm = ref({ type: 'button', color: '', switch_type: 'NORMALLY_OPEN', tags: [] })
+
+const selectedColor = computed(() =>
+  hidForm.value.color ? colors.value.find(c => c.id === hidForm.value.color) ?? null : null
+)
 
 onMounted(async () => {
   const id = Number(route.params.id)
@@ -163,24 +194,30 @@ function tagName(id) {
 
 function openAddHid() {
   hidForm.value = { type: 'button', color: '', switch_type: 'NORMALLY_OPEN', tags: [] }
+  showColorDropdown.value = false
   showHidModal.value = true
 }
 
 async function addHid() {
-  const hid = {
-    type: hidForm.value.type,
-    switch_type: hidForm.value.switch_type,
-    enabled: true,
-    actions: [],
-    tags: []
+  try {
+    const hid = {
+      type: hidForm.value.type,
+      switch_type: hidForm.value.switch_type,
+      enabled: true,
+      actions: [],
+      tags: []
+    }
+    if (hidForm.value.type === 'button' && hidForm.value.color) {
+      hid.color = Number(hidForm.value.color)
+    }
+    if (!client.value.hids) client.value.hids = []
+    client.value.hids.push(hid)
+    await saveHids()
+    showHidModal.value = false
+    addToast('success', 'Added.')
+  } catch (e) {
+    addToast('error', `Failed to add: ${e.message}`)
   }
-  if (hidForm.value.type === 'button' && hidForm.value.color) {
-    hid.color = Number(hidForm.value.color)
-  }
-  client.value.hids.push(hid)
-  await saveHids()
-  showHidModal.value = false
-  addToast('success', 'Added.')
 }
 
 async function toggleEnabled(idx) {
@@ -198,10 +235,15 @@ function confirmRemoveHid(idx) {
 }
 
 async function doRemoveHid() {
-  client.value.hids.splice(removeHidIdx.value, 1)
-  await saveHids()
-  removeHidIdx.value = null
-  addToast('success', 'Removed.')
+  try {
+    client.value.hids.splice(removeHidIdx.value, 1)
+    await saveHids()
+    addToast('success', 'Removed.')
+  } catch (e) {
+    addToast('error', `Failed to remove: ${e.message}`)
+  } finally {
+    removeHidIdx.value = null
+  }
 }
 
 async function saveHids() {

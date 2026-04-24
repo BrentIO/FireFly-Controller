@@ -7,10 +7,10 @@
       </button>
     </div>
 
-    <div class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(20rem,1fr))]">
-      <div v-if="items.length === 0" class="text-gray-400 dark:text-gray-500 py-8">No clients defined.</div>
+    <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+      <div v-if="sortedItems.length === 0" class="text-gray-400 dark:text-gray-500 py-8 col-span-full">No clients defined.</div>
 
-      <div v-for="client in items" :key="client.id"
+      <div v-for="client in sortedItems" :key="client.id"
         class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 break-inside-avoid">
         <div class="flex items-start justify-between gap-2 mb-3">
           <div>
@@ -23,7 +23,7 @@
             <button class="text-red-600 hover:text-red-700 dark:text-red-400 text-sm" @click="confirmDelete(client)">Delete</button>
           </div>
         </div>
-        <p class="text-xs text-gray-500 dark:text-gray-400">{{ client.hids?.length ?? 0 }} button(s)/switch(es)</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">{{ hidSummary(client.hids) }}</p>
       </div>
     </div>
 
@@ -37,15 +37,15 @@
             <form @submit.prevent="save" class="space-y-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Short ID <span class="text-xs font-normal text-gray-400">(max 8 chars)</span></label>
-                <input v-model="form.name" type="text" maxlength="8" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input v-model="form.name" type="text" maxlength="8" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description <span class="text-xs font-normal text-gray-400">(max 20 chars)</span></label>
-                <input v-model="form.description" type="text" maxlength="20" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input v-model="form.description" type="text" maxlength="20" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Area</label>
-                <select v-model.number="form.area" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select v-model.number="form.area" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">Select area…</option>
                   <option v-for="a in areas" :key="a.id" :value="a.id">{{ a.name }}</option>
                 </select>
@@ -55,9 +55,10 @@
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">MAC Address</label>
                   <button type="button" class="text-xs text-blue-600 dark:text-blue-400 hover:underline" @click="generateMac">Generate</button>
                 </div>
-                <input v-model="form.mac" type="text" required pattern="[0-9A-Fa-f]{2}[:-]([0-9A-Fa-f]{2}[:-]){4}[0-9A-Fa-f]{2}"
-                  placeholder="AA:BB:CC:DD:EE:FF"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input v-model="form.mac" type="text" placeholder="AA:BB:CC:DD:EE:FF"
+                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  :class="macError ? 'border-red-400 focus:ring-red-400' : ''" />
+                <p v-if="macError" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ macError }}</p>
               </div>
               <div>
                 <div class="flex items-center justify-between mb-1">
@@ -84,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
@@ -93,28 +94,52 @@ import { useAreas } from '../composables/useAreas'
 import { useToast } from '../composables/useToast'
 import { randomUUID } from '../composables/useValidators'
 
+const MAC_RE = /^[0-9A-Fa-f]{2}[:-]([0-9A-Fa-f]{2}[:-]){4}[0-9A-Fa-f]{2}$/
+
 const { items, load, create, remove, isInUse } = useClients()
 const { items: areas, load: loadAreas } = useAreas()
 const { addToast } = useToast()
 
 const showModal = ref(false)
 const deleteTarget = ref(null)
+const macError = ref('')
 const emptyForm = () => ({ name: '', description: '', area: '', mac: '', uuid: '' })
 const form = ref(emptyForm())
 
+const sortedItems = computed(() =>
+  [...items.value].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+)
+
 onMounted(() => Promise.all([load(), loadAreas()]))
+
+function hidSummary(hids) {
+  const all = hids || []
+  const buttons = all.filter(h => h.type !== 'switch').length
+  const switches = all.filter(h => h.type === 'switch').length
+  const parts = []
+  if (buttons > 0) parts.push(`${buttons} ${buttons === 1 ? 'button' : 'buttons'}`)
+  if (switches > 0) parts.push(`${switches} ${switches === 1 ? 'switch' : 'switches'}`)
+  return parts.length ? parts.join(', ') : 'No buttons or switches'
+}
 
 function openAdd() {
   form.value = emptyForm()
+  macError.value = ''
   showModal.value = true
 }
 
 function generateMac() {
   const hex = () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0').toUpperCase()
   form.value.mac = [hex(), hex(), hex(), hex(), hex(), hex()].join(':')
+  macError.value = ''
 }
 
 async function save() {
+  macError.value = ''
+  if (!MAC_RE.test(form.value.mac)) {
+    macError.value = 'Enter a valid MAC address (e.g. AA:BB:CC:DD:EE:FF)'
+    return
+  }
   try {
     await create(form.value)
     addToast('success', 'Client added.')
@@ -125,11 +150,15 @@ async function save() {
 }
 
 async function confirmDelete(client) {
-  if (await isInUse(client.id)) {
-    addToast('warning', `Client "${client.name}" is assigned to a controller input and cannot be deleted.`)
-    return
+  try {
+    if (await isInUse(client.id)) {
+      addToast('warning', `Client "${client.name}" is assigned to a controller input and cannot be deleted.`)
+      return
+    }
+    deleteTarget.value = client
+  } catch (e) {
+    addToast('error', `Could not check usage: ${e.message}`)
   }
-  deleteTarget.value = client
 }
 
 async function doDelete() {
