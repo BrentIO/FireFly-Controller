@@ -110,19 +110,18 @@ jobs:
       - name: Generate controller_products in useDatabase.js from devices.yaml
         if: matrix.application == 'Controller'
         run: |
-          PRODUCTS=$(yq -o=json ${{ github.workspace }}/devices.yaml \
-            | jq -c '[.devices[] | select(.status != "RETIRED") | {pid: .product_id, inputs: {count: .inputs_count}, outputs: {count: .outputs_count}}]')
-          # Format as JS array literal and replace the const in useDatabase.js
-          PRODUCTS_JS=$(echo "$PRODUCTS" | jq -r 'map("  { pid: \(.pid | @json), inputs: { count: \(.inputs.count) }, outputs: { count: \(.outputs.count) } }") | join(",\n")')
+          PRODUCTS_JS=$(yq -o=json ${{ github.workspace }}/devices.yaml \
+            | jq -r '[.devices[] | select(.status != "RETIRED") | "  { pid: \(.product_id | @json), inputs: { count: \(.inputs_count) }, outputs: { count: \(.outputs_count) } }"] | join(",\n")')
           DB_FILE="${{ github.workspace }}/Controller/ui/src/composables/useDatabase.js"
-          # Replace everything between "const defaultControllerProducts = [" and the closing "]"
-          python3 - <<PYEOF
-          import re
-          with open("$DB_FILE", "r") as f:
+          PRODUCTS_JS="$PRODUCTS_JS" DB_FILE="$DB_FILE" python3 - <<'PYEOF'
+          import re, os
+          products_js = os.environ["PRODUCTS_JS"]
+          db_file = os.environ["DB_FILE"]
+          with open(db_file, "r") as f:
             content = f.read()
-          new_block = "const defaultControllerProducts = [\n${PRODUCTS_JS}\n]"
+          new_block = "const defaultControllerProducts = [\n" + products_js + "\n]"
           content = re.sub(r"const defaultControllerProducts = \[.*?\]", new_block, content, flags=re.DOTALL)
-          with open("$DB_FILE", "w") as f:
+          with open(db_file, "w") as f:
             f.write(content)
           PYEOF
           echo "Updated defaultControllerProducts:"
