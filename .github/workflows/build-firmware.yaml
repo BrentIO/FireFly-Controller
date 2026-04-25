@@ -348,17 +348,13 @@ jobs:
 
   trigger-configurator-ui:
     needs: ConfigureAndBuild
-    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.target_env != 'production' || github.ref_type == 'tag') }}
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Dispatch deploy-configurator-ui to FireFly-Cloud
-        env:
-          GH_TOKEN: ${{ secrets.FIREFLY_CLOUD_TOKEN }}
-        run: |
-          jq -nc --arg env "${{ inputs.target_env }}" --arg ref "${{ github.ref_name }}" \
-            '{"event_type":"deploy-configurator-ui","client_payload":{"target_env":$env,"ref":$ref}}' | \
-            gh api repos/BrentIO/FireFly-Cloud/dispatches -X POST --input -
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/trigger-configurator-ui.yaml
+    with:
+      target_env: ${{ inputs.target_env }}
+      ref: ${{ github.ref_name }}
+    secrets:
+      FIREFLY_CLOUD_TOKEN: ${{ secrets.FIREFLY_CLOUD_TOKEN }}
 
   sync-library-docs:
     needs: ConfigureAndBuild
