@@ -9,11 +9,6 @@ on:
         options:
           - dev
           - production
-      ref:
-        type: string
-        description: "FireFly-Controller branch or tag to deploy (default: current)"
-        required: false
-        default: ''
   workflow_call:
     inputs:
       target_env:
