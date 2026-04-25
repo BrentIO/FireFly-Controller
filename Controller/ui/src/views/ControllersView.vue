@@ -38,14 +38,14 @@
             <div class="flex gap-2">
               <input v-model="tokenInputs[ctrl.id]" type="text" placeholder="Visual token" maxlength="8"
                 class="flex-1 min-w-0 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <button class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex-shrink-0" @click="authenticate(ctrl.id)">Connect</button>
+              <button class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg transition-colors flex-shrink-0" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-700'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="authenticate(ctrl.id)">Connect</button>
             </div>
           </div>
           <div v-else class="flex flex-wrap items-center gap-2">
             <span class="text-xs text-green-600 dark:text-green-400 font-medium">Connected · {{ sessions[ctrl.id].ip }}</span>
             <button class="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 underline" @click="logout(ctrl.id)">Disconnect</button>
-            <button class="ml-auto px-2 py-1.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors" @click="deploy(ctrl)">Deploy</button>
-            <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="openEventLog(ctrl.id)">Events</button>
+            <button class="ml-auto px-2 py-1.5 text-xs font-medium text-white bg-amber-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-amber-700'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="deploy(ctrl)">Deploy</button>
+            <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="openEventLog(ctrl.id)">Events</button>
           </div>
         </div>
       </div>
@@ -166,6 +166,7 @@ import { useControllerSession } from '../composables/useControllerSession'
 import { buildControllerPayload, checkConfiguration } from '../composables/usePayloads'
 import { useToast } from '../composables/useToast'
 import { randomUUID } from '../composables/useValidators'
+import { isCloudMode } from '../composables/useCloudMode'
 
 const { items, products, load, create, update, remove } = useControllers()
 const { items: areas, load: loadAreas } = useAreas()
