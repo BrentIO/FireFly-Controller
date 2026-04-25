@@ -303,6 +303,10 @@ async function openEventLog(id) {
 
 async function checkConfig() {
   const errors = await checkConfiguration()
+  if (!errors.length) {
+    addToast('success', 'Configuration is valid.')
+    return
+  }
   validateResults.value = errors.map(e => {
     if (typeof e === 'string') {
       return { type: e.toLowerCase().includes('error') ? 'error' : 'warning', message: e }
