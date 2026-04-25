@@ -25,7 +25,13 @@
             <td class="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{{ b.name }}</td>
             <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400">{{ b.amperage }}</td>
             <td class="px-4 py-3 text-right">
-              <span :class="b.pct > 80 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-600 dark:text-gray-400'">
+              <span :class="utilizationClass(b.pct)" class="inline-flex items-center justify-end gap-1">
+                <svg v-if="b.pct > 60 && b.pct <= 80" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 shrink-0">
+                  <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                </svg>
+                <svg v-else-if="b.pct > 80" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 shrink-0">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                </svg>
                 {{ b.loadA }}A / {{ b.pct }}%
               </span>
             </td>
@@ -48,7 +54,7 @@
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
               <input v-model="form.name" type="text" maxlength="30" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amperage Rating</label>
-              <input v-model.number="form.amperage" type="number" min="1" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
+              <input v-model.number="form.amperage" type="number" min="1" max="100" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
               <div class="flex gap-3 justify-end">
                 <button type="button" class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="showModal = false">Cancel</button>
                 <button type="submit" class="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Save</button>
@@ -110,14 +116,19 @@ function openEdit(b) {
   showModal.value = true
 }
 
+function utilizationClass(pct) {
+  if (pct >= 100) return 'text-fuchsia-600 dark:text-fuchsia-400 font-semibold'
+  if (pct > 80) return 'text-red-600 dark:text-red-400 font-semibold'
+  if (pct > 60) return 'text-yellow-500 dark:text-yellow-400 font-semibold'
+  return 'text-gray-600 dark:text-gray-400'
+}
+
 async function save() {
   try {
     if (editing.value) {
       await update(editing.value.id, form.value)
-      addToast('success', 'Breaker updated.')
     } else {
       await create(form.value)
-      addToast('success', 'Breaker added.')
     }
     showModal.value = false
   } catch (e) {
@@ -136,7 +147,6 @@ async function confirmDelete(b) {
 async function doDelete() {
   try {
     await remove(deleteTarget.value.id)
-    addToast('success', 'Breaker deleted.')
   } catch (e) {
     addToast('error', `Failed to delete: ${e.message}`)
   } finally {
