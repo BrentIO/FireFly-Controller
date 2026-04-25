@@ -1,5 +1,4 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import LoginView from '../views/LoginView.vue'
 import ControllersView from '../views/ControllersView.vue'
 import ClientsView from '../views/ClientsView.vue'
 import ClientDetailView from '../views/ClientDetailView.vue'
@@ -22,7 +21,6 @@ import ControlCircuitsView from '../views/reports/ControlCircuitsView.vue'
 
 const routes = [
   { path: '/', redirect: '/controllers' },
-  { path: '/login', component: LoginView, meta: { public: true } },
   { path: '/controllers', component: ControllersView },
   { path: '/clients', component: ClientsView },
   { path: '/clients/:id', component: ClientDetailView },
@@ -49,9 +47,5 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to) => {
-  if (to.meta.public) return true
-  if (!sessionStorage.getItem('visual_token')) return '/login'
-})
 
 export default router

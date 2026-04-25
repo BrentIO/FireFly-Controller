@@ -15,11 +15,6 @@ export async function apiFetch(path, options = {}) {
       signal: ctrl.signal
     })
     clearTimeout(id)
-    if (res.status === 401) {
-      sessionStorage.removeItem('visual_token')
-      const { default: router } = await import('../router')
-      router.push('/login')
-    }
     return res
   } catch (err) {
     clearTimeout(id)
