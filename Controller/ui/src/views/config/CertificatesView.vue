@@ -2,6 +2,12 @@
   <AppLayout>
     <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 print:text-xl">Certificates</h1>
 
+    <!-- Info box -->
+    <div class="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 text-sm text-amber-800 dark:text-amber-300">
+      <p class="font-medium mb-1">Most users should not upload a certificate.</p>
+      <p>By default, the system validates HTTPS OTA connections using the Mozilla root CA bundle (~130 CAs). Uploading a certificate <strong>replaces</strong> the entire bundle — only uploaded certificates will be trusted. Only upload if your OTA server uses a CA not included in the Mozilla bundle.</p>
+    </div>
+
     <!-- Drop zone -->
     <div
       class="mb-6 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 p-8 text-center cursor-pointer hover:border-blue-400 transition-colors print:hidden"
