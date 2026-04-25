@@ -13,13 +13,13 @@ export function useClients() {
   }
 
   async function create(data) {
-    const id = await db.clients.add({ ...data, hids: [] })
+    const id = await db.clients.add(JSON.parse(JSON.stringify({ ...data, hids: [] })))
     await load()
     return id
   }
 
   async function update(id, data) {
-    await db.clients.update(id, data)
+    await db.clients.update(id, JSON.parse(JSON.stringify(data)))
     await load()
   }
 

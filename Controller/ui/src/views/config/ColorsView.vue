@@ -23,7 +23,7 @@
           <tr v-if="items.length === 0">
             <td colspan="3" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">No colors defined.</td>
           </tr>
-          <tr v-for="color in items" :key="color.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+          <tr v-for="color in sortedColors" :key="color.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
             <td class="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{{ color.name }}</td>
             <td class="px-4 py-3">
               <div class="w-8 h-8 rounded border border-gray-300 dark:border-gray-600" :style="{ backgroundColor: color.hex }" :title="color.hex"></div>
@@ -73,7 +73,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AppLayout from '../../components/AppLayout.vue'
 import ConfirmModal from '../../components/ConfirmModal.vue'
 import { useColors } from '../../composables/useColors'
@@ -81,6 +81,10 @@ import { useToast } from '../../composables/useToast'
 
 const { items, load, create, update, remove } = useColors()
 const { addToast } = useToast()
+
+const sortedColors = computed(() =>
+  [...items.value].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+)
 
 const showModal = ref(false)
 const editing = ref(null)
@@ -105,10 +109,8 @@ async function save() {
   try {
     if (editing.value) {
       await update(editing.value.id, form.value)
-      addToast('success', 'Color updated.')
     } else {
       await create(form.value)
-      addToast('success', 'Color added.')
     }
     showModal.value = false
   } catch (e) {
@@ -123,7 +125,6 @@ function confirmDelete(color) {
 async function doDelete() {
   try {
     await remove(deleteTarget.value.id)
-    addToast('success', 'Color deleted.')
   } catch (e) {
     addToast('error', `Failed to delete: ${e.message}`)
   } finally {

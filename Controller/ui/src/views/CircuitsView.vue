@@ -23,7 +23,7 @@
         </div>
         <dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mt-3">
           <dt class="text-gray-500 dark:text-gray-400">Area</dt><dd class="text-gray-900 dark:text-gray-100">{{ c.areaName }}</dd>
-          <dt class="text-gray-500 dark:text-gray-400">Breaker</dt><dd class="text-gray-900 dark:text-gray-100">{{ c.breakerName }}</dd>
+          <dt class="text-gray-500 dark:text-gray-400">Breaker</dt><dd class="text-gray-900 dark:text-gray-100 truncate">{{ c.breakerName }}</dd>
           <dt class="text-gray-500 dark:text-gray-400">Relay</dt><dd class="text-gray-900 dark:text-gray-100">{{ c.relayName }}</dd>
           <dt class="text-gray-500 dark:text-gray-400">Load</dt><dd class="text-gray-900 dark:text-gray-100">{{ c.load_amperage }}A</dd>
         </dl>
@@ -78,7 +78,7 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Load (Amps)</label>
-                <input v-model.number="form.load_amperage" type="number" min="0" step="0.5" required
+                <input v-model.number="form.load_amperage" type="number" min="1" max="100" step="0.5" required
                   class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div class="flex gap-3 justify-end pt-2">
@@ -148,10 +148,8 @@ async function save() {
   try {
     if (editing.value) {
       await update(editing.value.id, form.value)
-      addToast('success', 'Circuit updated.')
     } else {
       await create(form.value)
-      addToast('success', 'Circuit added.')
     }
     showModal.value = false
   } catch (e) {
@@ -170,7 +168,6 @@ async function confirmDelete(c) {
 async function doDelete() {
   try {
     await remove(deleteTarget.value.id)
-    addToast('success', 'Circuit deleted.')
   } catch (e) {
     addToast('error', `Failed to delete: ${e.message}`)
   } finally {

@@ -106,9 +106,6 @@
               <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl leading-none" @click="showValidateModal = false">&times;</button>
             </div>
             <div class="overflow-y-auto flex-1 space-y-2">
-              <div v-if="validateResults.length === 0" class="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <span class="text-green-700 dark:text-green-400 font-medium text-sm">✓ Configuration is valid.</span>
-              </div>
               <div v-for="(r, i) in validateResults" :key="i"
                 class="p-3 rounded-lg text-sm"
                 :class="r.type === 'error' ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300'">
@@ -302,6 +299,7 @@ async function openEventLog(id) {
 }
 
 async function checkConfig() {
+  validateResults.value = []
   const errors = await checkConfiguration()
   if (!errors.length) {
     addToast('success', 'Configuration is valid.')

@@ -17,23 +17,10 @@
 
       <div class="flex flex-col lg:flex-row gap-6">
 
-        <!-- Switch plate preview -->
-        <div class="flex-shrink-0 flex justify-center lg:justify-start print:hidden">
-          <div class="w-24">
-            <p class="text-xs text-center text-gray-500 dark:text-gray-400 mb-2">Preview</p>
-            <div class="bg-gray-700 rounded-xl p-2 border-2 border-gray-500 shadow-lg flex flex-col gap-1.5 min-h-16">
-              <div v-if="!client.hids?.length" class="flex items-center justify-center py-4">
-                <span class="text-xs text-gray-400">—</span>
-              </div>
-              <div v-for="(hid, i) in client.hids" :key="i"
-                class="rounded h-10 flex items-center justify-between px-2 border border-black/30"
-                :style="hid.color ? { backgroundColor: colorHex(hid.color) } : {}"
-                :class="[!hid.color ? 'bg-gray-500' : '', hid.enabled === false ? 'opacity-40' : '']">
-                <span class="text-xs font-bold text-white drop-shadow">{{ i + 1 }}</span>
-                <span class="text-xs text-white/70 drop-shadow">{{ hid.type === 'switch' ? 'S' : 'B' }}</span>
-              </div>
-            </div>
-          </div>
+        <!-- Switch plate SVG preview -->
+        <div class="flex-shrink-0 flex flex-col items-center lg:items-start print:hidden">
+          <p class="text-xs text-center text-gray-500 dark:text-gray-400 mb-2">Preview</p>
+          <ClientSvg :hids="client.hids || []" :colors="colors" />
         </div>
 
         <!-- HID table -->
@@ -205,11 +192,7 @@
                       <option value="LONG">Long Press</option>
                     </select>
                     <select v-model="actionDraft.action" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      <option value="TOGGLE">Toggle</option>
-                      <option value="INCREASE">Increase</option>
-                      <option value="DECREASE">Decrease</option>
-                      <option value="INCREASE_MAXIMUM">Maximum</option>
-                      <option value="DECREASE_MAXIMUM">Minimum</option>
+                      <option v-for="opt in availableActions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                     </select>
                   </div>
                   <button type="button"
@@ -239,10 +222,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
+import ClientSvg from '../components/ClientSvg.vue'
 import { useClients } from '../composables/useClients'
 import { useColors } from '../composables/useColors'
 import { useTags } from '../composables/useTags'
@@ -254,7 +238,7 @@ const route = useRoute()
 const { get, update } = useClients()
 const { items: colors, load: loadColors } = useColors()
 const { items: tags, load: loadTags } = useTags()
-const { items: circuits, load: loadCircuits } = useCircuits()
+const { items: circuits, relayModels, load: loadCircuits } = useCircuits()
 const { addToast } = useToast()
 
 const client = ref(null)
@@ -273,6 +257,38 @@ const actionDraft = ref({ circuit: '', change_state: 'SHORT', action: 'TOGGLE' }
 const selectedColor = computed(() =>
   hidForm.value.color ? colors.value.find(c => c.id === hidForm.value.color) ?? null : null
 )
+
+const availableActions = computed(() => {
+  const circuitId = Number(actionDraft.value.circuit)
+  if (!circuitId) return allActions
+  const circuit = circuits.value.find(c => c.id === circuitId)
+  if (!circuit) return allActions
+  const rm = relayModels.value.find(r => r.id === circuit.relay_model)
+  if (!rm) return allActions
+  if (rm.type === 'BINARY') return [{ value: 'TOGGLE', label: 'Toggle' }]
+  if (rm.type === 'VARIABLE') return [
+    { value: 'INCREASE', label: 'Increase' },
+    { value: 'DECREASE', label: 'Decrease' },
+    { value: 'INCREASE_MAXIMUM', label: 'Maximum' },
+    { value: 'DECREASE_MAXIMUM', label: 'Minimum' }
+  ]
+  return allActions
+})
+
+const allActions = [
+  { value: 'TOGGLE', label: 'Toggle' },
+  { value: 'INCREASE', label: 'Increase' },
+  { value: 'DECREASE', label: 'Decrease' },
+  { value: 'INCREASE_MAXIMUM', label: 'Maximum' },
+  { value: 'DECREASE_MAXIMUM', label: 'Minimum' }
+]
+
+watch(() => actionDraft.value.circuit, () => {
+  const valid = availableActions.value.some(a => a.value === actionDraft.value.action)
+  if (!valid && availableActions.value.length > 0) {
+    actionDraft.value.action = availableActions.value[0].value
+  }
+})
 
 onMounted(async () => {
   const id = Number(route.params.id)
@@ -317,7 +333,7 @@ function openEdit(idx) {
     color: hid.color ?? '',
     switch_type: hid.switch_type ?? 'NORMALLY_OPEN',
     enabled: hid.enabled !== false,
-    tags: [...(hid.tags ?? [])],
+    tags: Array.isArray(hid.tags) ? [...hid.tags] : [],
     actions: JSON.parse(JSON.stringify(hid.actions ?? []))
   }
   actionDraft.value = { circuit: '', change_state: 'SHORT', action: 'TOGGLE' }
@@ -328,54 +344,63 @@ function openEdit(idx) {
 
 function addAction() {
   if (!actionDraft.value.circuit) return
-  hidForm.value.actions.push({
-    circuit: Number(actionDraft.value.circuit),
-    change_state: actionDraft.value.change_state,
-    action: actionDraft.value.action
-  })
+  hidForm.value.actions = [
+    ...hidForm.value.actions,
+    {
+      circuit: Number(actionDraft.value.circuit),
+      change_state: String(actionDraft.value.change_state),
+      action: String(actionDraft.value.action)
+    }
+  ]
   actionDraft.value.circuit = ''
 }
 
 function removeAction(i) {
-  hidForm.value.actions.splice(i, 1)
+  hidForm.value.actions = hidForm.value.actions.filter((_, idx) => idx !== i)
 }
 
 async function submitHid() {
   const isAdd = editIdx.value === null
   try {
     const hid = {
-      type: hidForm.value.type,
-      switch_type: hidForm.value.switch_type,
-      enabled: hidForm.value.enabled,
-      tags: [...hidForm.value.tags],
-      actions: JSON.parse(JSON.stringify(hidForm.value.actions))
+      type: String(hidForm.value.type),
+      switch_type: String(hidForm.value.switch_type),
+      enabled: Boolean(hidForm.value.enabled),
+      tags: hidForm.value.tags.map(id => Number(id)),
+      actions: hidForm.value.actions.map(a => ({
+        circuit: Number(a.circuit),
+        change_state: String(a.change_state),
+        action: String(a.action)
+      }))
     }
     if (hidForm.value.type === 'button' && hidForm.value.color) {
       hid.color = Number(hidForm.value.color)
     }
-    const newHids = JSON.parse(JSON.stringify(client.value.hids ?? []))
+    const existing = JSON.parse(JSON.stringify(client.value.hids ?? []))
     if (isAdd) {
-      newHids.push(hid)
+      existing.push(hid)
     } else {
-      newHids[editIdx.value] = hid
+      existing[editIdx.value] = hid
     }
-    await update(client.value.id, { hids: newHids })
-    client.value.hids = newHids
+    await update(client.value.id, { hids: existing })
+    client.value.hids = existing
     showHidModal.value = false
-    addToast('success', isAdd ? 'Added.' : 'Saved.')
   } catch (e) {
     addToast('error', `Failed to save: ${e.message}`)
   }
 }
 
 async function toggleEnabled(idx) {
-  client.value.hids[idx].enabled = client.value.hids[idx].enabled !== false ? false : true
-  await saveHids()
+  const newHids = JSON.parse(JSON.stringify(client.value.hids))
+  newHids[idx].enabled = newHids[idx].enabled !== false ? false : true
+  await update(client.value.id, { hids: newHids })
+  client.value.hids = newHids
 }
 
 async function moveHid(from, to) {
-  client.value.hids = moveArrayItem(client.value.hids, from, to)
-  await saveHids()
+  const newHids = JSON.parse(JSON.stringify(moveArrayItem(client.value.hids, from, to)))
+  await update(client.value.id, { hids: newHids })
+  client.value.hids = newHids
 }
 
 function confirmRemoveHid(idx) {
@@ -384,17 +409,14 @@ function confirmRemoveHid(idx) {
 
 async function doRemoveHid() {
   try {
-    client.value.hids.splice(removeHidIdx.value, 1)
-    await saveHids()
-    addToast('success', 'Removed.')
+    const newHids = JSON.parse(JSON.stringify(client.value.hids))
+    newHids.splice(removeHidIdx.value, 1)
+    await update(client.value.id, { hids: newHids })
+    client.value.hids = newHids
   } catch (e) {
     addToast('error', `Failed to remove: ${e.message}`)
   } finally {
     removeHidIdx.value = null
   }
-}
-
-async function saveHids() {
-  await update(client.value.id, { hids: JSON.parse(JSON.stringify(client.value.hids)) })
 }
 </script>

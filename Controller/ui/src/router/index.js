@@ -16,6 +16,7 @@ import TagsView from '../views/config/TagsView.vue'
 import WifiView from '../views/config/WifiView.vue'
 import ImportView from '../views/config/ImportView.vue'
 import ResetView from '../views/config/ResetView.vue'
+import RelayTypesView from '../views/config/RelayTypesView.vue'
 import BomView from '../views/reports/BomView.vue'
 import ControlCircuitsView from '../views/reports/ControlCircuitsView.vue'
 
@@ -38,6 +39,7 @@ const routes = [
   { path: '/config/wifi', component: WifiView },
   { path: '/config/import', component: ImportView },
   { path: '/config/reset', component: ResetView },
+  { path: '/config/relay-types', component: RelayTypesView },
   { path: '/reports/bom', component: BomView },
   { path: '/reports/control-circuits', component: ControlCircuitsView }
 ]

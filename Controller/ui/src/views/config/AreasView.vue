@@ -103,10 +103,8 @@ async function save() {
   try {
     if (editing.value) {
       await update(editing.value.id, form.value)
-      addToast('success', 'Area updated.')
     } else {
       await create(form.value)
-      addToast('success', 'Area added.')
     }
     showModal.value = false
   } catch (e) {
@@ -125,7 +123,6 @@ async function confirmDelete(area) {
 async function doDelete() {
   try {
     await remove(deleteTarget.value.id)
-    addToast('success', 'Area deleted.')
   } catch (e) {
     addToast('error', `Failed to delete: ${e.message}`)
   } finally {

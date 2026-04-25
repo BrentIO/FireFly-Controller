@@ -96,10 +96,8 @@ async function save() {
   try {
     if (editing.value) {
       await update(editing.value.id, form.value)
-      addToast('success', 'Tag updated.')
     } else {
       await create(form.value)
-      addToast('success', 'Tag added.')
     }
     showModal.value = false
   } catch (e) {
@@ -118,7 +116,6 @@ async function confirmDelete(tag) {
 async function doDelete() {
   try {
     await remove(deleteTarget.value.id)
-    addToast('success', 'Tag deleted.')
   } catch (e) {
     addToast('error', `Failed to delete: ${e.message}`)
   } finally {

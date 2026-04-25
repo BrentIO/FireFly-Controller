@@ -147,6 +147,7 @@ const configItems = [
   { path: '/config/icons', label: 'Icons' },
   { path: '/config/mqtt', label: 'MQTT' },
   { path: '/config/ota', label: 'OTA Updates' },
+  { path: '/config/relay-types', label: 'Relay Types' },
   { path: '/config/tags', label: 'Tags' },
   { path: '/config/wifi', label: 'WiFi' }
 ]
