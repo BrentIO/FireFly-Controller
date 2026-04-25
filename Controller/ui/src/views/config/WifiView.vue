@@ -1,7 +1,7 @@
 <template>
   <AppLayout>
     <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 print:text-xl">WiFi</h1>
-    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">WiFi credentials used to provision client devices.</p>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">WiFi credentials used by client devices to connect to the network after provisioning.</p>
 
     <form class="max-w-md bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4" @submit.prevent="save">
       <div>
