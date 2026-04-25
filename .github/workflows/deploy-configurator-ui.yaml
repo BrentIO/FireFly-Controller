@@ -1,0 +1,80 @@
+name: 🚀 Deploy Configurator UI
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        type: choice
+        description: "Select destination environment"
+        options:
+          - dev
+          - production
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  deploy:
+    environment: ${{ inputs.target_env }}
+    runs-on: ubuntu-24.04
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Set build variables
+        run: |
+          echo "COMMIT_HASH=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          echo "BRANCH=$GITHUB_REF_NAME" >> $GITHUB_ENV
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: Controller/ui
+        run: npm ci --legacy-peer-deps
+
+      - name: Build UI
+        working-directory: Controller/ui
+        env:
+          VITE_UI_VERSION: "${{ env.BRANCH }} (${{ env.COMMIT_HASH }})"
+        run: npm run build -- --outDir dist
+
+      - name: Look up S3 bucket name
+        id: lookup-s3
+        run: |
+          BUCKET=$(aws cloudformation describe-stacks \
+            --stack-name firefly-configurator-s3 \
+            --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
+            --output text)
+          echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
+
+      - name: Sync to S3
+        run: aws s3 sync Controller/ui/dist/ s3://${{ steps.lookup-s3.outputs.bucket }} --delete
+
+      - name: Look up CloudFront distribution ID
+        id: lookup-dist
+        run: |
+          DIST_ID=$(aws cloudformation describe-stacks \
+            --stack-name firefly-configurator-cloudfront \
+            --query "Stacks[0].Outputs[?OutputKey=='DistributionId'].OutputValue" \
+            --output text)
+          echo "dist_id=$DIST_ID" >> $GITHUB_OUTPUT
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.lookup-dist.outputs.dist_id }} \
+            --paths "/*"
