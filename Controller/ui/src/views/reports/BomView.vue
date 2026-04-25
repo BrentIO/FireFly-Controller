@@ -36,7 +36,7 @@
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
               <tr v-if="!clientBom.length"><td colspan="2" class="px-4 py-4 text-center text-gray-400">None.</td></tr>
               <tr v-for="row in clientBom" :key="row.count" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                <td class="px-4 py-2 text-gray-900 dark:text-gray-100">{{ row.count }} button(s)</td>
+                <td class="px-4 py-2 text-gray-900 dark:text-gray-100">{{ row.count }} {{ row.count === 1 ? 'button' : 'buttons' }}</td>
                 <td class="px-4 py-2 text-right text-gray-700 dark:text-gray-300 font-semibold">{{ row.qty }}</td>
               </tr>
             </tbody>
