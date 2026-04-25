@@ -342,6 +342,20 @@ jobs:
           aws s3 cp /tmp/firmware-upload.zip \
             "s3://${{ secrets.S3_FIRMWARE_BUCKET_NAME }}/${DEST_KEY}"
 
+  trigger-configurator-ui:
+    needs: ConfigureAndBuild
+    if: ${{ !env.ACT }}
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Dispatch deploy-configurator-ui to FireFly-Cloud
+        env:
+          GH_TOKEN: ${{ secrets.FIREFLY_CLOUD_TOKEN }}
+        run: |
+          jq -nc --arg env "${{ inputs.target_env }}" \
+            '{"event_type":"deploy-configurator-ui","client_payload":{"target_env":$env}}' | \
+            gh api repos/BrentIO/FireFly-Cloud/dispatches -X POST --input -
+
   sync-library-docs:
     needs: ConfigureAndBuild
     if: ${{ github.event.inputs.target_env == 'production' }}
