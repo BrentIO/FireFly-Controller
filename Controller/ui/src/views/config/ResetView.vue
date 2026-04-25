@@ -43,7 +43,6 @@ async function doReset() {
   try {
     await db.delete()
     localStorage.clear()
-    sessionStorage.clear()
     addToast('success', 'All data deleted. Reloading…')
     setTimeout(() => window.location.reload(), 1500)
   } catch (e) {
