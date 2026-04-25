@@ -7,7 +7,7 @@
       </button>
     </div>
 
-    <div class="grid gap-4 grid-cols-[repeat(auto-fill,minmax(22rem,1fr))]">
+    <div class="grid gap-4 grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(22rem,1fr))]">
       <div v-if="enriched.length === 0" class="text-gray-400 dark:text-gray-500 py-8">No circuits defined.</div>
       <div v-for="c in enriched" :key="c.id"
         class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 break-inside-avoid">
@@ -50,28 +50,28 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Area</label>
-                <select v-model.number="form.area" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select v-model.number="form.area" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">Select area…</option>
                   <option v-for="a in areas" :key="a.id" :value="a.id">{{ a.name }}</option>
                 </select>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Breaker</label>
-                <select v-model.number="form.breaker" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select v-model.number="form.breaker" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">Select breaker…</option>
                   <option v-for="b in breakers" :key="b.id" :value="b.id">{{ b.name }}</option>
                 </select>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Icon</label>
-                <select v-model.number="form.icon" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select v-model.number="form.icon" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">Select icon…</option>
                   <option v-for="i in icons" :key="i.id" :value="i.id">{{ i.name }}</option>
                 </select>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Relay Model</label>
-                <select v-model.number="form.relay_model" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select v-model.number="form.relay_model" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">Select relay…</option>
                   <option v-for="r in relayModels" :key="r.id" :value="r.id">{{ r.manufacturer }} {{ r.model }} — {{ r.description }}</option>
                 </select>

@@ -183,15 +183,15 @@
                 <div v-if="circuits.length" class="border border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-3">
                   <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Add action</p>
                   <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                    <select v-model="actionDraft.circuit" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select v-model="actionDraft.circuit" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
                       <option value="">Circuit…</option>
                       <option v-for="c in circuits" :key="c.id" :value="c.id">{{ c.name }} — {{ c.description }}</option>
                     </select>
-                    <select v-model="actionDraft.change_state" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select v-model="actionDraft.change_state" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
                       <option value="SHORT">Short Press</option>
                       <option value="LONG">Long Press</option>
                     </select>
-                    <select v-model="actionDraft.action" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select v-model="actionDraft.action" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
                       <option v-for="opt in availableActions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                     </select>
                   </div>

@@ -43,11 +43,14 @@
 
     <!-- Controllers -->
     <section v-for="ctrl in enrichedControllers" :key="ctrl.id" class="mb-8">
-      <div class="flex items-center gap-3 mb-3">
+      <button type="button" class="flex items-center gap-3 mb-3 w-full text-left" @click="toggleCollapse(ctrl.id)">
+        <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform" :class="collapsed.has(ctrl.id) ? '-rotate-90' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
         <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ ctrl.name }}</h2>
         <span class="text-xs text-gray-500 dark:text-gray-400">{{ ctrl.product }}</span>
-      </div>
-      <div class="flex flex-wrap gap-3">
+      </button>
+      <div v-show="!collapsed.has(ctrl.id)" class="flex flex-wrap gap-3">
         <div
           v-for="port in ctrl.ports"
           :key="port.num"
@@ -98,6 +101,13 @@ const { addToast } = useToast()
 
 const selectedCircuitId = ref(null)
 const unassignTarget = ref(null)
+const collapsed = ref(new Set())
+
+function toggleCollapse(id) {
+  const s = new Set(collapsed.value)
+  s.has(id) ? s.delete(id) : s.add(id)
+  collapsed.value = s
+}
 
 const dragging = ref(null) // { circuitId, fromControllerId, fromPort }
 const dragOver = ref(null)
