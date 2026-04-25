@@ -9,13 +9,13 @@ export function useIcons() {
   }
 
   async function create(data) {
-    const id = await db.circuit_icons.add(data)
+    const id = await db.circuit_icons.add(JSON.parse(JSON.stringify(data)))
     await load()
     return id
   }
 
   async function update(id, data) {
-    await db.circuit_icons.update(id, data)
+    await db.circuit_icons.update(id, JSON.parse(JSON.stringify(data)))
     await load()
   }
 

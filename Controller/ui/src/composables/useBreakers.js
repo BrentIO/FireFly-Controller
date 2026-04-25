@@ -9,13 +9,13 @@ export function useBreakers() {
   }
 
   async function create(data) {
-    const id = await db.breakers.add(data)
+    const id = await db.breakers.add(JSON.parse(JSON.stringify(data)))
     await load()
     return id
   }
 
   async function update(id, data) {
-    await db.breakers.update(id, data)
+    await db.breakers.update(id, JSON.parse(JSON.stringify(data)))
     await load()
   }
 

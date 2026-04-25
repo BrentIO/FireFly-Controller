@@ -9,13 +9,13 @@ export function useAreas() {
   }
 
   async function create(data) {
-    const id = await db.areas.add(data)
+    const id = await db.areas.add(JSON.parse(JSON.stringify(data)))
     await load()
     return id
   }
 
   async function update(id, data) {
-    await db.areas.update(id, data)
+    await db.areas.update(id, JSON.parse(JSON.stringify(data)))
     await load()
   }
 

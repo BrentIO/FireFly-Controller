@@ -44,7 +44,7 @@
       <li class="mt-2">
         <button
           class="flex items-center w-full px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
-          @click="configOpen = !configOpen"
+          @click="toggleConfig"
         >
           <svg class="w-3 h-3 mr-1.5 transition-transform duration-150" :class="configOpen ? 'rotate-90' : ''" viewBox="0 0 24 24" fill="currentColor">
             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>
@@ -67,7 +67,7 @@
       <li class="mt-1">
         <button
           class="flex items-center w-full px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
-          @click="reportsOpen = !reportsOpen"
+          @click="toggleReports"
         >
           <svg class="w-3 h-3 mr-1.5 transition-transform duration-150" :class="reportsOpen ? 'rotate-90' : ''" viewBox="0 0 24 24" fill="currentColor">
             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/>
@@ -119,8 +119,17 @@ const { state } = useAppState()
 const { isDark, toggleTheme } = useTheme()
 const route = useRoute()
 
-const configOpen = ref(false)
-const reportsOpen = ref(false)
+const configOpen = ref(localStorage.getItem('nav_config_open') === 'true')
+const reportsOpen = ref(localStorage.getItem('nav_reports_open') === 'true')
+
+function toggleConfig() {
+  configOpen.value = !configOpen.value
+  localStorage.setItem('nav_config_open', configOpen.value)
+}
+function toggleReports() {
+  reportsOpen.value = !reportsOpen.value
+  localStorage.setItem('nav_reports_open', reportsOpen.value)
+}
 
 const mainItems = [
   { path: '/controllers', label: 'Controllers' },

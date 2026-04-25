@@ -9,13 +9,13 @@ export function useTags() {
   }
 
   async function create(data) {
-    const id = await db.tags.add(data)
+    const id = await db.tags.add(JSON.parse(JSON.stringify(data)))
     await load()
     return id
   }
 
   async function update(id, data) {
-    await db.tags.update(id, data)
+    await db.tags.update(id, JSON.parse(JSON.stringify(data)))
     await load()
   }
 

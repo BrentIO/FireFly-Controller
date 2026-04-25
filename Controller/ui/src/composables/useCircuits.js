@@ -11,13 +11,13 @@ export function useCircuits() {
   }
 
   async function create(data) {
-    const id = await db.circuits.add(data)
+    const id = await db.circuits.add(JSON.parse(JSON.stringify(data)))
     await load()
     return id
   }
 
   async function update(id, data) {
-    await db.circuits.update(id, data)
+    await db.circuits.update(id, JSON.parse(JSON.stringify(data)))
     await load()
   }
 

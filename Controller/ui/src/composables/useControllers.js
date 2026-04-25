@@ -11,13 +11,13 @@ export function useControllers() {
   }
 
   async function create(data) {
-    const id = await db.controllers.add({ ...data, inputs: {}, outputs: {} })
+    const id = await db.controllers.add({ ...JSON.parse(JSON.stringify(data)), inputs: {}, outputs: {} })
     await load()
     return id
   }
 
   async function update(id, data) {
-    await db.controllers.update(id, data)
+    await db.controllers.update(id, JSON.parse(JSON.stringify(data)))
     await load()
   }
 

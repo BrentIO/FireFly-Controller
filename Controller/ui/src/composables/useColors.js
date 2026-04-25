@@ -9,13 +9,13 @@ export function useColors() {
   }
 
   async function create(data) {
-    const id = await db.colors.add(data)
+    const id = await db.colors.add(JSON.parse(JSON.stringify(data)))
     await load()
     return id
   }
 
   async function update(id, data) {
-    await db.colors.update(id, data)
+    await db.colors.update(id, JSON.parse(JSON.stringify(data)))
     await load()
   }
 
