@@ -24,7 +24,7 @@
           v-for="circuit in unassignedCircuits"
           :key="circuit.id"
           draggable="true"
-          class="px-3 py-2 rounded-lg border text-sm font-medium cursor-grab active:cursor-grabbing transition-colors select-none"
+          class="w-28 h-28 rounded-xl border-2 flex flex-col items-center justify-center text-center p-2 cursor-grab active:cursor-grabbing transition-colors select-none"
           :class="selectedCircuitId === circuit.id
             ? 'bg-blue-600 border-blue-600 text-white shadow-md'
             : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 hover:border-blue-400'"
@@ -32,7 +32,8 @@
           @dragend="endDrag"
           @click="toggleSelect(circuit.id)"
         >
-          <span class="font-mono text-xs mr-1">{{ circuit.name }}</span>{{ circuit.description }}
+          <span class="font-mono text-base font-bold leading-tight">{{ circuit.name }}</span>
+          <span class="text-xs leading-tight mt-1 opacity-70">{{ circuit.description }}</span>
         </div>
       </div>
       <p v-if="selectedCircuitId" class="mt-2 text-xs text-blue-600 dark:text-blue-400 font-medium">
@@ -179,28 +180,27 @@ function onDragOver(controllerId, port) {
 async function onDropPort(controllerId, port) {
   if (!dragging.value) { dragOver.value = null; return }
   if (port.circuit) { endDrag(); return }
-
+  const drag = { ...dragging.value }
+  endDrag()
   try {
-    await assignOutput(controllerId, port.num, dragging.value.circuitId)
-    if (dragging.value.fromControllerId !== null) {
-      await assignOutput(dragging.value.fromControllerId, dragging.value.fromPort, null)
+    if (drag.fromControllerId !== null) {
+      await assignOutput(drag.fromControllerId, drag.fromPort, null)
     }
-    addToast('success', 'Circuit assigned.')
+    await assignOutput(controllerId, port.num, drag.circuitId)
   } catch (e) {
     addToast('error', `Failed: ${e.message}`)
   }
-  endDrag()
 }
 
 async function onDropUnassign() {
   if (!dragging.value?.fromControllerId) { endDrag(); return }
+  const drag = { ...dragging.value }
+  endDrag()
   try {
-    await assignOutput(dragging.value.fromControllerId, dragging.value.fromPort, null)
-    addToast('success', 'Circuit unassigned.')
+    await assignOutput(drag.fromControllerId, drag.fromPort, null)
   } catch (e) {
     addToast('error', `Failed: ${e.message}`)
   }
-  endDrag()
 }
 
 async function portClick(controllerId, port) {

@@ -24,7 +24,7 @@
             </div>
           </div>
           <div class="flex gap-2 print:hidden flex-shrink-0">
-            <RouterLink :to="`/clients/${client.id}`" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 text-sm">Edit</RouterLink>
+            <button class="text-blue-600 hover:text-blue-700 dark:text-blue-400 text-sm" @click="router.push(`/clients/${client.id}`)">Edit</button>
             <button class="text-red-600 hover:text-red-700 dark:text-red-400 text-sm" @click="confirmDelete(client)">Delete</button>
           </div>
         </div>
@@ -97,7 +97,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { RouterLink } from 'vue-router'
+import { useRouter } from 'vue-router'
 import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { useClients } from '../composables/useClients'
@@ -107,6 +107,7 @@ import { randomUUID } from '../composables/useValidators'
 
 const MAC_RE = /^[0-9A-Fa-f]{2}[:-]([0-9A-Fa-f]{2}[:-]){4}[0-9A-Fa-f]{2}$/
 
+const router = useRouter()
 const { items, load, create, remove, isInUse } = useClients()
 const { items: areas, load: loadAreas } = useAreas()
 const { addToast } = useToast()
