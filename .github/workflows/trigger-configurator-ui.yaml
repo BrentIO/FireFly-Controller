@@ -1,0 +1,43 @@
+name: 🚀 Trigger Configurator UI Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        type: choice
+        description: "Select destination environment"
+        options:
+          - dev
+          - production
+      ref:
+        type: string
+        description: "FireFly-Controller branch or tag to deploy (default: current)"
+        required: false
+        default: ''
+  workflow_call:
+    inputs:
+      target_env:
+        type: string
+        required: true
+      ref:
+        type: string
+        required: false
+        default: ''
+    secrets:
+      FIREFLY_CLOUD_TOKEN:
+        required: true
+
+jobs:
+  trigger:
+    if: ${{ inputs.target_env != 'production' || github.ref_type == 'tag' }}
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Dispatch deploy-configurator-ui to FireFly-Cloud
+        env:
+          GH_TOKEN: ${{ secrets.FIREFLY_CLOUD_TOKEN }}
+        run: |
+          REF="${{ inputs.ref || github.ref_name }}"
+          jq -nc --arg env "${{ inputs.target_env }}" --arg ref "$REF" \
+            '{"event_type":"deploy-configurator-ui","client_payload":{"target_env":$env,"ref":$ref}}' | \
+            gh api repos/BrentIO/FireFly-Cloud/dispatches -X POST --input -
