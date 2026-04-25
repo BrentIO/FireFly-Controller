@@ -1,6 +1,9 @@
 name: 🛠️ Build Firmware
 
 on:
+  push:
+    paths:
+      - '.github/workflows/build-firmware.yaml'
   workflow_dispatch:
     inputs:
       target_env:
@@ -17,6 +20,7 @@ env:
 jobs:
 
   load-matrix:
+    if: github.event_name == 'workflow_dispatch'
     uses: ./.github/workflows/generate-matrix.yaml
 
   ConfigureAndBuild:
