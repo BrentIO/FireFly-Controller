@@ -352,8 +352,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.FIREFLY_CLOUD_TOKEN }}
         run: |
-          jq -nc --arg env "${{ inputs.target_env }}" \
-            '{"event_type":"deploy-configurator-ui","client_payload":{"target_env":$env}}' | \
+          jq -nc --arg env "${{ inputs.target_env }}" --arg ref "${{ github.ref_name }}" \
+            '{"event_type":"deploy-configurator-ui","client_payload":{"target_env":$env,"ref":$ref}}' | \
             gh api repos/BrentIO/FireFly-Cloud/dispatches -X POST --input -
 
   sync-library-docs:
