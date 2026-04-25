@@ -2,9 +2,10 @@
   <AppLayout>
     <div class="flex items-center justify-between mb-6 print:mb-4">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl">Circuits</h1>
-      <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors print:hidden" @click="openAdd">
-        Add Circuit
-      </button>
+      <div class="flex gap-2 print:hidden">
+        <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors" onclick="window.print()">Print</button>
+        <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors" @click="openAdd">Add Circuit</button>
+      </div>
     </div>
 
     <div class="grid gap-4 grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(22rem,1fr))]">
@@ -22,10 +23,10 @@
           </div>
         </div>
         <dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mt-3">
-          <dt class="text-gray-500 dark:text-gray-400">Area</dt><dd class="text-gray-900 dark:text-gray-100">{{ c.areaName }}</dd>
-          <dt class="text-gray-500 dark:text-gray-400">Breaker</dt><dd class="text-gray-900 dark:text-gray-100 truncate">{{ c.breakerName }}</dd>
-          <dt class="text-gray-500 dark:text-gray-400">Relay</dt><dd class="text-gray-900 dark:text-gray-100">{{ c.relayName }}</dd>
-          <dt class="text-gray-500 dark:text-gray-400">Load</dt><dd class="text-gray-900 dark:text-gray-100">{{ c.load_amperage }}A</dd>
+          <dt class="text-gray-500 dark:text-gray-400 print:text-black">Area</dt><dd class="text-gray-900 dark:text-gray-100 print:text-black">{{ c.areaName }}</dd>
+          <dt class="text-gray-500 dark:text-gray-400 print:text-black">Breaker</dt><dd class="text-gray-900 dark:text-gray-100 truncate print:text-black">{{ c.breakerName }}</dd>
+          <dt class="text-gray-500 dark:text-gray-400 print:text-black">Relay</dt><dd class="text-gray-900 dark:text-gray-100 print:text-black">{{ c.relayName }}</dd>
+          <dt class="text-gray-500 dark:text-gray-400 print:text-black">Load</dt><dd class="text-gray-900 dark:text-gray-100 print:text-black">{{ c.load_amperage }}A</dd>
         </dl>
       </div>
     </div>
