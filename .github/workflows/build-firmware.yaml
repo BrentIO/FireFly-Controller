@@ -1,6 +1,9 @@
 name: 🛠️ Build Firmware
 
 on:
+  push:
+    paths:
+      - '.github/workflows/build-firmware.yaml'
   workflow_dispatch:
     inputs:
       target_env:
@@ -17,6 +20,7 @@ env:
 jobs:
 
   load-matrix:
+    if: github.event_name == 'workflow_dispatch'
     uses: ./.github/workflows/generate-matrix.yaml
 
   ConfigureAndBuild:
@@ -352,7 +356,7 @@ jobs:
 
   trigger-configurator-ui:
     needs: ConfigureAndBuild
-    if: ${{ !env.ACT && (inputs.target_env != 'production' || github.ref_type == 'tag') }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.target_env != 'production' || github.ref_type == 'tag') }}
     runs-on: ubuntu-24.04
 
     steps:
@@ -360,8 +364,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.FIREFLY_CLOUD_TOKEN }}
         run: |
-          jq -nc --arg env "${{ inputs.target_env }}" \
-            '{"event_type":"deploy-configurator-ui","client_payload":{"target_env":$env}}' | \
+          jq -nc --arg env "${{ inputs.target_env }}" --arg ref "${{ github.ref_name }}" \
+            '{"event_type":"deploy-configurator-ui","client_payload":{"target_env":$env,"ref":$ref}}' | \
             gh api repos/BrentIO/FireFly-Cloud/dispatches -X POST --input -
 
   sync-library-docs:

@@ -275,11 +275,7 @@ void setup() {
 
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
-    if(WiFi.getMode() == wifi_mode_t::WIFI_MODE_NULL){
-
-      log_w("HTTP server will not be started because WiFi it has not been initialized (WIFI_MODE_NULL)");
-    
-    }else{
+    if(WiFi.getMode() != wifi_mode_t::WIFI_MODE_NULL){
       httpServer.begin();
       eventLog.createEvent("Web server started");
 
