@@ -82,40 +82,33 @@ jobs:
             sed -i "s/^  version: .*/  version: \"${BRANCH} (${COMMIT_HASH})\"/" ./${{ matrix.application }}/swagger.yaml
           fi
 
-          cp ./${{ matrix.application }}/swagger.yaml ${{ github.workspace }}/${{ matrix.application }}/www
-          head -n 10  ${{ github.workspace }}/${{ matrix.application }}/www/swagger.yaml
-
-      - name: Update UI version (version.json)
-        if: ${{ matrix.application == 'Controller' }}
-        run: |
-          BRANCH="${{ env.BRANCH }}"
-          COMMIT_HASH="${{ env.COMMIT_HASH }}"
-          VERSION="${{ env.VERSION }}"
-
-          if [ "${VERSION}" = "DEBUG" ]; then
-            UI_VERSION="${VERSION} (${COMMIT_HASH})"
-          else
-            UI_VERSION="${BRANCH} (${COMMIT_HASH})"
+          # For HW-Reg, copy swagger.yaml into www/ directly (no separate build step does this)
+          # For Controller, the "Build Vue UI (Controller)" step handles the copy after npm run build
+          if [ "${{ matrix.application }}" != "Controller" ]; then
+            cp ./${{ matrix.application }}/swagger.yaml ${{ github.workspace }}/${{ matrix.application }}/www
+            head -n 10  ${{ github.workspace }}/${{ matrix.application }}/www/swagger.yaml
           fi
 
-          jq --arg v "$UI_VERSION" '.ui = $v' \
-            "${{ github.workspace }}/${{ matrix.application }}/www/version.json" \
-            > version.json.tmp
 
-          mv version.json.tmp "${{ github.workspace }}/${{ matrix.application }}/www/version.json"
-
-          echo "Updated version.json:"
-          cat "${{ github.workspace }}/${{ matrix.application }}/www/version.json"
-
-      - name: Generate controller_products in database.js from devices.yaml
+      - name: Generate controller_products in useDatabase.js from devices.yaml
         if: matrix.application == 'Controller'
         run: |
-          PRODUCTS=$(yq -o=json ${{ github.workspace }}/devices.yaml \
-            | jq -c '[.devices[] | select(.status != "RETIRED") | {pid: .product_id, inputs: {count: .inputs_count}, outputs: {count: .outputs_count}}]')
-          sed -i "s|^var controller_products = .*;|var controller_products = ${PRODUCTS};|" \
-            "${{ github.workspace }}/Controller/www/database.js"
-          echo "Updated controller_products:"
-          grep "^var controller_products" "${{ github.workspace }}/Controller/www/database.js"
+          PRODUCTS_JS=$(yq -o=json ${{ github.workspace }}/devices.yaml \
+            | jq -r '[.devices[] | select(.status != "RETIRED") | "  { pid: \(.product_id | @json), inputs: { count: \(.inputs_count) }, outputs: { count: \(.outputs_count) } }"] | join(",\n")')
+          DB_FILE="${{ github.workspace }}/Controller/ui/src/composables/useDatabase.js"
+          PRODUCTS_JS="$PRODUCTS_JS" DB_FILE="$DB_FILE" python3 - <<'PYEOF'
+          import re, os
+          products_js = os.environ["PRODUCTS_JS"]
+          db_file = os.environ["DB_FILE"]
+          with open(db_file, "r") as f:
+            content = f.read()
+          new_block = "const defaultControllerProducts = [\n" + products_js + "\n]"
+          content = re.sub(r"const defaultControllerProducts = \[.*?\]", new_block, content, flags=re.DOTALL)
+          with open(db_file, "w") as f:
+            f.write(content)
+          PYEOF
+          echo "Updated defaultControllerProducts:"
+          grep -A6 "const defaultControllerProducts" "$DB_FILE"
 
       - name: Generate partitions.csv from devices.yaml
         run: |
@@ -246,6 +239,21 @@ jobs:
           TOTAL=$(du -sb $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/www | cut -f1)
           if [ "$TOTAL" -gt 2097152 ]; then
             echo "ERROR: www/ exceeds 2MB (${TOTAL} bytes)"
+            exit 1
+          fi
+
+      - name: Build Vue UI (Controller)
+        if: ${{ matrix.application == 'Controller' }}
+        run: |
+          cd $GITHUB_WORKSPACE/Controller/ui
+          npm ci --legacy-peer-deps
+          VITE_UI_VERSION="${{ env.BRANCH }} (${{ env.COMMIT_HASH }})" npm run build
+          cp $GITHUB_WORKSPACE/Controller/swagger.yaml \
+             $GITHUB_WORKSPACE/Controller/www/swagger.yaml
+          gzip -r -9 $GITHUB_WORKSPACE/Controller/www
+          TOTAL=$(du -sb $GITHUB_WORKSPACE/Controller/www | cut -f1)
+          if [ "$TOTAL" -gt 3014656 ]; then
+            echo "ERROR: www/ exceeds partition size of 0x2e0000 (${TOTAL} bytes)"
             exit 1
           fi
 
