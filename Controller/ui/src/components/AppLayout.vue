@@ -48,12 +48,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import SideNav from './SideNav.vue'
-import { useAppState } from '../composables/useAppState'
 
-const { loadAppState } = useAppState()
 const sidebarOpen = ref(false)
-
-onMounted(loadAppState)
 </script>

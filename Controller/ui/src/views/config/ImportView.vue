@@ -18,8 +18,8 @@
         <p class="text-sm text-amber-700 dark:text-amber-400 mb-4">
           Importing will replace all existing configuration data. This cannot be undone.
         </p>
-        <div class="flex items-center gap-3">
-          <input ref="fileInput" type="file" accept=".json" class="text-sm text-gray-600 dark:text-gray-400" @change="onFileSelect" />
+        <div class="space-y-3">
+          <input ref="fileInput" type="file" accept=".json" class="block text-sm text-gray-600 dark:text-gray-400" @change="onFileSelect" />
           <button
             :disabled="!selectedFile"
             class="px-4 py-2.5 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-40 print:hidden"
