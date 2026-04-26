@@ -14,21 +14,37 @@
 
       <!-- Import -->
       <div class="bg-white dark:bg-gray-900 rounded-xl border border-amber-200 dark:border-amber-800 p-6">
-        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Import Configuration</h2>
-        <p class="text-sm text-amber-700 dark:text-amber-400 mb-4">
-          Importing will replace all existing configuration data. This cannot be undone.
-        </p>
+        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Erase All and Import Configuration</h2>
         <div class="space-y-3">
           <input ref="fileInput" type="file" accept=".json" class="block text-sm text-gray-600 dark:text-gray-400" @change="onFileSelect" />
           <button
             :disabled="!selectedFile"
             class="px-4 py-2.5 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-40 print:hidden"
             :class="selectedFile ? 'bg-amber-600 hover:bg-amber-700' : 'bg-gray-400'"
-            @click="doImport"
+            @click="showConfirm = true"
           >Import</button>
         </div>
       </div>
     </div>
+
+    <!-- Confirm modal -->
+    <Teleport to="body">
+      <Transition enter-active-class="ease-out duration-200" enter-from-class="opacity-0" enter-to-class="opacity-100"
+                  leave-active-class="ease-in duration-150" leave-from-class="opacity-100" leave-to-class="opacity-0">
+        <div v-if="showConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" @click.self="showConfirm = false">
+          <div class="w-full max-w-sm bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6">
+            <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">Erase All and Import Configuration</h3>
+            <p class="text-sm text-amber-700 dark:text-amber-400 mb-5">
+              Importing will replace all existing configuration data. This cannot be undone.
+            </p>
+            <div class="flex justify-end gap-3">
+              <button class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="showConfirm = false">Cancel</button>
+              <button class="px-4 py-2.5 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors" @click="doImport">Import</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </AppLayout>
 </template>
 
@@ -43,6 +59,7 @@ import { useToast } from '../../composables/useToast'
 const { addToast } = useToast()
 const fileInput = ref(null)
 const selectedFile = ref(null)
+const showConfirm = ref(false)
 
 function onFileSelect(e) {
   selectedFile.value = e.target.files[0] ?? null
@@ -64,6 +81,7 @@ async function doExport() {
 }
 
 async function doImport() {
+  showConfirm.value = false
   if (!selectedFile.value) return
   try {
     await db.delete()
