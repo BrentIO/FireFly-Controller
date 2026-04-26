@@ -35,6 +35,7 @@
 <script setup>
 import { ref } from 'vue'
 import Dexie from 'dexie'
+import { exportDB, importDB } from 'dexie-export-import'
 import { db } from '../../composables/useDatabase'
 import AppLayout from '../../components/AppLayout.vue'
 import { useToast } from '../../composables/useToast'
@@ -49,7 +50,6 @@ function onFileSelect(e) {
 
 async function doExport() {
   try {
-    const { exportDB } = await import('dexie-export-import')
     const blob = await exportDB(db)
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -66,7 +66,6 @@ async function doExport() {
 async function doImport() {
   if (!selectedFile.value) return
   try {
-    const { importDB } = await import('dexie-export-import')
     await db.delete()
     await importDB(selectedFile.value)
     addToast('success', 'Import successful! Reloading…')
