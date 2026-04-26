@@ -16,6 +16,8 @@
             <th class="py-2 text-left font-semibold">Short ID</th>
             <th class="py-2 text-left font-semibold">Description</th>
             <th class="py-2 text-left font-semibold">Area</th>
+            <th class="py-2 text-center font-semibold">B</th>
+            <th class="py-2 text-center font-semibold">S</th>
             <th class="py-2 text-left font-semibold">MAC Address</th>
             <th class="py-2 text-left font-semibold">UUID</th>
           </tr>
@@ -25,6 +27,8 @@
             <td class="py-2 font-mono text-xs">{{ client.name }}</td>
             <td class="py-2 text-xs">{{ client.description }}</td>
             <td class="py-2 text-xs">{{ areaName(client.area) }}</td>
+            <td class="py-2 text-xs text-center">{{ (client.hids || []).filter(h => h.type !== 'switch').length }}</td>
+            <td class="py-2 text-xs text-center">{{ (client.hids || []).filter(h => h.type === 'switch').length }}</td>
             <td class="py-2 font-mono text-xs">{{ client.mac }}</td>
             <td class="py-2 font-mono text-xs">{{ client.uuid }}</td>
           </tr>
