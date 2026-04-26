@@ -45,7 +45,7 @@
     </section>
 
     <!-- Controllers -->
-    <section v-for="ctrl in enrichedControllers" :key="ctrl.id" class="mb-8 print:break-before-page print:first:break-before-auto">
+    <section v-for="(ctrl, index) in enrichedControllers" :key="ctrl.id" class="mb-8" :class="index > 0 ? 'print:break-before-page' : ''">
       <button type="button" class="flex items-center gap-3 mb-3 w-full text-left print:hidden" @click="toggleCollapse(ctrl.id)">
         <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform" :class="collapsed.has(ctrl.id) ? '-rotate-90' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -90,7 +90,7 @@
     <div v-if="enrichedControllers.length === 0" class="text-gray-400 dark:text-gray-500 py-8">Add a controller to assign inputs.</div>
 
     <ConfirmModal :show="!!unassignTarget" title="Unassign Client"
-      :message="`Unassign '${unassignTarget?.clientName}' from port ${unassignTarget?.port}?`"
+      :message="`Unassign '${unassignTarget?.clientName}' from controller '${unassignTarget?.controllerName}' port ${unassignTarget?.port}?`"
       confirm-label="Unassign" @confirm="doUnassign" @cancel="unassignTarget = null" />
   </AppLayout>
 </template>
@@ -245,7 +245,7 @@ function unassign(controllerId, portNum) {
   const ctrl = controllers.value.find(c => c.id === controllerId)
   const clientId = ctrl?.inputs?.[portNum]
   const client = allClients.value.find(c => c.id === clientId)
-  unassignTarget.value = { controllerId, port: portNum, clientName: client?.name ?? '?' }
+  unassignTarget.value = { controllerId, port: portNum, clientName: client?.name ?? '?', controllerName: ctrl?.name ?? '?' }
 }
 
 async function doUnassign() {
