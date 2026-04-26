@@ -44,14 +44,7 @@
           <div>
             <p class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ client.name }}</p>
             <p class="font-semibold text-gray-900 dark:text-gray-100">{{ client.description }}</p>
-            <div class="flex items-center gap-1 mt-0.5">
-              <svg v-if="client.mac === 'ff:ff:ff:ff:ff:ff'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-3.5 h-3.5 flex-shrink-0 text-yellow-700 dark:text-yellow-500">
-                <path fill="currentColor" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495z"/>
-                <rect x="9.25" y="5.5" width="1.5" height="4" rx="0.75" fill="white"/>
-                <circle cx="10" cy="14" r="1" fill="white"/>
-              </svg>
-              <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ client.mac }}</p>
-            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">{{ client.uuid }}</p>
           </div>
           <div class="flex gap-2 print:hidden flex-shrink-0">
             <button class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="router.push(`/clients/${client.id}`)">Edit</button>
