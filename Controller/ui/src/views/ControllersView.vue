@@ -25,8 +25,8 @@
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ ctrl.product }}</p>
           </div>
           <div class="flex gap-2 print:hidden flex-shrink-0">
-            <button class="text-blue-600 hover:text-blue-700 dark:text-blue-400 text-sm" @click="openEdit(ctrl)">Edit</button>
-            <button class="text-red-600 hover:text-red-700 dark:text-red-400 text-sm" @click="confirmDelete(ctrl)">Delete</button>
+            <button class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="openEdit(ctrl)">Edit</button>
+            <button class="px-2.5 py-1 text-xs font-medium rounded border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" @click="confirmDelete(ctrl)">Delete</button>
           </div>
         </div>
 

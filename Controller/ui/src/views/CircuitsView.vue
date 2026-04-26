@@ -18,8 +18,8 @@
             <p class="font-semibold text-gray-900 dark:text-gray-100">{{ c.description }}</p>
           </div>
           <div class="flex gap-2 print:hidden flex-shrink-0">
-            <button class="text-blue-600 hover:text-blue-700 dark:text-blue-400 text-sm" @click="openEdit(c)">Edit</button>
-            <button class="text-red-600 hover:text-red-700 dark:text-red-400 text-sm" @click="confirmDelete(c)">Delete</button>
+            <button class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="openEdit(c)">Edit</button>
+            <button class="px-2.5 py-1 text-xs font-medium rounded border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" @click="confirmDelete(c)">Delete</button>
           </div>
         </div>
         <dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mt-3">

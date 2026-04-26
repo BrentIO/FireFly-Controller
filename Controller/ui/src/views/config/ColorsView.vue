@@ -29,8 +29,10 @@
               <div class="w-8 h-8 rounded border border-gray-300 dark:border-gray-600" :style="{ backgroundColor: color.hex }" :title="color.hex"></div>
             </td>
             <td class="px-4 py-3 text-right print:hidden">
-              <button class="text-blue-600 hover:text-blue-700 dark:text-blue-400 mr-3 text-sm" @click="openEdit(color)">Edit</button>
-              <button class="text-red-600 hover:text-red-700 dark:text-red-400 text-sm" @click="confirmDelete(color)">Delete</button>
+              <div class="flex justify-end gap-2">
+                <button class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="openEdit(color)">Edit</button>
+                <button class="px-2.5 py-1 text-xs font-medium rounded border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" @click="confirmDelete(color)">Delete</button>
+              </div>
             </td>
           </tr>
         </tbody>
