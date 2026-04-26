@@ -14,7 +14,7 @@
       Icons use <a href="https://pictogrammers.com/library/mdi/" target="_blank" rel="noopener" class="text-blue-600 dark:text-blue-400 hover:underline print:hidden">Material Design Icons</a> format (e.g. <code class="font-mono bg-gray-100 dark:bg-gray-800 px-1 rounded">mdi:chandelier</code>).
     </p>
 
-    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">
           <tr>
