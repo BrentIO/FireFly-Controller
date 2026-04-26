@@ -247,7 +247,6 @@ function unassign(controllerId, portNum) {
 async function doUnassign() {
   try {
     await assignOutput(unassignTarget.value.controllerId, unassignTarget.value.port, null)
-    addToast('success', 'Unassigned.')
   } catch (e) {
     addToast('error', `Failed: ${e.message}`)
   } finally {
