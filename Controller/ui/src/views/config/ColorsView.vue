@@ -47,7 +47,7 @@
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">{{ editing ? 'Edit Color' : 'Add Color' }}</h3>
             <form @submit.prevent="save">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-              <input v-model="form.name" type="text" maxlength="20" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
+              <input v-model="form.name" type="text" maxlength="20" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color</label>
               <div class="flex items-center gap-3 mb-4">
                 <input v-model="form.hex" type="color" class="h-10 w-16 rounded border border-gray-300 dark:border-gray-600 cursor-pointer" />
