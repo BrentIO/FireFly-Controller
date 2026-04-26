@@ -45,7 +45,7 @@
     </section>
 
     <!-- Controllers -->
-    <section v-for="ctrl in enrichedControllers" :key="ctrl.id" class="mb-8">
+    <section v-for="ctrl in enrichedControllers" :key="ctrl.id" class="mb-8 print:break-before-page print:first:break-before-auto">
       <button type="button" class="flex items-center gap-3 mb-3 w-full text-left print:hidden" @click="toggleCollapse(ctrl.id)">
         <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform" :class="collapsed.has(ctrl.id) ? '-rotate-90' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
