@@ -125,7 +125,7 @@ async function confirmDelete(color) {
   const clients = await db.clients.toArray()
   const inUse = clients.some(c => c.hids?.some(h => h.color === color.id))
   if (inUse) {
-    addToast('error', `Cannot delete '${color.name}': it is assigned to one or more buttons or switches.`)
+    addToast('warning', `Cannot delete '${color.name}': it is assigned to one or more buttons or switches.`)
     return
   }
   deleteTarget.value = color
