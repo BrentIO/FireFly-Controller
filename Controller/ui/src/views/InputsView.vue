@@ -173,7 +173,7 @@ function portStyle(controllerId, port) {
   if (!port.client) return {}
   const key = portKey(controllerId, port.num)
   if (dragOver.value === key) return {}
-  return { borderColor: '#f2981b', backgroundColor: '#f7cc8f' }
+  return { borderColor: '#f2981b', backgroundColor: '#f7cc8f', printColorAdjust: 'exact', WebkitPrintColorAdjust: 'exact' }
 }
 
 function toggleSelect(id) {
