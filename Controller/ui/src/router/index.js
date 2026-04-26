@@ -19,6 +19,7 @@ import ResetView from '../views/config/ResetView.vue'
 import RelayTypesView from '../views/config/RelayTypesView.vue'
 import BomView from '../views/reports/BomView.vue'
 import ControlCircuitsView from '../views/reports/ControlCircuitsView.vue'
+import ValidateView from '../views/ValidateView.vue'
 
 const routes = [
   { path: '/', redirect: '/controllers' },
@@ -41,7 +42,8 @@ const routes = [
   { path: '/config/reset', component: ResetView },
   { path: '/config/relay-types', component: RelayTypesView },
   { path: '/reports/bom', component: BomView },
-  { path: '/reports/control-circuits', component: ControlCircuitsView }
+  { path: '/reports/control-circuits', component: ControlCircuitsView },
+  { path: '/validate', component: ValidateView }
 ]
 
 const router = createRouter({

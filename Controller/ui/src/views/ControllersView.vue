@@ -3,9 +3,6 @@
     <div class="flex flex-wrap items-center gap-3 justify-between mb-6 print:mb-4">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl">Controllers</h1>
       <div class="flex gap-2 print:hidden flex-shrink-0">
-        <button class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors" @click="checkConfig">
-          Validate
-        </button>
         <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors" @click="openAdd">
           Add Controller
         </button>
@@ -95,30 +92,6 @@
       </Transition>
     </Teleport>
 
-    <!-- Validate results modal -->
-    <Teleport to="body">
-      <Transition enter-active-class="ease-out duration-200" enter-from-class="opacity-0" enter-to-class="opacity-100"
-                  leave-active-class="ease-in duration-150" leave-from-class="opacity-100" leave-to-class="opacity-0">
-        <div v-if="showValidateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" @click.self="showValidateModal = false">
-          <div class="w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6 max-h-[80vh] flex flex-col">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Validation Results</h3>
-              <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl leading-none" @click="showValidateModal = false">&times;</button>
-            </div>
-            <div class="overflow-y-auto flex-1 space-y-2">
-              <div v-for="(r, i) in validateResults" :key="i"
-                class="p-3 rounded-lg text-sm"
-                :class="r.type === 'error' ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300'">
-                <span class="font-medium mr-1">{{ r.type === 'error' ? '✗ Error:' : '⚠ Warning:' }}</span>{{ r.message }}
-              </div>
-            </div>
-            <div class="mt-4 flex justify-end">
-              <button class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors" @click="showValidateModal = false">Close</button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
 
     <!-- Event log modal -->
     <Teleport to="body">
@@ -160,7 +133,7 @@ import ConfirmModal from '../components/ConfirmModal.vue'
 import { useControllers } from '../composables/useControllers'
 import { useAreas } from '../composables/useAreas'
 import { useControllerSession } from '../composables/useControllerSession'
-import { buildControllerPayload, checkConfiguration } from '../composables/usePayloads'
+import { buildControllerPayload } from '../composables/usePayloads'
 import { useToast } from '../composables/useToast'
 import { randomUUID } from '../composables/useValidators'
 import { isCloudMode } from '../composables/useCloudMode'
@@ -171,11 +144,9 @@ const { addToast } = useToast()
 
 const showModal = ref(false)
 const showEventLog = ref(false)
-const showValidateModal = ref(false)
 const editing = ref(null)
 const deleteTarget = ref(null)
 const eventLog = ref([])
-const validateResults = ref([])
 const emptyForm = () => ({ name: '', area: '', product: '', uuid: '' })
 const form = ref(emptyForm())
 
@@ -304,19 +275,4 @@ async function openEventLog(id) {
   showEventLog.value = true
 }
 
-async function checkConfig() {
-  validateResults.value = []
-  const errors = await checkConfiguration()
-  if (!errors.length) {
-    addToast('success', 'Configuration is valid.')
-    return
-  }
-  validateResults.value = errors.map(e => {
-    if (typeof e === 'string') {
-      return { type: e.toLowerCase().includes('error') ? 'error' : 'warning', message: e }
-    }
-    return { type: e.type || 'warning', message: e.message || String(e) }
-  })
-  showValidateModal.value = true
-}
 </script>
