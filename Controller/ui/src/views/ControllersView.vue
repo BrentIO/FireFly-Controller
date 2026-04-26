@@ -1,15 +1,38 @@
 <template>
   <AppLayout>
     <div class="flex flex-wrap items-center gap-3 justify-between mb-6 print:mb-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl">Controllers</h1>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl print:!text-black">Controllers</h1>
       <div class="flex gap-2 print:hidden flex-shrink-0">
+        <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors" @click="printLandscape">Print</button>
         <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors" @click="openAdd">
           Add Controller
         </button>
       </div>
     </div>
 
-    <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+    <!-- Print-only table -->
+    <div class="hidden print:block mb-6">
+      <table class="w-full text-xs text-black">
+        <thead class="uppercase tracking-wider border-b border-black">
+          <tr>
+            <th class="py-2 text-left font-semibold">Name</th>
+            <th class="py-2 text-left font-semibold">Area</th>
+            <th class="py-2 text-left font-semibold">Product</th>
+            <th class="py-2 text-left font-semibold">UUID</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-300">
+          <tr v-for="ctrl in items" :key="ctrl.id">
+            <td class="py-2 font-semibold">{{ ctrl.name }}</td>
+            <td class="py-2">{{ areaName(ctrl.area) }}</td>
+            <td class="py-2 font-mono">{{ ctrl.product }}</td>
+            <td class="py-2 font-mono">{{ ctrl.uuid }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 print:hidden">
       <div v-if="items.length === 0" class="text-gray-400 dark:text-gray-500 py-8 col-span-full">No controllers defined.</div>
 
       <div v-for="ctrl in items" :key="ctrl.id"
@@ -20,6 +43,7 @@
             <p class="font-semibold text-gray-900 dark:text-gray-100">{{ ctrl.name }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ ctrl.uuid }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ ctrl.product }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ areaName(ctrl.area) }}</p>
           </div>
           <div class="flex gap-2 print:hidden flex-shrink-0">
             <button class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="openEdit(ctrl)">Edit</button>
@@ -176,6 +200,16 @@ onMounted(async () => {
   await Promise.all([load(), loadAreas()])
   items.value.forEach(c => initSession(c.id))
 })
+
+function areaName(id) { return areas.value.find(a => a.id === id)?.name ?? '—' }
+
+function printLandscape() {
+  const style = document.createElement('style')
+  style.textContent = '@page { size: landscape; }'
+  document.head.appendChild(style)
+  window.print()
+  document.head.removeChild(style)
+}
 
 function openAdd() {
   editing.value = null
