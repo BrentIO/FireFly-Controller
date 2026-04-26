@@ -84,6 +84,22 @@ async function doImport() {
   showConfirm.value = false
   if (!selectedFile.value) return
   try {
+    const text = await selectedFile.value.text()
+    let parsed
+    try {
+      parsed = JSON.parse(text)
+    } catch {
+      addToast('error', 'Import failed: file is not valid JSON.')
+      return
+    }
+    if (parsed.formatName !== 'dexie') {
+      addToast('error', 'Import failed: file is not a valid Dexie export.')
+      return
+    }
+    if (parsed.data?.databaseName !== 'FireFly-Controller') {
+      addToast('error', 'Import failed: file was not exported from FireFly Controller.')
+      return
+    }
     await db.delete()
     await importDB(selectedFile.value)
     addToast('success', 'Import successful! Reloading…')
