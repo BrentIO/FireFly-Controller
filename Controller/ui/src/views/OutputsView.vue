@@ -53,7 +53,11 @@
         <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ ctrl.name }}</h2>
         <span class="text-xs text-gray-500 dark:text-gray-400">{{ ctrl.product }}</span>
       </button>
-      <h2 class="hidden print:block text-lg font-semibold text-black mb-3">{{ ctrl.name }} <span class="text-xs font-normal text-gray-600">{{ ctrl.product }}</span></h2>
+      <div class="hidden print:block mb-3">
+        <h2 class="text-lg font-semibold text-black">{{ ctrl.name }} <span class="text-xs font-normal text-gray-600">{{ ctrl.product }}</span></h2>
+        <p class="text-xs text-black">{{ areas.find(a => a.id === ctrl.area)?.name ?? '' }}</p>
+        <p class="text-xs text-black font-mono">{{ ctrl.uuid }}</p>
+      </div>
       <div v-show="!collapsed.has(ctrl.id)" class="flex flex-wrap gap-3 print:!flex">
         <div
           v-for="port in ctrl.ports"
@@ -101,10 +105,12 @@ import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { useControllers } from '../composables/useControllers'
 import { useCircuits } from '../composables/useCircuits'
+import { useAreas } from '../composables/useAreas'
 import { useToast } from '../composables/useToast'
 
 const { items: controllers, products, load: loadControllers, assignOutput } = useControllers()
 const { items: allCircuits, load: loadCircuits } = useCircuits()
+const { items: areas, load: loadAreas } = useAreas()
 const { addToast } = useToast()
 
 const selectedCircuitId = ref(null)
@@ -120,7 +126,7 @@ function toggleCollapse(id) {
 const dragging = ref(null) // { circuitId, fromControllerId, fromPort }
 const dragOver = ref(null)
 
-onMounted(() => Promise.all([loadControllers(), loadCircuits()]))
+onMounted(() => Promise.all([loadControllers(), loadCircuits(), loadAreas()]))
 
 const assignedCircuitIds = computed(() => {
   const ids = new Set()
