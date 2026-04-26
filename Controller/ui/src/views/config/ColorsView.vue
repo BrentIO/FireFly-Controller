@@ -80,6 +80,7 @@ import AppLayout from '../../components/AppLayout.vue'
 import ConfirmModal from '../../components/ConfirmModal.vue'
 import { useColors } from '../../composables/useColors'
 import { useToast } from '../../composables/useToast'
+import { db } from '../../composables/useDatabase'
 
 const { items, load, create, update, remove } = useColors()
 const { addToast } = useToast()
@@ -120,7 +121,13 @@ async function save() {
   }
 }
 
-function confirmDelete(color) {
+async function confirmDelete(color) {
+  const clients = await db.clients.toArray()
+  const inUse = clients.some(c => c.hids?.some(h => h.color === color.id))
+  if (inUse) {
+    addToast('error', `Cannot delete '${color.name}': it is assigned to one or more buttons or switches.`)
+    return
+  }
   deleteTarget.value = color
 }
 
