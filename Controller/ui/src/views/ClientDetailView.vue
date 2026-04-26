@@ -31,7 +31,7 @@
             :class="svgInverted
               ? 'bg-blue-600 border-blue-600 text-white'
               : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'"
-            @click="svgInverted = !svgInverted">Invert</button>
+            @click="toggleInvert">Invert</button>
         </div>
 
         <!-- HID table -->
@@ -364,6 +364,7 @@ onMounted(async () => {
   const id = Number(route.params.id)
   client.value = await get(id)
   if (client.value && !client.value.hids) client.value.hids = []
+  svgInverted.value = !!client.value?.inverted
   await Promise.all([loadAreas(), loadColors(), loadTags(), loadCircuits()])
 })
 
@@ -386,6 +387,16 @@ function formatChangeState(val) {
 function formatAction(val) {
   const map = { TOGGLE: 'Toggle', INCREASE: 'Increase', DECREASE: 'Decrease', INCREASE_MAXIMUM: 'Maximum', DECREASE_MAXIMUM: 'Minimum' }
   return map[val] ?? val
+}
+
+async function toggleInvert() {
+  svgInverted.value = !svgInverted.value
+  try {
+    await update(client.value.id, { inverted: svgInverted.value })
+    client.value = { ...client.value, inverted: svgInverted.value }
+  } catch (e) {
+    addToast('error', `Failed to save: ${e.message}`)
+  }
 }
 
 function openEditClient() {

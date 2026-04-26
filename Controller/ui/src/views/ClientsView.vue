@@ -11,43 +11,51 @@
     <!-- Print-only cards -->
     <div class="hidden print:block">
       <div class="grid grid-cols-2 gap-4">
-        <div v-for="client in sortedItems" :key="client.id" class="border border-black p-3 break-inside-avoid text-black text-xs">
-          <!-- Header -->
-          <div class="flex items-start justify-between gap-2 mb-1">
-            <div>
-              <span class="font-mono font-bold">{{ client.name }}</span>
-              <span class="mx-1 text-gray-400">·</span>
-              <span class="font-semibold">{{ client.description }}</span>
-            </div>
-            <span>{{ areaName(client.area) }}</span>
+        <div v-for="client in sortedItems" :key="client.id" class="border border-black p-3 break-inside-avoid text-black text-xs flex gap-3">
+          <!-- SVG preview -->
+          <div class="flex-shrink-0">
+            <ClientSvg :hids="client.hids || []" :colors="colors" :inverted="!!client.inverted" style="width:60px" />
           </div>
-          <p class="font-mono text-gray-600 mb-0.5">{{ client.uuid }}</p>
-          <p class="font-mono text-gray-600">{{ client.mac }}</p>
 
-          <!-- HIDs -->
-          <div class="mt-2 pt-2 border-t border-gray-300">
-            <template v-if="client.hids?.length">
-              <table class="w-full">
-                <thead>
-                  <tr class="border-b border-gray-300">
-                    <th class="text-left pb-1 font-semibold">Qty</th>
-                    <th class="text-left pb-1 font-semibold">Type</th>
-                    <th class="text-left pb-1 font-semibold">Color</th>
-                    <th class="text-left pb-1 font-semibold">Contact</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(entry, i) in aggregateHids(client.hids)" :key="i">
-                    <td class="py-0.5">{{ entry.count }}</td>
-                    <td class="py-0.5">{{ entry.type === 'switch' ? 'Switch' : 'Button' }}</td>
-                    <td class="py-0.5">{{ entry.colorName }}</td>
-                    <td class="py-0.5">{{ entry.switch_type === 'NORMALLY_CLOSED' ? 'Normally Closed' : 'Normally Open' }}</td>
-                  </tr>
-                </tbody>
-              </table>
-              <p class="mt-1 pt-1 border-t border-gray-200 text-gray-600">{{ hidSummary(client.hids) }}</p>
-            </template>
-            <p v-else class="italic text-gray-500">No buttons or switches defined</p>
+          <!-- Details -->
+          <div class="flex-1 min-w-0">
+            <!-- Header -->
+            <div class="flex items-start justify-between gap-2 mb-1">
+              <div>
+                <span class="font-mono font-bold">{{ client.name }}</span>
+                <span class="mx-1 text-gray-400">·</span>
+                <span class="font-semibold">{{ client.description }}</span>
+              </div>
+              <span class="text-right">{{ areaName(client.area) }}</span>
+            </div>
+            <p class="font-mono text-gray-600 mb-0.5">{{ client.uuid }}</p>
+            <p class="font-mono text-gray-600">{{ client.mac }}</p>
+
+            <!-- HIDs -->
+            <div class="mt-2 pt-2 border-t border-gray-300">
+              <template v-if="client.hids?.length">
+                <table class="w-full">
+                  <thead>
+                    <tr class="border-b border-gray-300">
+                      <th class="text-left pb-1 font-semibold">Qty</th>
+                      <th class="text-left pb-1 font-semibold">Type</th>
+                      <th class="text-left pb-1 font-semibold">Color</th>
+                      <th class="text-left pb-1 font-semibold">Contact</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(entry, i) in aggregateHids(client.hids)" :key="i">
+                      <td class="py-0.5">{{ entry.count }}</td>
+                      <td class="py-0.5">{{ entry.type === 'switch' ? 'Switch' : 'Button' }}</td>
+                      <td class="py-0.5">{{ entry.colorName }}</td>
+                      <td class="py-0.5">{{ entry.switch_type === 'NORMALLY_CLOSED' ? 'Normally Closed' : 'Normally Open' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p class="mt-1 pt-1 border-t border-gray-200 text-gray-600">{{ hidSummary(client.hids) }}</p>
+              </template>
+              <p v-else class="italic text-gray-500">No buttons or switches defined</p>
+            </div>
           </div>
         </div>
       </div>
@@ -146,6 +154,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
+import ClientSvg from '../components/ClientSvg.vue'
 import { useClients } from '../composables/useClients'
 import { useAreas } from '../composables/useAreas'
 import { useColors } from '../composables/useColors'
