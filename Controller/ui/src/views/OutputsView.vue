@@ -231,7 +231,6 @@ async function portClick(controllerId, port) {
   try {
     await assignOutput(controllerId, port.num, selectedCircuitId.value)
     selectedCircuitId.value = null
-    addToast('success', 'Circuit assigned.')
   } catch (e) {
     addToast('error', `Failed: ${e.message}`)
   }
