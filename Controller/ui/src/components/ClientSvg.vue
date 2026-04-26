@@ -1,104 +1,68 @@
 <template>
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    :viewBox="`0 0 80 ${svgHeight}`"
+    viewBox="0 0 400 600"
     class="w-full drop-shadow"
-    style="max-width:80px"
+    style="max-width:160px"
   >
-    <!-- Outer plate / wall surround -->
-    <rect x="1" y="1" width="78" :height="svgHeight - 2" rx="6" ry="6"
-          fill="#52525b" stroke="#27272a" stroke-width="1"/>
+    <defs>
+      <radialGradient id="csvBtnGrad">
+        <stop offset="10%" stop-color="#C0C0C0" />
+        <stop offset="95%" stop-color="#a6a6a6" />
+      </radialGradient>
+      <linearGradient id="csvSwGrad" gradientTransform="rotate(90)">
+        <stop offset="0%"   stop-color="#C0C0C0" />
+        <stop offset="50%"  stop-color="#C0C0C0" />
+        <stop offset="100%" stop-color="#a6a6a6" />
+      </linearGradient>
+    </defs>
+
+    <!-- Outer bezel -->
+    <rect x="5" y="5" width="390" height="590" rx="30" ry="30"
+          fill="#52525b" stroke="#27272a" stroke-width="2" />
     <!-- Screw holes -->
-    <circle cx="40" cy="9" r="3.5" fill="#27272a"/>
-    <circle cx="40" :cy="svgHeight - 9" r="3.5" fill="#27272a"/>
+    <circle cx="200" cy="30"  r="12" fill="#27272a" />
+    <circle cx="200" cy="570" r="12" fill="#27272a" />
     <!-- Inner face plate -->
-    <rect x="8" y="19" width="64" :height="svgHeight - 38" rx="3" ry="3"
-          fill="#e4e4e7"/>
+    <rect x="25" y="55" width="350" height="490" rx="15" ry="15" fill="#e8e8e8" />
 
     <g v-for="(hid, i) in hids" :key="i" :opacity="hid.enabled === false ? 0.35 : 1">
-      <!-- Button / rocker face -->
-      <rect
-        :x="btnX(i)"
-        :y="btnTop(i)"
-        :width="btnW"
-        :height="BTN_H"
-        rx="2" ry="2"
-        fill="#f9fafb"
-        stroke="#d1d5db"
-        stroke-width="0.5"
-      />
-
-      <!-- Switch: rocker dividing line -->
-      <line
-        v-if="hid.type === 'switch'"
-        :x1="btnX(i)"
-        :y1="btnTop(i) + BTN_H / 2"
-        :x2="btnX(i) + btnW"
-        :y2="btnTop(i) + BTN_H / 2"
-        stroke="#9ca3af"
-        stroke-width="1"
-      />
-
-      <!-- Button: LED indicator -->
-      <circle
-        v-else
-        :cx="btnX(i) + btnW / 2"
-        :cy="ledY(i)"
-        r="4"
-        :fill="ledColor(hid)"
-        stroke="#00000018"
-        stroke-width="0.5"
-      />
+      <!-- Switch -->
+      <template v-if="hid.type === 'switch' || hid.type === 'SWITCH'">
+        <rect :x="loc(i)[0] - 50" :y="loc(i)[1] - 25" width="100" height="50" fill="#737373" />
+        <rect :x="loc(i)[0] - 50" :y="loc(i)[1] - 25" width="30"  height="50" fill="url(#csvSwGrad)" />
+      </template>
+      <!-- Button -->
+      <template v-else>
+        <circle :cx="loc(i)[0]" :cy="loc(i)[1]" r="50" fill="url(#csvBtnGrad)" />
+        <circle :cx="loc(i)[0]" :cy="loc(i)[1]" r="33"
+                :stroke="ledColor(hid)" stroke-width="10" fill="url(#csvBtnGrad)" />
+      </template>
     </g>
   </svg>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-
 const props = defineProps({
-  hids: { type: Array, default: () => [] },
-  colors: { type: Array, default: () => [] }
+  hids:     { type: Array,   default: () => [] },
+  colors:   { type: Array,   default: () => [] },
+  inverted: { type: Boolean, default: false }
 })
 
-const BTN_H = 36
-const BTN_GAP = 3
-const BTN_GAP_H = 3
-const PLATE_PAD = 21
-const FACE_X = 12
-const FACE_W = 56
+const LOCATIONS = {
+  1:   [[200,300]],
+  2:   [[200,200],[200,400]],
+  3:   [[200,150],[200,300],[200,450]],
+  4:   [[125,200],[275,200],[125,400],[275,400]],
+  5:   [[125,150],[275,150],[125,300],[275,300],[200,450]],
+  6:   [[125,150],[275,150],[125,300],[275,300],[125,450],[275,450]],
+  '5i':[[200,150],[125,300],[275,300],[125,450],[275,450]]
+}
 
-const cols = computed(() => {
+function loc(i) {
   const n = props.hids.length
-  if (n >= 5) return 3
-  if (n === 4) return 2
-  return 1
-})
-
-const rows = computed(() => Math.ceil(props.hids.length / cols.value))
-
-const btnW = computed(() => (FACE_W - (cols.value - 1) * BTN_GAP_H) / cols.value)
-
-const svgHeight = computed(() => {
-  const r = Math.max(1, rows.value)
-  return PLATE_PAD * 2 + r * BTN_H + (r - 1) * BTN_GAP
-})
-
-function btnCol(i) { return i % cols.value }
-function btnRow(i) { return Math.floor(i / cols.value) }
-
-function btnX(i) {
-  return FACE_X + btnCol(i) * (btnW.value + BTN_GAP_H)
-}
-
-function btnTop(i) {
-  return PLATE_PAD + btnRow(i) * (BTN_H + BTN_GAP)
-}
-
-function ledY(i) {
-  const top = btnTop(i)
-  const inverted = props.hids.length === 5 && i === 4
-  return inverted ? top + 8 : top + BTN_H - 8
+  const key = n === 5 && props.inverted ? '5i' : n
+  return (LOCATIONS[key] ?? [[200,300]])[i] ?? [200,300]
 }
 
 function ledColor(hid) {

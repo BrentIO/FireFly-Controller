@@ -8,7 +8,7 @@
           <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1 print:text-xl">
             {{ client.name }} — {{ client.description }}
           </h1>
-          <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ client.mac }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ areas.find(a => a.id === client.area)?.name ?? '' }}</p>
         </div>
         <div class="flex gap-2 print:hidden flex-shrink-0">
           <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors" @click="openEditClient">Edit Client</button>
@@ -25,7 +25,13 @@
         <!-- Switch plate SVG preview -->
         <div class="flex-shrink-0 flex flex-col items-center lg:items-start print:hidden">
           <p class="text-xs text-center text-gray-500 dark:text-gray-400 mb-2">Preview</p>
-          <ClientSvg :hids="client.hids || []" :colors="colors" />
+          <ClientSvg :hids="client.hids || []" :colors="colors" :inverted="svgInverted" />
+          <button v-if="(client.hids?.length ?? 0) === 5"
+            class="mt-2 px-3 py-1 text-xs font-medium rounded border transition-colors"
+            :class="svgInverted
+              ? 'bg-blue-600 border-blue-600 text-white'
+              : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'"
+            @click="svgInverted = !svgInverted">Invert</button>
         </div>
 
         <!-- HID table -->
@@ -302,6 +308,7 @@ const { items: circuits, relayModels, load: loadCircuits } = useCircuits()
 const { addToast } = useToast()
 
 const client = ref(null)
+const svgInverted = ref(false)
 const showClientModal = ref(false)
 const clientMacError = ref('')
 const clientForm = ref({})
