@@ -167,7 +167,7 @@ const reportItems = [
 ]
 
 const utilItems = [
-  { path: '/config/import', label: 'Import' },
+  { path: '/config/import', label: 'Import / Export' },
   { path: '/config/reset', label: 'Reset' }
 ]
 </script>
