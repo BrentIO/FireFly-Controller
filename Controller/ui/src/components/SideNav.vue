@@ -87,13 +87,13 @@
       </li>
 
       <!-- Validate -->
-      <li class="mt-1">
+      <li class="mt-2 border-t border-gray-700 dark:border-gray-800 pt-2">
         <RouterLink
           to="/validate"
           class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-gray-100 transition-colors rounded-sm mx-1"
           :class="{ 'bg-gray-800 text-gray-100': route.path === '/validate' }"
           @click="$emit('close')"
-        >Validate</RouterLink>
+        >Validate Configuration</RouterLink>
       </li>
 
       <!-- Utilities -->
