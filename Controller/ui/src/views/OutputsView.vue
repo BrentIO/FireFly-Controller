@@ -58,8 +58,9 @@
         <div
           v-for="port in ctrl.ports"
           :key="port.num"
-          class="w-36 h-28 rounded-xl border-2 flex flex-col items-center justify-center text-center p-2 transition-all select-none print:border-gray-400 print:bg-white"
+          class="w-36 h-28 rounded-xl border-2 flex flex-col items-center justify-center text-center p-2 transition-all select-none"
           :class="portClass(ctrl.id, port)"
+          :style="portStyle(ctrl.id, port)"
           :draggable="!!port.circuit"
           @dragstart="port.circuit && startDragPort($event, ctrl.id, port.num, port.circuit.id)"
           @dragend="endDrag"
@@ -155,7 +156,7 @@ function portClass(controllerId, port) {
   if (port.circuit) {
     return dragOver.value === key
       ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20 cursor-pointer'
-      : 'border-green-400 bg-green-50 dark:bg-green-900/20 cursor-grab'
+      : 'cursor-grab'
   }
   if (dragOver.value === key) {
     return 'border-blue-500 bg-blue-100 dark:bg-blue-900/30 cursor-copy'
@@ -163,7 +164,14 @@ function portClass(controllerId, port) {
   if (canDrop(controllerId, port)) {
     return 'border-blue-300 bg-blue-50 dark:bg-blue-900/10 cursor-pointer border-dashed'
   }
-  return 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'
+  return 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 print:border-gray-400 print:bg-white'
+}
+
+function portStyle(controllerId, port) {
+  if (!port.circuit) return {}
+  const key = portKey(controllerId, port.num)
+  if (dragOver.value === key) return {}
+  return { borderColor: '#8df086', backgroundColor: '#c7e5c5' }
 }
 
 function toggleSelect(id) {
