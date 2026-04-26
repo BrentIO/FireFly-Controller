@@ -210,9 +210,12 @@ export async function checkConfiguration() {
   const clients = await db.clients.where('id').noneOf(extendedClientIds).toArray()
   const breakers = await db.breakers.toArray()
 
+  const seenErrors = new Set()
   for (const controller of controllers) {
     const errors = await buildControllerPayload(controller.id, true)
-    errors.forEach(e => errorList.push(e))
+    errors.forEach(e => {
+      if (!seenErrors.has(e)) { seenErrors.add(e); errorList.push(e) }
+    })
     Object.values(controller.inputs || {}).forEach(id => assignedClientIds.push(id))
     Object.values(controller.outputs || {}).forEach(id => assignedCircuitIds.push(id))
   }
