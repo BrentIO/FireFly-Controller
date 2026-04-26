@@ -97,7 +97,6 @@ async function processFile(file) {
   try {
     const parsed = parseCertBasic(text)
     await store(file.name, text, parsed)
-    addToast('success', `Certificate "${parsed.commonName || file.name}" stored.`)
   } catch (e) {
     addToast('error', `Failed to store certificate: ${e.message}`)
   }
@@ -134,7 +133,6 @@ async function confirmDelete(cert) {
 async function doDelete() {
   try {
     await remove(deleteTarget.value.id)
-    addToast('success', 'Certificate deleted.')
   } catch (e) {
     addToast('error', `Failed to delete: ${e.message}`)
   } finally {

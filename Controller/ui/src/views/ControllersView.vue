@@ -193,7 +193,6 @@ async function save() {
   try {
     if (editing.value) {
       await update(editing.value.id, form.value)
-      addToast('success', 'Controller updated.')
     } else {
       await create(form.value)
     }
@@ -218,7 +217,6 @@ function confirmDelete(c) {
 async function doDelete() {
   try {
     await remove(deleteTarget.value.id)
-    addToast('success', 'Controller deleted.')
   } catch (e) {
     addToast('error', `Failed to delete: ${e.message}`)
   } finally {
