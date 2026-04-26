@@ -17,7 +17,7 @@
           <tr>
             <th class="py-2 text-left font-semibold">Name</th>
             <th class="py-2 text-left font-semibold">Area</th>
-            <th class="py-2 text-left font-semibold">Product</th>
+            <th class="py-2 text-left font-semibold">Product ID</th>
             <th class="py-2 text-left font-semibold">UUID</th>
           </tr>
         </thead>
