@@ -12,7 +12,11 @@
         </div>
         <div class="flex gap-2 print:hidden flex-shrink-0">
           <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors" @click="openEditClient">Edit Client</button>
-          <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors" @click="openAdd">Add Button/Switch</button>
+          <button class="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-white"
+            :class="(client.hids?.length ?? 0) >= 6 ? 'bg-blue-600 opacity-40 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
+            :disabled="(client.hids?.length ?? 0) >= 6"
+            :title="(client.hids?.length ?? 0) >= 6 ? 'Maximum of 6 buttons/switches reached' : undefined"
+            @click="openAdd">Add Button/Switch</button>
         </div>
       </div>
 
