@@ -1,24 +1,24 @@
 <template>
   <AppLayout>
     <div class="flex items-center justify-between mb-6 print:mb-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl">Bill of Materials</h1>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl print:!text-black">Bill of Materials</h1>
       <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors print:hidden" onclick="window.print()">Print</button>
     </div>
 
     <div class="space-y-6">
       <!-- Controllers -->
       <section class="break-inside-avoid">
-        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">Controllers</h2>
-        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 print:!text-black">Controllers</h2>
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
           <table class="w-full text-sm">
-            <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">
+            <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider print:!text-black print:bg-white">
               <tr><th class="px-4 py-2 text-left">Product ID</th><th class="px-4 py-2 text-right">Qty</th></tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-              <tr v-if="!controllerBom.length"><td colspan="2" class="px-4 py-4 text-center text-gray-400">None.</td></tr>
+              <tr v-if="!controllerBom.length"><td colspan="2" class="px-4 py-4 text-center text-gray-400 print:!text-black">None.</td></tr>
               <tr v-for="row in controllerBom" :key="row.pid" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                <td class="px-4 py-2 text-gray-900 dark:text-gray-100">{{ row.pid }}</td>
-                <td class="px-4 py-2 text-right text-gray-700 dark:text-gray-300 font-semibold">{{ row.qty }}</td>
+                <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.pid }}</td>
+                <td class="px-4 py-2 text-right text-gray-700 dark:text-gray-300 font-semibold print:!text-black">{{ row.qty }}</td>
               </tr>
             </tbody>
           </table>
@@ -27,38 +27,38 @@
 
       <!-- Clients -->
       <section class="break-inside-avoid">
-        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">Clients</h2>
-        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 print:!text-black">Clients</h2>
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
           <table class="w-full text-sm">
-            <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">
+            <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider print:!text-black print:bg-white">
               <tr><th class="px-4 py-2 text-left">Button Count</th><th class="px-4 py-2 text-right">Qty</th></tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-              <tr v-if="!clientBom.length"><td colspan="2" class="px-4 py-4 text-center text-gray-400">None.</td></tr>
+              <tr v-if="!clientBom.length"><td colspan="2" class="px-4 py-4 text-center text-gray-400 print:!text-black">None.</td></tr>
               <tr v-for="row in clientBom" :key="row.count" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                <td class="px-4 py-2 text-gray-900 dark:text-gray-100">{{ row.count }} {{ row.count === 1 ? 'button' : 'buttons' }}</td>
-                <td class="px-4 py-2 text-right text-gray-700 dark:text-gray-300 font-semibold">{{ row.qty }}</td>
+                <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.count }} {{ row.count === 1 ? 'button' : 'buttons' }}</td>
+                <td class="px-4 py-2 text-right text-gray-700 dark:text-gray-300 font-semibold print:!text-black">{{ row.qty }}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <!-- Breakers & Circuits -->
+      <!-- Relays -->
       <section class="break-inside-avoid">
-        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">Relays</h2>
-        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 print:!text-black">Relays</h2>
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
           <table class="w-full text-sm">
-            <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">
+            <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider print:!text-black print:bg-white">
               <tr><th class="px-4 py-2 text-left">Manufacturer</th><th class="px-4 py-2 text-left">Model</th><th class="px-4 py-2 text-left">Description</th><th class="px-4 py-2 text-right">Qty</th></tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-              <tr v-if="!relayBom.length"><td colspan="4" class="px-4 py-4 text-center text-gray-400">None.</td></tr>
+              <tr v-if="!relayBom.length"><td colspan="4" class="px-4 py-4 text-center text-gray-400 print:!text-black">None.</td></tr>
               <tr v-for="row in relayBom" :key="row.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                <td class="px-4 py-2 text-gray-900 dark:text-gray-100">{{ row.manufacturer }}</td>
-                <td class="px-4 py-2 text-gray-700 dark:text-gray-300">{{ row.model }}</td>
-                <td class="px-4 py-2 text-gray-600 dark:text-gray-400">{{ row.description }}</td>
-                <td class="px-4 py-2 text-right font-semibold text-gray-700 dark:text-gray-300">{{ row.qty }}</td>
+                <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.manufacturer }}</td>
+                <td class="px-4 py-2 text-gray-700 dark:text-gray-300 print:!text-black">{{ row.model }}</td>
+                <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.description }}</td>
+                <td class="px-4 py-2 text-right font-semibold text-gray-700 dark:text-gray-300 print:!text-black">{{ row.qty }}</td>
               </tr>
             </tbody>
           </table>

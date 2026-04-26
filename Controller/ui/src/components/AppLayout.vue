@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden">
+  <div class="flex h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden print:h-auto print:overflow-visible">
     <!-- Mobile backdrop -->
     <Transition
       enter-active-class="ease-out duration-200"
@@ -25,7 +25,7 @@
     </div>
 
     <!-- Main content -->
-    <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
+    <div class="flex flex-col flex-1 min-w-0 overflow-hidden print:overflow-visible">
       <!-- Mobile top bar -->
       <div class="flex items-center gap-3 px-4 h-12 bg-gray-900 border-b border-gray-700 md:hidden flex-shrink-0 print:hidden">
         <button
@@ -40,7 +40,7 @@
         <span class="text-sm font-semibold text-gray-100">FireFly Controller</span>
       </div>
 
-      <main class="flex-1 overflow-auto p-6">
+      <main class="flex-1 overflow-auto p-6 print:overflow-visible">
         <slot />
       </main>
     </div>

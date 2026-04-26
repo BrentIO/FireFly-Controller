@@ -86,6 +86,16 @@
         </ul>
       </li>
 
+      <!-- Validate -->
+      <li class="mt-2 border-t border-gray-700 dark:border-gray-800 pt-2">
+        <RouterLink
+          to="/validate"
+          class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-gray-100 transition-colors rounded-sm mx-1"
+          :class="{ 'bg-gray-800 text-gray-100': route.path === '/validate' }"
+          @click="$emit('close')"
+        >Validate Configuration</RouterLink>
+      </li>
+
       <!-- Utilities -->
       <li class="mt-2 border-t border-gray-700 dark:border-gray-800 pt-2">
         <RouterLink
@@ -101,7 +111,7 @@
 
     <!-- Footer -->
     <div class="px-4 py-3 text-xs text-gray-600 border-t border-gray-700 dark:border-gray-800 space-y-0.5">
-      <div>v{{ state.uiVersion }}</div>
+      <div>{{ state.uiVersion }}</div>
     </div>
   </nav>
 </template>
@@ -157,7 +167,7 @@ const reportItems = [
 ]
 
 const utilItems = [
-  { path: '/config/import', label: 'Import' },
+  { path: '/config/import', label: 'Import / Export' },
   { path: '/config/reset', label: 'Reset' }
 ]
 </script>

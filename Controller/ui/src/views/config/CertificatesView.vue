@@ -21,7 +21,7 @@
       <input ref="fileInput" type="file" accept=".pem,.crt,.cer" class="hidden" @change="onFileSelect" />
     </div>
 
-    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">
           <tr>
@@ -40,8 +40,10 @@
             <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ cert.organization }}</td>
             <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ cert.expiration }}</td>
             <td class="px-4 py-3 text-right print:hidden">
-              <button class="text-blue-600 hover:text-blue-700 dark:text-blue-400 mr-3 text-sm" @click="doExport(cert)">Export</button>
-              <button class="text-red-600 hover:text-red-700 dark:text-red-400 text-sm" @click="confirmDelete(cert)">Delete</button>
+              <div class="flex justify-end gap-2">
+                <button class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="doExport(cert)">Export</button>
+                <button class="px-2.5 py-1 text-xs font-medium rounded border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" @click="confirmDelete(cert)">Delete</button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -95,7 +97,6 @@ async function processFile(file) {
   try {
     const parsed = parseCertBasic(text)
     await store(file.name, text, parsed)
-    addToast('success', `Certificate "${parsed.commonName || file.name}" stored.`)
   } catch (e) {
     addToast('error', `Failed to store certificate: ${e.message}`)
   }
@@ -132,7 +133,6 @@ async function confirmDelete(cert) {
 async function doDelete() {
   try {
     await remove(deleteTarget.value.id)
-    addToast('success', 'Certificate deleted.')
   } catch (e) {
     addToast('error', `Failed to delete: ${e.message}`)
   } finally {

@@ -1,34 +1,88 @@
 <template>
   <AppLayout>
     <div class="flex items-center justify-between mb-6 print:mb-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl">Clients</h1>
-      <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors print:hidden" @click="openAdd">
-        Add Client
-      </button>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl print:!text-black">Clients</h1>
+      <div class="flex gap-2 print:hidden">
+        <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors" @click="printLandscape">Print</button>
+        <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors" @click="openAdd">Add Client</button>
+      </div>
     </div>
 
-    <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+    <!-- Print-only cards -->
+    <div class="hidden print:block">
+      <div class="grid grid-cols-2 gap-4">
+        <div v-for="client in sortedItems" :key="client.id" class="border border-black p-3 break-inside-avoid text-black text-xs flex gap-3">
+          <!-- SVG preview -->
+          <div class="flex-shrink-0">
+            <ClientSvg :hids="client.hids || []" :colors="colors" :inverted="!!client.inverted" style="width:60px" />
+          </div>
+
+          <!-- Details -->
+          <div class="flex-1 min-w-0">
+            <!-- Header -->
+            <div class="flex items-start justify-between gap-2 mb-1">
+              <div>
+                <span class="font-mono font-bold">{{ client.name }}</span>
+                <span class="mx-1 text-gray-400">·</span>
+                <span class="font-semibold">{{ client.description }}</span>
+              </div>
+              <span class="text-right">{{ areaName(client.area) }}</span>
+            </div>
+            <p class="font-mono text-gray-600 mb-0.5">{{ client.uuid }}</p>
+            <p class="font-mono text-gray-600">{{ client.mac }}</p>
+
+            <!-- HIDs -->
+            <div class="mt-2 pt-2 border-t border-gray-300">
+              <template v-if="client.hids?.length">
+                <table class="w-full">
+                  <thead>
+                    <tr class="border-b border-gray-300">
+                      <th class="text-left pb-1 font-semibold">Qty</th>
+                      <th class="text-left pb-1 font-semibold">Type</th>
+                      <th class="text-left pb-1 font-semibold">Color</th>
+                      <th class="text-left pb-1 font-semibold">Contact</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(entry, i) in aggregateHids(client.hids)" :key="i">
+                      <td class="py-0.5">{{ entry.count }}</td>
+                      <td class="py-0.5">{{ entry.type === 'switch' ? 'Switch' : 'Button' }}</td>
+                      <td class="py-0.5">{{ entry.colorName }}</td>
+                      <td class="py-0.5">{{ entry.switch_type === 'NORMALLY_CLOSED' ? 'Normally Closed' : 'Normally Open' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p class="mt-1 pt-1 border-t border-gray-200 text-gray-600">{{ hidSummary(client.hids) }}</p>
+              </template>
+              <p v-else class="italic text-gray-500">No buttons or switches defined</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 print:hidden">
       <div v-if="sortedItems.length === 0" class="text-gray-400 dark:text-gray-500 py-8 col-span-full">No clients defined.</div>
 
       <div v-for="client in sortedItems" :key="client.id"
-        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 break-inside-avoid">
+        class="rounded-xl border p-4 break-inside-avoid"
+        :class="client.mac === 'ff:ff:ff:ff:ff:ff'
+          ? 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-300 dark:border-yellow-700'
+          : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'">
         <div class="flex items-start justify-between gap-2 mb-3">
           <div>
             <p class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ client.name }}</p>
             <p class="font-semibold text-gray-900 dark:text-gray-100">{{ client.description }}</p>
-            <div class="flex items-center gap-1 mt-0.5">
-              <svg v-if="client.mac === 'ff:ff:ff:ff:ff:ff'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 text-yellow-500 flex-shrink-0">
-                <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-              </svg>
-              <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ client.mac }}</p>
-            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">{{ client.uuid }}</p>
           </div>
           <div class="flex gap-2 print:hidden flex-shrink-0">
-            <button class="text-blue-600 hover:text-blue-700 dark:text-blue-400 text-sm" @click="router.push(`/clients/${client.id}`)">Edit</button>
-            <button class="text-red-600 hover:text-red-700 dark:text-red-400 text-sm" @click="confirmDelete(client)">Delete</button>
+            <button class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="router.push(`/clients/${client.id}`)">Edit</button>
+            <button class="px-2.5 py-1 text-xs font-medium rounded border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" @click="confirmDelete(client)">Delete</button>
           </div>
         </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400">{{ areaName(client.area) }}</p>
         <p class="text-xs text-gray-500 dark:text-gray-400">{{ hidSummary(client.hids) }}</p>
+        <p v-if="client.mac === 'ff:ff:ff:ff:ff:ff'" class="text-xs text-yellow-700 dark:text-yellow-500 mt-1 font-medium">MAC Address is invalid</p>
       </div>
     </div>
 
@@ -77,7 +131,7 @@
                   <button type="button" class="text-xs text-blue-600 dark:text-blue-400 hover:underline" @click="form.uuid = randomUUID()">Generate</button>
                 </div>
                 <input v-model="form.uuid" type="text" required pattern="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div class="flex gap-3 justify-end pt-2">
                 <button type="button" class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="showModal = false">Cancel</button>
@@ -100,8 +154,10 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
+import ClientSvg from '../components/ClientSvg.vue'
 import { useClients } from '../composables/useClients'
 import { useAreas } from '../composables/useAreas'
+import { useColors } from '../composables/useColors'
 import { useToast } from '../composables/useToast'
 import { randomUUID } from '../composables/useValidators'
 
@@ -110,6 +166,7 @@ const MAC_RE = /^[0-9A-Fa-f]{2}[:-]([0-9A-Fa-f]{2}[:-]){4}[0-9A-Fa-f]{2}$/
 const router = useRouter()
 const { items, load, create, remove, isInUse } = useClients()
 const { items: areas, load: loadAreas } = useAreas()
+const { items: colors, load: loadColors } = useColors()
 const { addToast } = useToast()
 
 const showModal = ref(false)
@@ -122,7 +179,35 @@ const sortedItems = computed(() =>
   [...items.value].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
 )
 
-onMounted(() => Promise.all([load(), loadAreas()]))
+onMounted(() => Promise.all([load(), loadAreas(), loadColors()]))
+
+function areaName(id) { return areas.value.find(a => a.id === id)?.name ?? '—' }
+
+function aggregateHids(hids) {
+  const map = new Map()
+  for (const h of (hids || [])) {
+    const key = `${h.type}|${h.color ?? ''}|${h.switch_type}`
+    if (map.has(key)) {
+      map.get(key).count++
+    } else {
+      map.set(key, {
+        count: 1,
+        type: h.type,
+        colorName: h.type !== 'switch' && h.color ? (colors.value.find(c => c.id === h.color)?.name ?? '—') : '—',
+        switch_type: h.switch_type ?? 'NORMALLY_OPEN'
+      })
+    }
+  }
+  return [...map.values()]
+}
+
+function printLandscape() {
+  const style = document.createElement('style')
+  style.textContent = '@page { size: landscape; }'
+  document.head.appendChild(style)
+  window.print()
+  document.head.removeChild(style)
+}
 
 function hidSummary(hids) {
   const all = hids || []

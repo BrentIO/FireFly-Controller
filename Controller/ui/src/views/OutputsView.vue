@@ -1,7 +1,7 @@
 <template>
   <AppLayout>
     <div class="flex items-center justify-between mb-2 print:mb-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl">Outputs</h1>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl print:!text-black">Outputs</h1>
       <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors print:hidden" onclick="window.print()">Print</button>
     </div>
 
@@ -45,7 +45,7 @@
     </section>
 
     <!-- Controllers -->
-    <section v-for="ctrl in enrichedControllers" :key="ctrl.id" class="mb-8">
+    <section v-for="(ctrl, index) in enrichedControllers" :key="ctrl.id" class="mb-8" :class="index > 0 ? 'print:break-before-page' : ''">
       <button type="button" class="flex items-center gap-3 mb-3 w-full text-left print:hidden" @click="toggleCollapse(ctrl.id)">
         <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform" :class="collapsed.has(ctrl.id) ? '-rotate-90' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -53,13 +53,19 @@
         <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ ctrl.name }}</h2>
         <span class="text-xs text-gray-500 dark:text-gray-400">{{ ctrl.product }}</span>
       </button>
-      <h2 class="hidden print:block text-lg font-semibold text-black mb-3">{{ ctrl.name }} <span class="text-xs font-normal text-gray-600">{{ ctrl.product }}</span></h2>
+      <div class="hidden print:block mb-3">
+        <h2 class="text-lg font-semibold text-black">{{ ctrl.name }}</h2>
+        <p class="text-xs text-black font-mono">{{ ctrl.uuid }}</p>
+        <p class="text-xs text-black">{{ ctrl.product }}</p>
+        <p class="text-xs text-black">{{ areas.find(a => a.id === ctrl.area)?.name ?? '' }}</p>
+      </div>
       <div v-show="!collapsed.has(ctrl.id)" class="flex flex-wrap gap-3 print:!flex">
         <div
           v-for="port in ctrl.ports"
           :key="port.num"
-          class="w-36 h-28 rounded-xl border-2 flex flex-col items-center justify-center text-center p-2 transition-all select-none print:border-gray-400 print:bg-white"
+          class="w-36 h-28 rounded-xl border-2 flex flex-col overflow-hidden transition-all select-none break-inside-avoid"
           :class="portClass(ctrl.id, port)"
+          :style="portStyle(ctrl.id, port)"
           :draggable="!!port.circuit"
           @dragstart="port.circuit && startDragPort($event, ctrl.id, port.num, port.circuit.id)"
           @dragend="endDrag"
@@ -68,17 +74,20 @@
           @drop.prevent="onDropPort(ctrl.id, port)"
           @click="portClick(ctrl.id, port)"
         >
-          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 print:text-black">Port {{ port.num }}</span>
-          <template v-if="port.circuit">
-            <span class="font-mono text-xs font-bold text-gray-900 dark:text-gray-100 cursor-grab print:text-black">{{ port.circuit.name }}</span>
-            <span class="text-xs text-gray-600 dark:text-gray-400 leading-tight print:text-gray-700">{{ port.circuit.description }}</span>
-            <button class="mt-1 text-red-500 hover:text-red-700 text-xs print:hidden leading-none" title="Unassign" @click.stop="unassign(ctrl.id, port.num)">✕</button>
-          </template>
-          <template v-else>
-            <span class="text-xs print:text-gray-500" :class="canDrop(ctrl.id, port) ? 'text-blue-400 dark:text-blue-500' : 'text-gray-300 dark:text-gray-600'">
-              {{ canDrop(ctrl.id, port) ? 'Drop here' : 'Empty' }}
-            </span>
-          </template>
+          <div class="bg-black text-white text-xs font-bold text-center py-1 flex-shrink-0"
+               style="print-color-adjust:exact;-webkit-print-color-adjust:exact">Port {{ port.num }}</div>
+          <div class="flex-1 flex flex-col items-center justify-center text-center px-2 pb-1">
+            <template v-if="port.circuit">
+              <span class="font-mono text-xs font-bold text-gray-900 dark:text-black cursor-grab print:!text-black">{{ port.circuit.name }}</span>
+              <span class="text-xs text-gray-600 dark:text-black leading-tight print:!text-black">{{ port.circuit.description }}</span>
+              <button class="mt-1 text-red-500 hover:text-red-700 text-xs print:hidden leading-none" title="Unassign" @click.stop="unassign(ctrl.id, port.num)">✕</button>
+            </template>
+            <template v-else>
+              <span class="print:hidden text-xs" :class="canDrop(ctrl.id, port) ? 'text-blue-400 dark:text-blue-500' : 'text-gray-300 dark:text-gray-600'">
+                {{ canDrop(ctrl.id, port) ? 'Drop here' : 'Empty' }}
+              </span>
+            </template>
+          </div>
         </div>
       </div>
     </section>
@@ -86,7 +95,7 @@
     <div v-if="enrichedControllers.length === 0" class="text-gray-400 dark:text-gray-500 py-8">Add a controller to assign outputs.</div>
 
     <ConfirmModal :show="!!unassignTarget" title="Unassign Circuit"
-      :message="`Unassign '${unassignTarget?.circuitName}' from port ${unassignTarget?.port}?`"
+      :message="`Unassign '${unassignTarget?.circuitName}' from controller '${unassignTarget?.controllerName}' port ${unassignTarget?.port}?`"
       confirm-label="Unassign" @confirm="doUnassign" @cancel="unassignTarget = null" />
   </AppLayout>
 </template>
@@ -97,10 +106,12 @@ import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { useControllers } from '../composables/useControllers'
 import { useCircuits } from '../composables/useCircuits'
+import { useAreas } from '../composables/useAreas'
 import { useToast } from '../composables/useToast'
 
 const { items: controllers, products, load: loadControllers, assignOutput } = useControllers()
 const { items: allCircuits, load: loadCircuits } = useCircuits()
+const { items: areas, load: loadAreas } = useAreas()
 const { addToast } = useToast()
 
 const selectedCircuitId = ref(null)
@@ -116,7 +127,7 @@ function toggleCollapse(id) {
 const dragging = ref(null) // { circuitId, fromControllerId, fromPort }
 const dragOver = ref(null)
 
-onMounted(() => Promise.all([loadControllers(), loadCircuits()]))
+onMounted(() => Promise.all([loadControllers(), loadCircuits(), loadAreas()]))
 
 const assignedCircuitIds = computed(() => {
   const ids = new Set()
@@ -155,7 +166,7 @@ function portClass(controllerId, port) {
   if (port.circuit) {
     return dragOver.value === key
       ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20 cursor-pointer'
-      : 'border-green-400 bg-green-50 dark:bg-green-900/20 cursor-grab'
+      : 'cursor-grab'
   }
   if (dragOver.value === key) {
     return 'border-blue-500 bg-blue-100 dark:bg-blue-900/30 cursor-copy'
@@ -163,7 +174,14 @@ function portClass(controllerId, port) {
   if (canDrop(controllerId, port)) {
     return 'border-blue-300 bg-blue-50 dark:bg-blue-900/10 cursor-pointer border-dashed'
   }
-  return 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50'
+  return 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 print:border-gray-400 print:bg-white'
+}
+
+function portStyle(controllerId, port) {
+  if (!port.circuit) return {}
+  const key = portKey(controllerId, port.num)
+  if (dragOver.value === key) return {}
+  return { borderColor: '#8df086', backgroundColor: '#c7e5c5', printColorAdjust: 'exact', WebkitPrintColorAdjust: 'exact' }
 }
 
 function toggleSelect(id) {
@@ -222,7 +240,6 @@ async function portClick(controllerId, port) {
   try {
     await assignOutput(controllerId, port.num, selectedCircuitId.value)
     selectedCircuitId.value = null
-    addToast('success', 'Circuit assigned.')
   } catch (e) {
     addToast('error', `Failed: ${e.message}`)
   }
@@ -232,13 +249,12 @@ function unassign(controllerId, portNum) {
   const ctrl = controllers.value.find(c => c.id === controllerId)
   const circuitId = ctrl?.outputs?.[portNum]
   const circuit = allCircuits.value.find(c => c.id === circuitId)
-  unassignTarget.value = { controllerId, port: portNum, circuitName: circuit?.name ?? '?' }
+  unassignTarget.value = { controllerId, port: portNum, circuitName: circuit?.name ?? '?', controllerName: ctrl?.name ?? '?' }
 }
 
 async function doUnassign() {
   try {
     await assignOutput(unassignTarget.value.controllerId, unassignTarget.value.port, null)
-    addToast('success', 'Unassigned.')
   } catch (e) {
     addToast('error', `Failed: ${e.message}`)
   } finally {

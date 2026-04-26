@@ -1,18 +1,38 @@
 <template>
   <AppLayout>
     <div class="flex flex-wrap items-center gap-3 justify-between mb-6 print:mb-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl">Controllers</h1>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl print:!text-black">Controllers</h1>
       <div class="flex gap-2 print:hidden flex-shrink-0">
-        <button class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors" @click="checkConfig">
-          Validate
-        </button>
+        <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors" @click="printLandscape">Print</button>
         <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors" @click="openAdd">
           Add Controller
         </button>
       </div>
     </div>
 
-    <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+    <!-- Print-only table -->
+    <div class="hidden print:block mb-6">
+      <table class="w-full text-xs text-black">
+        <thead class="uppercase tracking-wider border-b border-black">
+          <tr>
+            <th class="py-2 text-left font-semibold">Name</th>
+            <th class="py-2 text-left font-semibold">Area</th>
+            <th class="py-2 text-left font-semibold">Product ID</th>
+            <th class="py-2 text-left font-semibold">UUID</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-300">
+          <tr v-for="ctrl in items" :key="ctrl.id">
+            <td class="py-2 font-semibold">{{ ctrl.name }}</td>
+            <td class="py-2">{{ areaName(ctrl.area) }}</td>
+            <td class="py-2">{{ ctrl.product }}</td>
+            <td class="py-2 font-mono">{{ ctrl.uuid }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 print:hidden">
       <div v-if="items.length === 0" class="text-gray-400 dark:text-gray-500 py-8 col-span-full">No controllers defined.</div>
 
       <div v-for="ctrl in items" :key="ctrl.id"
@@ -23,10 +43,11 @@
             <p class="font-semibold text-gray-900 dark:text-gray-100">{{ ctrl.name }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ ctrl.uuid }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ ctrl.product }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ areaName(ctrl.area) }}</p>
           </div>
           <div class="flex gap-2 print:hidden flex-shrink-0">
-            <button class="text-blue-600 hover:text-blue-700 dark:text-blue-400 text-sm" @click="openEdit(ctrl)">Edit</button>
-            <button class="text-red-600 hover:text-red-700 dark:text-red-400 text-sm" @click="confirmDelete(ctrl)">Delete</button>
+            <button class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="openEdit(ctrl)">Edit</button>
+            <button class="px-2.5 py-1 text-xs font-medium rounded border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" @click="confirmDelete(ctrl)">Delete</button>
           </div>
         </div>
 
@@ -34,7 +55,7 @@
         <div class="print:hidden border-t border-gray-100 dark:border-gray-800 pt-3 mt-3 space-y-2">
           <div v-if="!sessions[ctrl.id]?.isAuthenticated" class="space-y-2">
             <input v-model="ipInputs[ctrl.id]" type="text" placeholder="192.168.1.x"
-              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" />
             <div class="flex gap-2">
               <input v-model="tokenInputs[ctrl.id]" type="text" placeholder="Visual token" maxlength="8"
                 class="flex-1 min-w-0 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -83,7 +104,7 @@
                   <button type="button" class="text-xs text-blue-600 dark:text-blue-400 hover:underline" @click="form.uuid = randomUUID()">Generate</button>
                 </div>
                 <input v-model="form.uuid" type="text" required pattern="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div class="flex gap-3 justify-end pt-2">
                 <button type="button" class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="showModal = false">Cancel</button>
@@ -95,30 +116,6 @@
       </Transition>
     </Teleport>
 
-    <!-- Validate results modal -->
-    <Teleport to="body">
-      <Transition enter-active-class="ease-out duration-200" enter-from-class="opacity-0" enter-to-class="opacity-100"
-                  leave-active-class="ease-in duration-150" leave-from-class="opacity-100" leave-to-class="opacity-0">
-        <div v-if="showValidateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" @click.self="showValidateModal = false">
-          <div class="w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6 max-h-[80vh] flex flex-col">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Validation Results</h3>
-              <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl leading-none" @click="showValidateModal = false">&times;</button>
-            </div>
-            <div class="overflow-y-auto flex-1 space-y-2">
-              <div v-for="(r, i) in validateResults" :key="i"
-                class="p-3 rounded-lg text-sm"
-                :class="r.type === 'error' ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300'">
-                <span class="font-medium mr-1">{{ r.type === 'error' ? '✗ Error:' : '⚠ Warning:' }}</span>{{ r.message }}
-              </div>
-            </div>
-            <div class="mt-4 flex justify-end">
-              <button class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors" @click="showValidateModal = false">Close</button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
 
     <!-- Event log modal -->
     <Teleport to="body">
@@ -160,7 +157,7 @@ import ConfirmModal from '../components/ConfirmModal.vue'
 import { useControllers } from '../composables/useControllers'
 import { useAreas } from '../composables/useAreas'
 import { useControllerSession } from '../composables/useControllerSession'
-import { buildControllerPayload, checkConfiguration } from '../composables/usePayloads'
+import { buildControllerPayload } from '../composables/usePayloads'
 import { useToast } from '../composables/useToast'
 import { randomUUID } from '../composables/useValidators'
 import { isCloudMode } from '../composables/useCloudMode'
@@ -171,11 +168,9 @@ const { addToast } = useToast()
 
 const showModal = ref(false)
 const showEventLog = ref(false)
-const showValidateModal = ref(false)
 const editing = ref(null)
 const deleteTarget = ref(null)
 const eventLog = ref([])
-const validateResults = ref([])
 const emptyForm = () => ({ name: '', area: '', product: '', uuid: '' })
 const form = ref(emptyForm())
 
@@ -206,6 +201,16 @@ onMounted(async () => {
   items.value.forEach(c => initSession(c.id))
 })
 
+function areaName(id) { return areas.value.find(a => a.id === id)?.name ?? '—' }
+
+function printLandscape() {
+  const style = document.createElement('style')
+  style.textContent = '@page { size: landscape; }'
+  document.head.appendChild(style)
+  window.print()
+  document.head.removeChild(style)
+}
+
 function openAdd() {
   editing.value = null
   form.value = emptyForm()
@@ -222,10 +227,8 @@ async function save() {
   try {
     if (editing.value) {
       await update(editing.value.id, form.value)
-      addToast('success', 'Controller updated.')
     } else {
       await create(form.value)
-      addToast('success', 'Controller added.')
     }
     showModal.value = false
     await load()
@@ -235,14 +238,19 @@ async function save() {
   }
 }
 
-async function confirmDelete(c) {
+function confirmDelete(c) {
+  const inputCount = Object.keys(c.inputs || {}).length
+  const outputCount = Object.keys(c.outputs || {}).length
+  if (inputCount > 0 || outputCount > 0) {
+    addToast('warning', `Cannot delete '${c.name}': remove all input and output assignments first.`)
+    return
+  }
   deleteTarget.value = c
 }
 
 async function doDelete() {
   try {
     await remove(deleteTarget.value.id)
-    addToast('success', 'Controller deleted.')
   } catch (e) {
     addToast('error', `Failed to delete: ${e.message}`)
   } finally {
@@ -298,19 +306,4 @@ async function openEventLog(id) {
   showEventLog.value = true
 }
 
-async function checkConfig() {
-  validateResults.value = []
-  const errors = await checkConfiguration()
-  if (!errors.length) {
-    addToast('success', 'Configuration is valid.')
-    return
-  }
-  validateResults.value = errors.map(e => {
-    if (typeof e === 'string') {
-      return { type: e.toLowerCase().includes('error') ? 'error' : 'warning', message: e }
-    }
-    return { type: e.type || 'warning', message: e.message || String(e) }
-  })
-  showValidateModal.value = true
-}
 </script>

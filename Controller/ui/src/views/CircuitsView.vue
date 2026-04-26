@@ -1,14 +1,40 @@
 <template>
   <AppLayout>
     <div class="flex items-center justify-between mb-6 print:mb-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl">Circuits</h1>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl print:!text-black">Circuits</h1>
       <div class="flex gap-2 print:hidden">
-        <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors" onclick="window.print()">Print</button>
+        <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors" @click="printLandscape">Print</button>
         <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors" @click="openAdd">Add Circuit</button>
       </div>
     </div>
 
-    <div class="grid gap-4 grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(22rem,1fr))]">
+    <!-- Print-only table -->
+    <div class="hidden print:block mb-6">
+      <table class="w-full text-xs text-black">
+        <thead class="uppercase tracking-wider border-b border-black">
+          <tr>
+            <th class="py-2 text-left font-semibold">Short ID</th>
+            <th class="py-2 text-left font-semibold">Description</th>
+            <th class="py-2 text-left font-semibold">Area</th>
+            <th class="py-2 text-left font-semibold">Relay</th>
+            <th class="py-2 text-left font-semibold">Breaker</th>
+            <th class="py-2 text-right font-semibold">Load (Amps)</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-300">
+          <tr v-for="c in enriched" :key="c.id">
+            <td class="py-2 font-mono">{{ c.name }}</td>
+            <td class="py-2">{{ c.description }}</td>
+            <td class="py-2">{{ c.areaName }}</td>
+            <td class="py-2">{{ c.relayName }}</td>
+            <td class="py-2">{{ c.breakerName }}</td>
+            <td class="py-2 text-right">{{ c.load_amperage }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid gap-4 grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(22rem,1fr))] print:hidden">
       <div v-if="enriched.length === 0" class="text-gray-400 dark:text-gray-500 py-8">No circuits defined.</div>
       <div v-for="c in enriched" :key="c.id"
         class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 break-inside-avoid">
@@ -18,8 +44,8 @@
             <p class="font-semibold text-gray-900 dark:text-gray-100">{{ c.description }}</p>
           </div>
           <div class="flex gap-2 print:hidden flex-shrink-0">
-            <button class="text-blue-600 hover:text-blue-700 dark:text-blue-400 text-sm" @click="openEdit(c)">Edit</button>
-            <button class="text-red-600 hover:text-red-700 dark:text-red-400 text-sm" @click="confirmDelete(c)">Delete</button>
+            <button class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="openEdit(c)">Edit</button>
+            <button class="px-2.5 py-1 text-xs font-medium rounded border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" @click="confirmDelete(c)">Delete</button>
           </div>
         </div>
         <dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mt-3">
@@ -132,6 +158,14 @@ const enriched = computed(() => items.value.map(c => ({
 })))
 
 onMounted(() => Promise.all([load(), loadAreas(), loadBreakers(), loadIcons()]))
+
+function printLandscape() {
+  const style = document.createElement('style')
+  style.textContent = '@page { size: landscape; }'
+  document.head.appendChild(style)
+  window.print()
+  document.head.removeChild(style)
+}
 
 function openAdd() {
   editing.value = null

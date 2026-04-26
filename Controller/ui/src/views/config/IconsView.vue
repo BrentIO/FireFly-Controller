@@ -14,7 +14,7 @@
       Icons use <a href="https://pictogrammers.com/library/mdi/" target="_blank" rel="noopener" class="text-blue-600 dark:text-blue-400 hover:underline print:hidden">Material Design Icons</a> format (e.g. <code class="font-mono bg-gray-100 dark:bg-gray-800 px-1 rounded">mdi:chandelier</code>).
     </p>
 
-    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">
           <tr>
@@ -31,8 +31,10 @@
             <td class="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{{ icon.name }}</td>
             <td class="px-4 py-3 text-gray-600 dark:text-gray-400 font-mono text-xs">{{ icon.icon }}</td>
             <td class="px-4 py-3 text-right print:hidden">
-              <button class="text-blue-600 hover:text-blue-700 dark:text-blue-400 mr-3 text-sm" @click="openEdit(icon)">Edit</button>
-              <button class="text-red-600 hover:text-red-700 dark:text-red-400 text-sm" @click="confirmDelete(icon)">Delete</button>
+              <div class="flex justify-end gap-2">
+                <button class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="openEdit(icon)">Edit</button>
+                <button class="px-2.5 py-1 text-xs font-medium rounded border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" @click="confirmDelete(icon)">Delete</button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -47,9 +49,9 @@
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">{{ editing ? 'Edit Icon' : 'Add Icon' }}</h3>
             <form @submit.prevent="save">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-              <input v-model="form.name" type="text" maxlength="40" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
+              <input v-model="form.name" type="text" maxlength="40" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Icon ID</label>
-              <input v-model="form.icon" type="text" maxlength="64" required placeholder="mdi:chandelier" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
+              <input v-model="form.icon" type="text" maxlength="64" required placeholder="mdi:chandelier" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
               <div class="flex gap-3 justify-end">
                 <button type="button" class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="showModal = false">Cancel</button>
                 <button type="submit" class="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Save</button>

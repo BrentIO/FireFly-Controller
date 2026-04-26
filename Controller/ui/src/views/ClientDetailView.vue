@@ -8,11 +8,16 @@
           <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1 print:text-xl">
             {{ client.name }} — {{ client.description }}
           </h1>
-          <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ client.mac }}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ areas.find(a => a.id === client.area)?.name ?? '' }}</p>
         </div>
-        <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors print:hidden flex-shrink-0" @click="openAdd">
-          Add Button/Switch
-        </button>
+        <div class="flex gap-2 print:hidden flex-shrink-0">
+          <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors" @click="openEditClient">Edit Client</button>
+          <button class="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-white"
+            :class="(client.hids?.length ?? 0) >= 6 ? 'bg-blue-600 opacity-40 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
+            :disabled="(client.hids?.length ?? 0) >= 6"
+            :title="(client.hids?.length ?? 0) >= 6 ? 'Maximum of 6 buttons/switches reached' : undefined"
+            @click="openAdd">Add Button/Switch</button>
+        </div>
       </div>
 
       <div class="flex flex-col lg:flex-row gap-6">
@@ -20,7 +25,13 @@
         <!-- Switch plate SVG preview -->
         <div class="flex-shrink-0 flex flex-col items-center lg:items-start print:hidden">
           <p class="text-xs text-center text-gray-500 dark:text-gray-400 mb-2">Preview</p>
-          <ClientSvg :hids="client.hids || []" :colors="colors" />
+          <ClientSvg :hids="client.hids || []" :colors="colors" :inverted="svgInverted" />
+          <button v-if="(client.hids?.length ?? 0) === 5"
+            class="mt-2 px-3 py-1 text-xs font-medium rounded border transition-colors"
+            :class="svgInverted
+              ? 'bg-blue-600 border-blue-600 text-white'
+              : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'"
+            @click="toggleInvert">Invert</button>
         </div>
 
         <!-- HID table -->
@@ -71,8 +82,8 @@
                 <td class="px-4 py-3 text-right print:hidden whitespace-nowrap">
                   <button v-if="idx > 0" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mr-1 text-xs" title="Move up" @click="moveHid(idx, idx - 1)">↑</button>
                   <button v-if="idx < client.hids.length - 1" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mr-2 text-xs" title="Move down" @click="moveHid(idx, idx + 1)">↓</button>
-                  <button class="text-blue-600 hover:text-blue-700 dark:text-blue-400 text-xs mr-2" @click="openEdit(idx)">Edit</button>
-                  <button class="text-red-600 hover:text-red-700 dark:text-red-400 text-xs" @click="confirmRemoveHid(idx)">Remove</button>
+                  <button class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors mr-1" @click="openEdit(idx)">Edit</button>
+                  <button class="px-2.5 py-1 text-xs font-medium rounded border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" @click="confirmRemoveHid(idx)">Remove</button>
                 </td>
               </tr>
             </tbody>
@@ -80,6 +91,57 @@
         </div>
       </div>
     </template>
+
+    <!-- Edit Client modal -->
+    <Teleport to="body">
+      <Transition enter-active-class="ease-out duration-200" enter-from-class="opacity-0" enter-to-class="opacity-100"
+                  leave-active-class="ease-in duration-150" leave-from-class="opacity-100" leave-to-class="opacity-0">
+        <div v-if="showClientModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" @click.self="showClientModal = false">
+          <div class="w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6">
+            <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Edit Client</h3>
+            <form @submit.prevent="saveClient" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Short ID <span class="text-xs font-normal text-gray-400">(max 8 chars)</span></label>
+                <input v-model="clientForm.name" type="text" maxlength="8" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description <span class="text-xs font-normal text-gray-400">(max 20 chars)</span></label>
+                <input v-model="clientForm.description" type="text" maxlength="20" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Area</label>
+                <select v-model.number="clientForm.area" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">Select area…</option>
+                  <option v-for="a in areas" :key="a.id" :value="a.id">{{ a.name }}</option>
+                </select>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">MAC Address</label>
+                  <button type="button" class="text-xs text-blue-600 dark:text-blue-400 hover:underline" @click="clientForm.mac = 'ff:ff:ff:ff:ff:ff'; clientMacError = ''">Generate</button>
+                </div>
+                <input v-model="clientForm.mac" type="text" placeholder="aa:bb:cc:dd:ee:ff"
+                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  :class="clientMacError ? 'border-red-400 focus:ring-red-400' : ''" />
+                <p v-if="clientMacError" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ clientMacError }}</p>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">UUID</label>
+                  <button type="button" class="text-xs text-blue-600 dark:text-blue-400 hover:underline" @click="clientForm.uuid = randomUUID()">Generate</button>
+                </div>
+                <input v-model="clientForm.uuid" type="text" required pattern="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div class="flex gap-3 justify-end pt-2">
+                <button type="button" class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="showClientModal = false">Cancel</button>
+                <button type="submit" class="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <!-- Add/Edit HID modal -->
     <Teleport to="body">
@@ -216,7 +278,7 @@
     </Teleport>
 
     <ConfirmModal :show="removeHidIdx !== null" title="Remove"
-      :message="`Remove HID #${(removeHidIdx ?? 0) + 1}? This cannot be undone.`"
+      :message="`Are you sure you wish to delete ${client?.hids?.[removeHidIdx]?.type === 'switch' ? 'switch' : 'button'} #${(removeHidIdx ?? 0) + 1}?`"
       confirm-label="Remove" @confirm="doRemoveHid" @cancel="removeHidIdx = null" />
   </AppLayout>
 </template>
@@ -228,20 +290,28 @@ import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import ClientSvg from '../components/ClientSvg.vue'
 import { useClients } from '../composables/useClients'
+import { useAreas } from '../composables/useAreas'
 import { useColors } from '../composables/useColors'
 import { useTags } from '../composables/useTags'
 import { useCircuits } from '../composables/useCircuits'
 import { useToast } from '../composables/useToast'
-import { moveArrayItem } from '../composables/useValidators'
+import { moveArrayItem, randomUUID } from '../composables/useValidators'
+
+const MAC_RE = /^[0-9A-Fa-f]{2}[:-]([0-9A-Fa-f]{2}[:-]){4}[0-9A-Fa-f]{2}$/
 
 const route = useRoute()
 const { get, update } = useClients()
+const { items: areas, load: loadAreas } = useAreas()
 const { items: colors, load: loadColors } = useColors()
 const { items: tags, load: loadTags } = useTags()
 const { items: circuits, relayModels, load: loadCircuits } = useCircuits()
 const { addToast } = useToast()
 
 const client = ref(null)
+const svgInverted = ref(false)
+const showClientModal = ref(false)
+const clientMacError = ref('')
+const clientForm = ref({})
 const showHidModal = ref(false)
 const showColorDropdown = ref(false)
 const editIdx = ref(null)
@@ -294,7 +364,8 @@ onMounted(async () => {
   const id = Number(route.params.id)
   client.value = await get(id)
   if (client.value && !client.value.hids) client.value.hids = []
-  await Promise.all([loadColors(), loadTags(), loadCircuits()])
+  svgInverted.value = !!client.value?.inverted
+  await Promise.all([loadAreas(), loadColors(), loadTags(), loadCircuits()])
 })
 
 function colorHex(id) { return colors.value.find(c => c.id === id)?.hex ?? '#888' }
@@ -316,6 +387,44 @@ function formatChangeState(val) {
 function formatAction(val) {
   const map = { TOGGLE: 'Toggle', INCREASE: 'Increase', DECREASE: 'Decrease', INCREASE_MAXIMUM: 'Maximum', DECREASE_MAXIMUM: 'Minimum' }
   return map[val] ?? val
+}
+
+async function toggleInvert() {
+  svgInverted.value = !svgInverted.value
+  try {
+    await update(client.value.id, { inverted: svgInverted.value })
+    client.value = { ...client.value, inverted: svgInverted.value }
+  } catch (e) {
+    addToast('error', `Failed to save: ${e.message}`)
+  }
+}
+
+function openEditClient() {
+  clientForm.value = {
+    name: client.value.name,
+    description: client.value.description,
+    area: client.value.area,
+    mac: client.value.mac,
+    uuid: client.value.uuid
+  }
+  clientMacError.value = ''
+  showClientModal.value = true
+}
+
+async function saveClient() {
+  clientMacError.value = ''
+  const mac = clientForm.value.mac.toLowerCase()
+  if (!MAC_RE.test(mac)) {
+    clientMacError.value = 'Enter a valid MAC address (e.g. aa:bb:cc:dd:ee:ff)'
+    return
+  }
+  try {
+    await update(client.value.id, { ...clientForm.value, mac })
+    client.value = { ...client.value, ...clientForm.value, mac }
+    showClientModal.value = false
+  } catch (e) {
+    addToast('error', `Failed to save: ${e.message}`)
+  }
 }
 
 function openAdd() {

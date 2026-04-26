@@ -20,7 +20,7 @@ async function getOTAConfig(deviceType) {
   if (!ota || ota.value.enabled === false) return {}
 
   const result = {}
-  if (ota.value.protocol === 'https') {
+  if (ota.value.protocol === 'https' && ota.value.certificate) {
     const cert = await db.certificates.get(ota.value.certificate)
     if (!cert) throw new Error(`Unknown certificate ID ${ota.value.certificate} in OTA configuration.`)
     result.certificate = cert.fileName.substring(0, MAX_CERT)
@@ -123,7 +123,10 @@ export async function buildControllerPayload(controllerId, returnOnlyErrors = fa
   }
 
   const mqtt = await db.settings.where({ setting: 'mqtt' }).first()
-  if (!mqtt) throw new Error('MQTT has not been configured.')
+  if (!mqtt) {
+    if (returnOnlyErrors) { errorList.push('MQTT has not been configured.'); return errorList }
+    throw new Error('MQTT has not been configured.')
+  }
 
   const mqttPayload = {}
   for (const field of ['host', 'port', 'username', 'password']) {
@@ -207,9 +210,12 @@ export async function checkConfiguration() {
   const clients = await db.clients.where('id').noneOf(extendedClientIds).toArray()
   const breakers = await db.breakers.toArray()
 
+  const seenErrors = new Set()
   for (const controller of controllers) {
     const errors = await buildControllerPayload(controller.id, true)
-    errors.forEach(e => errorList.push(e))
+    errors.forEach(e => {
+      if (!seenErrors.has(e)) { seenErrors.add(e); errorList.push(e) }
+    })
     Object.values(controller.inputs || {}).forEach(id => assignedClientIds.push(id))
     Object.values(controller.outputs || {}).forEach(id => assignedCircuitIds.push(id))
   }
