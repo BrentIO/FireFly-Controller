@@ -17,14 +17,12 @@
       </linearGradient>
     </defs>
 
-    <!-- Outer bezel -->
+    <!-- Plate -->
     <rect x="5" y="5" width="390" height="590" rx="30" ry="30"
-          fill="#52525b" stroke="#27272a" stroke-width="2" />
+          fill="#e8e8e8" stroke="#d1d5db" stroke-width="2" />
     <!-- Screw holes -->
     <circle cx="200" cy="30"  r="12" fill="#27272a" />
     <circle cx="200" cy="570" r="12" fill="#27272a" />
-    <!-- Inner face plate -->
-    <rect x="25" y="55" width="350" height="490" rx="15" ry="15" fill="#e8e8e8" />
 
     <g v-for="(hid, i) in hids" :key="i" :opacity="hid.enabled === false ? 0.35 : 1">
       <!-- Switch -->
