@@ -216,7 +216,7 @@
     </Teleport>
 
     <ConfirmModal :show="removeHidIdx !== null" title="Remove"
-      :message="`Remove HID #${(removeHidIdx ?? 0) + 1}? This cannot be undone.`"
+      :message="`Are you sure you wish to delete ${client?.hids?.[removeHidIdx]?.type === 'switch' ? 'switch' : 'button'} #${(removeHidIdx ?? 0) + 1}?`"
       confirm-label="Remove" @confirm="doRemoveHid" @cancel="removeHidIdx = null" />
   </AppLayout>
 </template>
