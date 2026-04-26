@@ -58,7 +58,7 @@
         <div
           v-for="port in ctrl.ports"
           :key="port.num"
-          class="w-36 h-28 rounded-xl border-2 flex flex-col overflow-hidden transition-all select-none"
+          class="w-36 h-28 rounded-xl border-2 flex flex-col overflow-hidden transition-all select-none break-inside-avoid"
           :class="portClass(ctrl.id, port)"
           :style="portStyle(ctrl.id, port)"
           :draggable="!!port.client"
