@@ -239,7 +239,7 @@ function confirmDelete(c) {
   const inputCount = Object.keys(c.inputs || {}).length
   const outputCount = Object.keys(c.outputs || {}).length
   if (inputCount > 0 || outputCount > 0) {
-    addToast('error', `Cannot delete '${c.name}': remove all input and output assignments first.`)
+    addToast('warning', `Cannot delete '${c.name}': remove all input and output assignments first.`)
     return
   }
   deleteTarget.value = c
