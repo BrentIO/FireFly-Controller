@@ -16,6 +16,7 @@
             <th class="py-2 text-left font-semibold">Short ID</th>
             <th class="py-2 text-left font-semibold">Description</th>
             <th class="py-2 text-left font-semibold">Area</th>
+            <th class="py-2 text-left font-semibold">Relay</th>
             <th class="py-2 text-left font-semibold">Breaker</th>
             <th class="py-2 text-right font-semibold">Load (Amps)</th>
           </tr>
@@ -25,6 +26,7 @@
             <td class="py-2 font-mono">{{ c.name }}</td>
             <td class="py-2">{{ c.description }}</td>
             <td class="py-2">{{ c.areaName }}</td>
+            <td class="py-2">{{ c.relayName }}</td>
             <td class="py-2">{{ c.breakerName }}</td>
             <td class="py-2 text-right">{{ c.load_amperage }}</td>
           </tr>
