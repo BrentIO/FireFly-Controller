@@ -196,7 +196,6 @@ async function save() {
       addToast('success', 'Controller updated.')
     } else {
       await create(form.value)
-      addToast('success', 'Controller added.')
     }
     showModal.value = false
     await load()
