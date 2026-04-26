@@ -8,32 +8,49 @@
       </div>
     </div>
 
-    <!-- Print-only table -->
-    <div class="hidden print:block mb-6">
-      <table class="w-full text-sm text-black">
-        <thead class="text-xs uppercase tracking-wider border-b border-black">
-          <tr>
-            <th class="py-2 text-left font-semibold">Short ID</th>
-            <th class="py-2 text-left font-semibold">Description</th>
-            <th class="py-2 text-left font-semibold">Area</th>
-            <th class="py-2 text-center font-semibold">B</th>
-            <th class="py-2 text-center font-semibold">S</th>
-            <th class="py-2 text-left font-semibold">MAC Address</th>
-            <th class="py-2 text-left font-semibold">UUID</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-300">
-          <tr v-for="client in sortedItems" :key="client.id">
-            <td class="py-2 font-mono text-xs">{{ client.name }}</td>
-            <td class="py-2 text-xs">{{ client.description }}</td>
-            <td class="py-2 text-xs">{{ areaName(client.area) }}</td>
-            <td class="py-2 text-xs text-center">{{ (client.hids || []).filter(h => h.type !== 'switch').length }}</td>
-            <td class="py-2 text-xs text-center">{{ (client.hids || []).filter(h => h.type === 'switch').length }}</td>
-            <td class="py-2 font-mono text-xs">{{ client.mac }}</td>
-            <td class="py-2 font-mono text-xs">{{ client.uuid }}</td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Print-only cards -->
+    <div class="hidden print:block">
+      <div class="grid grid-cols-2 gap-4">
+        <div v-for="client in sortedItems" :key="client.id" class="border border-black p-3 break-inside-avoid text-black text-xs">
+          <!-- Header -->
+          <div class="flex items-start justify-between gap-2 mb-1">
+            <div>
+              <span class="font-mono font-bold">{{ client.name }}</span>
+              <span class="mx-1 text-gray-400">·</span>
+              <span class="font-semibold">{{ client.description }}</span>
+            </div>
+            <span>{{ areaName(client.area) }}</span>
+          </div>
+          <p class="font-mono text-gray-600 mb-0.5">{{ client.uuid }}</p>
+          <p class="font-mono text-gray-600">{{ client.mac }}</p>
+
+          <!-- HIDs -->
+          <div class="mt-2 pt-2 border-t border-gray-300">
+            <template v-if="client.hids?.length">
+              <table class="w-full">
+                <thead>
+                  <tr class="border-b border-gray-300">
+                    <th class="text-left pb-1 font-semibold">Qty</th>
+                    <th class="text-left pb-1 font-semibold">Type</th>
+                    <th class="text-left pb-1 font-semibold">Color</th>
+                    <th class="text-left pb-1 font-semibold">Contact</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(entry, i) in aggregateHids(client.hids)" :key="i">
+                    <td class="py-0.5">{{ entry.count }}</td>
+                    <td class="py-0.5">{{ entry.type === 'switch' ? 'Switch' : 'Button' }}</td>
+                    <td class="py-0.5">{{ entry.colorName }}</td>
+                    <td class="py-0.5">{{ entry.switch_type === 'NORMALLY_CLOSED' ? 'Normally Closed' : 'Normally Open' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p class="mt-1 pt-1 border-t border-gray-200 text-gray-600">{{ hidSummary(client.hids) }}</p>
+            </template>
+            <p v-else class="italic text-gray-500">No buttons or switches defined</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 print:hidden">
@@ -131,6 +148,7 @@ import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { useClients } from '../composables/useClients'
 import { useAreas } from '../composables/useAreas'
+import { useColors } from '../composables/useColors'
 import { useToast } from '../composables/useToast'
 import { randomUUID } from '../composables/useValidators'
 
@@ -139,6 +157,7 @@ const MAC_RE = /^[0-9A-Fa-f]{2}[:-]([0-9A-Fa-f]{2}[:-]){4}[0-9A-Fa-f]{2}$/
 const router = useRouter()
 const { items, load, create, remove, isInUse } = useClients()
 const { items: areas, load: loadAreas } = useAreas()
+const { items: colors, load: loadColors } = useColors()
 const { addToast } = useToast()
 
 const showModal = ref(false)
@@ -151,9 +170,27 @@ const sortedItems = computed(() =>
   [...items.value].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
 )
 
-onMounted(() => Promise.all([load(), loadAreas()]))
+onMounted(() => Promise.all([load(), loadAreas(), loadColors()]))
 
 function areaName(id) { return areas.value.find(a => a.id === id)?.name ?? '—' }
+
+function aggregateHids(hids) {
+  const map = new Map()
+  for (const h of (hids || [])) {
+    const key = `${h.type}|${h.color ?? ''}|${h.switch_type}`
+    if (map.has(key)) {
+      map.get(key).count++
+    } else {
+      map.set(key, {
+        count: 1,
+        type: h.type,
+        colorName: h.type !== 'switch' && h.color ? (colors.value.find(c => c.id === h.color)?.name ?? '—') : '—',
+        switch_type: h.switch_type ?? 'NORMALLY_OPEN'
+      })
+    }
+  }
+  return [...map.values()]
+}
 
 function printLandscape() {
   const style = document.createElement('style')
