@@ -69,10 +69,11 @@
           @drop.prevent="onDropPort(ctrl.id, port)"
           @click="portClick(ctrl.id, port)"
         >
-          <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 print:text-black">Port {{ port.num }}</span>
+          <span class="text-xs font-semibold mb-1 print:!text-black"
+                :class="port.client ? 'text-gray-700 dark:text-black' : 'text-gray-500 dark:text-gray-400'">Port {{ port.num }}</span>
           <template v-if="port.client">
-            <span class="font-mono text-xs font-bold text-gray-900 dark:text-gray-100 cursor-grab print:text-black">{{ port.client.name }}</span>
-            <span class="text-xs text-gray-600 dark:text-gray-400 leading-tight print:text-gray-700">{{ port.client.description }}</span>
+            <span class="font-mono text-xs font-bold text-gray-900 dark:text-black cursor-grab print:!text-black">{{ port.client.name }}</span>
+            <span class="text-xs text-gray-600 dark:text-black leading-tight print:!text-black">{{ port.client.description }}</span>
             <button class="mt-1 text-red-500 hover:text-red-700 text-xs print:hidden leading-none" title="Unassign" @click.stop="unassign(ctrl.id, port.num)">✕</button>
           </template>
           <template v-else>
