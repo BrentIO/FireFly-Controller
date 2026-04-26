@@ -82,8 +82,8 @@
                 <td class="px-4 py-3 text-right print:hidden whitespace-nowrap">
                   <button v-if="idx > 0" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mr-1 text-xs" title="Move up" @click="moveHid(idx, idx - 1)">↑</button>
                   <button v-if="idx < client.hids.length - 1" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mr-2 text-xs" title="Move down" @click="moveHid(idx, idx + 1)">↓</button>
-                  <button class="text-blue-600 hover:text-blue-700 dark:text-blue-400 text-xs mr-2" @click="openEdit(idx)">Edit</button>
-                  <button class="text-red-600 hover:text-red-700 dark:text-red-400 text-xs" @click="confirmRemoveHid(idx)">Remove</button>
+                  <button class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors mr-1" @click="openEdit(idx)">Edit</button>
+                  <button class="px-2.5 py-1 text-xs font-medium rounded border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" @click="confirmRemoveHid(idx)">Remove</button>
                 </td>
               </tr>
             </tbody>
