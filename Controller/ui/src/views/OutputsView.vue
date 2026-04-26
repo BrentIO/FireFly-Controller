@@ -54,9 +54,10 @@
         <span class="text-xs text-gray-500 dark:text-gray-400">{{ ctrl.product }}</span>
       </button>
       <div class="hidden print:block mb-3">
-        <h2 class="text-lg font-semibold text-black">{{ ctrl.name }} <span class="text-xs font-normal text-gray-600">{{ ctrl.product }}</span></h2>
-        <p class="text-xs text-black">{{ areas.find(a => a.id === ctrl.area)?.name ?? '' }}</p>
+        <h2 class="text-lg font-semibold text-black">{{ ctrl.name }}</h2>
         <p class="text-xs text-black font-mono">{{ ctrl.uuid }}</p>
+        <p class="text-xs text-black">{{ ctrl.product }}</p>
+        <p class="text-xs text-black">{{ areas.find(a => a.id === ctrl.area)?.name ?? '' }}</p>
       </div>
       <div v-show="!collapsed.has(ctrl.id)" class="flex flex-wrap gap-3 print:!flex">
         <div
