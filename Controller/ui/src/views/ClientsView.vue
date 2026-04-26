@@ -57,7 +57,7 @@
         </div>
         <p class="text-xs text-gray-500 dark:text-gray-400">{{ areaName(client.area) }}</p>
         <p class="text-xs text-gray-500 dark:text-gray-400">{{ hidSummary(client.hids) }}</p>
-        <p v-if="client.mac === 'ff:ff:ff:ff:ff:ff'" class="text-xs text-yellow-700 dark:text-yellow-500 mt-1 font-medium">MAC Address is invalid.</p>
+        <p v-if="client.mac === 'ff:ff:ff:ff:ff:ff'" class="text-xs text-yellow-700 dark:text-yellow-500 mt-1 font-medium">MAC Address is invalid</p>
       </div>
     </div>
 
