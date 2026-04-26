@@ -23,9 +23,9 @@
 
       <div v-if="form.protocol === 'https'">
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Certificate</label>
-        <select v-model="form.certificate" required
+        <select v-model="form.certificate"
           class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="">Select a certificate…</option>
+          <option value="">Built-in root CA bundle</option>
           <option v-for="cert in certificates" :key="cert.id" :value="cert.id">{{ cert.commonName }}</option>
         </select>
       </div>
@@ -50,11 +50,12 @@ const props = defineProps({
 
 const { getSetting, setSetting } = useSettings()
 const { addToast } = useToast()
-const form = ref({ enabled: false, protocol: 'http', url: '', certificate: '' })
+const DEFAULT_URL = 'api.fireflylx.com/ota/$$pid$$/$$app$$'
+const form = ref({ enabled: false, protocol: 'https', url: DEFAULT_URL, certificate: '' })
 
 onMounted(async () => {
   const saved = await getSetting(props.settingKey)
-  if (saved) form.value = { enabled: saved.enabled ?? false, protocol: saved.protocol ?? 'http', url: saved.url ?? '', certificate: saved.certificate ?? '' }
+  if (saved) form.value = { enabled: saved.enabled ?? false, protocol: saved.protocol ?? 'https', url: saved.url ?? DEFAULT_URL, certificate: saved.certificate ?? '' }
 })
 
 async function save() {

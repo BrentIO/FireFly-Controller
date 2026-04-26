@@ -11,14 +11,19 @@
       <div v-if="sortedItems.length === 0" class="text-gray-400 dark:text-gray-500 py-8 col-span-full">No clients defined.</div>
 
       <div v-for="client in sortedItems" :key="client.id"
-        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 break-inside-avoid">
+        class="rounded-xl border p-4 break-inside-avoid"
+        :class="client.mac === 'ff:ff:ff:ff:ff:ff'
+          ? 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-300 dark:border-yellow-700'
+          : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'">
         <div class="flex items-start justify-between gap-2 mb-3">
           <div>
             <p class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ client.name }}</p>
             <p class="font-semibold text-gray-900 dark:text-gray-100">{{ client.description }}</p>
             <div class="flex items-center gap-1 mt-0.5">
-              <svg v-if="client.mac === 'ff:ff:ff:ff:ff:ff'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 text-yellow-500 flex-shrink-0">
-                <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+              <svg v-if="client.mac === 'ff:ff:ff:ff:ff:ff'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="w-3.5 h-3.5 flex-shrink-0">
+                <path fill="black" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495z"/>
+                <rect x="9.25" y="5.5" width="1.5" height="4" rx="0.75" fill="#eab308"/>
+                <circle cx="10" cy="14" r="1" fill="#eab308"/>
               </svg>
               <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ client.mac }}</p>
             </div>
@@ -29,6 +34,7 @@
           </div>
         </div>
         <p class="text-xs text-gray-500 dark:text-gray-400">{{ hidSummary(client.hids) }}</p>
+        <p v-if="client.mac === 'ff:ff:ff:ff:ff:ff'" class="text-xs text-yellow-700 dark:text-yellow-500 mt-1 font-medium">MAC Address is invalid.</p>
       </div>
     </div>
 

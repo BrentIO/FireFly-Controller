@@ -1,13 +1,13 @@
 <template>
   <AppLayout>
     <div class="flex items-center justify-between mb-6 print:mb-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl">Control Circuits</h1>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl print:text-black">Control Circuits</h1>
       <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors print:hidden" onclick="window.print()">Print</button>
     </div>
 
-    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
       <table class="w-full text-sm">
-        <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">
+        <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider print:text-black print:bg-white">
           <tr>
             <th class="px-4 py-3 text-left">Power Source</th>
             <th class="px-4 py-3 text-left">Circuit</th>
@@ -22,11 +22,11 @@
           </tr>
           <template v-for="(group, breakerName) in grouped" :key="breakerName">
             <tr v-for="(row, idx) in group" :key="row.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 break-inside-avoid">
-              <td class="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{{ idx === 0 ? breakerName : '' }}</td>
-              <td class="px-4 py-3 text-gray-700 dark:text-gray-300 font-mono text-xs">{{ row.name }}</td>
-              <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ row.areaName }}</td>
-              <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ row.description }}</td>
-              <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ row.relayType }}</td>
+              <td class="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium print:text-black">{{ idx === 0 ? breakerName : '' }}</td>
+              <td class="px-4 py-3 text-gray-700 dark:text-gray-300 text-xs print:text-black">{{ row.name }}</td>
+              <td class="px-4 py-3 text-gray-600 dark:text-gray-400 print:text-black">{{ row.areaName }}</td>
+              <td class="px-4 py-3 text-gray-900 dark:text-gray-100 print:text-black">{{ row.description }}</td>
+              <td class="px-4 py-3 text-gray-600 dark:text-gray-400 print:text-black">{{ row.relayType }}</td>
             </tr>
           </template>
         </tbody>

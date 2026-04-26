@@ -7,7 +7,7 @@ export function useSettings() {
   }
 
   async function setSetting(key, value) {
-    await db.settings.put({ setting: key, value })
+    await db.settings.put({ setting: key, value: JSON.parse(JSON.stringify(value)) })
   }
 
   return { getSetting, setSetting }

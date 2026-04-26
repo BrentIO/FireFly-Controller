@@ -18,9 +18,9 @@
     <g v-for="(hid, i) in hids" :key="i" :opacity="hid.enabled === false ? 0.35 : 1">
       <!-- Button / rocker face -->
       <rect
-        :x="12"
+        :x="btnX(i)"
         :y="btnTop(i)"
-        width="56"
+        :width="btnW"
         :height="BTN_H"
         rx="2" ry="2"
         fill="#f9fafb"
@@ -31,9 +31,9 @@
       <!-- Switch: rocker dividing line -->
       <line
         v-if="hid.type === 'switch'"
-        :x1="12"
+        :x1="btnX(i)"
         :y1="btnTop(i) + BTN_H / 2"
-        :x2="68"
+        :x2="btnX(i) + btnW"
         :y2="btnTop(i) + BTN_H / 2"
         stroke="#9ca3af"
         stroke-width="1"
@@ -42,9 +42,9 @@
       <!-- Button: LED indicator -->
       <circle
         v-else
-        cx="40"
+        :cx="btnX(i) + btnW / 2"
         :cy="ledY(i)"
-        r="5"
+        r="4"
         :fill="ledColor(hid)"
         stroke="#00000018"
         stroke-width="0.5"
@@ -61,23 +61,44 @@ const props = defineProps({
   colors: { type: Array, default: () => [] }
 })
 
-const BTN_H = 42
-const BTN_GAP = 4
+const BTN_H = 36
+const BTN_GAP = 3
+const BTN_GAP_H = 3
 const PLATE_PAD = 21
+const FACE_X = 12
+const FACE_W = 56
 
-const svgHeight = computed(() => {
-  const n = Math.max(1, props.hids.length)
-  return PLATE_PAD * 2 + n * BTN_H + (n - 1) * BTN_GAP
+const cols = computed(() => {
+  const n = props.hids.length
+  if (n >= 5) return 3
+  if (n === 4) return 2
+  return 1
 })
 
+const rows = computed(() => Math.ceil(props.hids.length / cols.value))
+
+const btnW = computed(() => (FACE_W - (cols.value - 1) * BTN_GAP_H) / cols.value)
+
+const svgHeight = computed(() => {
+  const r = Math.max(1, rows.value)
+  return PLATE_PAD * 2 + r * BTN_H + (r - 1) * BTN_GAP
+})
+
+function btnCol(i) { return i % cols.value }
+function btnRow(i) { return Math.floor(i / cols.value) }
+
+function btnX(i) {
+  return FACE_X + btnCol(i) * (btnW.value + BTN_GAP_H)
+}
+
 function btnTop(i) {
-  return PLATE_PAD + i * (BTN_H + BTN_GAP)
+  return PLATE_PAD + btnRow(i) * (BTN_H + BTN_GAP)
 }
 
 function ledY(i) {
   const top = btnTop(i)
   const inverted = props.hids.length === 5 && i === 4
-  return inverted ? top + 9 : top + BTN_H - 9
+  return inverted ? top + 8 : top + BTN_H - 8
 }
 
 function ledColor(hid) {
