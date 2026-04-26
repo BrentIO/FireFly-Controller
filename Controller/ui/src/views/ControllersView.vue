@@ -25,7 +25,7 @@
           <tr v-for="ctrl in items" :key="ctrl.id">
             <td class="py-2 font-semibold">{{ ctrl.name }}</td>
             <td class="py-2">{{ areaName(ctrl.area) }}</td>
-            <td class="py-2 font-mono">{{ ctrl.product }}</td>
+            <td class="py-2">{{ ctrl.product }}</td>
             <td class="py-2 font-mono">{{ ctrl.uuid }}</td>
           </tr>
         </tbody>
