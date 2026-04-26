@@ -47,7 +47,7 @@
       <!-- Relays -->
       <section class="break-inside-avoid">
         <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 print:!text-black">Relays</h2>
-        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider print:!text-black print:bg-white">
               <tr><th class="px-4 py-2 text-left">Manufacturer</th><th class="px-4 py-2 text-left">Model</th><th class="px-4 py-2 text-left">Description</th><th class="px-4 py-2 text-right">Qty</th></tr>
