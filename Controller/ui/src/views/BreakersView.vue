@@ -12,7 +12,7 @@
         <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">
           <tr>
             <th class="px-4 py-3 text-left">Name</th>
-            <th class="px-4 py-3 text-right">Rating (A)</th>
+            <th class="px-4 py-3 text-right">Rating (Amps)</th>
             <th class="px-4 py-3 text-right">Utilization</th>
             <th class="px-4 py-3 text-right print:hidden">Actions</th>
           </tr>
