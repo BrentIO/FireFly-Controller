@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between mb-6 print:mb-4">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl print:!text-black">Clients</h1>
       <div class="flex gap-2 print:hidden">
-        <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors" onclick="window.print()">Print</button>
+        <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors" @click="printLandscape">Print</button>
         <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors" @click="openAdd">Add Client</button>
       </div>
     </div>
@@ -22,10 +22,10 @@
         </thead>
         <tbody class="divide-y divide-gray-300">
           <tr v-for="client in sortedItems" :key="client.id">
-            <td class="py-2 font-mono">{{ client.name }}</td>
-            <td class="py-2">{{ client.description }}</td>
-            <td class="py-2">{{ areaName(client.area) }}</td>
-            <td class="py-2 font-mono">{{ client.mac }}</td>
+            <td class="py-2 font-mono text-xs">{{ client.name }}</td>
+            <td class="py-2 text-xs">{{ client.description }}</td>
+            <td class="py-2 text-xs">{{ areaName(client.area) }}</td>
+            <td class="py-2 font-mono text-xs">{{ client.mac }}</td>
             <td class="py-2 font-mono text-xs">{{ client.uuid }}</td>
           </tr>
         </tbody>
@@ -157,6 +157,14 @@ const sortedItems = computed(() =>
 onMounted(() => Promise.all([load(), loadAreas()]))
 
 function areaName(id) { return areas.value.find(a => a.id === id)?.name ?? '—' }
+
+function printLandscape() {
+  const style = document.createElement('style')
+  style.textContent = '@page { size: landscape; }'
+  document.head.appendChild(style)
+  window.print()
+  document.head.removeChild(style)
+}
 
 function hidSummary(hids) {
   const all = hids || []
