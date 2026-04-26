@@ -58,7 +58,7 @@
         <div
           v-for="port in ctrl.ports"
           :key="port.num"
-          class="w-36 h-28 rounded-xl border-2 flex flex-col items-center justify-center text-center p-2 transition-all select-none"
+          class="w-36 h-28 rounded-xl border-2 flex flex-col overflow-hidden transition-all select-none"
           :class="portClass(ctrl.id, port)"
           :style="portStyle(ctrl.id, port)"
           :draggable="!!port.circuit"
@@ -69,18 +69,20 @@
           @drop.prevent="onDropPort(ctrl.id, port)"
           @click="portClick(ctrl.id, port)"
         >
-          <span class="text-xs font-semibold mb-1 print:!text-black"
-                :class="port.circuit ? 'text-gray-700 dark:text-black' : 'text-gray-500 dark:text-gray-400'">Port {{ port.num }}</span>
-          <template v-if="port.circuit">
-            <span class="font-mono text-xs font-bold text-gray-900 dark:text-black cursor-grab print:!text-black">{{ port.circuit.name }}</span>
-            <span class="text-xs text-gray-600 dark:text-black leading-tight print:!text-black">{{ port.circuit.description }}</span>
-            <button class="mt-1 text-red-500 hover:text-red-700 text-xs print:hidden leading-none" title="Unassign" @click.stop="unassign(ctrl.id, port.num)">✕</button>
-          </template>
-          <template v-else>
-            <span class="text-xs print:text-gray-500" :class="canDrop(ctrl.id, port) ? 'text-blue-400 dark:text-blue-500' : 'text-gray-300 dark:text-gray-600'">
-              {{ canDrop(ctrl.id, port) ? 'Drop here' : 'Empty' }}
-            </span>
-          </template>
+          <div class="bg-black text-white text-xs font-bold text-center py-1 flex-shrink-0"
+               style="print-color-adjust:exact;-webkit-print-color-adjust:exact">Port {{ port.num }}</div>
+          <div class="flex-1 flex flex-col items-center justify-center text-center px-2 pb-1">
+            <template v-if="port.circuit">
+              <span class="font-mono text-xs font-bold text-gray-900 dark:text-black cursor-grab print:!text-black">{{ port.circuit.name }}</span>
+              <span class="text-xs text-gray-600 dark:text-black leading-tight print:!text-black">{{ port.circuit.description }}</span>
+              <button class="mt-1 text-red-500 hover:text-red-700 text-xs print:hidden leading-none" title="Unassign" @click.stop="unassign(ctrl.id, port.num)">✕</button>
+            </template>
+            <template v-else>
+              <span class="print:hidden text-xs" :class="canDrop(ctrl.id, port) ? 'text-blue-400 dark:text-blue-500' : 'text-gray-300 dark:text-gray-600'">
+                {{ canDrop(ctrl.id, port) ? 'Drop here' : 'Empty' }}
+              </span>
+            </template>
+          </div>
         </div>
       </div>
     </section>
