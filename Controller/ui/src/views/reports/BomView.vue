@@ -44,6 +44,36 @@
         </div>
       </section>
 
+      <!-- HIDs -->
+      <section class="break-inside-avoid">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 print:!text-black">HIDs</h2>
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider print:!text-black print:bg-white">
+              <tr>
+                <th class="px-4 py-2 text-left">Type</th>
+                <th class="px-4 py-2 text-left">Color</th>
+                <th class="px-4 py-2 text-right">Qty</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+              <tr v-if="!hidBom.length"><td colspan="3" class="px-4 py-4 text-center text-gray-400 print:!text-black">None.</td></tr>
+              <tr v-for="row in hidBom" :key="`${row.type}|${row.colorName}`" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.type }}</td>
+                <td class="px-4 py-2 print:!text-black">
+                  <div v-if="row.hex" class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded border border-gray-200 dark:border-gray-600 flex-shrink-0" :style="{ backgroundColor: row.hex }"></div>
+                    <span class="text-gray-900 dark:text-gray-100">{{ row.colorName }}</span>
+                  </div>
+                  <span v-else class="text-gray-400 dark:text-gray-500">—</span>
+                </td>
+                <td class="px-4 py-2 text-right text-gray-700 dark:text-gray-300 font-semibold print:!text-black">{{ row.qty }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <!-- Relays -->
       <section class="break-inside-avoid">
         <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 print:!text-black">Relays</h2>
@@ -74,15 +104,17 @@ import AppLayout from '../../components/AppLayout.vue'
 import { useControllers } from '../../composables/useControllers'
 import { useClients } from '../../composables/useClients'
 import { useCircuits } from '../../composables/useCircuits'
+import { useColors } from '../../composables/useColors'
 
 const { items: controllers, products, load: loadControllers } = useControllers()
 const { items: clients, load: loadClients, getExtendedClientIds } = useClients()
 const { items: circuits, relayModels, load: loadCircuits } = useCircuits()
+const { items: colors, load: loadColors } = useColors()
 
 const extendedIds = ref([])
 
 onMounted(async () => {
-  await Promise.all([loadControllers(), loadClients(), loadCircuits()])
+  await Promise.all([loadControllers(), loadClients(), loadCircuits(), loadColors()])
   extendedIds.value = await getExtendedClientIds()
 })
 
@@ -100,6 +132,25 @@ const clientBom = computed(() => {
     counts[n] = (counts[n] ?? 0) + 1
   })
   return Object.entries(counts).map(([count, qty]) => ({ count: Number(count), qty })).sort((a, b) => a.count - b.count)
+})
+
+const hidBom = computed(() => {
+  const counts = {}
+  clients.value.forEach(client => {
+    ;(client.hids ?? []).forEach(hid => {
+      const type = hid.type === 'switch' ? 'Switch' : 'Button'
+      const colorObj = colors.value.find(c => c.id === hid.color)
+      const colorName = colorObj?.name ?? ''
+      const hex = colorObj?.hex ?? ''
+      const key = `${type}|${colorName}`
+      if (!counts[key]) counts[key] = { type, colorName, hex, qty: 0 }
+      counts[key].qty++
+    })
+  })
+  return Object.values(counts).sort((a, b) =>
+    a.type.localeCompare(b.type) ||
+    (a.colorName === '' ? 1 : b.colorName === '' ? -1 : a.colorName.localeCompare(b.colorName))
+  )
 })
 
 const relayBom = computed(() => {
