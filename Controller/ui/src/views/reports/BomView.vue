@@ -27,16 +27,16 @@
 
       <!-- Clients -->
       <section class="break-inside-avoid">
-        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 print:!text-black">Clients</h2>
+        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 print:!text-black">Faceplates</h2>
         <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider print:!text-black print:bg-white">
-              <tr><th class="px-4 py-2 text-left">Button Count</th><th class="px-4 py-2 text-right">Qty</th></tr>
+              <tr><th class="px-4 py-2 text-left">Configuration</th><th class="px-4 py-2 text-right">Qty</th></tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
               <tr v-if="!clientBom.length"><td colspan="2" class="px-4 py-4 text-center text-gray-400 print:!text-black">None.</td></tr>
-              <tr v-for="row in clientBom" :key="row.count" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.count }} {{ row.count === 1 ? 'button' : 'buttons' }}</td>
+              <tr v-for="row in clientBom" :key="row.key" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.label }}</td>
                 <td class="px-4 py-2 text-right text-gray-700 dark:text-gray-300 font-semibold print:!text-black">{{ row.qty }}</td>
               </tr>
             </tbody>
@@ -130,10 +130,21 @@ const clientBom = computed(() => {
   const real = clients.value.filter(c => !extendedIds.value.includes(c.id))
   const counts = {}
   real.forEach(c => {
-    const n = c.hids?.length ?? 0
-    counts[n] = (counts[n] ?? 0) + 1
+    const hids = c.hids ?? []
+    const buttons = hids.filter(h => h.type !== 'switch').length
+    const switches = hids.filter(h => h.type === 'switch').length
+    const key = `${buttons}|${switches}`
+    if (!counts[key]) {
+      const parts = []
+      if (buttons > 0) parts.push(`${buttons} ${buttons === 1 ? 'Button' : 'Buttons'}`)
+      if (switches > 0) parts.push(`${switches} ${switches === 1 ? 'Switch' : 'Switches'}`)
+      counts[key] = { key, buttons, switches, label: parts.length ? parts.join(', ') : 'No HIDs', qty: 0 }
+    }
+    counts[key].qty++
   })
-  return Object.entries(counts).map(([count, qty]) => ({ count: Number(count), qty })).sort((a, b) => a.count - b.count)
+  return Object.values(counts).sort((a, b) =>
+    (a.buttons + a.switches) - (b.buttons + b.switches) || b.buttons - a.buttons
+  )
 })
 
 const hidBom = computed(() => {
