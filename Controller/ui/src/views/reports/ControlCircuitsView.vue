@@ -56,7 +56,7 @@ const rows = computed(() => circuits.value.map(c => {
     ...c,
     areaName: area?.name ?? '—',
     breakerName: breaker?.name ?? '—',
-    relayType: relay ? (relay.type === 'BINARY' ? 'Non-Dimmable' : 'Dimmable') : '—'
+    relayType: relay?.description ?? '—'
   }
 }).sort((a, b) => a.breakerName.localeCompare(b.breakerName) || a.name.localeCompare(b.name)))
 

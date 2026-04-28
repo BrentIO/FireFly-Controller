@@ -30,7 +30,7 @@
               <span :class="r.type === 'BINARY'
                 ? 'px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
                 : 'px-2 py-0.5 text-xs rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300'">
-                {{ r.type === 'BINARY' ? 'Binary' : 'Variable' }}
+                {{ r.description }}
               </span>
             </td>
             <td class="px-4 py-3 text-right print:hidden">
