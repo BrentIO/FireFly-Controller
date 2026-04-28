@@ -2,7 +2,7 @@
   <AppLayout>
     <div class="flex items-center justify-between mb-6 print:mb-4">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl print:!text-black">Control Circuits</h1>
-      <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors print:hidden" onclick="window.print()">Print</button>
+      <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors print:hidden" @click="printPage">Print</button>
     </div>
 
     <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
@@ -16,7 +16,7 @@
             <th class="px-4 py-3 text-left">Relay Type</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-800 [print-color-adjust:exact]">
           <tr v-if="!rows.length">
             <td colspan="5" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">No circuits defined.</td>
           </tr>
@@ -68,4 +68,11 @@ const grouped = computed(() => {
   })
   return g
 })
+
+function printPage() {
+  const prev = document.title
+  document.title = 'Control Circuits'
+  window.addEventListener('afterprint', () => { document.title = prev }, { once: true })
+  window.print()
+}
 </script>
