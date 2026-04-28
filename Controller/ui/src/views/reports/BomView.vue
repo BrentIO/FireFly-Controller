@@ -2,7 +2,7 @@
   <AppLayout>
     <div class="flex items-center justify-between mb-6 print:mb-4">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl print:!text-black">Bill of Materials</h1>
-      <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors print:hidden" onclick="window.print()">Print</button>
+      <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors print:hidden" @click="printPage">Print</button>
     </div>
 
     <div class="space-y-6">
@@ -27,16 +27,48 @@
 
       <!-- Clients -->
       <section class="break-inside-avoid">
-        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 print:!text-black">Clients</h2>
+        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 print:!text-black">Faceplates</h2>
         <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider print:!text-black print:bg-white">
-              <tr><th class="px-4 py-2 text-left">Button Count</th><th class="px-4 py-2 text-right">Qty</th></tr>
+              <tr><th class="px-4 py-2 text-left">Configuration</th><th class="px-4 py-2 text-right">Qty</th></tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
               <tr v-if="!clientBom.length"><td colspan="2" class="px-4 py-4 text-center text-gray-400 print:!text-black">None.</td></tr>
-              <tr v-for="row in clientBom" :key="row.count" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.count }} {{ row.count === 1 ? 'button' : 'buttons' }}</td>
+              <tr v-for="row in clientBom" :key="row.key" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.label }}</td>
+                <td class="px-4 py-2 text-right text-gray-700 dark:text-gray-300 font-semibold print:!text-black">{{ row.qty }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- HIDs -->
+      <section class="break-inside-avoid">
+        <h2 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3 print:!text-black">HIDs</h2>
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider print:!text-black print:bg-white">
+              <tr>
+                <th class="px-4 py-2 text-left">Type</th>
+                <th class="px-4 py-2 text-left">Contact</th>
+                <th class="px-4 py-2 text-left">Color</th>
+                <th class="px-4 py-2 text-right">Quantity</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+              <tr v-if="!hidBom.length"><td colspan="4" class="px-4 py-4 text-center text-gray-400 print:!text-black">None.</td></tr>
+              <tr v-for="row in hidBom" :key="`${row.type}|${row.contact}|${row.colorName}`" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.type }}</td>
+                <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.contact }}</td>
+                <td class="px-4 py-2 print:!text-black">
+                  <div v-if="row.hex" class="flex items-center gap-2">
+                    <div class="w-4 h-4 rounded border border-gray-200 dark:border-gray-600 flex-shrink-0 [print-color-adjust:exact]" :style="{ backgroundColor: row.hex }"></div>
+                    <span class="text-gray-900 dark:text-gray-100 print:!text-black">{{ row.colorName }}</span>
+                  </div>
+                  <span v-else class="text-gray-400 dark:text-gray-500">—</span>
+                </td>
                 <td class="px-4 py-2 text-right text-gray-700 dark:text-gray-300 font-semibold print:!text-black">{{ row.qty }}</td>
               </tr>
             </tbody>
@@ -74,15 +106,17 @@ import AppLayout from '../../components/AppLayout.vue'
 import { useControllers } from '../../composables/useControllers'
 import { useClients } from '../../composables/useClients'
 import { useCircuits } from '../../composables/useCircuits'
+import { useColors } from '../../composables/useColors'
 
 const { items: controllers, products, load: loadControllers } = useControllers()
 const { items: clients, load: loadClients, getExtendedClientIds } = useClients()
 const { items: circuits, relayModels, load: loadCircuits } = useCircuits()
+const { items: colors, load: loadColors } = useColors()
 
 const extendedIds = ref([])
 
 onMounted(async () => {
-  await Promise.all([loadControllers(), loadClients(), loadCircuits()])
+  await Promise.all([loadControllers(), loadClients(), loadCircuits(), loadColors()])
   extendedIds.value = await getExtendedClientIds()
 })
 
@@ -96,10 +130,42 @@ const clientBom = computed(() => {
   const real = clients.value.filter(c => !extendedIds.value.includes(c.id))
   const counts = {}
   real.forEach(c => {
-    const n = c.hids?.length ?? 0
-    counts[n] = (counts[n] ?? 0) + 1
+    const hids = c.hids ?? []
+    const buttons = hids.filter(h => h.type !== 'switch').length
+    const switches = hids.filter(h => h.type === 'switch').length
+    const key = `${buttons}|${switches}`
+    if (!counts[key]) {
+      const parts = []
+      if (buttons > 0) parts.push(`${buttons} ${buttons === 1 ? 'Button' : 'Buttons'}`)
+      if (switches > 0) parts.push(`${switches} ${switches === 1 ? 'Switch' : 'Switches'}`)
+      counts[key] = { key, buttons, switches, label: parts.length ? parts.join(', ') : 'No HIDs', qty: 0 }
+    }
+    counts[key].qty++
   })
-  return Object.entries(counts).map(([count, qty]) => ({ count: Number(count), qty })).sort((a, b) => a.count - b.count)
+  return Object.values(counts).sort((a, b) =>
+    (a.buttons + a.switches) - (b.buttons + b.switches) || b.buttons - a.buttons
+  )
+})
+
+const hidBom = computed(() => {
+  const counts = {}
+  clients.value.forEach(client => {
+    ;(client.hids ?? []).forEach(hid => {
+      const type = hid.type === 'switch' ? 'Switch' : 'Button'
+      const colorObj = colors.value.find(c => c.id === hid.color)
+      const colorName = colorObj?.name ?? ''
+      const hex = colorObj?.hex ?? ''
+      const contact = hid.switch_type === 'NORMALLY_CLOSED' ? 'Normally Closed' : 'Normally Open'
+      const key = `${type}|${colorName}|${contact}`
+      if (!counts[key]) counts[key] = { type, colorName, hex, contact, qty: 0 }
+      counts[key].qty++
+    })
+  })
+  return Object.values(counts).sort((a, b) =>
+    a.type.localeCompare(b.type) ||
+    (a.colorName === '' ? 1 : b.colorName === '' ? -1 : a.colorName.localeCompare(b.colorName)) ||
+    a.contact.localeCompare(b.contact)
+  )
 })
 
 const relayBom = computed(() => {
@@ -114,4 +180,11 @@ const relayBom = computed(() => {
   })
   return Object.values(counts).sort((a, b) => a.model.localeCompare(b.model))
 })
+
+function printPage() {
+  const prev = document.title
+  document.title = 'Bill of Materials'
+  window.addEventListener('afterprint', () => { document.title = prev }, { once: true })
+  window.print()
+}
 </script>

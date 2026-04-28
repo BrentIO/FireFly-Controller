@@ -204,11 +204,16 @@ onMounted(async () => {
 function areaName(id) { return areas.value.find(a => a.id === id)?.name ?? '—' }
 
 function printLandscape() {
+  const prev = document.title
+  document.title = 'Controllers'
   const style = document.createElement('style')
   style.textContent = '@page { size: landscape; }'
   document.head.appendChild(style)
+  window.addEventListener('afterprint', () => {
+    document.title = prev
+    document.head.removeChild(style)
+  }, { once: true })
   window.print()
-  document.head.removeChild(style)
 }
 
 function openAdd() {

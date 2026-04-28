@@ -202,11 +202,16 @@ function aggregateHids(hids) {
 }
 
 function printLandscape() {
+  const prev = document.title
+  document.title = 'Clients'
   const style = document.createElement('style')
   style.textContent = '@page { size: landscape; }'
   document.head.appendChild(style)
+  window.addEventListener('afterprint', () => {
+    document.title = prev
+    document.head.removeChild(style)
+  }, { once: true })
   window.print()
-  document.head.removeChild(style)
 }
 
 function hidSummary(hids) {
