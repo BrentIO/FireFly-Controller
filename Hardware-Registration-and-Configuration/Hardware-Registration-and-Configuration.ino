@@ -4,7 +4,7 @@
  * Application allows for the reading of the device identity, as well as programming of the device identity data.  This is
  * separated from the main program to ensure the device identity can't be accidentally configured and lose the device information.
  * 
- * Exposes a set of API's that are described in the swagger.yaml file.
+ * Exposes a set of API's that are described in the openapi.yaml file.
  * 
  * (C) 2024, P5 Software, LLC
 */
