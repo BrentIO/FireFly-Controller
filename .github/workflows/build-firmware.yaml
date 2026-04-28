@@ -76,10 +76,8 @@ jobs:
           BRANCH="${{ env.BRANCH }}"
           COMMIT_HASH="${{ env.COMMIT_HASH }}"
           VERSION="${{ env.VERSION }}"
-          if [ "${VERSION}" = "DEBUG" ]; then
-            sed -i "s/^  version: .*/  version: \"${VERSION} (${COMMIT_HASH})\"/" ./${{ matrix.application }}/openapi.yaml
-          else
-            sed -i "s/^  version: .*/  version: \"${BRANCH} (${COMMIT_HASH})\"/" ./${{ matrix.application }}/openapi.yaml
+          if [ "${VERSION}" != "DEBUG" ]; then
+            sed -i "s/^  version: .*/  version: \"${VERSION}\"/" ./${{ matrix.application }}/openapi.yaml
           fi
 
           # For HW-Reg, copy openapi.yaml into www/ directly (no separate build step does this)
