@@ -52,15 +52,16 @@
             <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider print:!text-black print:bg-white">
               <tr>
                 <th class="px-4 py-2 text-left">Type</th>
-                <th class="px-4 py-2 text-left">Color</th>
                 <th class="px-4 py-2 text-left">Contact</th>
-                <th class="px-4 py-2 text-right">Qty</th>
+                <th class="px-4 py-2 text-left">Color</th>
+                <th class="px-4 py-2 text-right">Quantity</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
               <tr v-if="!hidBom.length"><td colspan="4" class="px-4 py-4 text-center text-gray-400 print:!text-black">None.</td></tr>
               <tr v-for="row in hidBom" :key="`${row.type}|${row.contact}|${row.colorName}`" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                 <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.type }}</td>
+                <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.contact }}</td>
                 <td class="px-4 py-2 print:!text-black">
                   <div v-if="row.hex" class="flex items-center gap-2">
                     <div class="w-4 h-4 rounded border border-gray-200 dark:border-gray-600 flex-shrink-0" :style="{ backgroundColor: row.hex }"></div>
@@ -68,7 +69,6 @@
                   </div>
                   <span v-else class="text-gray-400 dark:text-gray-500">—</span>
                 </td>
-                <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.contact }}</td>
                 <td class="px-4 py-2 text-right text-gray-700 dark:text-gray-300 font-semibold print:!text-black">{{ row.qty }}</td>
               </tr>
             </tbody>
