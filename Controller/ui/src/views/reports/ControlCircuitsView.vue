@@ -21,9 +21,14 @@
             <td colspan="5" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">No circuits defined.</td>
           </tr>
           <template v-for="(group, breakerName) in grouped" :key="breakerName">
-            <tr v-for="row in group" :key="row.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 break-inside-avoid print:even:bg-gray-100">
+            <tr v-for="row in group" :key="row.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 break-inside-avoid print:even:bg-gray-100" :class="row.enabled === false ? 'opacity-60' : ''">
               <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-medium print:!text-black">{{ breakerName }}</td>
-              <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 print:!text-black">{{ row.name }}</td>
+              <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 print:!text-black">
+                <div class="flex items-center gap-2">
+                  {{ row.name }}
+                  <span v-if="row.enabled === false" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 print:border print:border-gray-400">Disabled</span>
+                </div>
+              </td>
               <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 print:!text-black">{{ row.areaName }}</td>
               <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 print:!text-black">{{ row.description }}</td>
               <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 print:!text-black">{{ row.relayType }}</td>

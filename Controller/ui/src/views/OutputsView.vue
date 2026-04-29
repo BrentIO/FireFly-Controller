@@ -37,6 +37,7 @@
         >
           <span class="font-mono text-base font-bold leading-tight">{{ circuit.name }}</span>
           <span class="text-xs leading-tight mt-1 opacity-70">{{ circuit.description }}</span>
+          <span v-if="circuit.enabled === false" class="mt-1 text-xs font-medium opacity-80">Disabled</span>
         </div>
       </div>
       <p v-if="selectedCircuitId" class="mt-2 text-xs text-blue-600 dark:text-blue-400 font-medium">
@@ -80,6 +81,7 @@
             <template v-if="port.circuit">
               <span class="font-mono text-xs font-bold text-gray-900 dark:text-black cursor-grab print:!text-black">{{ port.circuit.name }}</span>
               <span class="text-xs text-gray-600 dark:text-black leading-tight print:!text-black">{{ port.circuit.description }}</span>
+              <span v-if="port.circuit.enabled === false" class="text-xs font-medium text-gray-500 dark:text-gray-500 print:!text-black leading-none">Disabled</span>
               <button class="mt-1 text-red-500 hover:text-red-700 text-xs print:hidden leading-none" title="Unassign" @click.stop="unassign(ctrl.id, port.num)">✕</button>
             </template>
             <template v-else>
