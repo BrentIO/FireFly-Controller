@@ -19,6 +19,7 @@
             <th class="py-2 text-left font-semibold">Relay</th>
             <th class="py-2 text-left font-semibold">Breaker</th>
             <th class="py-2 text-right font-semibold">Load (Amps)</th>
+            <th class="py-2 text-center font-semibold">Enabled</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-300">
@@ -29,6 +30,7 @@
             <td class="py-2">{{ c.relayName }}</td>
             <td class="py-2">{{ c.breakerName }}</td>
             <td class="py-2 text-right">{{ c.load_amperage }}</td>
+            <td class="py-2 text-center">{{ c.enabled === false ? 'No' : 'Yes' }}</td>
           </tr>
         </tbody>
       </table>
@@ -37,10 +39,14 @@
     <div class="grid gap-4 grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(22rem,1fr))] print:hidden">
       <div v-if="enriched.length === 0" class="text-gray-400 dark:text-gray-500 py-8">No circuits defined.</div>
       <div v-for="c in enriched" :key="c.id"
-        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 break-inside-avoid">
+        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 break-inside-avoid transition-opacity"
+        :class="c.enabled === false ? 'opacity-60' : ''">
         <div class="flex items-start justify-between gap-2 mb-2">
           <div>
-            <p class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ c.name }}</p>
+            <div class="flex items-center gap-2">
+              <p class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ c.name }}</p>
+              <span v-if="c.enabled === false" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">Disabled</span>
+            </div>
             <p class="font-semibold text-gray-900 dark:text-gray-100">{{ c.description }}</p>
           </div>
           <div class="flex gap-2 print:hidden flex-shrink-0">
@@ -108,6 +114,10 @@
                 <input v-model.number="form.load_amperage" type="number" min="1" max="100" step="0.5" required
                   class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
+              <div class="flex items-center gap-2">
+                <input v-model="form.enabled" type="checkbox" id="circuitEnabled" class="rounded text-blue-600 focus:ring-blue-500" />
+                <label for="circuitEnabled" class="text-sm text-gray-700 dark:text-gray-300">Enabled</label>
+              </div>
               <div class="flex gap-3 justify-end pt-2">
                 <button type="button" class="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="showModal = false">Cancel</button>
                 <button type="submit" class="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Save</button>
@@ -143,7 +153,7 @@ const { addToast } = useToast()
 const showModal = ref(false)
 const editing = ref(null)
 const deleteTarget = ref(null)
-const emptyForm = () => ({ name: '', description: '', area: '', breaker: '', icon: '', relay_model: '', load_amperage: 0 })
+const emptyForm = () => ({ name: '', description: '', area: '', breaker: '', icon: '', relay_model: '', load_amperage: 0, enabled: true })
 const form = ref(emptyForm())
 
 const areaMap = computed(() => Object.fromEntries(areas.value.map(a => [a.id, a.name])))
@@ -180,7 +190,7 @@ function openAdd() {
 
 function openEdit(c) {
   editing.value = c
-  form.value = { name: c.name, description: c.description, area: c.area, breaker: c.breaker, icon: c.icon, relay_model: c.relay_model, load_amperage: c.load_amperage }
+  form.value = { name: c.name, description: c.description, area: c.area, breaker: c.breaker, icon: c.icon, relay_model: c.relay_model, load_amperage: c.load_amperage, enabled: c.enabled !== false }
   showModal.value = true
 }
 
