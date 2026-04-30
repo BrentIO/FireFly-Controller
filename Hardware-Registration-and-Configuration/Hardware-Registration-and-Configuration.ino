@@ -678,6 +678,8 @@ void checkCloudRegistration() {
   int       status = esp_http_client_get_status_code(client);
   esp_http_client_cleanup(client);
 
+  log_i("checkCloudRegistration: err=%d status=%d", (int)err, status);
+
   if (err == ESP_OK && status == 200) {
     _registrationState.registered = true;
     eventLog.createEvent("Cloud registered", EventLog::LOG_LEVEL_INFO);
