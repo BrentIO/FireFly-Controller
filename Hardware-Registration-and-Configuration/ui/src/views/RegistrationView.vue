@@ -48,7 +48,7 @@
               required
             />
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              6-character one-time code obtained from a registered FireFly-Cloud user. Expires after 30 minutes.
+              6-character one-time code obtained from a registered FireFly-Cloud user.
             </p>
           </div>
 

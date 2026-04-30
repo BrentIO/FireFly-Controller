@@ -43,7 +43,7 @@ jobs:
           COMMIT_HASH=${GITHUB_SHA::7}
           echo "COMMIT_HASH=$COMMIT_HASH" >> $GITHUB_ENV
 
-          BRANCH=$GITHUB_REF_NAME
+          BRANCH=${GITHUB_REF_NAME//\//-}
           echo "BRANCH=$BRANCH" >> $GITHUB_ENV
               
       - name: Echo Tag or Branch Name and Commit Hash
@@ -78,13 +78,6 @@ jobs:
           VERSION="${{ env.VERSION }}"
           if [ "${VERSION}" != "DEBUG" ]; then
             sed -i "s/^  version: .*/  version: \"${VERSION}\"/" ./${{ matrix.application }}/openapi.yaml
-          fi
-
-          # For HW-Reg, copy openapi.yaml into www/ directly (no separate build step does this)
-          # For Controller, the "Build Vue UI (Controller)" step handles the copy after npm run build
-          if [ "${{ matrix.application }}" != "Controller" ]; then
-            cp ./${{ matrix.application }}/openapi.yaml ${{ github.workspace }}/${{ matrix.application }}/www
-            head -n 10  ${{ github.workspace }}/${{ matrix.application }}/www/openapi.yaml
           fi
 
 
