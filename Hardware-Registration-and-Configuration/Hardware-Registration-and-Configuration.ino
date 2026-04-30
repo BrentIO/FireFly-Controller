@@ -680,10 +680,10 @@ void checkCloudRegistration() {
 
   log_i("checkCloudRegistration: err=%d status=%d", (int)err, status);
 
-  if (err == ESP_OK && status == 200) {
+  if (status == 200) {
     _registrationState.registered = true;
     eventLog.createEvent("Cloud registered", EventLog::LOG_LEVEL_INFO);
-  } else if (err == ESP_OK && (status == 401 || status == 404)) {
+  } else if (status == 401 || status == 404) {
     _registrationState.registered = false;
   } else {
     _registrationState.registered = false;
