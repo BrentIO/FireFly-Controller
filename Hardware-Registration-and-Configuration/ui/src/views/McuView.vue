@@ -7,9 +7,9 @@
 
       <div
         v-else-if="mcu"
-        class="bg-white dark:bg-gray-900 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10 divide-y divide-gray-100 dark:divide-gray-800"
+        class="rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden"
       >
-        <div v-for="row in rows" :key="row.label" class="flex px-6 py-4">
+        <div v-for="(row, index) in rows" :key="row.label" class="flex px-6 py-4" :class="index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800/30'">
           <span class="w-40 text-sm font-medium text-gray-500 dark:text-gray-400">{{ row.label }}</span>
           <span class="text-sm" :class="row.error ? 'text-red-500 dark:text-red-400 font-medium' : 'text-gray-900 dark:text-gray-100'">{{ row.value }}</span>
         </div>

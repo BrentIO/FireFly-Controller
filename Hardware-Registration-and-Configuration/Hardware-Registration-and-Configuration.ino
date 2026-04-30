@@ -302,7 +302,7 @@ void loop() {
 
   updateNTPTime();
 
-  if (_registrationState.checkedAt == 0 && deviceIdentity.enabled && time(nullptr) > 946684800L) {
+  if (_registrationState.checkedAt == 0 && deviceIdentity.enabled && timeClient.isTimeSet()) {
     checkCloudRegistration();
   }
 
@@ -619,7 +619,7 @@ void checkCloudRegistration() {
                    (const uint8_t*)"firefly-auth-v1", 15,
                    key_auth, 32) != 0) {
     memset(key_auth, 0, 32);
-    _registrationState.checkedAt = time(nullptr);
+    _registrationState.checkedAt = timeClient.getEpochTime();
     eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_ERROR);
     return;
   }
@@ -647,7 +647,7 @@ void checkCloudRegistration() {
                                                _espRng, nullptr) == 0);
   mbedtls_ecdsa_free(&ecdsa);
 
-  _registrationState.checkedAt = time(nullptr);
+  _registrationState.checkedAt = timeClient.getEpochTime();
 
   if (!signOk) {
     eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_ERROR);
@@ -730,7 +730,7 @@ void http_handleRegistration_POST(AsyncWebServerRequest *request, JsonVariant &d
     return;
   }
 
-  if (time(nullptr) <= 946684800L) {
+  if (!timeClient.isTimeSet()) {
     http_serviceUnavailable(request, "Clock not synchronized");
     return;
   }
@@ -885,7 +885,7 @@ void http_handleRegistration_POST(AsyncWebServerRequest *request, JsonVariant &d
 
   if (err == ESP_OK && status == 204) {
     _registrationState.registered = true;
-    _registrationState.checkedAt  = time(nullptr);
+    _registrationState.checkedAt  = timeClient.getEpochTime();
     eventLog.createEvent("Cloud registered", EventLog::LOG_LEVEL_INFO);
     request->send(204);
   } else if (err == ESP_OK && (status == 401 || status == 403)) {

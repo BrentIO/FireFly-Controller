@@ -8,8 +8,8 @@
               v-for="col in columns"
               :key="col.key"
               class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap select-none"
-              :class="col.sortable !== false ? 'cursor-pointer hover:text-gray-700 dark:hover:text-gray-200' : ''"
-              @click="col.sortable !== false && toggleSort(col.key)"
+              :class="(col.sortable !== false || col.onClick) ? 'cursor-pointer hover:text-gray-700 dark:hover:text-gray-200' : ''"
+              @click="col.onClick ? col.onClick() : (col.sortable !== false && toggleSort(col.key))"
             >
               {{ col.label }}
               <template v-if="col.sortable !== false">

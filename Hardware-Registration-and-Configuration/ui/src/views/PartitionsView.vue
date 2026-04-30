@@ -17,6 +17,9 @@
         class="bg-white dark:bg-gray-900 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/10 overflow-hidden"
       >
         <SortableTable :columns="columns" :rows="rows">
+          <template #sizeLabel="{ row }">
+            {{ showRawSize ? row.sizeRaw : row.sizeLabel }}
+          </template>
           <template #status="{ row }">
             <span
               v-if="row.errors.length === 0"
@@ -37,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AppLayout from '../components/AppLayout.vue'
 import SortableTable from '../components/SortableTable.vue'
 import { apiFetch } from '../composables/useApi'
@@ -53,15 +56,16 @@ const { setNavError } = useAppState()
 const loading = ref(true)
 const errorMsg = ref('')
 const rows = ref([])
+const showRawSize = ref(false)
 
-const columns = [
+const columns = computed(() => [
+  { key: 'label',        label: 'Label' },
   { key: 'typeLabel',    label: 'Type' },
   { key: 'subtypeLabel', label: 'Subtype' },
   { key: 'addressLabel', label: 'Address' },
-  { key: 'sizeLabel',    label: 'Size' },
-  { key: 'label',        label: 'Label' },
+  { key: 'sizeLabel',    label: showRawSize.value ? 'Size (raw)' : 'Size', sortable: false, onClick: () => { showRawSize.value = !showRawSize.value } },
   { key: 'status',       label: 'Status', sortable: false }
-]
+])
 
 const APP_SUBTYPES = {
   0: 'Factory', 16: 'OTA_0', 17: 'OTA_1', 18: 'OTA_2', 19: 'OTA_3',
@@ -90,9 +94,11 @@ function formatAddress(addr) {
   return `0x${addr.toString(16).padStart(6, '0').toUpperCase()}`
 }
 function formatSize(bytes) {
-  const hex = `0x${bytes.toString(16).padStart(6, '0').toUpperCase()}`
-  if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} MB (${hex})`
-  return `${(bytes / 1024).toFixed(1)} KB (${hex})`
+  if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} MB`
+  return `${(bytes / 1024).toFixed(1)} KB`
+}
+function formatSizeRaw(bytes) {
+  return `0x${bytes.toString(16).padStart(6, '0').toUpperCase()}`
 }
 function checkPartition(api, expected) {
   const errors = []
@@ -137,11 +143,12 @@ async function load() {
       const exp = expected[i]
       const errors = exp ? checkPartition(p, exp) : ['No expected partition']
       return {
+        label:        p.label,
         typeLabel:    formatType(p.type),
         subtypeLabel: formatSubtype(p.type, p.subtype),
         addressLabel: formatAddress(p.address),
         sizeLabel:    formatSize(p.size),
-        label:        p.label,
+        sizeRaw:      formatSizeRaw(p.size),
         errors
       }
     })
