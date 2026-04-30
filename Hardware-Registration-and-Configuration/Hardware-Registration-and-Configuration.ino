@@ -620,7 +620,7 @@ void checkCloudRegistration() {
                    key_auth, 32) != 0) {
     memset(key_auth, 0, 32);
     _registrationState.checkedAt = timeClient.getEpochTime();
-    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_NOTIFICATION);
     return;
   }
 
@@ -650,7 +650,7 @@ void checkCloudRegistration() {
   _registrationState.checkedAt = timeClient.getEpochTime();
 
   if (!signOk) {
-    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_NOTIFICATION);
     return;
   }
 
@@ -678,14 +678,16 @@ void checkCloudRegistration() {
   int       status = esp_http_client_get_status_code(client);
   esp_http_client_cleanup(client);
 
-  if (err == ESP_OK && status == 200) {
+  log_i("checkCloudRegistration: err=%d status=%d", (int)err, status);
+
+  if (status == 200) {
     _registrationState.registered = true;
     eventLog.createEvent("Cloud registered", EventLog::LOG_LEVEL_INFO);
-  } else if (err == ESP_OK && status == 401) {
+  } else if (status == 401 || status == 404) {
     _registrationState.registered = false;
   } else {
     _registrationState.registered = false;
-    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_NOTIFICATION);
   }
 }
 
@@ -889,10 +891,10 @@ void http_handleRegistration_POST(AsyncWebServerRequest *request, JsonVariant &d
     eventLog.createEvent("Cloud registered", EventLog::LOG_LEVEL_INFO);
     request->send(204);
   } else if (err == ESP_OK && (status == 401 || status == 403)) {
-    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_NOTIFICATION);
     http_forbidden(request, "Invalid or expired registration key");
   } else {
-    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_ERROR);
+    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_NOTIFICATION);
     AsyncResponseStream *resp = request->beginResponseStream("application/json");
     JsonDocument errDoc;
     errDoc["message"] = "Cloud registration failed";

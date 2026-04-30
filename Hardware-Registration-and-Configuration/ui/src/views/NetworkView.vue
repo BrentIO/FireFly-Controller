@@ -35,7 +35,7 @@ const INTERFACE_LABELS = {
   bluetooth: 'Bluetooth',
   ethernet:  'Ethernet',
   wifi:      'WiFi',
-  wifi_ap:   'WiFi AP'
+  wifi_ap:   'SoftAP'
 }
 
 const columns = [
