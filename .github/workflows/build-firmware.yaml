@@ -80,13 +80,6 @@ jobs:
             sed -i "s/^  version: .*/  version: \"${VERSION}\"/" ./${{ matrix.application }}/openapi.yaml
           fi
 
-          # For HW-Reg, copy openapi.yaml into www/ directly (no separate build step does this)
-          # For Controller, the "Build Vue UI (Controller)" step handles the copy after npm run build
-          if [ "${{ matrix.application }}" != "Controller" ]; then
-            cp ./${{ matrix.application }}/openapi.yaml ${{ github.workspace }}/${{ matrix.application }}/www
-            head -n 10  ${{ github.workspace }}/${{ matrix.application }}/www/openapi.yaml
-          fi
-
 
       - name: Generate controller_products in useDatabase.js from devices.yaml
         if: matrix.application == 'Controller'
