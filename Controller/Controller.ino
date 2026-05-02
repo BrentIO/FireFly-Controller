@@ -2611,7 +2611,6 @@ void setup_OtaFirmware(){
   otaFirmware.setCertFileSystem(nullptr);
 
   otaFirmware.setExtraHTTPHeader("uuid", deviceIdentity.data.uuid);
-  otaFirmware.setExtraHTTPHeader("product_id", deviceIdentity.data.product_id);
 
   JsonDocument filter;
   filter["ota"] = true;
@@ -2644,11 +2643,10 @@ void setup_OtaFirmware(){
 
   String url = doc["ota"]["url"];
 
-  if(deviceIdentity.enabled == true){
-    url.replace("$$pid$$", deviceIdentity.data.product_id);
-  }
-
-  url.replace("$$app$$", APPLICATION_NAME);
+  char hex_str[11];
+  snprintf(hex_str, sizeof(hex_str), "0x%08lx", (uint32_t)PRODUCT_HEX);
+  url.replace("$$hex$$", hex_str);
+  url.replace("$$class$$", HARDWARE_CLASS);
 
   if(url.indexOf("current_version=") == -1){
     url += (url.indexOf('?') == -1 ? "?" : "&");

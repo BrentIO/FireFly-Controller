@@ -23,6 +23,9 @@
     #define ENUM_WIFI_MODEL_NONE 0 /* For hardware without WiFi */
 
 
+    #define HARDWARE_CLASS "controller"
+
+
     /* Hardware Types */
     #if PRODUCT_HEX == 0x32322211
         #include "devices/FFC3232-2211.h"
