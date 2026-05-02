@@ -295,10 +295,19 @@ jobs:
                 '. += [{name: $name, sha256: $sha256}]')
           done < <(find "$ROOT" -type f)
 
+          # Map application to firmware_type
+          case "$APPLICATION" in
+            Controller) FIRMWARE_TYPE="FireFly Controller" ;;
+            Hardware-Registration-and-Configuration) FIRMWARE_TYPE="FireFly Hardware Registration and Configuration" ;;
+            *) FIRMWARE_TYPE="$APPLICATION" ;;
+          esac
+
           # Build the final JSON object
           jq -nc \
-            --arg class "CONTROLLER" \
+            --arg class "controller" \
             --arg product_id "${{ matrix.product_id }}" \
+            --arg product_hex "${{ matrix.product_hex }}" \
+            --arg firmware_type "$FIRMWARE_TYPE" \
             --arg application "${{ matrix.application }}" \
             --arg branch "${{ env.BRANCH }}" \
             --arg version "${{ env.VERSION }}" \
@@ -309,6 +318,8 @@ jobs:
             '{
               class: $class,
               product_id: $product_id,
+              product_hex: $product_hex,
+              firmware_type: $firmware_type,
               application: $application,
               branch: $branch,
               version: $version,
@@ -337,7 +348,7 @@ jobs:
         if: ${{ !env.ACT }}
         run: |
           OUTDIR="${{ env.ARTIFACT_ROOT }}/${{ matrix.product_id }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}"
-          DEST_KEY="incoming/${{ matrix.product_id }}-${{ matrix.application }}-${{ env.BRANCH }}-${{ env.COMMIT_HASH }}.zip"
+          DEST_KEY="incoming/controller-${{ matrix.product_hex }}-${{ env.BRANCH }}-${{ env.COMMIT_HASH }}.zip"
 
           cd "$OUTDIR"
           zip -r /tmp/firmware-upload.zip .
