@@ -52,7 +52,9 @@
 #include "common/provisioningMode.h"
 
 uint64_t bootTime = 0; /* Approximate Epoch time the device booted */
+#if CORE_DEBUG_LEVEL >= 4
 uint64_t lastTimeMemoryBroadcast = 0; /* The last time memory usage was broadcast */
+#endif /* CORE_DEBUG_LEVEL >= 4 */
 volatile uint64_t lastTimeHttpServerUsed = 0;  /* The last time the HTTP server responded to a request */
 bool httpServerIsActive = false; /* If the HTTP server has been started */
 bool _mqttWasConnected = false; /* Tracks prior MQTT connected state to detect disconnect transitions */
@@ -460,11 +462,13 @@ void loop() {
     }
   }
 
+#if CORE_DEBUG_LEVEL >= 4
   if(esp_timer_get_time() - lastTimeMemoryBroadcast >= (uint64_t)MEMORY_USAGE_REPORT_SECONDS * 1000000ULL){
     lastTimeMemoryBroadcast = esp_timer_get_time();
     reportMemoryUsage("Main loop timer elapsed.");
     mqtt_publishMemoryUsage();
   }
+#endif /* CORE_DEBUG_LEVEL >= 4 */
 
   if(httpServerIsActive){
     uint64_t now = esp_timer_get_time();
@@ -3146,8 +3150,10 @@ void mqtt_reconnect(){
           mqtt_autoDiscovery_mac_address();
           mqtt_autoDiscovery_count_errors();
           mqtt_autoDiscovery_http_server();
+#if CORE_DEBUG_LEVEL >= 4
           mqtt_autoDiscovery_heapFree();
           mqtt_autoDiscovery_heapLargestFreeBlock();
+#endif /* CORE_DEBUG_LEVEL >= 4 */
           mqttClient.autoDiscovery.sent = true;
         }
         mqtt_publishTemperatures();
@@ -4135,6 +4141,7 @@ void mqtt_publishHttpServerStateChanged(boolean state){
 }
 
 
+#if CORE_DEBUG_LEVEL >= 4
 /**
  * Handles heap free auto discovery broadcasts
  */
@@ -4307,6 +4314,7 @@ void mqtt_publishMemoryUsage(){
     mqtt_publish_heapFree();
     mqtt_publish_heapLargestFreeBlock();
 }
+#endif /* CORE_DEBUG_LEVEL >= 4 */
 
 
 /**
