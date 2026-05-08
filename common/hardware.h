@@ -253,9 +253,11 @@
     #endif
 
 
+    #ifndef VERSION
     #ifndef MEMORY_USAGE_REPORT_SECONDS
         #define MEMORY_USAGE_REPORT_SECONDS 60 /* Number of seconds between each memory usage report in the main loop */
     #endif
+    #endif /* ifndef VERSION */
 
 
     #ifndef TEMPERATURE_SENSOR_LOCATION_MAX_LENGTH
