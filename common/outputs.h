@@ -537,7 +537,7 @@ namespace nsOutputs{
 
                 for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
                     if(this->outputs[i].port == port){
-                        this->outputs[i].startBrightness = constrain(value, 1, 100);
+                        this->outputs[i].startBrightness = constrain(value, 5, 100);
                         return;
                     }
                 }
