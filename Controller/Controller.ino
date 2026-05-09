@@ -4145,21 +4145,10 @@ void mqtt_autoDiscovery_inputs(){
         continue;
       }
 
-      // Scan the inputs manager to get both the chip address (for availability) and
-      // the offset (for the logical channel number used in the state topic)
-      uint8_t chipAddress = 0;
-      uint8_t channelOffset = 0;
-      for(int i = 0; i < IO_EXTENDER_COUNT; i++){
-        for(int j = 0; j < IO_EXTENDER_COUNT_PINS; j++){
-          if(inputs.inputControllers[i].inputs[j].port_channel.port == (p+1) &&
-             inputs.inputControllers[i].inputs[j].port_channel.channel == inputPorts[p].channels[c].channel){
-            chipAddress = inputs.inputControllers[i].address;
-            channelOffset = inputs.inputControllers[i].inputs[j].port_channel.offset;
-            break;
-          }
-        }
-        if(chipAddress != 0){ break; }
-      }
+      managerInputs::portChannel pc = {(uint8_t)(p+1), inputPorts[p].channels[c].channel};
+      managerInputs::portChannelInfo info = inputs.getPortChannelInfo(pc);
+      uint8_t chipAddress = info.chipAddress;
+      uint8_t channelOffset = info.offset;
 
       uint8_t logicalChannel = inputPorts[p].channels[c].channel + channelOffset;
 
