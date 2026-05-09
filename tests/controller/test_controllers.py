@@ -7,12 +7,15 @@ TEST_UUID = str(uuid.uuid4())
 CONTROLLER_PAYLOAD = {"name": "Test Controller"}
 CONTROLLER_PAYLOAD_UPDATED = {"name": "Updated Controller", "area": "Test Area"}
 
+OUTPUT_UUID = str(uuid.uuid4())
+
 
 @pytest.fixture(scope="module", autouse=True)
 def cleanup(base_url, auth_headers):
-    """Delete the test controller after all tests in this module complete."""
+    """Delete test controllers after all tests in this module complete."""
     yield
     requests.delete(f"{base_url}/api/controllers/{TEST_UUID}", headers=auth_headers)
+    requests.delete(f"{base_url}/api/controllers/{OUTPUT_UUID}", headers=auth_headers)
 
 
 class TestControllers:
@@ -98,3 +101,50 @@ class TestControllers:
             headers=auth_headers,
         )
         assert r.status_code == 400
+
+
+class TestControllerOutputStartBrightness:
+    def test_create_variable_output_with_start_brightness_returns_204(self, base_url, auth_headers):
+        r = requests.put(
+            f"{base_url}/api/controllers/{OUTPUT_UUID}",
+            json={
+                "name": "Output Test",
+                "outputs": {"1": {"id": "C1", "type": "VARIABLE", "start_brightness": 40}},
+            },
+            headers=auth_headers,
+        )
+        assert r.status_code == 204
+
+    def test_get_controller_reflects_start_brightness(self, base_url, auth_headers):
+        r = requests.get(f"{base_url}/api/controllers/{OUTPUT_UUID}", headers=auth_headers)
+        assert r.json()["outputs"]["1"]["start_brightness"] == 40
+
+    def test_update_start_brightness_returns_204(self, base_url, auth_headers):
+        r = requests.put(
+            f"{base_url}/api/controllers/{OUTPUT_UUID}",
+            json={
+                "name": "Output Test",
+                "outputs": {"1": {"id": "C1", "type": "VARIABLE", "start_brightness": 75}},
+            },
+            headers=auth_headers,
+        )
+        assert r.status_code == 204
+
+    def test_get_controller_reflects_updated_start_brightness(self, base_url, auth_headers):
+        r = requests.get(f"{base_url}/api/controllers/{OUTPUT_UUID}", headers=auth_headers)
+        assert r.json()["outputs"]["1"]["start_brightness"] == 75
+
+    def test_binary_output_without_start_brightness_returns_204(self, base_url, auth_headers):
+        r = requests.put(
+            f"{base_url}/api/controllers/{OUTPUT_UUID}",
+            json={
+                "name": "Output Test",
+                "outputs": {"1": {"id": "C1"}},
+            },
+            headers=auth_headers,
+        )
+        assert r.status_code == 204
+
+    def test_binary_output_has_no_start_brightness(self, base_url, auth_headers):
+        r = requests.get(f"{base_url}/api/controllers/{OUTPUT_UUID}", headers=auth_headers)
+        assert "start_brightness" not in r.json()["outputs"]["1"]
