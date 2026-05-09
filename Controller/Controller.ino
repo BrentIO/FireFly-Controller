@@ -50,6 +50,7 @@
 #include <WiFiUdp.h>
 #include "common/extendedPubSubClient.h"
 #include "common/provisioningMode.h"
+#include <HTTPClient.h>
 
 uint64_t bootTime = 0; /* Approximate Epoch time the device booted */
 #if CORE_DEBUG_LEVEL >= 4
@@ -365,8 +366,187 @@ void setup() {
 
   refreshCertBundle();
 
-  /* Configure the http server.  
-    IMPORTANT: *** Sequence below matters, they are sorted specific to generic *** 
+  /* If configFS is mounted and this device has no controller config, scan for a provisioning AP
+     and attempt to pull all controller and client records from the source controller.
+  */
+  #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
+  if(configFS_isMounted && deviceIdentity.enabled){
+
+    String ownControllerFile = CONFIGFS_PATH_CONTROLLERS + (String)"/" + deviceIdentity.data.uuid;
+
+    if(!configFS.exists(ownControllerFile)){
+
+      eventLog.createEvent("No cfg, scanning AP");
+      log_i("No controller config found; scanning for provisioning AP");
+
+      WiFi.mode(WIFI_STA);
+      int networkCount = WiFi.scanNetworks();
+
+      int provisioningNetworkIndex = -1;
+
+      for(int i = 0; i < networkCount; i++){
+        if(WiFi.SSID(i) == "FireFly-Provisioning"){
+          provisioningNetworkIndex = i;
+          break;
+        }
+      }
+
+      if(provisioningNetworkIndex >= 0){
+
+        uint8_t bssid[6];
+        memcpy(bssid, WiFi.BSSID(provisioningNetworkIndex), 6);
+
+        char apPassword[13] = {0};
+        const char apPasswordHex[] = "0123456789ABCDEF";
+        for(int i = 0; i < 6; i++){
+          apPassword[i * 2]     = apPasswordHex[bssid[i] >> 4];
+          apPassword[i * 2 + 1] = apPasswordHex[bssid[5 - i] & 0xF];
+        }
+        apPassword[12] = '\0';
+
+        log_i("Found FireFly-Provisioning AP, connecting...");
+        WiFi.begin("FireFly-Provisioning", apPassword);
+
+        uint64_t connectStart = esp_timer_get_time();
+        while(WiFi.status() != WL_CONNECTED){
+          delay(200);
+          if(esp_timer_get_time() - connectStart > 10ULL * 1000000ULL){
+            log_w("Timed out connecting to provisioning AP");
+            break;
+          }
+        }
+
+        if(WiFi.status() == WL_CONNECTED){
+
+          log_i("Connected to provisioning AP; fetching nonce");
+
+          WiFiClient wifiClientForProvisioning;
+          HTTPClient httpProvisioning;
+
+          httpProvisioning.begin(wifiClientForProvisioning, "http://192.168.4.1/api/provisioning/nonce");
+          int nonceHttpCode = httpProvisioning.GET();
+
+          if(nonceHttpCode == HTTP_CODE_OK){
+
+            String noncePayload = httpProvisioning.getString();
+            httpProvisioning.end();
+
+            JsonDocument nonceDoc;
+            DeserializationError nonceErr = deserializeJson(nonceDoc, noncePayload);
+
+            if(!nonceErr && !nonceDoc["nonce"].isNull()){
+
+              uint32_t nonce = nonceDoc["nonce"].as<uint32_t>();
+              String ownMac = WiFi.macAddress();
+              ownMac.toLowerCase();
+
+              log_i("Got nonce %u; fetching provisioning bundle", nonce);
+
+              char nonceStr[12];
+              snprintf(nonceStr, sizeof(nonceStr), "%u", nonce);
+
+              httpProvisioning.begin(wifiClientForProvisioning, "http://192.168.4.1/api/provisioning/controller");
+              httpProvisioning.addHeader("mac-address", ownMac);
+              httpProvisioning.addHeader("x-nonce", nonceStr);
+              int bundleHttpCode = httpProvisioning.GET();
+
+              if(bundleHttpCode == HTTP_CODE_OK){
+
+                String bundlePayload = httpProvisioning.getString();
+                httpProvisioning.end();
+
+                JsonDocument bundleDoc;
+                DeserializationError bundleErr = deserializeJson(bundleDoc, bundlePayload);
+
+                if(!bundleErr){
+
+                  bool writeOK = true;
+
+                  JsonArray controllers = bundleDoc["controllers"].as<JsonArray>();
+                  for(JsonObject controller : controllers){
+
+                    if(controller["uuid"].isNull()){
+                      log_w("Controller record missing uuid, skipping");
+                      continue;
+                    }
+
+                    String controllerUuid = controller["uuid"].as<String>();
+                    String controllerPath = CONFIGFS_PATH_CONTROLLERS + (String)"/" + controllerUuid;
+                    String controllerJson;
+                    serializeJson(controller, controllerJson);
+
+                    if(!secretEncryption.encryptToFile(configFS, controllerPath, controllerJson)){
+                      eventLog.createEvent("Prov ctlr write fail", EventLog::LOG_LEVEL_ERROR);
+                      log_e("Failed to write controller %s", controllerUuid.c_str());
+                      writeOK = false;
+                    }
+                  }
+
+                  JsonArray clients = bundleDoc["clients"].as<JsonArray>();
+                  for(JsonObject client : clients){
+
+                    if(client["uuid"].isNull()){
+                      log_w("Client record missing uuid, skipping");
+                      continue;
+                    }
+
+                    String clientUuid = client["uuid"].as<String>();
+                    String clientPath = CONFIGFS_PATH_CLIENTS + (String)"/" + clientUuid;
+                    String clientJson;
+                    serializeJson(client, clientJson);
+
+                    if(!secretEncryption.encryptToFile(configFS, clientPath, clientJson)){
+                      eventLog.createEvent("Prov client write fail", EventLog::LOG_LEVEL_ERROR);
+                      log_e("Failed to write client %s", clientUuid.c_str());
+                      writeOK = false;
+                    }
+                  }
+
+                  if(writeOK){
+                    eventLog.createEvent("Prov cfg written");
+                    log_i("Provisioning config written successfully; rebooting");
+                    WiFi.disconnect(true);
+                    delay(200);
+                    ESP.restart();
+                  }
+
+                } else {
+                  log_e("Failed to parse provisioning bundle: %s", bundleErr.c_str());
+                }
+
+              } else if(bundleHttpCode == HTTP_CODE_NOT_FOUND){
+                log_i("Source controller does not know this MAC; continuing unprovisioned");
+                httpProvisioning.end();
+              } else {
+                log_w("Provisioning bundle request returned %d; continuing unprovisioned", bundleHttpCode);
+                httpProvisioning.end();
+              }
+
+            } else {
+              log_w("Failed to parse nonce response; continuing unprovisioned");
+            }
+
+          } else {
+            log_w("Nonce request returned %d; continuing unprovisioned", nonceHttpCode);
+            httpProvisioning.end();
+          }
+
+          WiFi.disconnect(true);
+
+        }
+
+      } else {
+        log_i("No FireFly-Provisioning AP found; continuing unprovisioned");
+      }
+
+      WiFi.disconnect(true);
+
+    }
+  }
+  #endif /* WIFI_MODEL == ENUM_WIFI_MODEL_ESP32 */
+
+  /* Configure the http server.
+    IMPORTANT: *** Sequence below matters, they are sorted specific to generic ***
   */
 
   httpServer.on("/api/version", http_handleVersion);
@@ -391,6 +571,7 @@ void setup() {
     httpServer.on("/api/provisioning", http_handleProvisioning);
     httpServer.on("/api/provisioning/nonce", http_handleProvisioningNonce);
     httpServer.on("/api/provisioning/client", http_handleProvisioningClient);
+    httpServer.on("/api/provisioning/controller", http_handleProvisioningController);
     httpServer.on("^/certs/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
     httpServer.on("/api/ota/app", HTTP_OPTIONS, http_options);
@@ -1927,6 +2108,202 @@ void http_handleProvisioningClient(AsyncWebServerRequest *request){
     return;
   }
   request->send(200, "application/json", plaintext);
+}
+
+
+/**
+ * Returns the UUID of the controller whose `mac` field matches the provided MAC address,
+ * or an empty String if no match is found.
+ * @param mac the MAC address to search for (comparison is case-insensitive)
+ */
+String findControllerUuidByMac(const char* mac){
+
+  JsonDocument filter;
+  filter["mac"] = true;
+
+  File root = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/");
+  File file = root.openNextFile();
+
+  while(file){
+
+    if(!file.isDirectory()){
+      String controllerName = file.name();
+      String controllerPath = CONFIGFS_PATH_CONTROLLERS + (String)"/" + controllerName;
+      file.close();
+
+      String plaintext;
+      if(secretEncryption.decryptFromFile(configFS, controllerPath, plaintext)){
+        JsonDocument doc;
+        DeserializationError error = deserializeJson(doc, plaintext, DeserializationOption::Filter(filter));
+
+        if(!error){
+          String storedMac = doc["mac"].as<String>();
+          storedMac.toLowerCase();
+          String incomingMac = String(mac);
+          incomingMac.toLowerCase();
+
+          if(storedMac == incomingMac){
+            root.close();
+            return controllerName;
+          }
+        }
+      } else {
+        eventLog.createEvent("Ctlr decrypt fail", EventLog::LOG_LEVEL_ERROR);
+        log_e("Failed to decrypt %s", controllerPath.c_str());
+      }
+    } else {
+      file.close();
+    }
+
+    file = root.openNextFile();
+  }
+
+  root.close();
+  return String();
+}
+
+
+/**
+ * Handles GET /api/provisioning/controller — returns all controller and client records
+ * as a JSON bundle to an unprovisioned controller connecting via the provisioning SoftAP.
+ * Requires: SoftAP request, active provisioning mode, mac-address header matching a known
+ * controller record, and a valid unused x-nonce.
+ */
+void http_handleProvisioningController(AsyncWebServerRequest *request){
+
+  if(request->method() == HTTP_OPTIONS){
+    http_options(request);
+    return;
+  }
+
+  if(request->method() != HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  if(!isRequestViaSoftAP(request)){
+    http_forbiddenRequest(request, "Only accessible via provisioning network");
+    return;
+  }
+
+  if(provisioningMode.getStatus() != true){
+    http_conflict(request, "Provisioning mode inactive");
+    return;
+  }
+
+  if(!request->hasHeader("mac-address")){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(!request->hasHeader("x-nonce")){
+    http_unauthorized(request);
+    return;
+  }
+
+  uint32_t nonce = (uint32_t)strtoul(request->header("x-nonce").c_str(), nullptr, 10);
+
+  if(!provisioningMode.isNonceValid(nonce)){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(!configFS_isMounted){
+    http_error(request, "File system not mounted");
+    return;
+  }
+
+  String mac = request->header("mac-address");
+  mac.toLowerCase();
+
+  String controllerUuid = findControllerUuidByMac(mac.c_str());
+
+  if(controllerUuid.isEmpty()){
+    http_notFound(request);
+    return;
+  }
+
+  provisioningMode.invalidateNonce();
+
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
+  response->print("{\"controllers\":[");
+
+  File controllerRoot = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/");
+  File controllerFile = controllerRoot.openNextFile();
+  bool firstController = true;
+
+  while(controllerFile){
+    if(!controllerFile.isDirectory()){
+      String ctlrName = controllerFile.name();
+      String ctlrPath = CONFIGFS_PATH_CONTROLLERS + (String)"/" + ctlrName;
+      controllerFile.close();
+
+      String plaintext;
+      if(secretEncryption.decryptFromFile(configFS, ctlrPath, plaintext)){
+        JsonDocument doc;
+        DeserializationError error = deserializeJson(doc, plaintext);
+        if(!error){
+          doc["uuid"] = ctlrName;
+          if(!firstController){
+            response->print(",");
+          }
+          serializeJson(doc, *response);
+          firstController = false;
+        } else {
+          log_e("Failed to parse controller %s: %s", ctlrName.c_str(), error.c_str());
+        }
+      } else {
+        eventLog.createEvent("Ctlr decrypt fail", EventLog::LOG_LEVEL_ERROR);
+        log_e("Failed to decrypt controller %s", ctlrPath.c_str());
+      }
+    } else {
+      controllerFile.close();
+    }
+    controllerFile = controllerRoot.openNextFile();
+  }
+
+  controllerRoot.close();
+
+  response->print("],\"clients\":[");
+
+  File clientRoot = configFS.open(CONFIGFS_PATH_CLIENTS + (String)"/");
+  File clientFile = clientRoot.openNextFile();
+  bool firstClient = true;
+
+  while(clientFile){
+    if(!clientFile.isDirectory()){
+      String clientName = clientFile.name();
+      String clientPath = CONFIGFS_PATH_CLIENTS + (String)"/" + clientName;
+      clientFile.close();
+
+      String plaintext;
+      if(secretEncryption.decryptFromFile(configFS, clientPath, plaintext)){
+        JsonDocument doc;
+        DeserializationError error = deserializeJson(doc, plaintext);
+        if(!error){
+          doc["uuid"] = clientName;
+          if(!firstClient){
+            response->print(",");
+          }
+          serializeJson(doc, *response);
+          firstClient = false;
+        } else {
+          log_e("Failed to parse client %s: %s", clientName.c_str(), error.c_str());
+        }
+      } else {
+        eventLog.createEvent("Client decrypt fail", EventLog::LOG_LEVEL_ERROR);
+        log_e("Failed to decrypt client %s", clientPath.c_str());
+      }
+    } else {
+      clientFile.close();
+    }
+    clientFile = clientRoot.openNextFile();
+  }
+
+  clientRoot.close();
+
+  response->print("]}");
+  request->send(response);
 }
 
 
