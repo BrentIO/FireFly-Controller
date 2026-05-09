@@ -13,11 +13,19 @@
         <div class="flex gap-2 print:hidden flex-shrink-0">
           <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors" @click="openEditClient">Edit Client</button>
           <button class="px-4 py-2 rounded-lg text-sm font-medium transition-colors text-white"
-            :class="(client.hids?.length ?? 0) >= 6 ? 'bg-blue-600 opacity-40 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
-            :disabled="(client.hids?.length ?? 0) >= 6"
-            :title="(client.hids?.length ?? 0) >= 6 ? 'Maximum of 6 buttons/switches reached' : undefined"
+            :class="mergedHids.length >= 6 ? 'bg-blue-600 opacity-40 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
+            :disabled="mergedHids.length >= 6"
+            :title="mergedHids.length >= 6 ? 'Maximum of 6 buttons/switches reached' : undefined"
             @click="openAdd">Add Button/Switch</button>
         </div>
+      </div>
+
+      <!-- Extended client info banner -->
+      <div v-if="client.extends != null" class="mb-4 flex items-start gap-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 text-sm text-blue-800 dark:text-blue-200 print:hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 flex-shrink-0 mt-px">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+        </svg>
+        <span>This client is extended — HIDs 5–6 require a second controller port.</span>
       </div>
 
       <div class="flex flex-col lg:flex-row gap-6">
@@ -25,8 +33,8 @@
         <!-- Switch plate SVG preview -->
         <div class="flex-shrink-0 flex flex-col items-center lg:items-start print:hidden">
           <p class="text-xs text-center text-gray-500 dark:text-gray-400 mb-2">Preview</p>
-          <ClientSvg :hids="client.hids || []" :colors="colors" :inverted="svgInverted" />
-          <button v-if="(client.hids?.length ?? 0) === 5"
+          <ClientSvg :hids="mergedHids.slice(0, 5)" :colors="colors" :inverted="svgInverted" />
+          <button v-if="mergedHids.length === 5"
             class="mt-2 px-3 py-1 text-xs font-medium rounded border transition-colors"
             :class="svgInverted
               ? 'bg-blue-600 border-blue-600 text-white'
@@ -50,10 +58,11 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-              <tr v-if="!client.hids?.length">
+              <tr v-if="!mergedHids.length">
                 <td colspan="8" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">No buttons or switches defined.</td>
               </tr>
-              <tr v-for="(hid, idx) in client.hids" :key="idx" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+              <tr v-for="(hid, idx) in mergedHids" :key="idx" class="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                :class="idx === 4 ? 'border-t-2 border-blue-200 dark:border-blue-800' : ''">
                 <td class="px-4 py-3 text-center text-gray-500 dark:text-gray-400">{{ idx + 1 }}</td>
                 <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ hid.type === 'switch' ? 'Switch' : 'Button' }}</td>
                 <td class="px-4 py-3">
@@ -81,7 +90,7 @@
                 </td>
                 <td class="px-4 py-3 text-right print:hidden whitespace-nowrap">
                   <button v-if="idx > 0" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mr-1 text-xs" title="Move up" @click="moveHid(idx, idx - 1)">↑</button>
-                  <button v-if="idx < client.hids.length - 1" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mr-2 text-xs" title="Move down" @click="moveHid(idx, idx + 1)">↓</button>
+                  <button v-if="idx < mergedHids.length - 1" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mr-2 text-xs" title="Move down" @click="moveHid(idx, idx + 1)">↓</button>
                   <button class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors mr-1" @click="openEdit(idx)">Edit</button>
                   <button class="px-2.5 py-1 text-xs font-medium rounded border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" @click="confirmRemoveHid(idx)">Remove</button>
                 </td>
@@ -278,14 +287,14 @@
     </Teleport>
 
     <ConfirmModal :show="removeHidIdx !== null" title="Remove"
-      :message="`Are you sure you wish to delete ${client?.hids?.[removeHidIdx]?.type === 'switch' ? 'switch' : 'button'} #${(removeHidIdx ?? 0) + 1}?`"
+      :message="`Are you sure you wish to delete ${mergedHids[removeHidIdx]?.type === 'switch' ? 'switch' : 'button'} #${(removeHidIdx ?? 0) + 1}?`"
       confirm-label="Remove" @confirm="doRemoveHid" @cancel="removeHidIdx = null" />
   </AppLayout>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import ClientSvg from '../components/ClientSvg.vue'
@@ -300,7 +309,8 @@ import { moveArrayItem, randomUUID } from '../composables/useValidators'
 const MAC_RE = /^[0-9A-Fa-f]{2}[:-]([0-9A-Fa-f]{2}[:-]){4}[0-9A-Fa-f]{2}$/
 
 const route = useRoute()
-const { get, update } = useClients()
+const router = useRouter()
+const { get, update, getPrimaryId, getSecondaryClient, saveHids } = useClients()
 const { items: areas, load: loadAreas } = useAreas()
 const { items: colors, load: loadColors } = useColors()
 const { items: tags, load: loadTags } = useTags()
@@ -308,6 +318,7 @@ const { items: circuits, relayModels, load: loadCircuits } = useCircuits()
 const { addToast } = useToast()
 
 const client = ref(null)
+const mergedHids = ref([])
 const svgInverted = ref(false)
 const showClientModal = ref(false)
 const clientMacError = ref('')
@@ -362,8 +373,24 @@ watch(() => actionDraft.value.circuit, () => {
 
 onMounted(async () => {
   const id = Number(route.params.id)
+
+  // Redirect secondary clients to their primary
+  const primaryId = await getPrimaryId(id)
+  if (primaryId !== null) {
+    router.replace(`/clients/${primaryId}`)
+    return
+  }
+
   client.value = await get(id)
-  if (client.value && !client.value.hids) client.value.hids = []
+  if (!client.value) return
+
+  // Load secondary and merge HIDs
+  const secondary = await getSecondaryClient(id)
+  mergedHids.value = [
+    ...(client.value.hids ?? []),
+    ...(secondary?.hids ?? [])
+  ]
+
   svgInverted.value = !!client.value?.inverted
   await Promise.all([loadAreas(), loadColors(), loadTags(), loadCircuits()])
 })
@@ -436,7 +463,7 @@ function openAdd() {
 }
 
 function openEdit(idx) {
-  const hid = client.value.hids[idx]
+  const hid = mergedHids.value[idx]
   hidForm.value = {
     type: hid.type ?? 'button',
     color: hid.color ?? '',
@@ -485,14 +512,20 @@ async function submitHid() {
     if (hidForm.value.type === 'button' && hidForm.value.color) {
       hid.color = Number(hidForm.value.color)
     }
-    const existing = JSON.parse(JSON.stringify(client.value.hids ?? []))
+    const newMergedHids = JSON.parse(JSON.stringify(mergedHids.value))
     if (isAdd) {
-      existing.push(hid)
+      newMergedHids.push(hid)
     } else {
-      existing[editIdx.value] = hid
+      newMergedHids[editIdx.value] = hid
     }
-    await update(client.value.id, { hids: existing })
-    client.value.hids = existing
+    await saveHids(client.value.id, newMergedHids)
+    // Re-fetch client and secondary to stay in sync
+    client.value = await get(client.value.id)
+    const secondary = await getSecondaryClient(client.value.id)
+    mergedHids.value = [
+      ...(client.value.hids ?? []),
+      ...(secondary?.hids ?? [])
+    ]
     showHidModal.value = false
   } catch (e) {
     addToast('error', `Failed to save: ${e.message}`)
@@ -500,16 +533,34 @@ async function submitHid() {
 }
 
 async function toggleEnabled(idx) {
-  const newHids = JSON.parse(JSON.stringify(client.value.hids))
-  newHids[idx].enabled = newHids[idx].enabled !== false ? false : true
-  await update(client.value.id, { hids: newHids })
-  client.value.hids = newHids
+  const newMergedHids = JSON.parse(JSON.stringify(mergedHids.value))
+  newMergedHids[idx].enabled = newMergedHids[idx].enabled !== false ? false : true
+  try {
+    await saveHids(client.value.id, newMergedHids)
+    client.value = await get(client.value.id)
+    const secondary = await getSecondaryClient(client.value.id)
+    mergedHids.value = [
+      ...(client.value.hids ?? []),
+      ...(secondary?.hids ?? [])
+    ]
+  } catch (e) {
+    addToast('error', `Failed to save: ${e.message}`)
+  }
 }
 
 async function moveHid(from, to) {
-  const newHids = JSON.parse(JSON.stringify(moveArrayItem(client.value.hids, from, to)))
-  await update(client.value.id, { hids: newHids })
-  client.value.hids = newHids
+  const newMergedHids = JSON.parse(JSON.stringify(moveArrayItem(mergedHids.value, from, to)))
+  try {
+    await saveHids(client.value.id, newMergedHids)
+    client.value = await get(client.value.id)
+    const secondary = await getSecondaryClient(client.value.id)
+    mergedHids.value = [
+      ...(client.value.hids ?? []),
+      ...(secondary?.hids ?? [])
+    ]
+  } catch (e) {
+    addToast('error', `Failed to move: ${e.message}`)
+  }
 }
 
 function confirmRemoveHid(idx) {
@@ -518,10 +569,15 @@ function confirmRemoveHid(idx) {
 
 async function doRemoveHid() {
   try {
-    const newHids = JSON.parse(JSON.stringify(client.value.hids))
-    newHids.splice(removeHidIdx.value, 1)
-    await update(client.value.id, { hids: newHids })
-    client.value.hids = newHids
+    const newMergedHids = JSON.parse(JSON.stringify(mergedHids.value))
+    newMergedHids.splice(removeHidIdx.value, 1)
+    await saveHids(client.value.id, newMergedHids)
+    client.value = await get(client.value.id)
+    const secondary = await getSecondaryClient(client.value.id)
+    mergedHids.value = [
+      ...(client.value.hids ?? []),
+      ...(secondary?.hids ?? [])
+    ]
   } catch (e) {
     addToast('error', `Failed to remove: ${e.message}`)
   } finally {
