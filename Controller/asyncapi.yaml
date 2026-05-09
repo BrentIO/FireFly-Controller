@@ -82,12 +82,12 @@ channels:
         $ref: "#/components/messages/outputSet"
 
   ##########################################################
-  ## Output controller (PCA9685 chip) availability        ##
+  ## Output controller availability                        ##
   ##########################################################
 
   outputControllerAvailability:
     address: "FireFly/{uuid}/outputs/controller/{i2cAddress}/availability"
-    description: Per-chip availability for each PCA9685 output controller IC. Published "offline" immediately when a hardware failure is detected.
+    description: Per-chip availability for each output controller IC. Published "offline" immediately when a hardware failure is detected.
     parameters:
       uuid:
         $ref: "#/components/parameters/controllerUuid"
@@ -231,7 +231,7 @@ channels:
 
   heapFreeState:
     address: "FireFly/{uuid}/heap-free/state"
-    description: Current free heap memory in bytes. Published periodically in debug builds only (CORE_DEBUG_LEVEL >= 4).
+    description: Current free heap memory in bytes. Published periodically in debug builds only.
     parameters:
       uuid:
         $ref: "#/components/parameters/controllerUuid"
@@ -241,7 +241,7 @@ channels:
 
   heapLargestFreeBlockState:
     address: "FireFly/{uuid}/heap-largest-free-block/state"
-    description: Largest contiguous free block in heap memory, in bytes. Published periodically in debug builds only (CORE_DEBUG_LEVEL >= 4).
+    description: Largest contiguous free block in heap memory, in bytes. Published periodically in debug builds only.
     parameters:
       uuid:
         $ref: "#/components/parameters/controllerUuid"
@@ -355,7 +355,7 @@ channels:
 
   haDiscoveryHeapFree:
     address: "{haRoot}/sensor/FireFly-{uuid}-heap-free/config"
-    description: Home Assistant MQTT discovery config for the free heap sensor. Published once after MQTT connect. Present in debug builds only (CORE_DEBUG_LEVEL >= 4).
+    description: Home Assistant MQTT discovery config for the free heap sensor. Published once after MQTT connect. Present in debug builds only.
     parameters:
       haRoot:
         $ref: "#/components/parameters/haRoot"
@@ -367,7 +367,7 @@ channels:
 
   haDiscoveryHeapLargestFreeBlock:
     address: "{haRoot}/sensor/FireFly-{uuid}-heap-largest-free-block/config"
-    description: Home Assistant MQTT discovery config for the largest free heap block sensor. Published once after MQTT connect. Present in debug builds only (CORE_DEBUG_LEVEL >= 4).
+    description: Home Assistant MQTT discovery config for the largest free heap block sensor. Published once after MQTT connect. Present in debug builds only.
     parameters:
       haRoot:
         $ref: "#/components/parameters/haRoot"
@@ -429,7 +429,7 @@ operations:
       $ref: "#/channels/outputControllerAvailability"
     summary: Publish output controller chip availability
     description: >
-      Published once per PCA9685 chip on MQTT connect, reflecting whether that chip
+      Published once per output controller chip on MQTT connect, reflecting whether that chip
       is healthy. Also published "offline" immediately when a hardware failure is
       detected. The retain flag is set.
     messages:
@@ -543,8 +543,7 @@ operations:
       $ref: "#/channels/heapFreeState"
     summary: Publish free heap memory (debug builds only)
     description: >
-      Published periodically during the main loop. Only present when the firmware
-      is compiled with CORE_DEBUG_LEVEL >= 4.
+      Published periodically during the main loop. Only present in debug builds.
     messages:
       - $ref: "#/channels/heapFreeState/messages/heapFreeState"
 
@@ -554,8 +553,7 @@ operations:
       $ref: "#/channels/heapLargestFreeBlockState"
     summary: Publish largest free heap block (debug builds only)
     description: >
-      Published periodically during the main loop. Only present when the firmware
-      is compiled with CORE_DEBUG_LEVEL >= 4.
+      Published periodically during the main loop. Only present in debug builds.
     messages:
       - $ref: "#/channels/heapLargestFreeBlockState/messages/heapLargestFreeBlockState"
 
@@ -640,8 +638,7 @@ operations:
       $ref: "#/channels/haDiscoveryHeapFree"
     summary: Publish Home Assistant discovery config for the free heap sensor (debug builds only)
     description: >
-      Published once after MQTT connect. The retain flag is set. Only present when
-      the firmware is compiled with CORE_DEBUG_LEVEL >= 4.
+      Published once after MQTT connect. The retain flag is set. Only present in debug builds.
     messages:
       - $ref: "#/channels/haDiscoveryHeapFree/messages/haDiscoveryGeneric"
 
@@ -651,8 +648,7 @@ operations:
       $ref: "#/channels/haDiscoveryHeapLargestFreeBlock"
     summary: Publish Home Assistant discovery config for the largest free heap block sensor (debug builds only)
     description: >
-      Published once after MQTT connect. The retain flag is set. Only present when
-      the firmware is compiled with CORE_DEBUG_LEVEL >= 4.
+      Published once after MQTT connect. The retain flag is set. Only present in debug builds.
     messages:
       - $ref: "#/channels/haDiscoveryHeapLargestFreeBlock/messages/haDiscoveryGeneric"
 
@@ -719,7 +715,7 @@ components:
   parameters:
 
     controllerUuid:
-      description: UUIDv4 uniquely identifying this controller, stored in NVS during manufacturing
+      description: UUIDv4 uniquely identifying this controller, stored in eFuse during manufacturing
       examples:
         - 3fa85f64-5717-4562-b3fc-2c963f66afa6
 
@@ -733,10 +729,10 @@ components:
         - S22
 
     channelNumber:
-      description: Input channel number within a port (typically 1, 2, 3, or 6)
+      description: Input channel number within a port (1–4 for standard clients; 5–6 for extended clients)
       examples:
         - "1"
-        - "6"
+        - "5"
 
     outputId:
       description: >
@@ -748,7 +744,7 @@ components:
 
     i2cAddress:
       description: >
-        I2C address (decimal) of the PCA9685 output controller chip.
+        I2C address (decimal) of the output controller chip.
         Valid range is 0-127.
       examples:
         - "64"
