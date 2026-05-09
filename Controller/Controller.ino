@@ -847,15 +847,9 @@ void failureHandler_outputs(uint8_t address, nsOutputs::failureReason failureRea
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 
   if(mqttClient.connected()){
-    const uint8_t addresses[] = OUTPUT_CONTROLLER_ADDRESSES;
-    for(uint8_t i = 0; i < OUTPUT_CONTROLLER_COUNT; i++){
-      if(addresses[i] == address){
-        char availability_topic[MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
-        snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, i);
-        mqttClient.publish(availability_topic, "offline", true);
-        break;
-      }
-    }
+    char availability_topic[MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
+    snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, address);
+    mqttClient.publish(availability_topic, "offline", true);
   }
 }
 
@@ -3500,7 +3494,7 @@ void mqtt_publishOutputControllerAvailability(){
   for(int i = 0; i < health.count; i++){
 
     char availability_topic[MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
-    snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, (uint8_t)i);
+    snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, health.outputControllers[i].address);
 
     mqttClient.publish(availability_topic, health.outputControllers[i].enabled ? "online" : "offline", true);
   }
@@ -3674,8 +3668,9 @@ void mqtt_autoDiscovery_outputs(){
     mqttDoc["command_topic"] = command_topic;
 
     uint8_t chipIndex = (outputPortNumber - 1) / OUTPUT_CONTROLLER_COUNT_PINS;
+    const uint8_t chipAddresses[] = OUTPUT_CONTROLLER_ADDRESSES;
     char chip_availability_topic[MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
-    snprintf(chip_availability_topic, sizeof(chip_availability_topic), MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, chipIndex);
+    snprintf(chip_availability_topic, sizeof(chip_availability_topic), MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, chipAddresses[chipIndex]);
 
     JsonArray availability = mqttDoc["availability"].to<JsonArray>();
     JsonObject chip_specific = availability.add<JsonObject>();
