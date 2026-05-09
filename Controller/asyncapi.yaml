@@ -1,4 +1,4 @@
-asyncapi: 3.0.0
+asyncapi: 3.1.0
 
 info:
   title: FireFly Controller
@@ -735,8 +735,8 @@ components:
     channelNumber:
       description: Input channel number within a port (typically 1, 2, 3, or 6)
       examples:
-        - 1
-        - 6
+        - "1"
+        - "6"
 
     outputId:
       description: >
@@ -751,8 +751,8 @@ components:
         I2C address (decimal) of the PCA9685 output controller chip.
         Valid range is 0-127.
       examples:
-        - 64
-        - 65
+        - "64"
+        - "65"
 
     sensorLocation:
       description: Human-readable location string assigned to the temperature sensor (max 20 characters)
