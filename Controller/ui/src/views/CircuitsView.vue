@@ -115,7 +115,7 @@
                   class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div v-if="selectedRelayIsVariable">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Brightness <span class="text-xs font-normal text-gray-400">(1–100%, applied on button toggle-on)</span></label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Brightness <span class="text-xs font-normal text-gray-400">(5–100%, applied on button toggle-on)</span></label>
                 <input v-model.number="form.start_brightness" type="number" min="5" max="100" step="1" required
                   class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
