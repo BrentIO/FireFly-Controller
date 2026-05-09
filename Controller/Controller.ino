@@ -544,9 +544,17 @@ void failureHandler_temperatureSensors(uint8_t address, managerTemperatureSensor
   }else{
       snprintf(text, sizeof(text), "Temp sen 0x%02X fail %i", address, failureReason);
   }
-  
+
   eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
+
+  const char* location = temperatureSensors.getSensorLocationByAddress(address);
+
+  if(location != nullptr && mqttClient.connected()){
+    char availability_topic[MQTT_TOPIC_TEMPERATURE_AVAILABILITY_LENGTH+1];
+    snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_TEMPERATURE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, location);
+    mqttClient.publish(availability_topic, "offline", true);
+  }
 }
 
 
@@ -3156,6 +3164,7 @@ void mqtt_reconnect(){
 #endif /* CORE_DEBUG_LEVEL >= 4 */
           mqttClient.autoDiscovery.sent = true;
         }
+        mqtt_publishTemperatureAvailability();
         mqtt_publishTemperatures();
         mqtt_publishStartTime();
         mqtt_publishIPAddress();
@@ -3415,13 +3424,47 @@ void mqtt_autoDiscovery_temperature(){
     }
 
     doc["state_topic"] = state_topic;
-    doc["availability_topic"] = mqttClient.topic_availability;
+
+    char availability_topic[MQTT_TOPIC_TEMPERATURE_AVAILABILITY_LENGTH+1];
+    snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_TEMPERATURE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, sensorLocation);
+
+    JsonArray availability = doc["availability"].to<JsonArray>();
+    JsonObject sensor_specific = availability.add<JsonObject>();
+    JsonObject controller_level = availability.add<JsonObject>();
+    sensor_specific["topic"] = availability_topic;
+    controller_level["topic"] = mqttClient.topic_availability;
+    doc["availability_mode"] = "all";
 
     mqttClient.beginPublish(topic, measureJson(doc), true);
     BufferingPrint bufferedClient(mqttClient, 32);
     serializeJson(doc, bufferedClient);
     bufferedClient.flush();
     mqttClient.endPublish();
+  }
+}
+
+
+/**
+ * Publishes the per-sensor MQTT availability for all temperature sensors based on current health
+ */
+void mqtt_publishTemperatureAvailability(){
+
+  if(deviceIdentity.enabled == false){
+    return;
+  }
+
+  if(!mqttClient.connected()){
+    return;
+  }
+
+  managerTemperatureSensors::healthResult health = temperatureSensors.health();
+
+  for(int i = 0; i < health.count; i++){
+
+    char availability_topic[MQTT_TOPIC_TEMPERATURE_AVAILABILITY_LENGTH+1];
+    snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_TEMPERATURE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, temperatureSensors.getSensorLocation(i));
+
+    mqttClient.publish(availability_topic, health.sensor[i].enabled ? "online" : "offline", true);
   }
 }
 

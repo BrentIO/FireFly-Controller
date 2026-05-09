@@ -295,6 +295,19 @@ class managerTemperatureSensors{
         const char* getSensorLocation(uint8_t index){
             return this->temperatureSensors[index].location;
         }
+
+        /**
+         * Retrieves the sensor location name from the I2C address; returns nullptr if not found
+         * @param address the I2C address of the sensor
+         */
+        const char* getSensorLocationByAddress(uint8_t address){
+            for(int i = 0; i < TEMPERATURE_SENSOR_COUNT; i++){
+                if(this->temperatureSensors[i].address == address){
+                    return this->temperatureSensors[i].location;
+                }
+            }
+            return nullptr;
+        }
         
         
         /**
