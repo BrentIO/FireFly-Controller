@@ -83,8 +83,9 @@
               <button class="mt-1 text-red-500 hover:text-red-700 text-xs print:hidden leading-none" title="Unassign" @click.stop="unassign(ctrl.id, port.num)">✕</button>
             </template>
             <template v-else>
-              <span class="print:hidden text-xs" :class="canDrop(ctrl.id, port) ? 'text-blue-400 dark:text-blue-500' : 'text-gray-300 dark:text-gray-600'">
-                {{ canDrop(ctrl.id, port) ? 'Drop here' : 'Empty' }}
+              <span class="print:hidden text-xs"
+                :class="portEmptyTextClass(ctrl.id, port)">
+                {{ portEmptyLabel(ctrl.id, port) }}
               </span>
             </template>
           </div>
@@ -153,13 +154,55 @@ const enrichedControllers = computed(() => controllers.value.map(ctrl => {
   }
 }))
 
+// Map from secondary client id → primary client object
+const primaryBySecondaryId = computed(() => {
+  const map = new Map()
+  for (const c of allClients.value) {
+    if (c.extends != null) map.set(c.extends, c)
+  }
+  return map
+})
+
 function portKey(controllerId, portNum) {
   return `${controllerId}:${portNum}`
 }
 
+// Returns the controller id that has the given clientId assigned to any port, or null
+function getAssignedControllerId(clientId) {
+  for (const ctrl of controllers.value) {
+    if (Object.values(ctrl.inputs || {}).includes(clientId)) return ctrl.id
+  }
+  return null
+}
+
+// Returns the controller id that the active client MUST be placed on due to extended pairing, or null
+function requiredControllerId(clientId) {
+  const client = allClients.value.find(c => c.id === clientId)
+  if (!client) return null
+
+  // If this is a primary with an extends, constrain to the same controller as the secondary
+  if (client.extends != null) {
+    return getAssignedControllerId(client.extends)
+  }
+
+  // If this is a secondary (someone else extends it), constrain to the same controller as the primary
+  const primaryClient = primaryBySecondaryId.value.get(clientId)
+  if (primaryClient) {
+    return getAssignedControllerId(primaryClient.id)
+  }
+
+  return null
+}
+
 function canDrop(controllerId, port) {
   if (port.client) return false
-  return !!dragging.value || !!selectedClientId.value
+  const activeClientId = dragging.value?.clientId ?? selectedClientId.value
+  if (!activeClientId) return false
+
+  const required = requiredControllerId(activeClientId)
+  if (required !== null && required !== controllerId) return false
+
+  return true
 }
 
 function portClass(controllerId, port) {
@@ -172,10 +215,33 @@ function portClass(controllerId, port) {
   if (dragOver.value === key) {
     return 'border-blue-500 bg-blue-100 dark:bg-blue-900/30 cursor-copy'
   }
-  if (canDrop(controllerId, port)) {
+  const activeClientId = dragging.value?.clientId ?? selectedClientId.value
+  if (activeClientId) {
+    // There's an active drag/selection — check if this port is blocked by controller constraint
+    const required = requiredControllerId(activeClientId)
+    if (required !== null && required !== controllerId) {
+      // Blocked by controller pairing constraint — show distinct visual
+      return 'border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10 border-dashed cursor-not-allowed'
+    }
     return 'border-blue-300 bg-blue-50 dark:bg-blue-900/10 cursor-pointer border-dashed'
   }
   return 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 print:border-gray-400 print:bg-white'
+}
+
+function portEmptyLabel(controllerId, port) {
+  const activeClientId = dragging.value?.clientId ?? selectedClientId.value
+  if (!activeClientId) return 'Empty'
+  const required = requiredControllerId(activeClientId)
+  if (required !== null && required !== controllerId) return 'Blocked'
+  return 'Drop here'
+}
+
+function portEmptyTextClass(controllerId, port) {
+  const activeClientId = dragging.value?.clientId ?? selectedClientId.value
+  if (!activeClientId) return 'text-gray-300 dark:text-gray-600'
+  const required = requiredControllerId(activeClientId)
+  if (required !== null && required !== controllerId) return 'text-red-400 dark:text-red-600'
+  return 'text-blue-400 dark:text-blue-500'
 }
 
 function portStyle(controllerId, port) {
@@ -206,7 +272,7 @@ function endDrag() {
 }
 
 function onDragOver(controllerId, port) {
-  if (!port.client) {
+  if (!port.client && canDrop(controllerId, port)) {
     dragOver.value = portKey(controllerId, port.num)
   }
 }
@@ -214,6 +280,7 @@ function onDragOver(controllerId, port) {
 async function onDropPort(controllerId, port) {
   if (!dragging.value) { dragOver.value = null; return }
   if (port.client) { endDrag(); return }
+  if (!canDrop(controllerId, port)) { endDrag(); return }
   const drag = { ...dragging.value }
   endDrag()
   try {
@@ -240,6 +307,7 @@ async function onDropUnassign() {
 // Click-to-assign (mobile fallback)
 async function portClick(controllerId, port) {
   if (port.client || !selectedClientId.value) return
+  if (!canDrop(controllerId, port)) return
   try {
     await assignInput(controllerId, port.num, selectedClientId.value)
     selectedClientId.value = null
