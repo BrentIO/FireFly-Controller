@@ -183,6 +183,7 @@ namespace nsOutputs{
             outputController* controller; /* Reference to the output controller */
             boolean enabled = true; /* If the output is enabled */
             char id[OUTPUT_ID_MAX_LENGTH+1]; /* Identifier for the output */
+            uint8_t startBrightness = 10; /* Brightness (1-100) applied when a TOGGLE action turns this output on from off. Only used for VARIABLE outputs. */
 
             #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
                 uint16_t value = 0; /* Expected PWM value for the pin */
@@ -525,6 +526,36 @@ namespace nsOutputs{
                         strlcpy(id, this->outputs[i].id, maxLen);
                     }
                 }
+            }
+
+            /**
+             * Sets the start brightness for a port (used by TOGGLE action when turning on from off)
+             * @param port as the physical port number to set
+             * @param value as brightness percentage (1-100)
+             */
+            void setPortStartBrightness(uint8_t port, uint8_t value){
+
+                for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
+                    if(this->outputs[i].port == port){
+                        this->outputs[i].startBrightness = constrain(value, 1, 100);
+                        return;
+                    }
+                }
+            }
+
+            /**
+             * Gets the start brightness for a port
+             * @param port as the physical port number
+             * @returns start brightness percentage (1-100)
+             */
+            uint8_t getPortStartBrightness(uint8_t port){
+
+                for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
+                    if(this->outputs[i].port == port){
+                        return this->outputs[i].startBrightness;
+                    }
+                }
+                return 10;
             }
     };
 };

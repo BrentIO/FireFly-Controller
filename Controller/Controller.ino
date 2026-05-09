@@ -826,7 +826,7 @@ nsOutputs::set_result actionOutputPort(uint8_t port, outputAction action){
       if(currentPortValue > 0){
         returnValue = outputs.setPortValue(port, 0);
       }else{
-        returnValue = outputs.setPortValue(port, 100);
+        returnValue = outputs.setPortValue(port, outputs.getPortStartBrightness(port));
       }
       break;
   }
@@ -3271,6 +3271,7 @@ bool setup_outputs(String filename){
   filter_outputs__["id"] = true;
   filter_outputs__["type"] = true;
   filter_outputs__["enabled"] = true;
+  filter_outputs__["start_brightness"] = true;
 
   String plaintext;
   if(!secretEncryption.decryptFromFile(configFS, filename, plaintext)){
@@ -3327,6 +3328,10 @@ bool setup_outputs(String filename){
 
     if(!output.value()["enabled"].isNull()){
       outputs.enablePort(outputPortNumber, output.value()["enabled"].as<boolean>());
+    }
+
+    if(!output.value()["start_brightness"].isNull()){
+      outputs.setPortStartBrightness(outputPortNumber, output.value()["start_brightness"].as<uint8_t>());
     }
 
   }
