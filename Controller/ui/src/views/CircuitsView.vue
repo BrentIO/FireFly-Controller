@@ -114,6 +114,11 @@
                 <input v-model.number="form.load_amperage" type="number" min="1" max="100" step="0.5" required
                   class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
+              <div v-if="selectedRelayIsVariable">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Brightness <span class="text-xs font-normal text-gray-400">(1–100%, applied on button toggle-on)</span></label>
+                <input v-model.number="form.start_brightness" type="number" min="5" max="100" step="1" required
+                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
               <div class="flex items-center gap-2">
                 <input v-model="form.enabled" type="checkbox" id="circuitEnabled" class="rounded text-blue-600 focus:ring-blue-500" />
                 <label for="circuitEnabled" class="text-sm text-gray-700 dark:text-gray-300">Enabled</label>
@@ -134,7 +139,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { useCircuits } from '../composables/useCircuits'
@@ -153,12 +158,17 @@ const { addToast } = useToast()
 const showModal = ref(false)
 const editing = ref(null)
 const deleteTarget = ref(null)
-const emptyForm = () => ({ name: '', description: '', area: '', breaker: '', icon: '', relay_model: '', load_amperage: 0, enabled: true })
+const emptyForm = () => ({ name: '', description: '', area: '', breaker: '', icon: '', relay_model: '', load_amperage: 0, start_brightness: 10, enabled: true })
 const form = ref(emptyForm())
 
 const areaMap = computed(() => Object.fromEntries(areas.value.map(a => [a.id, a.name])))
 const breakerMap = computed(() => Object.fromEntries(breakers.value.map(b => [b.id, b.name])))
 const relayMap = computed(() => Object.fromEntries(relayModels.value.map(r => [r.id, `${r.manufacturer} ${r.model}`])))
+const selectedRelayIsVariable = computed(() => relayModels.value.find(r => r.id === form.value.relay_model)?.type === 'VARIABLE')
+
+watch(selectedRelayIsVariable, (isVariable) => {
+  if (!isVariable) form.value.start_brightness = 10
+})
 
 const enriched = computed(() => items.value.map(c => ({
   ...c,
@@ -190,7 +200,7 @@ function openAdd() {
 
 function openEdit(c) {
   editing.value = c
-  form.value = { name: c.name, description: c.description, area: c.area, breaker: c.breaker, icon: c.icon, relay_model: c.relay_model, load_amperage: c.load_amperage, enabled: c.enabled !== false }
+  form.value = { name: c.name, description: c.description, area: c.area, breaker: c.breaker, icon: c.icon, relay_model: c.relay_model, load_amperage: c.load_amperage, start_brightness: c.start_brightness ?? 10, enabled: c.enabled !== false }
   showModal.value = true
 }
 

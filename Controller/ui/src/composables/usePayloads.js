@@ -115,6 +115,9 @@ export async function buildControllerPayload(controllerId, returnOnlyErrors = fa
     }
     if (circuit.relay_model.type !== 'BINARY') {
       out.type = circuit.relay_model.type
+      if (circuit.start_brightness != null && circuit.start_brightness !== 10) {
+        out.start_brightness = circuit.start_brightness
+      }
     }
     if (circuit.enabled !== true) {
       out.enabled = circuit.enabled
