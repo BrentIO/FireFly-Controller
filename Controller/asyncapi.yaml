@@ -55,10 +55,7 @@ channels:
       (NORMAL, SHORT, LONG, or EXCESSIVE).
     parameters:
       haRoot:
-        description: Home Assistant discovery root topic (default "homeassistant")
-        schema:
-          type: string
-          default: homeassistant
+        $ref: "#/components/parameters/haRoot"
       uuid:
         $ref: "#/components/parameters/controllerUuid"
       portId:
