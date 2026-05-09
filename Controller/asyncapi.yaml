@@ -231,7 +231,7 @@ channels:
 
   heapFreeState:
     address: "FireFly/{uuid}/heap-free/state"
-    description: Current free heap memory in bytes. Published periodically in debug builds only.
+    description: Current free heap memory in bytes. Published periodically. Present in debug builds only.
     parameters:
       uuid:
         $ref: "#/components/parameters/controllerUuid"
@@ -241,7 +241,7 @@ channels:
 
   heapLargestFreeBlockState:
     address: "FireFly/{uuid}/heap-largest-free-block/state"
-    description: Largest contiguous free block in heap memory, in bytes. Published periodically in debug builds only.
+    description: Largest contiguous free block in heap memory, in bytes. Published periodically. Present in debug builds only.
     parameters:
       uuid:
         $ref: "#/components/parameters/controllerUuid"
@@ -543,7 +543,7 @@ operations:
       $ref: "#/channels/heapFreeState"
     summary: Publish free heap memory (debug builds only)
     description: >
-      Published periodically during the main loop. Only present in debug builds.
+      Published periodically during the main loop. Present in debug builds only.
     messages:
       - $ref: "#/channels/heapFreeState/messages/heapFreeState"
 
@@ -553,7 +553,7 @@ operations:
       $ref: "#/channels/heapLargestFreeBlockState"
     summary: Publish largest free heap block (debug builds only)
     description: >
-      Published periodically during the main loop. Only present in debug builds.
+      Published periodically during the main loop. Present in debug builds only.
     messages:
       - $ref: "#/channels/heapLargestFreeBlockState/messages/heapLargestFreeBlockState"
 
@@ -638,7 +638,7 @@ operations:
       $ref: "#/channels/haDiscoveryHeapFree"
     summary: Publish Home Assistant discovery config for the free heap sensor (debug builds only)
     description: >
-      Published once after MQTT connect. The retain flag is set. Only present in debug builds.
+      Published once after MQTT connect. The retain flag is set. Present in debug builds only.
     messages:
       - $ref: "#/channels/haDiscoveryHeapFree/messages/haDiscoveryGeneric"
 
@@ -648,7 +648,7 @@ operations:
       $ref: "#/channels/haDiscoveryHeapLargestFreeBlock"
     summary: Publish Home Assistant discovery config for the largest free heap block sensor (debug builds only)
     description: >
-      Published once after MQTT connect. The retain flag is set. Only present in debug builds.
+      Published once after MQTT connect. The retain flag is set. Present in debug builds only.
     messages:
       - $ref: "#/channels/haDiscoveryHeapLargestFreeBlock/messages/haDiscoveryGeneric"
 
