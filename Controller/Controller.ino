@@ -137,9 +137,6 @@ struct inputChannel{
   /// @brief The physical channel number, typically 1, 2, 3, or 6
   uint8_t channel;
 
-  /// @brief Channel offset applied to produce the logical channel number (e.g. 4 for extended clients)
-  uint8_t offset = 0;
-
   /// @brief List of actions to take when the channel state changes from its normal position
   LinkedList<inputAction> actions;
 };
@@ -3435,9 +3432,7 @@ bool setup_inputs(String filename){
       }
 
       if(port_value_channel.value()["offset"]){
-        uint8_t channelOffset = port_value_channel.value()["offset"].as<uint8_t>();
-        inputs.setOffset(portChannel, channelOffset);
-        inputPorts[atoi(port.key().c_str())-1].channels[i].offset = channelOffset;
+        inputs.setOffset(portChannel, port_value_channel.value()["offset"].as<uint8_t>());
       }
 
       JsonArray actions = port_value_channel.value()["actions"].as<JsonArray>();
@@ -4125,25 +4120,16 @@ void mqtt_autoDiscovery_outputs(){
 
 
 /**
- * Handles input channel device trigger auto discovery broadcasts.
- * Publishes one retained discovery message per channel per trigger type so that
- * HA surfaces each input channel as a native device trigger in the automation editor.
+ * Handles input channel sensor auto discovery broadcasts.
+ * Publishes one retained discovery message per configured input channel so that
+ * Home Assistant exposes each channel as a sensor entity whose state reflects the
+ * most recently published value (NORMAL, SHORT, LONG, or EXCESSIVE).
  */
 void mqtt_autoDiscovery_inputs(){
 
   if(deviceIdentity.enabled == false){
     return;
   }
-
-  struct {
-    const char* haType;
-    const char* payload;
-  } triggers[] = {
-    { "button_short_press", "SHORT"     },
-    { "button_long_press",  "LONG"      },
-    { "button_hold",        "EXCESSIVE" },
-    { "button_release",     "NORMAL"    }
-  };
 
   uint8_t portCount = (IO_EXTENDER_COUNT_PINS / IO_EXTENDER_COUNT_CHANNELS_PER_PORT) * IO_EXTENDER_COUNT;
 
@@ -4159,70 +4145,71 @@ void mqtt_autoDiscovery_inputs(){
         continue;
       }
 
-      uint8_t logicalChannel = inputPorts[p].channels[c].channel + inputPorts[p].channels[c].offset;
-
-      char state_topic[MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH+1];
-      snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_INPUT_STATE_PATTERN, inputPorts[p].id, logicalChannel);
-
-      char device_id[MQTT_INPUT_AUTO_DISCOVERY_DEVICE_ID_LENGTH+1];
-      snprintf(device_id, sizeof(device_id), MQTT_INPUT_AUTO_DISCOVERY_DEVICE_ID_PATTERN, inputPorts[p].id);
-
-      char subtype[MQTT_INPUT_AUTO_DISCOVERY_SUBTYPE_LENGTH+1];
-      snprintf(subtype, sizeof(subtype), MQTT_INPUT_AUTO_DISCOVERY_SUBTYPE_PATTERN, logicalChannel);
-
-      // Find the IO extender chip address for this port/channel for the availability topic
+      // Scan the inputs manager to get both the chip address (for availability) and
+      // the offset (for the logical channel number used in the state topic)
       uint8_t chipAddress = 0;
+      uint8_t channelOffset = 0;
       for(int i = 0; i < IO_EXTENDER_COUNT; i++){
         for(int j = 0; j < IO_EXTENDER_COUNT_PINS; j++){
           if(inputs.inputControllers[i].inputs[j].port_channel.port == (p+1) &&
              inputs.inputControllers[i].inputs[j].port_channel.channel == inputPorts[p].channels[c].channel){
             chipAddress = inputs.inputControllers[i].address;
+            channelOffset = inputs.inputControllers[i].inputs[j].port_channel.offset;
             break;
           }
         }
         if(chipAddress != 0){ break; }
       }
 
+      uint8_t logicalChannel = inputPorts[p].channels[c].channel + channelOffset;
+
+      char autodiscovery_topic[MQTT_TOPIC_INPUT_AUTO_DISCOVERY_LENGTH+1];
+      snprintf(autodiscovery_topic, sizeof(autodiscovery_topic), MQTT_TOPIC_INPUT_AUTO_DISCOVERY_PATTERN,
+        mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid, inputPorts[p].id, logicalChannel);
+
+      char unique_id[MQTT_INPUT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+      snprintf(unique_id, sizeof(unique_id), MQTT_INPUT_AUTO_DISCOVERY_UNIQUE_ID_PATTERN,
+        deviceIdentity.data.uuid, inputPorts[p].id, logicalChannel);
+
+      char default_entity_id[MQTT_INPUT_AUTO_DISCOVERY_DEFAULT_ENTITY_ID_LENGTH+1];
+      snprintf(default_entity_id, sizeof(default_entity_id), MQTT_INPUT_AUTO_DISCOVERY_DEFAULT_ENTITY_ID_PATTERN,
+        deviceIdentity.data.uuid, inputPorts[p].id, logicalChannel);
+
+      char state_topic[MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH+1];
+      snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_INPUT_STATE_PATTERN, inputPorts[p].id, logicalChannel);
+
+      char device_id[MQTT_INPUT_AUTO_DISCOVERY_DEVICE_ID_LENGTH+1];
+      snprintf(device_id, sizeof(device_id), MQTT_INPUT_AUTO_DISCOVERY_DEVICE_ID_PATTERN,
+        deviceIdentity.data.uuid, inputPorts[p].id);
+
       char chip_availability_topic[MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
-      snprintf(chip_availability_topic, sizeof(chip_availability_topic), MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, chipAddress);
+      snprintf(chip_availability_topic, sizeof(chip_availability_topic), MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_PATTERN,
+        deviceIdentity.data.uuid, chipAddress);
 
-      for(uint8_t t = 0; t < 4; t++){
+      JsonDocument mqttDoc;
+      mqttDoc["name"] = (char*)NULL;
+      mqttDoc["unique_id"] = unique_id;
+      mqttDoc["default_entity_id"] = default_entity_id;
+      mqttDoc["state_topic"] = state_topic;
 
-        char autodiscovery_topic[MQTT_TOPIC_INPUT_AUTO_DISCOVERY_LENGTH+1];
-        snprintf(autodiscovery_topic, sizeof(autodiscovery_topic), MQTT_TOPIC_INPUT_AUTO_DISCOVERY_PATTERN,
-          mqttClient.autoDiscovery.homeAssistantRoot, inputPorts[p].id, logicalChannel, triggers[t].haType);
+      JsonObject device = mqttDoc["device"].to<JsonObject>();
+      JsonArray identifiers = device["identifiers"].to<JsonArray>();
+      identifiers.add(device_id);
+      device["name"] = inputPorts[p].id;
+      device["via_device"] = deviceIdentity.data.uuid;
 
-        char unique_id[MQTT_INPUT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
-        snprintf(unique_id, sizeof(unique_id), MQTT_INPUT_AUTO_DISCOVERY_UNIQUE_ID_PATTERN,
-          inputPorts[p].id, logicalChannel, triggers[t].haType);
+      JsonArray availability = mqttDoc["availability"].to<JsonArray>();
+      JsonObject chip_avail = availability.add<JsonObject>();
+      JsonObject controller_avail = availability.add<JsonObject>();
+      chip_avail["topic"] = chip_availability_topic;
+      controller_avail["topic"] = mqttClient.topic_availability;
+      mqttDoc["availability_mode"] = "all";
 
-        JsonDocument mqttDoc;
-        mqttDoc["automation_type"] = "trigger";
-        mqttDoc["payload"] = triggers[t].payload;
-        mqttDoc["topic"] = state_topic;
-        mqttDoc["type"] = triggers[t].haType;
-        mqttDoc["subtype"] = subtype;
-        mqttDoc["unique_id"] = unique_id;
-
-        JsonObject device = mqttDoc["device"].to<JsonObject>();
-        JsonArray identifiers = device["identifiers"].to<JsonArray>();
-        identifiers.add(device_id);
-        device["name"] = inputPorts[p].id;
-        device["via_device"] = deviceIdentity.data.uuid;
-
-        JsonArray availability = mqttDoc["availability"].to<JsonArray>();
-        JsonObject chip_avail = availability.add<JsonObject>();
-        JsonObject controller_avail = availability.add<JsonObject>();
-        chip_avail["topic"] = chip_availability_topic;
-        controller_avail["topic"] = mqttClient.topic_availability;
-        mqttDoc["availability_mode"] = "all";
-
-        mqttClient.beginPublish(autodiscovery_topic, measureJson(mqttDoc), true);
-        BufferingPrint bufferedClient(mqttClient, 32);
-        serializeJson(mqttDoc, bufferedClient);
-        bufferedClient.flush();
-        mqttClient.endPublish();
-      }
+      mqttClient.beginPublish(autodiscovery_topic, measureJson(mqttDoc), true);
+      BufferingPrint bufferedClient(mqttClient, 32);
+      serializeJson(mqttDoc, bufferedClient);
+      bufferedClient.flush();
+      mqttClient.endPublish();
     }
   }
 }

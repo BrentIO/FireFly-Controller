@@ -46,31 +46,25 @@ channels:
   ##########################################################
 
   inputAutoDiscovery:
-    address: "{haRoot}/device_automation/FireFly-{portId}-channel-{channelNumber}-{triggerType}/config"
+    address: "{haRoot}/sensor/FireFly-{uuid}-inputs-{portId}-channel-{channelNumber}/config"
     description: >
-      Home Assistant MQTT device trigger auto-discovery topic for a single input channel trigger type.
-      Published once on MQTT connect (retained) for every configured input channel × trigger type combination.
-      Consumers (e.g. Home Assistant) use these messages to register the input channels as native device
-      triggers in the automation editor without any manual MQTT configuration.
+      Home Assistant MQTT sensor auto-discovery topic for a configured input channel.
+      Published once on MQTT connect (retained) for every configured input channel.
+      Consumers (e.g. Home Assistant) use these messages to register each input channel
+      as a sensor entity whose state reflects the most recently published value
+      (NORMAL, SHORT, LONG, or EXCESSIVE).
     parameters:
       haRoot:
         description: Home Assistant discovery root topic (default "homeassistant")
         schema:
           type: string
           default: homeassistant
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
       portId:
         $ref: "#/components/parameters/portId"
       channelNumber:
         $ref: "#/components/parameters/channelNumber"
-      triggerType:
-        description: Home Assistant trigger type string
-        schema:
-          type: string
-          enum:
-            - button_short_press
-            - button_long_press
-            - button_hold
-            - button_release
     messages:
       inputAutoDiscovery:
         $ref: "#/components/messages/inputAutoDiscovery"
@@ -438,14 +432,13 @@ operations:
     action: send
     channel:
       $ref: "#/channels/inputAutoDiscovery"
-    summary: Publish Home Assistant device trigger auto-discovery for an input channel
+    summary: Publish Home Assistant sensor auto-discovery for an input channel
     description: >
-      Published once on MQTT connect for every configured input channel × trigger type combination.
+      Published once on MQTT connect for every configured input channel (one message per channel).
       The retain flag is set so that Home Assistant receives the discovery payload immediately on
       subscribe, even if the controller connected before HA did.
-      Four messages are published per configured channel — one for each trigger type
-      (button_short_press, button_long_press, button_hold, button_release) — mapping to the
-      SHORT, LONG, EXCESSIVE, and NORMAL state payloads respectively.
+      Each message registers the channel as a sensor entity whose state will be NORMAL, SHORT,
+      LONG, or EXCESSIVE as published on the channel's state topic.
     messages:
       - $ref: "#/channels/inputAutoDiscovery/messages/inputAutoDiscovery"
 
@@ -858,47 +851,30 @@ components:
 
     inputAutoDiscovery:
       name: inputAutoDiscovery
-      title: Input Channel Device Trigger Auto-Discovery
-      summary: Home Assistant MQTT device trigger discovery payload for one input channel trigger type
+      title: Input Channel Sensor Auto-Discovery
+      summary: Home Assistant MQTT sensor discovery payload for one configured input channel
       contentType: application/json
       payload:
         type: object
         required:
-          - automation_type
-          - payload
-          - topic
-          - type
-          - subtype
+          - name
           - unique_id
+          - default_entity_id
+          - state_topic
           - device
         properties:
-          automation_type:
-            type: string
-            const: trigger
-          payload:
-            type: string
-            description: The state value that triggers this automation
-            enum:
-              - SHORT
-              - LONG
-              - EXCESSIVE
-              - NORMAL
-          topic:
-            type: string
-            description: The MQTT state topic to watch
-          type:
-            type: string
-            description: Home Assistant trigger type
-            enum:
-              - button_short_press
-              - button_long_press
-              - button_hold
-              - button_release
-          subtype:
-            type: string
-            description: Channel identifier (e.g. "channel-1")
+          name:
+            type: "null"
+            description: Null — lets Home Assistant derive the entity name from the device name
           unique_id:
             type: string
+            description: Globally unique entity identifier including the controller UUID and port ID
+          default_entity_id:
+            type: string
+            description: Suggested entity ID for Home Assistant
+          state_topic:
+            type: string
+            description: The MQTT topic the controller publishes channel state to
           device:
             type: object
             properties:
@@ -908,8 +884,10 @@ components:
                   type: string
               name:
                 type: string
+                description: Port ID used as the device name
               via_device:
                 type: string
+                description: Controller UUID — groups this sensor under the parent controller in the HA device registry
           availability:
             type: array
             items:
@@ -921,17 +899,15 @@ components:
             type: string
             const: all
       examples:
-        - name: short-press
+        - name: channel-1
           payload:
-            automation_type: trigger
-            payload: SHORT
-            topic: "FireFly/inputs/A1234567/channels/1/state"
-            type: button_short_press
-            subtype: channel-1
-            unique_id: "FireFly-A1234567-channel-1-button_short_press"
+            name: null
+            unique_id: "FireFly-00000000-0000-4000-0000-000000000000-inputs-A1234567-channel-1"
+            default_entity_id: "sensor.FireFly-00000000-0000-4000-0000-000000000000-inputs-A1234567-channel-1"
+            state_topic: "FireFly/inputs/A1234567/channels/1/state"
             device:
               identifiers:
-                - "FireFly-inputs-A1234567"
+                - "FireFly-00000000-0000-4000-0000-000000000000-inputs-A1234567"
               name: A1234567
               via_device: "00000000-0000-4000-0000-000000000000"
             availability:
