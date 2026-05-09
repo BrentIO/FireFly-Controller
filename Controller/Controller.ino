@@ -827,11 +827,17 @@ void failureHandler_inputs(uint8_t address, managerInputs::failureReason failure
   
   eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
+
+  if(mqttClient.connected()){
+    char availability_topic[MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
+    snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, address);
+    mqttClient.publish(availability_topic, "offline", true);
+  }
 }
 
 
-/** 
- * Callback function which handles failures of any output 
+/**
+ * Callback function which handles failures of any output
 */
 void failureHandler_outputs(uint8_t address, nsOutputs::failureReason failureReason){
 
@@ -3170,8 +3176,7 @@ void mqtt_reconnect(){
 #endif /* CORE_DEBUG_LEVEL >= 4 */
           mqttClient.autoDiscovery.sent = true;
         }
-        mqtt_publishOutputControllerAvailability();
-        mqtt_publishTemperatureAvailability();
+        mqtt_publishAllAvailability();
         mqtt_publishTemperatures();
         mqtt_publishStartTime();
         mqtt_publishIPAddress();
@@ -3498,6 +3503,41 @@ void mqtt_publishOutputControllerAvailability(){
 
     mqttClient.publish(availability_topic, health.outputControllers[i].enabled ? "online" : "offline", true);
   }
+}
+
+
+/**
+ * Publishes the per-chip MQTT availability for all input controllers based on current health
+ */
+void mqtt_publishInputControllerAvailability(){
+
+  if(deviceIdentity.enabled == false){
+    return;
+  }
+
+  if(!mqttClient.connected()){
+    return;
+  }
+
+  managerInputs::healthResult health = inputs.health();
+
+  for(int i = 0; i < health.count; i++){
+
+    char availability_topic[MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
+    snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, health.inputControllers[i].address);
+
+    mqttClient.publish(availability_topic, health.inputControllers[i].enabled ? "online" : "offline", true);
+  }
+}
+
+
+/**
+ * Publishes MQTT availability for all per-component availability topics
+ */
+void mqtt_publishAllAvailability(){
+  mqtt_publishTemperatureAvailability();
+  mqtt_publishOutputControllerAvailability();
+  mqtt_publishInputControllerAvailability();
 }
 
 
