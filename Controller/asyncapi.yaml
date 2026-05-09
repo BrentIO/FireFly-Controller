@@ -1,0 +1,1246 @@
+asyncapi: 3.1.0
+
+info:
+  title: FireFly Controller
+  description: MQTT messages published and subscribed to by the FireFly Controller firmware
+  version: "9999.99.99"
+
+servers:
+  mqtt:
+    host: "{host}:{port}"
+    protocol: mqtt
+    description: MQTT broker used by the controller
+    variables:
+      host:
+        default: localhost
+        description: Hostname or IP address of the MQTT broker
+      port:
+        default: "1883"
+        description: TCP port of the MQTT broker
+    security:
+      - $ref: "#/components/securitySchemes/userPassword"
+
+
+##########################################################
+## Channels                                             ##
+##########################################################
+
+channels:
+
+  ##########################################################
+  ## Device availability                                  ##
+  ##########################################################
+
+  controllerAvailability:
+    address: "FireFly/{uuid}/availability"
+    description: Device-level availability for the controller. Published as the MQTT Last Will and Testament (LWT) so the broker posts "offline" automatically when the connection drops.
+    parameters:
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      availability:
+        $ref: "#/components/messages/availability"
+
+  ##########################################################
+  ## Input state                                          ##
+  ##########################################################
+
+  inputChannelState:
+    address: "FireFly/inputs/{portId}/channels/{channelNumber}/state"
+    description: Current state of a single input channel (button/switch position).
+    parameters:
+      portId:
+        $ref: "#/components/parameters/portId"
+      channelNumber:
+        $ref: "#/components/parameters/channelNumber"
+    messages:
+      inputState:
+        $ref: "#/components/messages/inputState"
+
+  ##########################################################
+  ## Output (circuit) control and state                   ##
+  ##########################################################
+
+  outputState:
+    address: "FireFly/circuits/{outputId}/state"
+    description: Current brightness/power level of an output circuit (0-100). Published whenever the output value changes.
+    parameters:
+      outputId:
+        $ref: "#/components/parameters/outputId"
+    messages:
+      outputState:
+        $ref: "#/components/messages/outputState"
+
+  outputSet:
+    address: "FireFly/circuits/{outputId}/set"
+    description: Command topic to set the brightness/power level of an output circuit. The controller subscribes to this topic for each configured output.
+    parameters:
+      outputId:
+        $ref: "#/components/parameters/outputId"
+    messages:
+      outputSet:
+        $ref: "#/components/messages/outputSet"
+
+  ##########################################################
+  ## Output controller availability                        ##
+  ##########################################################
+
+  outputControllerAvailability:
+    address: "FireFly/{uuid}/outputs/controller/{i2cAddress}/availability"
+    description: Per-chip availability for each output controller IC. Published "offline" immediately when a hardware failure is detected.
+    parameters:
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+      i2cAddress:
+        $ref: "#/components/parameters/i2cAddress"
+    messages:
+      availability:
+        $ref: "#/components/messages/availability"
+
+  ##########################################################
+  ## Temperature sensors                                  ##
+  ##########################################################
+
+  temperatureState:
+    address: "FireFly/{uuid}/temperature/{location}/state"
+    description: Current temperature reading (degrees Celsius) from a sensor identified by its physical location string.
+    parameters:
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+      location:
+        $ref: "#/components/parameters/sensorLocation"
+    messages:
+      temperatureState:
+        $ref: "#/components/messages/temperatureState"
+
+  temperatureAvailability:
+    address: "FireFly/{uuid}/temperature/{location}/availability"
+    description: Per-sensor availability for each temperature sensor. Published "offline" immediately when a sensor hardware failure is detected.
+    parameters:
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+      location:
+        $ref: "#/components/parameters/sensorLocation"
+    messages:
+      availability:
+        $ref: "#/components/messages/availability"
+
+  ##########################################################
+  ## OTA firmware update                                  ##
+  ##########################################################
+
+  updateState:
+    address: "FireFly/{uuid}/update/state"
+    description: Firmware update status. Published when an update is available, when an install is in progress, or when the update service check completes.
+    parameters:
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      updateAvailable:
+        $ref: "#/components/messages/updateAvailable"
+      updateInProgress:
+        $ref: "#/components/messages/updateInProgress"
+
+  updateSet:
+    address: "FireFly/{uuid}/update/set"
+    description: Command topic to trigger a firmware OTA update. The controller subscribes to this topic. Send the payload "do-update" to initiate the update.
+    parameters:
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      updateSet:
+        $ref: "#/components/messages/updateSet"
+
+  updateAvailability:
+    address: "FireFly/{uuid}/update/availability"
+    description: Availability of the OTA update service (i.e., whether the firmware manifest server can be reached). Published as "online" when the server is reachable, "offline" otherwise.
+    parameters:
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      availability:
+        $ref: "#/components/messages/availability"
+
+  ##########################################################
+  ## HTTP server switch                                   ##
+  ##########################################################
+
+  httpServerState:
+    address: "FireFly/{uuid}/http-server/state"
+    description: Current state of the built-in HTTP server ("ON" or "OFF"). Published whenever the HTTP server is started or stopped.
+    parameters:
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      httpServerState:
+        $ref: "#/components/messages/onOff"
+
+  httpServerSet:
+    address: "FireFly/{uuid}/http-server/set"
+    description: Command topic to enable or disable the built-in HTTP server. The controller subscribes to this topic. Send "ON" to start the server, "OFF" to stop it.
+    parameters:
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      httpServerSet:
+        $ref: "#/components/messages/onOff"
+
+  ##########################################################
+  ## Diagnostic sensors                                   ##
+  ##########################################################
+
+  startTimeState:
+    address: "FireFly/{uuid}/time-start/state"
+    description: Unix epoch timestamp (seconds) of when the controller last booted. Published once on MQTT connect.
+    parameters:
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      startTimeState:
+        $ref: "#/components/messages/epochTimestamp"
+
+  ipAddressState:
+    address: "FireFly/{uuid}/ip-address/state"
+    description: Current IPv4 address of the controller's network interface. Published once on MQTT connect.
+    parameters:
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      ipAddressState:
+        $ref: "#/components/messages/ipAddress"
+
+  macAddressState:
+    address: "FireFly/{uuid}/mac-address/state"
+    description: Ethernet MAC address of the controller. Published once on MQTT connect.
+    parameters:
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      macAddressState:
+        $ref: "#/components/messages/macAddress"
+
+  countErrorsState:
+    address: "FireFly/{uuid}/count-errors/state"
+    description: Current count of active errors in the error log. Published on MQTT connect and whenever the error count changes.
+    parameters:
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      countErrorsState:
+        $ref: "#/components/messages/errorCount"
+
+  heapFreeState:
+    address: "FireFly/{uuid}/heap-free/state"
+    description: Current free heap memory in bytes. Published periodically. Present in debug builds only.
+    parameters:
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      heapFreeState:
+        $ref: "#/components/messages/memoryBytes"
+
+  heapLargestFreeBlockState:
+    address: "FireFly/{uuid}/heap-largest-free-block/state"
+    description: Largest contiguous free block in heap memory, in bytes. Published periodically. Present in debug builds only.
+    parameters:
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      heapLargestFreeBlockState:
+        $ref: "#/components/messages/memoryBytes"
+
+  ##########################################################
+  ## Home Assistant MQTT discovery                        ##
+  ##########################################################
+
+  haDiscoveryOutput:
+    address: "{haRoot}/{platform}/FireFly-circuits-{outputId}/config"
+    description: Home Assistant MQTT discovery config for a single output circuit. Published once after MQTT connect. The platform segment is "light", "fan", or "switch" depending on the output's configured icon.
+    parameters:
+      haRoot:
+        $ref: "#/components/parameters/haRoot"
+      platform:
+        $ref: "#/components/parameters/haPlatform"
+      outputId:
+        $ref: "#/components/parameters/outputId"
+    messages:
+      haDiscoveryOutput:
+        $ref: "#/components/messages/haDiscoveryOutput"
+
+  haDiscoveryTemperature:
+    address: "{haRoot}/sensor/FireFly-{uuid}-temperature-{location}/config"
+    description: Home Assistant MQTT discovery config for a temperature sensor. Published once after MQTT connect.
+    parameters:
+      haRoot:
+        $ref: "#/components/parameters/haRoot"
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+      location:
+        $ref: "#/components/parameters/sensorLocation"
+    messages:
+      haDiscoveryGeneric:
+        $ref: "#/components/messages/haDiscoveryConfig"
+
+  haDiscoveryStartTime:
+    address: "{haRoot}/sensor/FireFly-{uuid}-time-start/config"
+    description: Home Assistant MQTT discovery config for the boot timestamp sensor. Published once after MQTT connect.
+    parameters:
+      haRoot:
+        $ref: "#/components/parameters/haRoot"
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      haDiscoveryGeneric:
+        $ref: "#/components/messages/haDiscoveryConfig"
+
+  haDiscoveryIpAddress:
+    address: "{haRoot}/sensor/FireFly-{uuid}-ip-address/config"
+    description: Home Assistant MQTT discovery config for the IP address sensor. Published once after MQTT connect.
+    parameters:
+      haRoot:
+        $ref: "#/components/parameters/haRoot"
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      haDiscoveryGeneric:
+        $ref: "#/components/messages/haDiscoveryConfig"
+
+  haDiscoveryMacAddress:
+    address: "{haRoot}/sensor/FireFly-{uuid}-mac-address/config"
+    description: Home Assistant MQTT discovery config for the MAC address sensor. Published once after MQTT connect.
+    parameters:
+      haRoot:
+        $ref: "#/components/parameters/haRoot"
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      haDiscoveryGeneric:
+        $ref: "#/components/messages/haDiscoveryConfig"
+
+  haDiscoveryCountErrors:
+    address: "{haRoot}/sensor/FireFly-{uuid}-count-errors/config"
+    description: Home Assistant MQTT discovery config for the error count sensor. Published once after MQTT connect.
+    parameters:
+      haRoot:
+        $ref: "#/components/parameters/haRoot"
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      haDiscoveryGeneric:
+        $ref: "#/components/messages/haDiscoveryConfig"
+
+  haDiscoveryHttpServer:
+    address: "{haRoot}/switch/FireFly-{uuid}-http-server/config"
+    description: Home Assistant MQTT discovery config for the HTTP server switch. Published once after MQTT connect.
+    parameters:
+      haRoot:
+        $ref: "#/components/parameters/haRoot"
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      haDiscoveryGeneric:
+        $ref: "#/components/messages/haDiscoveryConfig"
+
+  haDiscoveryUpdate:
+    address: "{haRoot}/update/FireFly-{uuid}-update/config"
+    description: Home Assistant MQTT discovery config for the firmware update entity. Published once after MQTT connect.
+    parameters:
+      haRoot:
+        $ref: "#/components/parameters/haRoot"
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      haDiscoveryGeneric:
+        $ref: "#/components/messages/haDiscoveryConfig"
+
+  haDiscoveryHeapFree:
+    address: "{haRoot}/sensor/FireFly-{uuid}-heap-free/config"
+    description: Home Assistant MQTT discovery config for the free heap sensor. Published once after MQTT connect. Present in debug builds only.
+    parameters:
+      haRoot:
+        $ref: "#/components/parameters/haRoot"
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      haDiscoveryGeneric:
+        $ref: "#/components/messages/haDiscoveryConfig"
+
+  haDiscoveryHeapLargestFreeBlock:
+    address: "{haRoot}/sensor/FireFly-{uuid}-heap-largest-free-block/config"
+    description: Home Assistant MQTT discovery config for the largest free heap block sensor. Published once after MQTT connect. Present in debug builds only.
+    parameters:
+      haRoot:
+        $ref: "#/components/parameters/haRoot"
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+    messages:
+      haDiscoveryGeneric:
+        $ref: "#/components/messages/haDiscoveryConfig"
+
+
+##########################################################
+## Operations                                           ##
+##########################################################
+
+operations:
+
+  ##########################################################
+  ## Publish (controller sends)                           ##
+  ##########################################################
+
+  publishControllerAvailability:
+    action: send
+    channel:
+      $ref: "#/channels/controllerAvailability"
+    summary: Publish device-level controller availability
+    description: >
+      Published "online" when the controller connects to the broker and "offline"
+      as the MQTT Last Will and Testament when the connection drops unexpectedly.
+      The retain flag is set so new subscribers immediately learn the current state.
+    messages:
+      - $ref: "#/channels/controllerAvailability/messages/availability"
+
+  publishInputChannelState:
+    action: send
+    channel:
+      $ref: "#/channels/inputChannelState"
+    summary: Publish input channel state change
+    description: >
+      Published whenever an input channel (button or switch contact) changes state.
+      The payload reflects the new state: NORMAL (at rest), SHORT (brief press/release),
+      LONG (held), or EXCESSIVE (held beyond the long-press threshold).
+    messages:
+      - $ref: "#/channels/inputChannelState/messages/inputState"
+
+  publishOutputState:
+    action: send
+    channel:
+      $ref: "#/channels/outputState"
+    summary: Publish output circuit level
+    description: >
+      Published whenever an output circuit's brightness/power level changes,
+      including on reconnect (initial value is 0). The retain flag is set.
+    messages:
+      - $ref: "#/channels/outputState/messages/outputState"
+
+  publishOutputControllerAvailability:
+    action: send
+    channel:
+      $ref: "#/channels/outputControllerAvailability"
+    summary: Publish output controller chip availability
+    description: >
+      Published once per output controller chip on MQTT connect, reflecting whether that chip
+      is healthy. Also published "offline" immediately when a hardware failure is
+      detected. The retain flag is set.
+    messages:
+      - $ref: "#/channels/outputControllerAvailability/messages/availability"
+
+  publishTemperatureState:
+    action: send
+    channel:
+      $ref: "#/channels/temperatureState"
+    summary: Publish temperature reading
+    description: >
+      Published once per temperature sensor on MQTT connect, and again whenever
+      the sensor reports a new reading. The retain flag is set.
+    messages:
+      - $ref: "#/channels/temperatureState/messages/temperatureState"
+
+  publishTemperatureAvailability:
+    action: send
+    channel:
+      $ref: "#/channels/temperatureAvailability"
+    summary: Publish temperature sensor availability
+    description: >
+      Published once per sensor on MQTT connect, reflecting whether the sensor is
+      healthy. Also published "offline" immediately when a sensor failure is detected.
+      The retain flag is set.
+    messages:
+      - $ref: "#/channels/temperatureAvailability/messages/availability"
+
+  publishUpdateState:
+    action: send
+    channel:
+      $ref: "#/channels/updateState"
+    summary: Publish firmware update status
+    description: >
+      Published when an OTA update is available (with version metadata), when an
+      install is initiated or in progress, or when the update service check confirms
+      no update is available.
+    messages:
+      - $ref: "#/channels/updateState/messages/updateAvailable"
+      - $ref: "#/channels/updateState/messages/updateInProgress"
+
+  publishUpdateAvailability:
+    action: send
+    channel:
+      $ref: "#/channels/updateAvailability"
+    summary: Publish update service availability
+    description: >
+      Published "online" when the firmware manifest server is reachable and
+      "offline" when it is not (or before the first check).
+    messages:
+      - $ref: "#/channels/updateAvailability/messages/availability"
+
+  publishHttpServerState:
+    action: send
+    channel:
+      $ref: "#/channels/httpServerState"
+    summary: Publish HTTP server state
+    description: >
+      Published whenever the HTTP server is started or stopped, and once on MQTT
+      connect. The retain flag is set.
+    messages:
+      - $ref: "#/channels/httpServerState/messages/httpServerState"
+
+  publishStartTimeState:
+    action: send
+    channel:
+      $ref: "#/channels/startTimeState"
+    summary: Publish controller boot timestamp
+    description: >
+      Published once on MQTT connect. Contains the Unix epoch timestamp (seconds)
+      of when the device booted. The retain flag is set.
+    messages:
+      - $ref: "#/channels/startTimeState/messages/startTimeState"
+
+  publishIpAddressState:
+    action: send
+    channel:
+      $ref: "#/channels/ipAddressState"
+    summary: Publish controller IP address
+    description: >
+      Published once on MQTT connect. Contains the current IPv4 address as a
+      dotted-decimal string. The retain flag is set.
+    messages:
+      - $ref: "#/channels/ipAddressState/messages/ipAddressState"
+
+  publishMacAddressState:
+    action: send
+    channel:
+      $ref: "#/channels/macAddressState"
+    summary: Publish controller MAC address
+    description: >
+      Published once on MQTT connect. Contains the Ethernet MAC address in
+      colon-delimited uppercase hex notation. The retain flag is set.
+    messages:
+      - $ref: "#/channels/macAddressState/messages/macAddressState"
+
+  publishCountErrorsState:
+    action: send
+    channel:
+      $ref: "#/channels/countErrorsState"
+    summary: Publish active error count
+    description: >
+      Published on MQTT connect and whenever the error log changes (error added or
+      resolved). The retain flag is set.
+    messages:
+      - $ref: "#/channels/countErrorsState/messages/countErrorsState"
+
+  publishHeapFreeState:
+    action: send
+    channel:
+      $ref: "#/channels/heapFreeState"
+    summary: Publish free heap memory (debug builds only)
+    description: >
+      Published periodically during the main loop. Present in debug builds only.
+    messages:
+      - $ref: "#/channels/heapFreeState/messages/heapFreeState"
+
+  publishHeapLargestFreeBlockState:
+    action: send
+    channel:
+      $ref: "#/channels/heapLargestFreeBlockState"
+    summary: Publish largest free heap block (debug builds only)
+    description: >
+      Published periodically during the main loop. Present in debug builds only.
+    messages:
+      - $ref: "#/channels/heapLargestFreeBlockState/messages/heapLargestFreeBlockState"
+
+  publishHaDiscoveryOutput:
+    action: send
+    channel:
+      $ref: "#/channels/haDiscoveryOutput"
+    summary: Publish Home Assistant discovery config for an output circuit
+    description: >
+      Published once after MQTT connect for each configured output. The retain flag
+      is set. The platform segment ("light", "fan", or "switch") is derived from the
+      output's configured icon field.
+    messages:
+      - $ref: "#/channels/haDiscoveryOutput/messages/haDiscoveryOutput"
+
+  publishHaDiscoveryTemperature:
+    action: send
+    channel:
+      $ref: "#/channels/haDiscoveryTemperature"
+    summary: Publish Home Assistant discovery config for a temperature sensor
+    description: Published once after MQTT connect for each configured temperature sensor. The retain flag is set.
+    messages:
+      - $ref: "#/channels/haDiscoveryTemperature/messages/haDiscoveryGeneric"
+
+  publishHaDiscoveryStartTime:
+    action: send
+    channel:
+      $ref: "#/channels/haDiscoveryStartTime"
+    summary: Publish Home Assistant discovery config for the boot timestamp sensor
+    description: Published once after MQTT connect. The retain flag is set.
+    messages:
+      - $ref: "#/channels/haDiscoveryStartTime/messages/haDiscoveryGeneric"
+
+  publishHaDiscoveryIpAddress:
+    action: send
+    channel:
+      $ref: "#/channels/haDiscoveryIpAddress"
+    summary: Publish Home Assistant discovery config for the IP address sensor
+    description: Published once after MQTT connect. The retain flag is set.
+    messages:
+      - $ref: "#/channels/haDiscoveryIpAddress/messages/haDiscoveryGeneric"
+
+  publishHaDiscoveryMacAddress:
+    action: send
+    channel:
+      $ref: "#/channels/haDiscoveryMacAddress"
+    summary: Publish Home Assistant discovery config for the MAC address sensor
+    description: Published once after MQTT connect. The retain flag is set.
+    messages:
+      - $ref: "#/channels/haDiscoveryMacAddress/messages/haDiscoveryGeneric"
+
+  publishHaDiscoveryCountErrors:
+    action: send
+    channel:
+      $ref: "#/channels/haDiscoveryCountErrors"
+    summary: Publish Home Assistant discovery config for the error count sensor
+    description: Published once after MQTT connect. The retain flag is set.
+    messages:
+      - $ref: "#/channels/haDiscoveryCountErrors/messages/haDiscoveryGeneric"
+
+  publishHaDiscoveryHttpServer:
+    action: send
+    channel:
+      $ref: "#/channels/haDiscoveryHttpServer"
+    summary: Publish Home Assistant discovery config for the HTTP server switch
+    description: Published once after MQTT connect. The retain flag is set.
+    messages:
+      - $ref: "#/channels/haDiscoveryHttpServer/messages/haDiscoveryGeneric"
+
+  publishHaDiscoveryUpdate:
+    action: send
+    channel:
+      $ref: "#/channels/haDiscoveryUpdate"
+    summary: Publish Home Assistant discovery config for the firmware update entity
+    description: Published once after MQTT connect. The retain flag is set.
+    messages:
+      - $ref: "#/channels/haDiscoveryUpdate/messages/haDiscoveryGeneric"
+
+  publishHaDiscoveryHeapFree:
+    action: send
+    channel:
+      $ref: "#/channels/haDiscoveryHeapFree"
+    summary: Publish Home Assistant discovery config for the free heap sensor (debug builds only)
+    description: >
+      Published once after MQTT connect. The retain flag is set. Present in debug builds only.
+    messages:
+      - $ref: "#/channels/haDiscoveryHeapFree/messages/haDiscoveryGeneric"
+
+  publishHaDiscoveryHeapLargestFreeBlock:
+    action: send
+    channel:
+      $ref: "#/channels/haDiscoveryHeapLargestFreeBlock"
+    summary: Publish Home Assistant discovery config for the largest free heap block sensor (debug builds only)
+    description: >
+      Published once after MQTT connect. The retain flag is set. Present in debug builds only.
+    messages:
+      - $ref: "#/channels/haDiscoveryHeapLargestFreeBlock/messages/haDiscoveryGeneric"
+
+  ##########################################################
+  ## Subscribe (controller receives)                      ##
+  ##########################################################
+
+  receiveOutputSet:
+    action: receive
+    channel:
+      $ref: "#/channels/outputSet"
+    summary: Receive output circuit level command
+    description: >
+      The controller subscribes to this topic for each configured output at startup.
+      The payload is a numeric brightness value (0-100) or the string "ON" (treated
+      as 100). Payloads longer than 10 bytes are discarded.
+    messages:
+      - $ref: "#/channels/outputSet/messages/outputSet"
+
+  receiveUpdateSet:
+    action: receive
+    channel:
+      $ref: "#/channels/updateSet"
+    summary: Receive firmware update install command
+    description: >
+      The controller subscribes to this topic on MQTT connect. Send "do-update"
+      to trigger an OTA firmware update. Any other payload is ignored. Payloads
+      longer than 10 bytes are discarded.
+    messages:
+      - $ref: "#/channels/updateSet/messages/updateSet"
+
+  receiveHttpServerSet:
+    action: receive
+    channel:
+      $ref: "#/channels/httpServerSet"
+    summary: Receive HTTP server enable/disable command
+    description: >
+      The controller subscribes to this topic on MQTT connect. Send "ON" to start
+      the built-in HTTP server or "OFF" to stop it. Payloads longer than 10 bytes
+      are discarded.
+    messages:
+      - $ref: "#/channels/httpServerSet/messages/httpServerSet"
+
+
+##########################################################
+## Components                                           ##
+##########################################################
+
+components:
+
+  ##########################################################
+  ## Security                                             ##
+  ##########################################################
+
+  securitySchemes:
+    userPassword:
+      type: userPassword
+      description: Username and password credentials for the MQTT broker
+
+  ##########################################################
+  ## Parameters                                           ##
+  ##########################################################
+
+  parameters:
+
+    controllerUuid:
+      description: UUIDv4 uniquely identifying this controller, stored in eFuse during manufacturing
+      examples:
+        - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+
+    portId:
+      description: >
+        Human-assigned alphanumeric identifier for an input port (max 8 characters,
+        pattern [A-Za-z0-9~!@#$%^&*()_+-=|]{1,8}).  The same ID is shared across
+        both ports when a multi-port switch spans two physical connectors.
+      examples:
+        - S16
+        - S22
+
+    channelNumber:
+      description: Input channel number within a port (1–4 for standard clients; 5–6 for extended clients)
+      examples:
+        - "1"
+        - "5"
+
+    outputId:
+      description: >
+        Human-assigned alphanumeric identifier for an output circuit (max 8 characters,
+        pattern [A-Za-z0-9~!@#$%^&*()_+-=|]{1,8}).
+      examples:
+        - C7
+        - C49
+
+    i2cAddress:
+      description: >
+        I2C address (decimal) of the output controller chip.
+        Valid range is 0-127.
+      examples:
+        - "64"
+        - "65"
+
+    sensorLocation:
+      description: Human-readable location string assigned to the temperature sensor (max 20 characters)
+      examples:
+        - board
+        - enclosure
+
+    haRoot:
+      description: >
+        Home Assistant MQTT discovery root topic prefix. Defaults to "homeassistant"
+        but can be changed in the Home Assistant MQTT integration settings.
+      default: homeassistant
+
+    haPlatform:
+      description: >
+        Home Assistant integration/platform type derived from the output's icon field.
+        Possible values are "light", "fan", or "switch" (default).
+      examples:
+        - light
+        - fan
+        - switch
+
+  ##########################################################
+  ## Messages                                             ##
+  ##########################################################
+
+  messages:
+
+    availability:
+      name: availability
+      title: Availability
+      summary: Indicates whether a device, chip, or sensor is online or offline
+      contentType: text/plain
+      payload:
+        $ref: "#/components/schemas/availabilityPayload"
+      examples:
+        - name: online
+          payload: online
+        - name: offline
+          payload: offline
+
+    inputState:
+      name: inputState
+      title: Input Channel State
+      summary: The current state of an input channel
+      contentType: text/plain
+      payload:
+        $ref: "#/components/schemas/inputStatePayload"
+      examples:
+        - name: normal
+          payload: NORMAL
+        - name: short
+          payload: SHORT
+        - name: long
+          payload: LONG
+        - name: excessive
+          payload: EXCESSIVE
+
+    outputState:
+      name: outputState
+      title: Output Circuit State
+      summary: Current brightness/power level of an output circuit (0-100)
+      contentType: text/plain
+      payload:
+        $ref: "#/components/schemas/outputStatePayload"
+      examples:
+        - name: on-full
+          payload: "100"
+        - name: half
+          payload: "50"
+        - name: off
+          payload: "0"
+
+    outputSet:
+      name: outputSet
+      title: Output Circuit Set Command
+      summary: Command to set the brightness/power level of an output circuit
+      contentType: text/plain
+      payload:
+        $ref: "#/components/schemas/outputSetPayload"
+      examples:
+        - name: on-by-string
+          payload: "ON"
+        - name: full-brightness
+          payload: "100"
+        - name: half-brightness
+          payload: "50"
+        - name: off
+          payload: "0"
+
+    onOff:
+      name: onOff
+      title: ON/OFF State or Command
+      summary: A simple ON or OFF value used for switch-type state and command topics
+      contentType: text/plain
+      payload:
+        $ref: "#/components/schemas/onOffPayload"
+      examples:
+        - name: on
+          payload: "ON"
+        - name: off
+          payload: "OFF"
+
+    temperatureState:
+      name: temperatureState
+      title: Temperature Reading
+      summary: Current temperature in degrees Celsius as a decimal string
+      contentType: text/plain
+      payload:
+        $ref: "#/components/schemas/temperatureStatePayload"
+      examples:
+        - name: typical
+          payload: "23.50"
+
+    updateAvailable:
+      name: updateAvailable
+      title: Firmware Update Available
+      summary: Firmware update status with version information
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/updateAvailablePayload"
+      examples:
+        - name: update-available
+          payload:
+            installed_version: "2025.04.01"
+            latest_version: "2025.05.01"
+            title: "FireFly Controller 2025.05.01"
+            release_summary: "Bug fixes and performance improvements"
+            release_url: "https://docs.fireflylx.com/releases/2025.05.01"
+            in_progress: false
+            update_percentage: null
+        - name: no-update
+          payload:
+            installed_version: "2025.05.01"
+            latest_version: "2025.05.01"
+            in_progress: false
+
+    updateInProgress:
+      name: updateInProgress
+      title: Firmware Update Progress
+      summary: Firmware OTA update is in progress or has completed/failed
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/updateInProgressPayload"
+      examples:
+        - name: started
+          payload:
+            in_progress: true
+            update_percentage: 0
+        - name: mid-way
+          payload:
+            in_progress: true
+            update_percentage: 4200
+        - name: failed
+          payload:
+            in_progress: false
+
+    updateSet:
+      name: updateSet
+      title: Firmware Update Install Command
+      summary: Command to trigger a firmware OTA update
+      contentType: text/plain
+      payload:
+        $ref: "#/components/schemas/updateSetPayload"
+      examples:
+        - name: install
+          payload: do-update
+
+    epochTimestamp:
+      name: epochTimestamp
+      title: Unix Epoch Timestamp
+      summary: A Unix epoch time value in seconds, encoded as a decimal string
+      contentType: text/plain
+      payload:
+        $ref: "#/components/schemas/epochTimestampPayload"
+      examples:
+        - name: typical
+          payload: "1709398094"
+
+    ipAddress:
+      name: ipAddress
+      title: IPv4 Address
+      summary: An IPv4 address in dotted-decimal notation
+      contentType: text/plain
+      payload:
+        $ref: "#/components/schemas/ipAddressPayload"
+      examples:
+        - name: typical
+          payload: "192.168.10.101"
+
+    macAddress:
+      name: macAddress
+      title: MAC Address
+      summary: An Ethernet MAC address in uppercase colon-delimited hex notation
+      contentType: text/plain
+      payload:
+        $ref: "#/components/schemas/macAddressPayload"
+      examples:
+        - name: typical
+          payload: "A1:B2:C3:D4:E5:F6"
+
+    errorCount:
+      name: errorCount
+      title: Active Error Count
+      summary: Number of active (unresolved) errors in the error log
+      contentType: text/plain
+      payload:
+        $ref: "#/components/schemas/errorCountPayload"
+      examples:
+        - name: no-errors
+          payload: "0"
+        - name: two-errors
+          payload: "2"
+
+    memoryBytes:
+      name: memoryBytes
+      title: Memory Size in Bytes
+      summary: A memory quantity in bytes encoded as a decimal string
+      contentType: text/plain
+      payload:
+        $ref: "#/components/schemas/memoryBytesPayload"
+      examples:
+        - name: typical
+          payload: "123456"
+
+    haDiscoveryOutput:
+      name: haDiscoveryOutput
+      title: Home Assistant Discovery — Output Circuit
+      summary: Home Assistant MQTT discovery payload for an output circuit entity
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/haDiscoveryOutputPayload"
+
+    haDiscoveryConfig:
+      name: haDiscoveryConfig
+      title: Home Assistant Discovery — Generic Entity
+      summary: Home Assistant MQTT discovery payload for a generic entity
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/haDiscoveryConfigPayload"
+
+  ##########################################################
+  ## Schemas                                              ##
+  ##########################################################
+
+  schemas:
+
+    availabilityPayload:
+      type: string
+      enum:
+        - online
+        - offline
+      description: Online/offline availability string
+
+    inputStatePayload:
+      type: string
+      enum:
+        - NORMAL
+        - SHORT
+        - LONG
+        - EXCESSIVE
+      description: >
+        Current state of an input channel.
+        NORMAL = at rest (not activated).
+        SHORT = a brief press/release transition.
+        LONG = held beyond the short-press threshold.
+        EXCESSIVE = held beyond the long-press threshold.
+
+    outputStatePayload:
+      type: string
+      description: >
+        Brightness/power level of the output circuit as a decimal integer string,
+        in the range 0 (off) to 100 (full).
+      pattern: "^(100|[0-9]{1,2})$"
+      examples:
+        - "0"
+        - "50"
+        - "100"
+
+    outputSetPayload:
+      type: string
+      description: >
+        Brightness/power level command. Either a decimal integer string in the range
+        0-100, or the literal string "ON" (which the controller maps to 100).
+        Payloads longer than 10 bytes are rejected.
+      examples:
+        - "ON"
+        - "100"
+        - "50"
+        - "0"
+
+    onOffPayload:
+      type: string
+      enum:
+        - "ON"
+        - "OFF"
+      description: Simple ON or OFF string
+
+    temperatureStatePayload:
+      type: string
+      description: Temperature in degrees Celsius encoded as a decimal string (e.g., "23.50")
+      examples:
+        - "23.50"
+        - "-5.00"
+
+    updateAvailablePayload:
+      type: object
+      description: Firmware update status message with version details
+      properties:
+        installed_version:
+          type: string
+          description: Currently installed firmware version
+          examples:
+            - "2025.04.01"
+        latest_version:
+          type: string
+          description: Latest available firmware version
+          examples:
+            - "2025.05.01"
+        title:
+          type: string
+          description: Human-readable release title (optional)
+          examples:
+            - "FireFly Controller 2025.05.01"
+        release_summary:
+          type: string
+          description: Brief summary of changes in the new release (optional)
+        release_url:
+          type: string
+          description: URL to the full release notes (optional)
+        in_progress:
+          type: boolean
+          description: Whether a firmware install is currently in progress
+        update_percentage:
+          type:
+            - integer
+            - "null"
+          description: >
+            Install progress as an integer where the value is percentage * 100
+            (e.g., 4200 = 42%). Null when no install is in progress.
+      required:
+        - installed_version
+        - latest_version
+        - in_progress
+
+    updateInProgressPayload:
+      type: object
+      description: Firmware OTA install progress or failure notification
+      properties:
+        in_progress:
+          type: boolean
+          description: Whether the OTA update is still in progress. False indicates failure or completion.
+        update_percentage:
+          type: integer
+          description: >
+            Install progress as an integer where the value is percentage * 100
+            (e.g., 4200 = 42%). Present only when in_progress is true.
+      required:
+        - in_progress
+
+    updateSetPayload:
+      type: string
+      description: Command payload to initiate a firmware OTA update
+      enum:
+        - do-update
+
+    epochTimestampPayload:
+      type: string
+      description: Unix epoch time in seconds as a decimal string
+      examples:
+        - "1709398094"
+
+    ipAddressPayload:
+      type: string
+      description: IPv4 address in dotted-decimal notation
+      examples:
+        - "192.168.10.101"
+
+    macAddressPayload:
+      type: string
+      description: Ethernet MAC address in uppercase colon-delimited hex notation
+      pattern: "^([0-9A-F]{2}:){5}[0-9A-F]{2}$"
+      examples:
+        - "A1:B2:C3:D4:E5:F6"
+
+    errorCountPayload:
+      type: string
+      description: Count of active unresolved errors as a decimal string
+      examples:
+        - "0"
+        - "2"
+
+    memoryBytesPayload:
+      type: string
+      description: Memory quantity in bytes as a decimal string
+      examples:
+        - "123456"
+
+    haDiscoveryOutputPayload:
+      type: object
+      description: >
+        Home Assistant MQTT discovery payload for an output circuit. Structure
+        follows the Home Assistant MQTT light/switch/fan discovery specification.
+      properties:
+        name:
+          type:
+            - string
+            - "null"
+          description: Entity name (null to use the device name)
+        unique_id:
+          type: string
+          description: Globally unique entity identifier (format "FireFly-{outputId}")
+        default_entity_id:
+          type: string
+          description: Suggested entity_id (format "{platform}.FireFly-circuits-{outputId}")
+        icon:
+          type: string
+          description: MDI icon reference (e.g., "mdi:chandelier")
+        state_topic:
+          type: string
+          description: Topic where the output's current level is published
+        command_topic:
+          type: string
+          description: Topic where output level commands are sent
+        state_value_template:
+          type: string
+          description: Jinja2 template to derive ON/OFF from the numeric state value
+        on_command_type:
+          type: string
+          description: Present for VARIABLE outputs; set to "brightness"
+        brightness_scale:
+          type: integer
+          description: Present for VARIABLE outputs; set to 100
+        brightness_command_topic:
+          type: string
+          description: Present for VARIABLE outputs; same as command_topic
+        brightness_state_topic:
+          type: string
+          description: Present for VARIABLE outputs; same as state_topic
+        availability:
+          type: array
+          description: >
+            Array of availability topics. Includes the per-chip output controller
+            availability topic and the device-level controller availability topic.
+          items:
+            type: object
+            properties:
+              topic:
+                type: string
+        availability_mode:
+          type: string
+          description: Set to "all" so the entity is online only when all topics are online
+        device:
+          type: object
+          description: Device grouping information linking this output to the FireFly controller
+
+    haDiscoveryConfigPayload:
+      type: object
+      description: >
+        Generic Home Assistant MQTT discovery payload. Exact fields vary by entity
+        type (sensor, switch, update, etc.) and follow the Home Assistant MQTT
+        discovery specification.
+      properties:
+        name:
+          type: string
+          description: Entity display name
+        unique_id:
+          type: string
+          description: Globally unique entity identifier
+        default_entity_id:
+          type: string
+          description: Suggested entity_id
+        icon:
+          type: string
+          description: MDI icon reference
+        state_topic:
+          type: string
+          description: Topic where the entity state is published
+        availability_topic:
+          type: string
+          description: Topic used for single-topic availability (non-update entities)
+        availability:
+          type: array
+          description: Array of availability topics used for multi-topic availability (update and temperature entities)
+          items:
+            type: object
+            properties:
+              topic:
+                type: string
+        availability_mode:
+          type: string
+          description: Set to "all" when multiple availability topics are in use
+        device:
+          type: object
+          description: Device grouping information
