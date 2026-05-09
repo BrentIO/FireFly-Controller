@@ -571,6 +571,35 @@ class managerInputs{
         }
 
 
+        /** Result of a port/channel lookup — chip address and offset for a given configured input */
+        struct portChannelInfo {
+            uint8_t chipAddress = 0;
+            uint8_t offset = 0;
+            bool found = false;
+        };
+
+
+        /** Returns the chip I2C address and channel offset for a given port/channel combination
+         * @param portChannel the human-readable port and channel to look up
+         * @returns portChannelInfo with chipAddress and offset set, or found=false if not mapped
+        */
+        portChannelInfo getPortChannelInfo(portChannel portChannel){
+            portChannelInfo result;
+            for(int i = 0; i < IO_EXTENDER_COUNT; i++){
+                for(int j = 0; j < IO_EXTENDER_COUNT_PINS; j++){
+                    if(this->inputControllers[i].inputs[j].port_channel.port == portChannel.port &&
+                       this->inputControllers[i].inputs[j].port_channel.channel == portChannel.channel){
+                        result.chipAddress = this->inputControllers[i].address;
+                        result.offset = this->inputControllers[i].inputs[j].port_channel.offset;
+                        result.found = true;
+                        return result;
+                    }
+                }
+            }
+            return result;
+        }
+
+
         /** Sets the port channel's offset
          * @param portChannel as the human-readable port and channel to set
          * @param type the type of input that the input channel should observe
