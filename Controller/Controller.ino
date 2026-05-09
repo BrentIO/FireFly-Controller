@@ -3551,6 +3551,7 @@ void mqtt_reconnect(){
           mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus::NEVER_ATTEMPTED);
           mqtt_autoDiscovery_temperature();
           mqtt_autoDiscovery_outputs();
+          mqtt_autoDiscovery_inputs();
           mqtt_autoDiscovery_start_time();
           mqtt_autoDiscovery_ip_address();
           mqtt_autoDiscovery_mac_address();
@@ -4114,6 +4115,102 @@ void mqtt_autoDiscovery_outputs(){
     mqttClient.addSubscription(command_topic);
 
     mqttClient.publish(state_topic, "0", true); //By default the controller will have set the output to off
+  }
+}
+
+
+/**
+ * Handles input channel sensor auto discovery broadcasts.
+ * Publishes one retained discovery message per configured input channel so that
+ * Home Assistant exposes each channel as a sensor entity whose state reflects the
+ * most recently published value (NORMAL, SHORT, LONG, or EXCESSIVE).
+ */
+void mqtt_autoDiscovery_inputs(){
+
+  if(deviceIdentity.enabled == false){
+    return;
+  }
+
+  uint8_t portCount = (IO_EXTENDER_COUNT_PINS / IO_EXTENDER_COUNT_CHANNELS_PER_PORT) * IO_EXTENDER_COUNT;
+
+  for(uint8_t p = 0; p < portCount; p++){
+
+    if(inputPorts[p].id[0] == '\0'){
+      continue;
+    }
+
+    for(uint8_t c = 0; c < IO_EXTENDER_COUNT_CHANNELS_PER_PORT; c++){
+
+      if(inputPorts[p].channels[c].channel == 0){
+        continue;
+      }
+
+      // Scan the inputs manager to get both the chip address (for availability) and
+      // the offset (for the logical channel number used in the state topic)
+      uint8_t chipAddress = 0;
+      uint8_t channelOffset = 0;
+      for(int i = 0; i < IO_EXTENDER_COUNT; i++){
+        for(int j = 0; j < IO_EXTENDER_COUNT_PINS; j++){
+          if(inputs.inputControllers[i].inputs[j].port_channel.port == (p+1) &&
+             inputs.inputControllers[i].inputs[j].port_channel.channel == inputPorts[p].channels[c].channel){
+            chipAddress = inputs.inputControllers[i].address;
+            channelOffset = inputs.inputControllers[i].inputs[j].port_channel.offset;
+            break;
+          }
+        }
+        if(chipAddress != 0){ break; }
+      }
+
+      uint8_t logicalChannel = inputPorts[p].channels[c].channel + channelOffset;
+
+      char autodiscovery_topic[MQTT_TOPIC_INPUT_AUTO_DISCOVERY_LENGTH+1];
+      snprintf(autodiscovery_topic, sizeof(autodiscovery_topic), MQTT_TOPIC_INPUT_AUTO_DISCOVERY_PATTERN,
+        mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid, inputPorts[p].id, logicalChannel);
+
+      char unique_id[MQTT_INPUT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+      snprintf(unique_id, sizeof(unique_id), MQTT_INPUT_AUTO_DISCOVERY_UNIQUE_ID_PATTERN,
+        deviceIdentity.data.uuid, inputPorts[p].id, logicalChannel);
+
+      char default_entity_id[MQTT_INPUT_AUTO_DISCOVERY_DEFAULT_ENTITY_ID_LENGTH+1];
+      snprintf(default_entity_id, sizeof(default_entity_id), MQTT_INPUT_AUTO_DISCOVERY_DEFAULT_ENTITY_ID_PATTERN,
+        deviceIdentity.data.uuid, inputPorts[p].id, logicalChannel);
+
+      char state_topic[MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH+1];
+      snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_INPUT_STATE_PATTERN, inputPorts[p].id, logicalChannel);
+
+      char device_id[MQTT_INPUT_AUTO_DISCOVERY_DEVICE_ID_LENGTH+1];
+      snprintf(device_id, sizeof(device_id), MQTT_INPUT_AUTO_DISCOVERY_DEVICE_ID_PATTERN,
+        deviceIdentity.data.uuid, inputPorts[p].id);
+
+      char chip_availability_topic[MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
+      snprintf(chip_availability_topic, sizeof(chip_availability_topic), MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_PATTERN,
+        deviceIdentity.data.uuid, chipAddress);
+
+      JsonDocument mqttDoc;
+      mqttDoc["name"] = (char*)NULL;
+      mqttDoc["unique_id"] = unique_id;
+      mqttDoc["default_entity_id"] = default_entity_id;
+      mqttDoc["state_topic"] = state_topic;
+
+      JsonObject device = mqttDoc["device"].to<JsonObject>();
+      JsonArray identifiers = device["identifiers"].to<JsonArray>();
+      identifiers.add(device_id);
+      device["name"] = inputPorts[p].id;
+      device["via_device"] = deviceIdentity.data.uuid;
+
+      JsonArray availability = mqttDoc["availability"].to<JsonArray>();
+      JsonObject chip_avail = availability.add<JsonObject>();
+      JsonObject controller_avail = availability.add<JsonObject>();
+      chip_avail["topic"] = chip_availability_topic;
+      controller_avail["topic"] = mqttClient.topic_availability;
+      mqttDoc["availability_mode"] = "all";
+
+      mqttClient.beginPublish(autodiscovery_topic, measureJson(mqttDoc), true);
+      BufferingPrint bufferedClient(mqttClient, 32);
+      serializeJson(mqttDoc, bufferedClient);
+      bufferedClient.flush();
+      mqttClient.endPublish();
+    }
   }
 }
 

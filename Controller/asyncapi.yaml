@@ -42,6 +42,34 @@ channels:
         $ref: "#/components/messages/availability"
 
   ##########################################################
+  ## Home Assistant auto-discovery                        ##
+  ##########################################################
+
+  inputAutoDiscovery:
+    address: "{haRoot}/sensor/FireFly-{uuid}-inputs-{portId}-channel-{channelNumber}/config"
+    description: >
+      Home Assistant MQTT sensor auto-discovery topic for a configured input channel.
+      Published once on MQTT connect (retained) for every configured input channel.
+      Consumers (e.g. Home Assistant) use these messages to register each input channel
+      as a sensor entity whose state reflects the most recently published value
+      (NORMAL, SHORT, LONG, or EXCESSIVE).
+    parameters:
+      haRoot:
+        description: Home Assistant discovery root topic (default "homeassistant")
+        schema:
+          type: string
+          default: homeassistant
+      uuid:
+        $ref: "#/components/parameters/controllerUuid"
+      portId:
+        $ref: "#/components/parameters/portId"
+      channelNumber:
+        $ref: "#/components/parameters/channelNumber"
+    messages:
+      inputAutoDiscovery:
+        $ref: "#/components/messages/inputAutoDiscovery"
+
+  ##########################################################
   ## Input state                                          ##
   ##########################################################
 
@@ -399,6 +427,20 @@ operations:
       The retain flag is set so new subscribers immediately learn the current state.
     messages:
       - $ref: "#/channels/controllerAvailability/messages/availability"
+
+  publishInputAutoDiscovery:
+    action: send
+    channel:
+      $ref: "#/channels/inputAutoDiscovery"
+    summary: Publish Home Assistant sensor auto-discovery for an input channel
+    description: >
+      Published once on MQTT connect for every configured input channel (one message per channel).
+      The retain flag is set so that Home Assistant receives the discovery payload immediately on
+      subscribe, even if the controller connected before HA did.
+      Each message registers the channel as a sensor entity whose state will be NORMAL, SHORT,
+      LONG, or EXCESSIVE as published on the channel's state topic.
+    messages:
+      - $ref: "#/channels/inputAutoDiscovery/messages/inputAutoDiscovery"
 
   publishInputChannelState:
     action: send
@@ -806,6 +848,72 @@ components:
           payload: LONG
         - name: excessive
           payload: EXCESSIVE
+
+    inputAutoDiscovery:
+      name: inputAutoDiscovery
+      title: Input Channel Sensor Auto-Discovery
+      summary: Home Assistant MQTT sensor discovery payload for one configured input channel
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - name
+          - unique_id
+          - default_entity_id
+          - state_topic
+          - device
+        properties:
+          name:
+            type: "null"
+            description: Null — lets Home Assistant derive the entity name from the device name
+          unique_id:
+            type: string
+            description: Globally unique entity identifier including the controller UUID and port ID
+          default_entity_id:
+            type: string
+            description: Suggested entity ID for Home Assistant
+          state_topic:
+            type: string
+            description: The MQTT topic the controller publishes channel state to
+          device:
+            type: object
+            properties:
+              identifiers:
+                type: array
+                items:
+                  type: string
+              name:
+                type: string
+                description: Port ID used as the device name
+              via_device:
+                type: string
+                description: Controller UUID — groups this sensor under the parent controller in the HA device registry
+          availability:
+            type: array
+            items:
+              type: object
+              properties:
+                topic:
+                  type: string
+          availability_mode:
+            type: string
+            const: all
+      examples:
+        - name: channel-1
+          payload:
+            name: null
+            unique_id: "FireFly-00000000-0000-4000-0000-000000000000-inputs-A1234567-channel-1"
+            default_entity_id: "sensor.FireFly-00000000-0000-4000-0000-000000000000-inputs-A1234567-channel-1"
+            state_topic: "FireFly/inputs/A1234567/channels/1/state"
+            device:
+              identifiers:
+                - "FireFly-00000000-0000-4000-0000-000000000000-inputs-A1234567"
+              name: A1234567
+              via_device: "00000000-0000-4000-0000-000000000000"
+            availability:
+              - topic: "FireFly/00000000-0000-4000-0000-000000000000/inputs/controller/32/availability"
+              - topic: "FireFly/00000000-0000-4000-0000-000000000000/availability"
+            availability_mode: all
 
     outputState:
       name: outputState

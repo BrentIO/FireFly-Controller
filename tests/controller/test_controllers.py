@@ -8,6 +8,7 @@ CONTROLLER_PAYLOAD = {"name": "Test Controller"}
 CONTROLLER_PAYLOAD_UPDATED = {"name": "Updated Controller", "area": "Test Area"}
 
 OUTPUT_UUID = str(uuid.uuid4())
+INPUT_UUID = str(uuid.uuid4())
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -16,6 +17,7 @@ def cleanup(base_url, auth_headers):
     yield
     requests.delete(f"{base_url}/api/controllers/{TEST_UUID}", headers=auth_headers)
     requests.delete(f"{base_url}/api/controllers/{OUTPUT_UUID}", headers=auth_headers)
+    requests.delete(f"{base_url}/api/controllers/{INPUT_UUID}", headers=auth_headers)
 
 
 class TestControllers:
@@ -148,3 +150,84 @@ class TestControllerOutputStartBrightness:
     def test_binary_output_has_no_start_brightness(self, base_url, auth_headers):
         r = requests.get(f"{base_url}/api/controllers/{OUTPUT_UUID}", headers=auth_headers)
         assert "start_brightness" not in r.json()["outputs"]["1"]
+
+
+class TestControllerInputPorts:
+    """Verify input port configuration round-trips correctly.
+
+    Input port configuration is what drives MQTT sensor auto-discovery —
+    one retained discovery message is published per configured channel on MQTT connect.
+    """
+
+    def test_create_controller_with_input_port_returns_204(self, base_url, auth_headers):
+        r = requests.put(
+            f"{base_url}/api/controllers/{INPUT_UUID}",
+            json={
+                "name": "Input Test",
+                "ports": {"1": {"id": "SW01", "channels": {"1": {}, "2": {}}}},
+            },
+            headers=auth_headers,
+        )
+        assert r.status_code == 204
+
+    def test_get_controller_reflects_input_port_id(self, base_url, auth_headers):
+        r = requests.get(f"{base_url}/api/controllers/{INPUT_UUID}", headers=auth_headers)
+        assert r.json()["ports"]["1"]["id"] == "SW01"
+
+    def test_get_controller_reflects_input_port_channels(self, base_url, auth_headers):
+        r = requests.get(f"{base_url}/api/controllers/{INPUT_UUID}", headers=auth_headers)
+        assert "1" in r.json()["ports"]["1"]["channels"]
+        assert "2" in r.json()["ports"]["1"]["channels"]
+
+    def test_input_port_id_too_long_returns_400(self, base_url, auth_headers):
+        r = requests.put(
+            f"{base_url}/api/controllers/{INPUT_UUID}",
+            json={
+                "name": "Input Test",
+                "ports": {"1": {"id": "TOOLONGID", "channels": {"1": {}}}},
+            },
+            headers=auth_headers,
+        )
+        assert r.status_code == 400
+
+    def test_input_port_missing_id_returns_400(self, base_url, auth_headers):
+        r = requests.put(
+            f"{base_url}/api/controllers/{INPUT_UUID}",
+            json={
+                "name": "Input Test",
+                "ports": {"1": {"channels": {"1": {}}}},
+            },
+            headers=auth_headers,
+        )
+        assert r.status_code == 400
+
+    def test_two_ports_same_id_accepted(self, base_url, auth_headers):
+        """Extended clients span two ports with the same port ID and an offset on the second."""
+        r = requests.put(
+            f"{base_url}/api/controllers/{INPUT_UUID}",
+            json={
+                "name": "Input Test",
+                "ports": {
+                    "1": {"id": "SW01", "channels": {"1": {}, "2": {}}},
+                    "2": {"id": "SW01", "offset": 4, "channels": {"5": {}, "6": {}}},
+                },
+            },
+            headers=auth_headers,
+        )
+        assert r.status_code == 204
+
+    def test_two_ports_same_id_reflects_offset(self, base_url, auth_headers):
+        r = requests.get(f"{base_url}/api/controllers/{INPUT_UUID}", headers=auth_headers)
+        assert r.json()["ports"]["2"]["offset"] == 4
+
+    def test_remove_input_ports_returns_204(self, base_url, auth_headers):
+        r = requests.put(
+            f"{base_url}/api/controllers/{INPUT_UUID}",
+            json={"name": "Input Test"},
+            headers=auth_headers,
+        )
+        assert r.status_code == 204
+
+    def test_removed_input_ports_not_present(self, base_url, auth_headers):
+        r = requests.get(f"{base_url}/api/controllers/{INPUT_UUID}", headers=auth_headers)
+        assert "ports" not in r.json() or r.json().get("ports") in (None, {})
