@@ -806,7 +806,11 @@ nsOutputs::set_result actionOutputPort(uint8_t port, outputAction action){
   switch(action){
 
     case outputAction::INCREASE:
-      returnValue = outputs.setPortValue(port, (currentPortValue + 10));
+      if(currentPortValue == 0){
+        returnValue = outputs.setPortValue(port, outputs.getPortStartBrightness(port));
+      }else{
+        returnValue = outputs.setPortValue(port, (currentPortValue + 10));
+      }
       break;
 
     case outputAction::INCREASE_MAXIMUM:
@@ -826,7 +830,7 @@ nsOutputs::set_result actionOutputPort(uint8_t port, outputAction action){
       if(currentPortValue > 0){
         returnValue = outputs.setPortValue(port, 0);
       }else{
-        returnValue = outputs.setPortValue(port, outputs.getPortStartBrightness(port));
+        returnValue = outputs.setPortValue(port, 100);
       }
       break;
   }
