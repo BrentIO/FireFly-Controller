@@ -14,7 +14,10 @@
     #define WORD_LENGTH_AVAILABILITY 12                             //len("availability")
     #define WORD_LENGTH_CONFIG 6                                    //len("config")
     #define WORD_LENGTH_INPUTS 6                                    //len("inputs")
+    #define WORD_LENGTH_OUTPUTS 7                                   //len("outputs")
     #define WORD_LENGTH_CIRCUITS 8                                  //len("circuits")
+    #define WORD_LENGTH_CONTROLLER 10                               //len("controller")
+    #define OUTPUT_CONTROLLER_INDEX_MAX_DIGITS 2                    //max digits in a chip index
     #define WORD_LENGTH_CHANNELS 8                                  //len("channels")
     #define WORD_LENGTH_INTEGRATION 19                              //The longest MQTT integration allowed in Home Assistant is len("alarm_control_panel"), see https://www.home-assistant.io/integrations/mqtt/
     #define WORD_LENGTH_AUTODISCOVERY_ROOT 13                       //len(this->auto_discovery_root, len("homeassistant"))
@@ -60,6 +63,10 @@
     //Ex: FireFly-12345678
     #define MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_PATTERN "FireFly-%s"       //%s = output ID
     #define MQTT_OUTPUT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH WORD_LENGTH_FIREFLY + WORD_LENGTH_DASH +  OUTPUT_ID_MAX_LENGTH
+
+    //Ex: FireFly/00000000-0000-4000-0000-000000000000/outputs/controller/0/availability
+    #define MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_PATTERN WORD_FIREFLY_SLASH "%s/outputs/controller/%u/availability"   //%s = Controller UUID, %u = chip index
+    #define MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_LENGTH WORD_LENGTH_FIREFLY + WORD_LENGTH_SLASH + UUID_LENGTH + WORD_LENGTH_SLASH + WORD_LENGTH_OUTPUTS + WORD_LENGTH_SLASH + WORD_LENGTH_CONTROLLER + WORD_LENGTH_SLASH + OUTPUT_CONTROLLER_INDEX_MAX_DIGITS + WORD_LENGTH_SLASH + WORD_LENGTH_AVAILABILITY
 
 
     /***************** PERIPHERAL TOPICS *****************/

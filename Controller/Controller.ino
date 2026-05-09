@@ -842,9 +842,21 @@ void failureHandler_outputs(uint8_t address, nsOutputs::failureReason failureRea
   }else{
       snprintf(text, sizeof(text), "Out ctl 0x%02X fail %i", address, failureReason);
   }
-  
+
   eventLog.createEvent(text, EventLog::LOG_LEVEL_ERROR);
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
+
+  if(mqttClient.connected()){
+    const uint8_t addresses[] = OUTPUT_CONTROLLER_ADDRESSES;
+    for(uint8_t i = 0; i < OUTPUT_CONTROLLER_COUNT; i++){
+      if(addresses[i] == address){
+        char availability_topic[MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
+        snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, i);
+        mqttClient.publish(availability_topic, "offline", true);
+        break;
+      }
+    }
+  }
 }
 
 
@@ -3164,6 +3176,7 @@ void mqtt_reconnect(){
 #endif /* CORE_DEBUG_LEVEL >= 4 */
           mqttClient.autoDiscovery.sent = true;
         }
+        mqtt_publishOutputControllerAvailability();
         mqtt_publishTemperatureAvailability();
         mqtt_publishTemperatures();
         mqtt_publishStartTime();
@@ -3470,6 +3483,31 @@ void mqtt_publishTemperatureAvailability(){
 
 
 /**
+ * Publishes the per-chip MQTT availability for all output controllers based on current health
+ */
+void mqtt_publishOutputControllerAvailability(){
+
+  if(deviceIdentity.enabled == false){
+    return;
+  }
+
+  if(!mqttClient.connected()){
+    return;
+  }
+
+  nsOutputs::managerOutputs::healthResult health = outputs.health();
+
+  for(int i = 0; i < health.count; i++){
+
+    char availability_topic[MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
+    snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, (uint8_t)i);
+
+    mqttClient.publish(availability_topic, health.outputControllers[i].enabled ? "online" : "offline", true);
+  }
+}
+
+
+/**
  * Publishes the currently observed temperatures for all sensor locations to MQTT
  */
 void mqtt_publishTemperatures(){
@@ -3634,7 +3672,17 @@ void mqtt_autoDiscovery_outputs(){
     }
     mqttDoc["state_topic"] = state_topic;
     mqttDoc["command_topic"] = command_topic;
-    mqttDoc["availability_topic"] = mqttClient.topic_availability;
+
+    uint8_t chipIndex = (outputPortNumber - 1) / OUTPUT_CONTROLLER_COUNT_PINS;
+    char chip_availability_topic[MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
+    snprintf(chip_availability_topic, sizeof(chip_availability_topic), MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, chipIndex);
+
+    JsonArray availability = mqttDoc["availability"].to<JsonArray>();
+    JsonObject chip_specific = availability.add<JsonObject>();
+    JsonObject controller_level = availability.add<JsonObject>();
+    chip_specific["topic"] = chip_availability_topic;
+    controller_level["topic"] = mqttClient.topic_availability;
+    mqttDoc["availability_mode"] = "all";
 
     mqttClient.beginPublish(autodiscovery_topic, measureJson(mqttDoc), true);
     BufferingPrint bufferedClient(mqttClient, 32);
