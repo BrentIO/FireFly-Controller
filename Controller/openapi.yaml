@@ -544,6 +544,71 @@ paths:
               example:
                 message: File system not mounted
 
+  /api/provisioning/controller:
+    get:
+      tags:
+        - Controllers
+      summary: Retrieve all controller and client records during active provisioning
+      description: Returns a JSON bundle containing all controller records and all client records stored on the source controller. Intended for controller-to-controller provisioning — an unprovisioned controller connecting via the provisioning SoftAP uses this endpoint to pull the full configuration. Requires provisioning mode to be active, a valid unused nonce, and a MAC address that matches a registered controller record. The nonce is invalidated after a successful response.
+      security:
+        - macAddress: []
+      parameters:
+        - in: header
+          name: x-nonce
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: Single-use nonce obtained from GET /api/provisioning/nonce
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  controllers:
+                    type: array
+                    description: All controller records stored on the source controller, each augmented with a uuid field set to the record's filename
+                    items:
+                      $ref: '#/components/schemas/controller'
+                  clients:
+                    type: array
+                    description: All client records stored on the source controller, each augmented with a uuid field set to the record's filename
+                    items:
+                      $ref: '#/components/schemas/client'
+        '401':
+          description: Unauthorized — missing or invalid mac-address or x-nonce header
+        '403':
+          description: Forbidden — request did not arrive via the provisioning SoftAP network
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Only accessible via provisioning network
+        '404':
+          description: Not Found — no controller record matches the provided MAC address
+        '405':
+          description: Method Not Allowed
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Provisioning mode inactive
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: File system not mounted
+
 
 ##########################################################
 ## Controllers                                          ##
