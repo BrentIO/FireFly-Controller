@@ -59,7 +59,7 @@ namespace nsOutputs{
         /// @brief request included an invalid output port number
         INVALID_PORT = 10,
 
-        /// @brief the set request will not be fulfilled because the set value and the requested value were the same
+        /// @brief value is already at maximum or minimum; continued requests are ignored
         EXCESSIVE = 20,
 
         /// @brief the controller handling the request is not enabled and request will not be fulfilled
