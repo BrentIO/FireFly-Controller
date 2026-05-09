@@ -408,7 +408,7 @@ operations:
     description: >
       Published whenever an input channel (button or switch contact) changes state.
       The payload reflects the new state: NORMAL (at rest), SHORT (brief press/release),
-      LONG (held), or EXCESSIVE (held beyond the long-press threshold).
+      LONG (held), or EXCESSIVE (value is already at maximum or minimum; continued requests are ignored).
     messages:
       - $ref: "#/channels/inputChannelState/messages/inputState"
 
@@ -1015,7 +1015,7 @@ components:
         NORMAL = at rest (not activated).
         SHORT = a brief press/release transition.
         LONG = held beyond the short-press threshold.
-        EXCESSIVE = held beyond the long-press threshold.
+        EXCESSIVE = value is already at maximum or minimum; continued requests are ignored.
 
     outputStatePayload:
       type: string
