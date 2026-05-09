@@ -62,11 +62,21 @@
               <button class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg transition-colors flex-shrink-0" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-700'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="authenticate(ctrl.id)">Connect</button>
             </div>
           </div>
-          <div v-else class="flex flex-wrap items-center gap-2">
-            <span class="text-xs text-green-600 dark:text-green-400 font-medium">Connected · {{ sessions[ctrl.id].ip }}</span>
-            <button class="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 underline" @click="logout(ctrl.id)">Disconnect</button>
-            <button class="ml-auto px-2 py-1.5 text-xs font-medium text-white bg-amber-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-amber-700'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="deploy(ctrl)">Deploy</button>
-            <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="openEventLog(ctrl.id)">Events</button>
+          <div v-else class="space-y-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-xs text-green-600 dark:text-green-400 font-medium">Connected · {{ sessions[ctrl.id].ip }}</span>
+              <button class="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 underline" @click="logout(ctrl.id)">Disconnect</button>
+              <button class="ml-auto px-2 py-1.5 text-xs font-medium text-white bg-amber-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-amber-700'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="deploy(ctrl)">Deploy</button>
+              <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="openEventLog(ctrl.id)">Events</button>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="openErrorLog(ctrl.id)">Errors</button>
+              <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmPullBackup(ctrl)">Pull Backup</button>
+              <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="pushCertificates(ctrl)">Push Certs</button>
+              <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="toggleProvisioning(ctrl.id)">{{ sessions[ctrl.id]?.provisioningModeEnabled ? 'Disable Provisioning' : 'Enable Provisioning' }}</button>
+              <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaApp(ctrl)">Force App Update</button>
+              <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaSpiffs(ctrl)">Force FS Update</button>
+            </div>
           </div>
         </div>
       </div>
@@ -145,13 +155,54 @@
       </Transition>
     </Teleport>
 
+    <!-- Error log modal -->
+    <Teleport to="body">
+      <Transition enter-active-class="ease-out duration-200" enter-from-class="opacity-0" enter-to-class="opacity-100"
+                  leave-active-class="ease-in duration-150" leave-from-class="opacity-100" leave-to-class="opacity-0">
+        <div v-if="showErrorLog" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" @click.self="showErrorLog = false">
+          <div class="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6 max-h-[80vh] flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Error Log</h3>
+              <div class="flex items-center gap-3">
+                <button class="px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="refreshErrorLog">Refresh</button>
+                <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl leading-none" @click="showErrorLog = false">&times;</button>
+              </div>
+            </div>
+            <div class="overflow-y-auto flex-1">
+              <table class="w-full text-xs">
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                  <tr v-if="!errorLog.length">
+                    <td class="py-4 text-center text-gray-400 dark:text-gray-500">No errors.</td>
+                  </tr>
+                  <tr v-for="(e, i) in errorLog" :key="i">
+                    <td class="py-1.5 pr-4 text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ e.time || e.timestamp || '' }}</td>
+                    <td class="py-1.5 text-gray-900 dark:text-gray-100">{{ e.message || e }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
     <ConfirmModal :show="!!deleteTarget" title="Delete Controller" :message="`Delete controller '${deleteTarget?.name}'? All assignments will be lost.`"
       confirm-label="Delete" @confirm="doDelete" @cancel="deleteTarget = null" />
+
+    <ConfirmModal :show="!!pullBackupTarget" title="Pull Backup" :message="`Pull backup from '${pullBackupTarget?.name}'? This will replace all local configuration data and cannot be undone.`"
+      variant="warning" confirm-label="Pull Backup" @confirm="doPullBackup" @cancel="pullBackupTarget = null" />
+
+    <ConfirmModal :show="!!otaAppTarget" title="Force Application Update" :message="`Force firmware update on '${otaAppTarget?.name}'? The controller will reboot after downloading the update.`"
+      variant="warning" confirm-label="Force Update" @confirm="doOtaApp" @cancel="otaAppTarget = null" />
+
+    <ConfirmModal :show="!!otaSpiffsTarget" title="Force Filesystem Update" :message="`Force filesystem update on '${otaSpiffsTarget?.name}'? The controller will reboot after downloading the update.`"
+      variant="warning" confirm-label="Force Update" @confirm="doOtaSpiffs" @cancel="otaSpiffsTarget = null" />
   </AppLayout>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { importDB } from 'dexie-export-import'
 import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { useControllers } from '../composables/useControllers'
@@ -161,6 +212,7 @@ import { buildControllerPayload } from '../composables/usePayloads'
 import { useToast } from '../composables/useToast'
 import { randomUUID } from '../composables/useValidators'
 import { isCloudMode } from '../composables/useCloudMode'
+import { db } from '../composables/useDatabase'
 
 const { items, products, load, create, update, remove } = useControllers()
 const { items: areas, load: loadAreas } = useAreas()
@@ -168,9 +220,15 @@ const { addToast } = useToast()
 
 const showModal = ref(false)
 const showEventLog = ref(false)
+const showErrorLog = ref(false)
 const editing = ref(null)
 const deleteTarget = ref(null)
+const pullBackupTarget = ref(null)
+const otaAppTarget = ref(null)
+const otaSpiffsTarget = ref(null)
 const eventLog = ref([])
+const errorLog = ref([])
+const activeErrorLogId = ref(null)
 const emptyForm = () => ({ name: '', area: '', product: '', uuid: '' })
 const form = ref(emptyForm())
 
@@ -270,6 +328,8 @@ async function authenticate(id) {
   try {
     await ctrl.authenticate()
     addToast('success', 'Connected.')
+    // Fetch provisioning state after authenticating
+    await fetchProvisioningState(id)
   } catch (e) {
     addToast('error', `Connection failed: ${e.message}`)
   }
@@ -309,6 +369,244 @@ async function openEventLog(id) {
     eventLog.value = []
   }
   showEventLog.value = true
+}
+
+// --- Error Log ---
+
+async function openErrorLog(id) {
+  activeErrorLogId.value = id
+  await fetchErrorLog(id)
+  showErrorLog.value = true
+}
+
+async function fetchErrorLog(id) {
+  const sessionCtrl = getSessionCtrl(id)
+  const { controllerFetch } = await import('../composables/useApi')
+  try {
+    const res = await controllerFetch(sessionCtrl.session.ip, '/errors', {}, sessionCtrl.session.visualToken)
+    errorLog.value = res.ok ? await res.json() : []
+  } catch {
+    errorLog.value = []
+  }
+}
+
+async function refreshErrorLog() {
+  if (activeErrorLogId.value) {
+    await fetchErrorLog(activeErrorLogId.value)
+  }
+}
+
+// --- Pull Backup ---
+
+function confirmPullBackup(ctrl) {
+  pullBackupTarget.value = ctrl
+}
+
+async function doPullBackup() {
+  const ctrl = pullBackupTarget.value
+  pullBackupTarget.value = null
+  if (!ctrl) return
+
+  const sessionCtrl = getSessionCtrl(ctrl.id)
+  const { session } = sessionCtrl
+  try {
+    const TIMEOUT = 5000
+    const abortCtrl = new AbortController()
+    const timerId = setTimeout(() => abortCtrl.abort(), TIMEOUT)
+    const res = await fetch(`http://${session.ip}/backup`, {
+      headers: { 'visual-token': session.visualToken },
+      signal: abortCtrl.signal
+    })
+    clearTimeout(timerId)
+
+    if (!res.ok) {
+      addToast('error', `Pull backup failed: HTTP ${res.status}`)
+      return
+    }
+
+    const data = await res.json()
+
+    if (data.formatName !== 'dexie') {
+      addToast('error', 'Pull backup failed: response is not a valid Dexie export.')
+      return
+    }
+    if (data.data?.databaseName !== 'FireFly-Controller') {
+      addToast('error', 'Pull backup failed: backup was not exported from FireFly Controller.')
+      return
+    }
+
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
+    const file = new File([blob], 'backup.json', { type: 'application/json' })
+
+    await db.delete()
+    await importDB(file)
+    addToast('success', `Backup pulled from ${ctrl.name}. Reloading…`)
+    setTimeout(() => window.location.reload(), 1500)
+  } catch (e) {
+    addToast('error', `Pull backup error: ${e.message}`)
+  }
+}
+
+// --- Push Certificates ---
+
+async function pushCertificates(ctrl) {
+  const sessionCtrl = getSessionCtrl(ctrl.id)
+  const { session } = sessionCtrl
+  const TIMEOUT = 10000
+
+  try {
+    const allCerts = await db.certificates.toArray()
+    if (allCerts.length === 0) {
+      addToast('warning', 'No certificates to push.')
+      return
+    }
+
+    // Fetch the current list of certs on the controller
+    let abortCtrl = new AbortController()
+    let timerId = setTimeout(() => abortCtrl.abort(), TIMEOUT)
+    const listRes = await fetch(`http://${session.ip}/certs`, {
+      headers: { 'visual-token': session.visualToken },
+      signal: abortCtrl.signal
+    })
+    clearTimeout(timerId)
+
+    if (!listRes.ok) {
+      addToast('error', `Push certs failed: could not read controller cert list (HTTP ${listRes.status})`)
+      return
+    }
+
+    const existing = await listRes.json()
+    const existingNames = new Set(Array.isArray(existing) ? existing.map(c => c.filename ?? c.name ?? c) : [])
+
+    let pushed = 0
+    let skipped = 0
+
+    for (const cert of allCerts) {
+      if (existingNames.has(cert.fileName)) {
+        skipped++
+        continue
+      }
+      const formData = new FormData()
+      const blob = new Blob([cert.certificate], { type: 'application/x-x509-ca-cert' })
+      formData.append('file', blob, cert.fileName)
+
+      abortCtrl = new AbortController()
+      timerId = setTimeout(() => abortCtrl.abort(), TIMEOUT)
+      const uploadRes = await fetch(`http://${session.ip}/certs`, {
+        method: 'POST',
+        headers: { 'visual-token': session.visualToken },
+        body: formData,
+        signal: abortCtrl.signal
+      })
+      clearTimeout(timerId)
+
+      if (uploadRes.status === 201 || uploadRes.status === 403) {
+        // 403 means already exists — treat as success
+        pushed++
+      } else {
+        addToast('error', `Push certs: failed to upload '${cert.fileName}' (HTTP ${uploadRes.status})`)
+        return
+      }
+    }
+
+    addToast('success', `Certificates pushed to ${ctrl.name}: ${pushed} uploaded, ${skipped} already present.`)
+  } catch (e) {
+    addToast('error', `Push certs error: ${e.message}`)
+  }
+}
+
+// --- Provisioning Mode ---
+
+async function fetchProvisioningState(id) {
+  const sessionCtrl = getSessionCtrl(id)
+  const { controllerFetch } = await import('../composables/useApi')
+  try {
+    const res = await controllerFetch(sessionCtrl.session.ip, '/provisioning', {}, sessionCtrl.session.visualToken)
+    if (res.ok) {
+      const data = await res.json()
+      sessionCtrl.session.provisioningModeEnabled = !!data.enabled
+      sessionCtrl.save()
+    }
+  } catch {
+    // Non-fatal — leave current state unchanged
+  }
+}
+
+async function toggleProvisioning(id) {
+  const sessionCtrl = getSessionCtrl(id)
+  const { controllerFetch } = await import('../composables/useApi')
+  const currentlyEnabled = sessionCtrl.session.provisioningModeEnabled
+  try {
+    const res = await controllerFetch(sessionCtrl.session.ip, '/provisioning', {
+      method: currentlyEnabled ? 'DELETE' : 'PUT'
+    }, sessionCtrl.session.visualToken)
+    if (res.status === 202) {
+      sessionCtrl.session.provisioningModeEnabled = !currentlyEnabled
+      sessionCtrl.save()
+      addToast('success', `Provisioning mode ${!currentlyEnabled ? 'enabled' : 'disabled'}.`)
+    } else {
+      addToast('error', `Provisioning toggle failed: HTTP ${res.status}`)
+    }
+  } catch (e) {
+    addToast('error', `Provisioning error: ${e.message}`)
+  }
+}
+
+// --- OTA ---
+
+function confirmOtaApp(ctrl) {
+  otaAppTarget.value = ctrl
+}
+
+function confirmOtaSpiffs(ctrl) {
+  otaSpiffsTarget.value = ctrl
+}
+
+async function doOtaApp() {
+  const ctrl = otaAppTarget.value
+  otaAppTarget.value = null
+  if (!ctrl) return
+  await triggerOta(ctrl, '/ota/app')
+}
+
+async function doOtaSpiffs() {
+  const ctrl = otaSpiffsTarget.value
+  otaSpiffsTarget.value = null
+  if (!ctrl) return
+  await triggerOta(ctrl, '/ota/spiffs')
+}
+
+async function triggerOta(ctrl, endpoint) {
+  const sessionCtrl = getSessionCtrl(ctrl.id)
+  const { controllerFetch } = await import('../composables/useApi')
+
+  // Read OTA URL from settings
+  const settingKey = endpoint.includes('app') ? 'ota_controller' : 'ota_controller'
+  const otaSetting = await db.settings.where({ setting: settingKey }).first()
+  if (!otaSetting || !otaSetting.value?.url) {
+    addToast('error', 'OTA URL is not configured. Set it in Settings > OTA.')
+    return
+  }
+
+  const url = `${otaSetting.value.protocol ?? 'https'}://${otaSetting.value.url}`
+
+  try {
+    const res = await controllerFetch(sessionCtrl.session.ip, endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    }, sessionCtrl.session.visualToken)
+
+    if (res.status === 202) {
+      addToast('success', `OTA update initiated on ${ctrl.name}.`)
+    } else {
+      let msg = `HTTP ${res.status}`
+      try { const body = await res.json(); msg = body.message ?? msg } catch { /* ignore */ }
+      addToast('error', `OTA failed: ${msg}`)
+    }
+  } catch (e) {
+    addToast('error', `OTA error: ${e.message}`)
+  }
 }
 
 </script>
