@@ -1367,7 +1367,7 @@ components:
             default: BINARY
           start_brightness:
             type: integer
-            description: Brightness level (5–100) applied when a TOGGLE button action turns this output on from off. Only meaningful for VARIABLE outputs. Omit to use the default (10). Values below 5 are rejected by the firmware minimum brightness threshold.
+            description: Brightness level (5–100) applied when an INCREASE button action turns this output on from off. Only meaningful for VARIABLE outputs. Omit to use the default (10). Values below 5 are rejected by the firmware minimum brightness threshold.
             minimum: 5
             maximum: 100
             default: 10
