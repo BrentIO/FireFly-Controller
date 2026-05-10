@@ -3552,6 +3552,8 @@ void mqtt_reconnect(){
           mqtt_autoDiscovery_temperature();
           mqtt_autoDiscovery_outputs();
           mqtt_autoDiscovery_inputs();
+          mqtt_autoDiscovery_inputControllers();
+          mqtt_autoDiscovery_outputControllers();
           mqtt_autoDiscovery_start_time();
           mqtt_autoDiscovery_ip_address();
           mqtt_autoDiscovery_mac_address();
@@ -4200,6 +4202,151 @@ void mqtt_autoDiscovery_inputs(){
       bufferedClient.flush();
       mqttClient.endPublish();
     }
+  }
+}
+
+
+/**
+ * Handles input controller chip sensor auto discovery broadcasts.
+ * Publishes one retained discovery message per IO extender chip so that
+ * Home Assistant exposes each chip as a sensor entity linked to the controller device.
+ * The sensor state_topic is the chip's existing availability topic, so state values
+ * are "Online" or "Offline".
+ */
+void mqtt_autoDiscovery_inputControllers(){
+
+  if(deviceIdentity.enabled == false){
+    return;
+  }
+
+  const uint8_t portsPerChip = IO_EXTENDER_COUNT_PINS / IO_EXTENDER_COUNT_CHANNELS_PER_PORT;
+  const uint8_t chipAddresses[] = IO_EXTENDER_ADDRESSES;
+
+  for(int i = 0; i < IO_EXTENDER_COUNT; i++){
+
+    JsonDocument doc;
+
+    char topic[MQTT_TOPIC_INPUT_CONTROLLER_AUTO_DISCOVERY_LENGTH+1];
+    snprintf(topic, sizeof(topic), MQTT_TOPIC_INPUT_CONTROLLER_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid, chipAddresses[i]);
+
+    char unique_id[MQTT_INPUT_CONTROLLER_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+    snprintf(unique_id, sizeof(unique_id), MQTT_INPUT_CONTROLLER_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, deviceIdentity.data.uuid, chipAddresses[i]);
+
+    char default_entity_id[MQTT_INPUT_CONTROLLER_AUTO_DISCOVERY_DEFAULT_ENTITY_ID_LENGTH+1];
+    snprintf(default_entity_id, sizeof(default_entity_id), MQTT_INPUT_CONTROLLER_AUTO_DISCOVERY_DEFAULT_ENTITY_ID_PATTERN, deviceIdentity.data.uuid, chipAddresses[i]);
+
+    char state_topic[MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
+    snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, chipAddresses[i]);
+
+    uint8_t firstPort = (i * portsPerChip) + 1;
+    uint8_t lastPort = (i + 1) * portsPerChip;
+    char name[32];
+    snprintf(name, sizeof(name), "Inputs %u-%u", firstPort, lastPort);
+
+    doc["name"] = name;
+    doc["unique_id"] = unique_id;
+    doc["default_entity_id"] = default_entity_id;
+    doc["icon"] = "mdi:chip";
+    doc["entity_category"] = "diagnostic";
+    doc["state_topic"] = state_topic;
+
+    JsonObject device = doc["device"].to<JsonObject>();
+    JsonArray identifiers = device["identifiers"].to<JsonArray>();
+    identifiers.add(deviceIdentity.data.uuid);
+
+    if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
+      device["name"] = mqttClient.autoDiscovery.deviceName;
+    }
+
+    device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
+    device["model"] = APPLICATION_NAME;
+    device["model_id"] = deviceIdentity.data.product_id;
+    device["serial_number"] = deviceIdentity.data.uuid;
+    device["sw_version"] = VERSION;
+
+    if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
+      device["suggested_area"] = mqttClient.autoDiscovery.suggestedArea;
+    }
+
+    doc["availability_topic"] = mqttClient.topic_availability;
+
+    mqttClient.beginPublish(topic, measureJson(doc), true);
+    BufferingPrint bufferedClient(mqttClient, 32);
+    serializeJson(doc, bufferedClient);
+    bufferedClient.flush();
+    mqttClient.endPublish();
+  }
+}
+
+
+/**
+ * Handles output controller chip sensor auto discovery broadcasts.
+ * Publishes one retained discovery message per PWM controller chip so that
+ * Home Assistant exposes each chip as a sensor entity linked to the controller device.
+ * The sensor state_topic is the chip's existing availability topic, so state values
+ * are "Online" or "Offline".
+ */
+void mqtt_autoDiscovery_outputControllers(){
+
+  if(deviceIdentity.enabled == false){
+    return;
+  }
+
+  const uint8_t chipAddresses[] = OUTPUT_CONTROLLER_ADDRESSES;
+
+  for(int i = 0; i < OUTPUT_CONTROLLER_COUNT; i++){
+
+    JsonDocument doc;
+
+    char topic[MQTT_TOPIC_OUTPUT_CONTROLLER_AUTO_DISCOVERY_LENGTH+1];
+    snprintf(topic, sizeof(topic), MQTT_TOPIC_OUTPUT_CONTROLLER_AUTO_DISCOVERY_PATTERN, mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid, chipAddresses[i]);
+
+    char unique_id[MQTT_OUTPUT_CONTROLLER_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
+    snprintf(unique_id, sizeof(unique_id), MQTT_OUTPUT_CONTROLLER_AUTO_DISCOVERY_UNIQUE_ID_PATTERN, deviceIdentity.data.uuid, chipAddresses[i]);
+
+    char default_entity_id[MQTT_OUTPUT_CONTROLLER_AUTO_DISCOVERY_DEFAULT_ENTITY_ID_LENGTH+1];
+    snprintf(default_entity_id, sizeof(default_entity_id), MQTT_OUTPUT_CONTROLLER_AUTO_DISCOVERY_DEFAULT_ENTITY_ID_PATTERN, deviceIdentity.data.uuid, chipAddresses[i]);
+
+    char state_topic[MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
+    snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, chipAddresses[i]);
+
+    uint8_t firstCircuit = (i * OUTPUT_CONTROLLER_COUNT_PINS) + 1;
+    uint8_t lastCircuit = (i + 1) * OUTPUT_CONTROLLER_COUNT_PINS;
+    char name[32];
+    snprintf(name, sizeof(name), "Outputs %u-%u", firstCircuit, lastCircuit);
+
+    doc["name"] = name;
+    doc["unique_id"] = unique_id;
+    doc["default_entity_id"] = default_entity_id;
+    doc["icon"] = "mdi:chip";
+    doc["entity_category"] = "diagnostic";
+    doc["state_topic"] = state_topic;
+
+    JsonObject device = doc["device"].to<JsonObject>();
+    JsonArray identifiers = device["identifiers"].to<JsonArray>();
+    identifiers.add(deviceIdentity.data.uuid);
+
+    if(strlen(mqttClient.autoDiscovery.deviceName) > 0){
+      device["name"] = mqttClient.autoDiscovery.deviceName;
+    }
+
+    device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
+    device["model"] = APPLICATION_NAME;
+    device["model_id"] = deviceIdentity.data.product_id;
+    device["serial_number"] = deviceIdentity.data.uuid;
+    device["sw_version"] = VERSION;
+
+    if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
+      device["suggested_area"] = mqttClient.autoDiscovery.suggestedArea;
+    }
+
+    doc["availability_topic"] = mqttClient.topic_availability;
+
+    mqttClient.beginPublish(topic, measureJson(doc), true);
+    BufferingPrint bufferedClient(mqttClient, 32);
+    serializeJson(doc, bufferedClient);
+    bufferedClient.flush();
+    mqttClient.endPublish();
   }
 }
 
