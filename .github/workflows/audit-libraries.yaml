@@ -14,63 +14,24 @@ jobs:
       contents: read
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Audit Arduino Library Versions
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
-          # Library list extracted from libraries.yaml
-          # Format: "owner/repo pinned_version"
-          declare -A LIBS
-          LIBS["adafruit/Adafruit_BusIO"]="1.17.4"
-          LIBS["adafruit/Adafruit-GFX-Library"]="1.12.5"
-          LIBS["adafruit/Adafruit_SSD1306"]="2.5.16"
-          LIBS["bblanchon/ArduinoJson"]="v7.4.1"
-          LIBS["bblanchon/ArduinoStreamUtils"]="v1.9.2"
-          LIBS["ESP32Async/AsyncTCP"]="v3.4.9"
-          LIBS["arduino-libraries/Ethernet"]="2.0.2"
-          LIBS["ESP32Async/ESPAsyncWebServer"]="v3.9.6"
-          LIBS["BrentIO/esp32FOTA"]="2026.4.1"
-          LIBS["BrentIO/PCA95x5"]="2023.10.2"
-          LIBS["BrentIO/PCT2075"]="2023.10.3"
-          LIBS["ivanseidel/LinkedList"]="v1.3.3"
-          LIBS["arduino-libraries/NTPClient"]="3.2.1"
-          LIBS["RobTillaart/PCA9685_RT"]="0.7.3"
-          LIBS["nickgammon/Regexp"]="0.1.1"
-          LIBS["thingsboard/pubsubclient"]="v2.12.1"
-
-          # Order to match libraries.yaml for consistent output
-          ORDERED_KEYS=(
-            "adafruit/Adafruit_BusIO"
-            "adafruit/Adafruit-GFX-Library"
-            "adafruit/Adafruit_SSD1306"
-            "bblanchon/ArduinoJson"
-            "bblanchon/ArduinoStreamUtils"
-            "ESP32Async/AsyncTCP"
-            "arduino-libraries/Ethernet"
-            "ESP32Async/ESPAsyncWebServer"
-            "BrentIO/esp32FOTA"
-            "BrentIO/PCA95x5"
-            "BrentIO/PCT2075"
-            "ivanseidel/LinkedList"
-            "arduino-libraries/NTPClient"
-            "RobTillaart/PCA9685_RT"
-            "nickgammon/Regexp"
-            "thingsboard/pubsubclient"
-          )
-
           get_latest_version() {
             local repo="$1"
-            local http_code
-            local body
+            local response http_code body tag
 
             # Try /releases/latest first
             response=$(curl -s -w "\n%{http_code}" \
               -H "Authorization: Bearer ${GH_TOKEN}" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/${repo}/releases/latest")
-
             http_code=$(echo "$response" | tail -n1)
             body=$(echo "$response" | head -n -1)
 
@@ -84,16 +45,12 @@ jobs:
               -H "Authorization: Bearer ${GH_TOKEN}" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/${repo}/tags?per_page=1")
-
             http_code=$(echo "$response" | tail -n1)
             body=$(echo "$response" | head -n -1)
 
             if [ "$http_code" = "200" ]; then
               tag=$(echo "$body" | grep -m1 '"name"' | sed 's/.*"name": *"\([^"]*\)".*/\1/')
-              if [ -n "$tag" ]; then
-                echo "$tag"
-                return
-              fi
+              [ -n "$tag" ] && echo "$tag" && return
             fi
 
             echo "unknown"
@@ -106,12 +63,16 @@ jobs:
             echo "| ------- | -------------- | -------------- | ------ |"
 
             outdated_count=0
+            lib_count=$(yq -r '.libraries | length' libraries.yaml)
 
-            for repo in "${ORDERED_KEYS[@]}"; do
-              pinned="${LIBS[$repo]}"
+            for i in $(seq 0 $((lib_count - 1))); do
+              name=$(yq -r ".libraries[$i].name" libraries.yaml)
+              pinned=$(yq -r ".libraries[$i].version" libraries.yaml)
+              url=$(yq -r ".libraries[$i].url" libraries.yaml)
+              repo="${url#https://github.com/}"
+
               latest=$(get_latest_version "$repo")
 
-              # Normalize versions for comparison (strip leading 'v')
               pinned_norm="${pinned#v}"
               latest_norm="${latest#v}"
 
@@ -124,14 +85,14 @@ jobs:
                 outdated_count=$((outdated_count + 1))
               fi
 
-              echo "| [\`${repo}\`](https://github.com/${repo}) | \`${pinned}\` | \`${latest}\` | ${status} |"
+              echo "| [\`${name}\`](${url}) | \`${pinned}\` | \`${latest}\` | ${status} |"
             done
 
             echo ""
             if [ "$outdated_count" -eq 0 ]; then
               echo "All libraries are up to date."
             else
-              echo "${outdated_count} library/libraries may need updating. Review the table above."
+              echo "${outdated_count} library/libraries may need updating."
             fi
 
           } >> "$GITHUB_STEP_SUMMARY"
