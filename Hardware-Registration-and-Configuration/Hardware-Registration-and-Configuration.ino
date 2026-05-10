@@ -36,6 +36,7 @@
 #endif
 
 #include "common/hardware.h"
+#include "common/cloudConfig.h"
 #include "common/deviceIdentity.h"
 #include "common/oled.h"
 #include "common/frontPanel.h"
@@ -75,7 +76,6 @@ EventLog eventLog(&timeClient); /* Event Log instance */
 uint64_t ntpSleepUntil = 0;
 
 #define DEVICE_CLASS "CONTROLLER"
-#define FIREFLY_CLOUD_REGISTRATION_URL "https://api.fireflylx.com"
 #define REGISTRATION_APPLICATION_NAME "Hardware-Registration-and-Configuration"
 
 struct {
@@ -627,11 +627,24 @@ void checkCloudRegistration() {
   uint8_t nonce[32];
   esp_fill_random(nonce, 32);
 
+  // Build ISO 8601 UTC timestamp string
+  time_t now_ts = (time_t)timeClient.getEpochTime();
+  char timestampBuf[25];
+  struct tm tmNow;
+  gmtime_r(&now_ts, &tmNow);
+  strftime(timestampBuf, sizeof(timestampBuf), "%Y-%m-%dT%H:%M:%SZ", &tmNow);
+
+  // Sign over nonce (32 bytes) || timestamp (ASCII bytes, no NUL)
+  size_t tsLen = strlen(timestampBuf);
+  uint8_t sigInput[32 + 25]; // nonce + timestamp bytes
+  memcpy(sigInput, nonce, 32);
+  memcpy(sigInput + 32, timestampBuf, tsLen);
+
   uint8_t hash[32];
   mbedtls_sha256_context sha_ctx;
   mbedtls_sha256_init(&sha_ctx);
   mbedtls_sha256_starts(&sha_ctx, 0);
-  mbedtls_sha256_update(&sha_ctx, nonce, 32);
+  mbedtls_sha256_update(&sha_ctx, sigInput, 32 + tsLen);
   mbedtls_sha256_finish(&sha_ctx, hash);
   mbedtls_sha256_free(&sha_ctx);
 
@@ -659,7 +672,7 @@ void checkCloudRegistration() {
   mbedtls_base64_encode(nonceB64, sizeof(nonceB64), &nonceB64Len, nonce, 32);
   mbedtls_base64_encode(sigB64,   sizeof(sigB64),   &sigB64Len,   sig,   sigLen);
 
-  String url = FIREFLY_CLOUD_REGISTRATION_URL;
+  String url = FIREFLY_CLOUD_API_ROOT;
   url += "/devices/";
   url += deviceIdentity.data.uuid;
   url += "/registration";
@@ -672,6 +685,7 @@ void checkCloudRegistration() {
   esp_http_client_handle_t client = esp_http_client_init(&cfg);
   esp_http_client_set_header(client, "X-Device-UUID",      deviceIdentity.data.uuid);
   esp_http_client_set_header(client, "X-Device-Nonce",     (char*)nonceB64);
+  esp_http_client_set_header(client, "X-Device-Timestamp", timestampBuf);
   esp_http_client_set_header(client, "X-Device-Signature", (char*)sigB64);
 
   esp_err_t err    = esp_http_client_perform(client);
@@ -745,7 +759,7 @@ void http_handleRegistration_POST(AsyncWebServerRequest *request, JsonVariant &d
 
   String regKey = request->header("X-Registration-Key");
 
-  String cloudUrl = FIREFLY_CLOUD_REGISTRATION_URL;
+  String cloudUrl = FIREFLY_CLOUD_API_ROOT;
   if (!doc.isNull() && !doc["url"].isNull()) {
     cloudUrl = doc["url"].as<String>();
   }

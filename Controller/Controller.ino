@@ -32,6 +32,7 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "common/hardware.h"
+#include "common/cloudConfig.h"
 #include "common/deviceIdentity.h"
 #include "common/secretEncryption.h"
 #include "common/oled.h"
@@ -51,6 +52,13 @@
 #include "common/extendedPubSubClient.h"
 #include "common/provisioningMode.h"
 #include <HTTPClient.h>
+#include <mbedtls/hkdf.h>
+#include <mbedtls/md.h>
+#include <mbedtls/sha256.h>
+#include <mbedtls/ecdsa.h>
+#include <mbedtls/base64.h>
+#include <esp_http_client.h>
+#include <esp_crt_bundle.h>
 
 uint64_t bootTime = 0; /* Approximate Epoch time the device booted */
 #if CORE_DEBUG_LEVEL >= 4
@@ -86,6 +94,11 @@ uint64_t ntpSleepUntil = 0;
 
 void updateNTPTime(bool force = false);
 void refreshCertBundle();
+void cloudBackup_uploadToCloud();
+void http_handleCloudBackup(AsyncWebServerRequest *request);
+void http_handleCloudBackup_POST(AsyncWebServerRequest *request);
+void http_handleCloudBackup_GET(AsyncWebServerRequest *request);
+void http_handleCloudBackup_DELETE(AsyncWebServerRequest *request);
 
 exEsp32FOTA otaFirmware(APPLICATION_NAME, VERSION, false); /* OTA firmware update class */
 
@@ -578,6 +591,7 @@ void setup() {
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced_POST));
     httpServer.on("/api/ota/spiffs", HTTP_OPTIONS, http_options);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced_POST));
+    httpServer.on("/api/cloud-backup", http_handleCloudBackup);
     httpServer.on("/ui/version", http_handleUIVersion);
     setup_OtaFirmware();
   }else{
@@ -632,6 +646,11 @@ void loop() {
     if((esp_timer_get_time() - otaFirmware.lastCheckedTime >= (uint64_t)FIRMWARE_CHECK_SECONDS * 1000000ULL) || (otaFirmware.lastCheckedTime == 0)){
       if(!otaFirmware.updateInProcess){
         reportMemoryUsage("Starting firmware check.");
+
+        // Upload pending cloud backup before firmware check
+        if(configFS_isMounted && configFS.exists("/backup.json")){
+          cloudBackup_uploadToCloud();
+        }
 
         if(otaFirmware.execHTTPcheck() == 0){
           eventLog.createEvent("OTA firmware checked");
@@ -1168,6 +1187,21 @@ void http_conflict(AsyncWebServerRequest *request, String message){
 
   serializeJson(doc, *response);
   response->setCode(409);
+  request->send(response);
+}
+
+
+/**
+ * Sends a 503 response indicating the service is temporarily unavailable
+*/
+void http_serviceUnavailable(AsyncWebServerRequest *request, String message){
+
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
+  JsonDocument doc;
+  doc["message"] = message;
+
+  serializeJson(doc, *response);
+  response->setCode(503);
   request->send(response);
 }
 
@@ -5192,4 +5226,531 @@ void resetHTPServerUsage(){
       lastTimeHttpServerUsed = esp_timer_get_time();
   }
 
+}
+
+
+// ─── Cloud Backup ─────────────────────────────────────────────────────────────
+
+static int _espRng(void*, unsigned char* buf, size_t len) {
+  esp_fill_random(buf, len);
+  return 0;
+}
+
+/**
+ * Builds the four device-authentication headers (UUID, Nonce, Timestamp, Signature)
+ * and sets them on the given esp_http_client handle.
+ *
+ * Signs SHA-256(nonce || timestamp_bytes) with key_auth derived from the master key.
+ * Returns false if the device identity is not enabled, the key derivation fails, or
+ * the signature operation fails.
+ */
+static bool _cloudAuth_setHeaders(esp_http_client_handle_t client) {
+
+  if (!deviceIdentity.enabled) return false;
+
+  uint8_t key_auth[32];
+  if (mbedtls_hkdf(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256),
+                   nullptr, 0,
+                   deviceIdentity.data.key, sizeof(deviceIdentity.data.key),
+                   (const uint8_t*)"firefly-auth-v1", 15,
+                   key_auth, 32) != 0) {
+    memset(key_auth, 0, 32);
+    return false;
+  }
+
+  uint8_t nonce[32];
+  esp_fill_random(nonce, 32);
+
+  time_t now_ts = (time_t)timeClient.getEpochTime();
+  char timestampBuf[25];
+  struct tm tmNow;
+  gmtime_r(&now_ts, &tmNow);
+  strftime(timestampBuf, sizeof(timestampBuf), "%Y-%m-%dT%H:%M:%SZ", &tmNow);
+
+  size_t tsLen = strlen(timestampBuf);
+  uint8_t sigInput[32 + 25];
+  memcpy(sigInput, nonce, 32);
+  memcpy(sigInput + 32, timestampBuf, tsLen);
+
+  uint8_t hash[32];
+  mbedtls_sha256_context sha_ctx;
+  mbedtls_sha256_init(&sha_ctx);
+  mbedtls_sha256_starts(&sha_ctx, 0);
+  mbedtls_sha256_update(&sha_ctx, sigInput, 32 + tsLen);
+  mbedtls_sha256_finish(&sha_ctx, hash);
+  mbedtls_sha256_free(&sha_ctx);
+
+  mbedtls_ecdsa_context ecdsa;
+  mbedtls_ecdsa_init(&ecdsa);
+  mbedtls_ecp_group_load(&ecdsa.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP256R1);
+  mbedtls_mpi_read_binary(&ecdsa.MBEDTLS_PRIVATE(d), key_auth, 32);
+  memset(key_auth, 0, 32);
+
+  uint8_t sig[72]; size_t sigLen = 0;
+  bool signOk = (mbedtls_ecdsa_write_signature(&ecdsa, MBEDTLS_MD_SHA256,
+                                               hash, 32, sig, sizeof(sig), &sigLen,
+                                               _espRng, nullptr) == 0);
+  mbedtls_ecdsa_free(&ecdsa);
+
+  if (!signOk) return false;
+
+  uint8_t nonceB64[48]; size_t nonceB64Len = 0;
+  uint8_t sigB64[100];  size_t sigB64Len = 0;
+  mbedtls_base64_encode(nonceB64, sizeof(nonceB64), &nonceB64Len, nonce, 32);
+  mbedtls_base64_encode(sigB64,   sizeof(sigB64),   &sigB64Len,   sig,   sigLen);
+
+  esp_http_client_set_header(client, "X-Device-UUID",      deviceIdentity.data.uuid);
+  esp_http_client_set_header(client, "X-Device-Nonce",     (char*)nonceB64);
+  esp_http_client_set_header(client, "X-Device-Timestamp", timestampBuf);
+  esp_http_client_set_header(client, "X-Device-Signature", (char*)sigB64);
+
+  return true;
+}
+
+
+/**
+ * Reads /backup.json from configFS, encrypts with key_backup, and uploads to the
+ * cloud.  Called automatically by the OTA check loop if /backup.json exists.
+ * On success the local /backup.json file is removed.
+ * Silently returns on any error — the file remains for the next attempt.
+ */
+void cloudBackup_uploadToCloud() {
+
+  if (!deviceIdentity.enabled) return;
+  if (!secretEncryption.isReady()) return;
+  if (!timeClient.isTimeSet()) return;
+
+  eventLog.createEvent("Backup upload start");
+  log_i("cloudBackup_uploadToCloud: reading /backup.json");
+
+  // Read the plaintext backup file
+  File f = configFS.open("/backup.json", "r");
+  if (!f) {
+    log_e("cloudBackup_uploadToCloud: failed to open /backup.json");
+    return;
+  }
+  size_t fileSize = f.size();
+
+  if (fileSize > 512UL * 1024UL) {
+    log_e("cloudBackup_uploadToCloud: backup.json exceeds 512KB (%u bytes)", fileSize);
+    f.close();
+    return;
+  }
+
+  uint8_t* plainBuf = (uint8_t*)(psramFound() ? ps_malloc(fileSize) : malloc(fileSize));
+  if (!plainBuf) {
+    f.close();
+    log_e("cloudBackup_uploadToCloud: malloc failed");
+    return;
+  }
+
+  if (f.read(plainBuf, fileSize) != fileSize) {
+    memset(plainBuf, 0, fileSize);
+    free(plainBuf);
+    f.close();
+    log_e("cloudBackup_uploadToCloud: read failed");
+    return;
+  }
+  f.close();
+
+  // Encrypt with key_backup
+  size_t blobLen = 0;
+  uint8_t* blob = secretEncryption.encryptBackup(plainBuf, fileSize, blobLen);
+  memset(plainBuf, 0, fileSize);
+  free(plainBuf);
+
+  if (!blob) {
+    log_e("cloudBackup_uploadToCloud: encryption failed");
+    eventLog.createEvent("Backup enc fail", EventLog::LOG_LEVEL_ERROR);
+    return;
+  }
+
+  // Build URL
+  String url = FIREFLY_CLOUD_API_ROOT;
+  url += "/devices/";
+  url += deviceIdentity.data.uuid;
+  url += "/backup";
+
+  esp_http_client_config_t cfg = {};
+  cfg.url               = url.c_str();
+  cfg.crt_bundle_attach = esp_crt_bundle_attach;
+  cfg.timeout_ms        = 30000;
+  cfg.method            = HTTP_METHOD_POST;
+
+  esp_http_client_handle_t client = esp_http_client_init(&cfg);
+
+  if (!_cloudAuth_setHeaders(client)) {
+    esp_http_client_cleanup(client);
+    memset(blob, 0, blobLen);
+    free(blob);
+    eventLog.createEvent("Backup auth fail", EventLog::LOG_LEVEL_ERROR);
+    return;
+  }
+
+  esp_http_client_set_header(client, "Content-Type", "application/octet-stream");
+  esp_http_client_set_post_field(client, (const char*)blob, blobLen);
+
+  esp_err_t err  = esp_http_client_perform(client);
+  int       code = esp_http_client_get_status_code(client);
+  esp_http_client_cleanup(client);
+
+  memset(blob, 0, blobLen);
+  free(blob);
+
+  log_i("cloudBackup_uploadToCloud: err=%d status=%d", (int)err, code);
+
+  if (err == ESP_OK && (code == 200 || code == 204 || code == 304)) {
+    configFS.remove("/backup.json");
+    eventLog.createEvent("Backup uploaded");
+  } else {
+    char text[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(text, sizeof(text), "Backup up fail %d", code);
+    eventLog.createEvent(text, EventLog::LOG_LEVEL_NOTIFICATION);
+  }
+}
+
+
+/**
+ * Generic dispatcher for /api/cloud-backup
+ */
+void http_handleCloudBackup(AsyncWebServerRequest *request) {
+  switch(request->method()) {
+
+    case HTTP_OPTIONS:
+      http_options(request);
+      break;
+
+    case HTTP_POST:
+      http_handleCloudBackup_POST(request);
+      break;
+
+    case HTTP_GET:
+      http_handleCloudBackup_GET(request);
+      break;
+
+    case HTTP_DELETE:
+      http_handleCloudBackup_DELETE(request);
+      break;
+
+    default:
+      http_methodNotAllowed(request);
+      break;
+  }
+}
+
+
+/**
+ * POST /api/cloud-backup
+ * Reads backup.json from configFS, encrypts with key_backup, uploads to cloud.
+ * Responds with the cloud HTTP status code.
+ */
+void http_handleCloudBackup_POST(AsyncWebServerRequest *request) {
+
+  if (!request->hasHeader("visual-token") ||
+      !authToken.authenticate(request->header("visual-token").c_str())) {
+    http_unauthorized(request);
+    return;
+  }
+
+  if (!deviceIdentity.enabled) {
+    http_conflict(request, "Device not provisioned");
+    return;
+  }
+
+  if (!secretEncryption.isReady()) {
+    http_error(request, "Encryption not ready");
+    return;
+  }
+
+  if (!timeClient.isTimeSet()) {
+    http_serviceUnavailable(request, "Clock not synchronized");
+    return;
+  }
+
+  if (!configFS.exists("/backup.json")) {
+    http_notFound(request);
+    return;
+  }
+
+  resetHTPServerUsage();
+
+  File f = configFS.open("/backup.json", "r");
+  if (!f) {
+    http_error(request, "Failed to open backup.json");
+    return;
+  }
+  size_t fileSize = f.size();
+
+  if (fileSize > 512UL * 1024UL) {
+    f.close();
+    AsyncResponseStream *resp = request->beginResponseStream("application/json");
+    JsonDocument doc;
+    doc["message"] = "Backup file exceeds 512KB limit";
+    serializeJson(doc, *resp);
+    resp->setCode(413);
+    request->send(resp);
+    return;
+  }
+
+  uint8_t* plainBuf = (uint8_t*)(psramFound() ? ps_malloc(fileSize) : malloc(fileSize));
+  if (!plainBuf) {
+    f.close();
+    http_error(request, "Out of memory");
+    return;
+  }
+  if (f.read(plainBuf, fileSize) != fileSize) {
+    memset(plainBuf, 0, fileSize);
+    free(plainBuf);
+    f.close();
+    http_error(request, "Failed to read backup.json");
+    return;
+  }
+  f.close();
+
+  size_t blobLen = 0;
+  uint8_t* blob = secretEncryption.encryptBackup(plainBuf, fileSize, blobLen);
+  memset(plainBuf, 0, fileSize);
+  free(plainBuf);
+
+  if (!blob) {
+    http_error(request, "Encryption failed");
+    return;
+  }
+
+  String url = FIREFLY_CLOUD_API_ROOT;
+  url += "/devices/";
+  url += deviceIdentity.data.uuid;
+  url += "/backup";
+
+  esp_http_client_config_t cfg = {};
+  cfg.url               = url.c_str();
+  cfg.crt_bundle_attach = esp_crt_bundle_attach;
+  cfg.timeout_ms        = 30000;
+  cfg.method            = HTTP_METHOD_POST;
+
+  esp_http_client_handle_t client = esp_http_client_init(&cfg);
+
+  if (!_cloudAuth_setHeaders(client)) {
+    esp_http_client_cleanup(client);
+    memset(blob, 0, blobLen);
+    free(blob);
+    http_error(request, "Auth header build failed");
+    return;
+  }
+
+  esp_http_client_set_header(client, "Content-Type", "application/octet-stream");
+  esp_http_client_set_post_field(client, (const char*)blob, blobLen);
+
+  esp_err_t err  = esp_http_client_perform(client);
+  int       code = esp_http_client_get_status_code(client);
+  esp_http_client_cleanup(client);
+
+  memset(blob, 0, blobLen);
+  free(blob);
+
+  if (err != ESP_OK) {
+    http_error(request, "Cloud request failed");
+    return;
+  }
+
+  AsyncResponseStream *resp = request->beginResponseStream("application/json");
+  JsonDocument doc;
+  doc["status"] = code;
+  serializeJson(doc, *resp);
+  resp->setCode(code == 200 || code == 204 || code == 304 ? 200 : 502);
+  request->send(resp);
+}
+
+
+/**
+ * GET /api/cloud-backup
+ * Downloads the encrypted backup from cloud, decrypts with key_backup,
+ * writes to /backup.json on configFS, returns 200 with the plaintext JSON.
+ */
+void http_handleCloudBackup_GET(AsyncWebServerRequest *request) {
+
+  if (!request->hasHeader("visual-token") ||
+      !authToken.authenticate(request->header("visual-token").c_str())) {
+    http_unauthorized(request);
+    return;
+  }
+
+  if (!deviceIdentity.enabled) {
+    http_conflict(request, "Device not provisioned");
+    return;
+  }
+
+  if (!secretEncryption.isReady()) {
+    http_error(request, "Encryption not ready");
+    return;
+  }
+
+  if (!timeClient.isTimeSet()) {
+    http_serviceUnavailable(request, "Clock not synchronized");
+    return;
+  }
+
+  resetHTPServerUsage();
+
+  String url = FIREFLY_CLOUD_API_ROOT;
+  url += "/devices/";
+  url += deviceIdentity.data.uuid;
+  url += "/backup";
+
+  esp_http_client_config_t cfg = {};
+  cfg.url               = url.c_str();
+  cfg.crt_bundle_attach = esp_crt_bundle_attach;
+  cfg.timeout_ms        = 30000;
+  cfg.method            = HTTP_METHOD_GET;
+
+  esp_http_client_handle_t client = esp_http_client_init(&cfg);
+
+  if (!_cloudAuth_setHeaders(client)) {
+    esp_http_client_cleanup(client);
+    http_error(request, "Auth header build failed");
+    return;
+  }
+
+  // Open connection and read the response into a buffer
+  esp_err_t err = esp_http_client_open(client, 0);
+  if (err != ESP_OK) {
+    esp_http_client_cleanup(client);
+    http_error(request, "Cloud connection failed");
+    return;
+  }
+
+  int64_t contentLength = esp_http_client_fetch_headers(client);
+  int     code          = esp_http_client_get_status_code(client);
+
+  if (code == 404) {
+    esp_http_client_close(client);
+    esp_http_client_cleanup(client);
+    http_notFound(request);
+    return;
+  }
+
+  if (code != 200 || contentLength <= 0 || contentLength > 512LL * 1024LL + 37LL) {
+    esp_http_client_close(client);
+    esp_http_client_cleanup(client);
+    AsyncResponseStream *resp = request->beginResponseStream("application/json");
+    JsonDocument doc;
+    doc["message"] = "Cloud returned unexpected response";
+    doc["status"]  = code;
+    serializeJson(doc, *resp);
+    resp->setCode(502);
+    request->send(resp);
+    return;
+  }
+
+  uint8_t* blobBuf = (uint8_t*)(psramFound() ? ps_malloc((size_t)contentLength) : malloc((size_t)contentLength));
+  if (!blobBuf) {
+    esp_http_client_close(client);
+    esp_http_client_cleanup(client);
+    http_error(request, "Out of memory");
+    return;
+  }
+
+  int bytesRead = esp_http_client_read(client, (char*)blobBuf, (int)contentLength);
+  esp_http_client_close(client);
+  esp_http_client_cleanup(client);
+
+  if (bytesRead != (int)contentLength) {
+    memset(blobBuf, 0, (size_t)contentLength);
+    free(blobBuf);
+    http_error(request, "Incomplete read from cloud");
+    return;
+  }
+
+  String plaintext;
+  if (!secretEncryption.decryptBackup(blobBuf, (size_t)contentLength, plaintext)) {
+    memset(blobBuf, 0, (size_t)contentLength);
+    free(blobBuf);
+    http_error(request, "Decryption failed");
+    return;
+  }
+
+  memset(blobBuf, 0, (size_t)contentLength);
+  free(blobBuf);
+
+  // Write restored backup.json to configFS
+  File outFile = configFS.open("/backup.json", "w");
+  if (!outFile) {
+    http_error(request, "Failed to write backup.json");
+    return;
+  }
+  outFile.print(plaintext);
+  outFile.close();
+
+  request->send(200, "application/json", plaintext);
+}
+
+
+/**
+ * DELETE /api/cloud-backup
+ * Sends DELETE to cloud and removes the local /backup.json if it exists.
+ */
+void http_handleCloudBackup_DELETE(AsyncWebServerRequest *request) {
+
+  if (!request->hasHeader("visual-token") ||
+      !authToken.authenticate(request->header("visual-token").c_str())) {
+    http_unauthorized(request);
+    return;
+  }
+
+  if (!deviceIdentity.enabled) {
+    http_conflict(request, "Device not provisioned");
+    return;
+  }
+
+  if (!timeClient.isTimeSet()) {
+    http_serviceUnavailable(request, "Clock not synchronized");
+    return;
+  }
+
+  resetHTPServerUsage();
+
+  String url = FIREFLY_CLOUD_API_ROOT;
+  url += "/devices/";
+  url += deviceIdentity.data.uuid;
+  url += "/backup";
+
+  esp_http_client_config_t cfg = {};
+  cfg.url               = url.c_str();
+  cfg.crt_bundle_attach = esp_crt_bundle_attach;
+  cfg.timeout_ms        = 15000;
+  cfg.method            = HTTP_METHOD_DELETE;
+
+  esp_http_client_handle_t client = esp_http_client_init(&cfg);
+
+  if (!_cloudAuth_setHeaders(client)) {
+    esp_http_client_cleanup(client);
+    http_error(request, "Auth header build failed");
+    return;
+  }
+
+  esp_err_t err  = esp_http_client_perform(client);
+  int       code = esp_http_client_get_status_code(client);
+  esp_http_client_cleanup(client);
+
+  if (err != ESP_OK) {
+    http_error(request, "Cloud request failed");
+    return;
+  }
+
+  if (code == 200 || code == 204) {
+    if (configFS.exists("/backup.json")) {
+      configFS.remove("/backup.json");
+    }
+    request->send(204);
+  } else if (code == 404) {
+    http_notFound(request);
+  } else {
+    AsyncResponseStream *resp = request->beginResponseStream("application/json");
+    JsonDocument doc;
+    doc["message"] = "Cloud returned unexpected status";
+    doc["status"]  = code;
+    serializeJson(doc, *resp);
+    resp->setCode(502);
+    request->send(resp);
+  }
 }

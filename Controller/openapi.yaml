@@ -24,6 +24,8 @@ tags:
     description: Manage clients
   - name: General
     description: Helper operations
+  - name: Cloud Backup
+    description: Operations for managing encrypted configuration backups in the cloud
 
 ##########################################################
 ## NOTE: This may not render except in the next-gen     ##
@@ -978,6 +980,131 @@ paths:
               example:
                 message: File system not mounted
   
+
+  /api/cloud-backup:
+    post:
+      tags:
+        - Cloud Backup
+      summary: Push local backup.json to cloud
+      description: |
+        Reads `backup.json` from the config file system, encrypts it on-device with
+        `key_backup` (AES-256-GCM, HKDF-derived from the eFuse master key with the
+        label `firefly-backup-v1`), and uploads the ciphertext blob to the FireFly
+        Cloud. Returns the HTTP status code returned by the cloud.
+      security:
+        - visualToken: []
+      responses:
+        '200':
+          description: Cloud accepted the upload (cloud returned 200, 204, or 304)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    description: HTTP status code returned by the cloud
+        '401':
+          description: Unauthorized
+        '404':
+          description: No local backup.json found
+        '409':
+          description: Device not provisioned
+        '413':
+          description: backup.json exceeds 512 KB limit
+        '500':
+          description: Encryption or internal failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+        '502':
+          description: Cloud returned an unexpected status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  status:
+                    type: integer
+        '503':
+          description: Clock not synchronized
+    get:
+      tags:
+        - Cloud Backup
+      summary: Restore backup from cloud
+      description: |
+        Downloads the encrypted backup blob from the FireFly Cloud, decrypts it
+        on-device with `key_backup`, writes the result to `backup.json` on the
+        config file system, and returns the plaintext JSON to the caller.
+      security:
+        - visualToken: []
+      responses:
+        '200':
+          description: Backup restored successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/dexieFormat'
+        '401':
+          description: Unauthorized
+        '404':
+          description: No backup found in cloud
+        '409':
+          description: Device not provisioned
+        '500':
+          description: Decryption or internal failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+        '502':
+          description: Cloud returned an unexpected response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  status:
+                    type: integer
+        '503':
+          description: Clock not synchronized
+    delete:
+      tags:
+        - Cloud Backup
+      summary: Delete cloud backup
+      description: |
+        Sends a DELETE request to the FireFly Cloud to remove the stored backup for
+        this device. If a local `backup.json` also exists, it is removed as well.
+      security:
+        - visualToken: []
+      responses:
+        '204':
+          description: Backup deleted
+        '401':
+          description: Unauthorized
+        '404':
+          description: No backup found in cloud
+        '409':
+          description: Device not provisioned
+        '502':
+          description: Cloud returned an unexpected status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  status:
+                    type: integer
+        '503':
+          description: Clock not synchronized
+
 
   /files:
     get:

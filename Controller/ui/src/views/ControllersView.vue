@@ -77,6 +77,11 @@
               <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaApp(ctrl)">Force App Update</button>
               <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaSpiffs(ctrl)">Force FS Update</button>
             </div>
+            <div class="flex flex-wrap gap-2">
+              <button class="px-2 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="pushCloudBackup(ctrl)">Push Cloud Backup</button>
+              <button class="px-2 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmCloudRestore(ctrl)">Restore Cloud Backup</button>
+              <button class="px-2 py-1.5 text-xs font-medium text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-red-50 dark:hover:bg-red-900/20'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmCloudDelete(ctrl)">Delete Cloud Backup</button>
+            </div>
           </div>
         </div>
       </div>
@@ -192,6 +197,12 @@
     <ConfirmModal :show="!!pullBackupTarget" title="Pull Backup" :message="`Pull backup from '${pullBackupTarget?.name}'? This will replace all local configuration data and cannot be undone.`"
       variant="warning" confirm-label="Pull Backup" @confirm="doPullBackup" @cancel="pullBackupTarget = null" />
 
+    <ConfirmModal :show="!!cloudRestoreTarget" title="Restore Cloud Backup" :message="`Restore cloud backup to '${cloudRestoreTarget?.name}'? The device will overwrite its local backup.json with the decrypted payload from the cloud. This cannot be undone.`"
+      variant="warning" confirm-label="Restore" @confirm="doCloudRestore" @cancel="cloudRestoreTarget = null" />
+
+    <ConfirmModal :show="!!cloudDeleteTarget" title="Delete Cloud Backup" :message="`Delete the cloud backup for '${cloudDeleteTarget?.name}'? This is permanent and cannot be undone.`"
+      variant="danger" confirm-label="Delete" @confirm="doCloudDelete" @cancel="cloudDeleteTarget = null" />
+
     <ConfirmModal :show="!!otaAppTarget" title="Force Application Update" :message="`Force firmware update on '${otaAppTarget?.name}'? The controller will reboot after downloading the update.`"
       variant="warning" confirm-label="Force Update" @confirm="doOtaApp" @cancel="otaAppTarget = null" />
 
@@ -226,6 +237,8 @@ const deleteTarget = ref(null)
 const pullBackupTarget = ref(null)
 const otaAppTarget = ref(null)
 const otaSpiffsTarget = ref(null)
+const cloudRestoreTarget = ref(null)
+const cloudDeleteTarget = ref(null)
 const eventLog = ref([])
 const errorLog = ref([])
 const activeErrorLogId = ref(null)
@@ -606,6 +619,87 @@ async function triggerOta(ctrl, endpoint) {
     }
   } catch (e) {
     addToast('error', `OTA error: ${e.message}`)
+  }
+}
+
+// --- Cloud Backup ---
+
+async function pushCloudBackup(ctrl) {
+  const sessionCtrl = getSessionCtrl(ctrl.id)
+  const { controllerFetch } = await import('../composables/useApi')
+  try {
+    const res = await controllerFetch(sessionCtrl.session.ip, '/cloud-backup', {
+      method: 'POST'
+    }, sessionCtrl.session.visualToken)
+    if (res.ok) {
+      let statusCode = ''
+      try { const body = await res.json(); statusCode = ` (cloud: ${body.status})` } catch { /* ignore */ }
+      addToast('success', `Cloud backup pushed for ${ctrl.name}.${statusCode}`)
+    } else if (res.status === 404) {
+      addToast('warning', `No local backup.json found on ${ctrl.name}.`)
+    } else {
+      let msg = `HTTP ${res.status}`
+      try { const body = await res.json(); msg = body.message ?? msg } catch { /* ignore */ }
+      addToast('error', `Push cloud backup failed: ${msg}`)
+    }
+  } catch (e) {
+    addToast('error', `Push cloud backup error: ${e.message}`)
+  }
+}
+
+function confirmCloudRestore(ctrl) {
+  cloudRestoreTarget.value = ctrl
+}
+
+async function doCloudRestore() {
+  const ctrl = cloudRestoreTarget.value
+  cloudRestoreTarget.value = null
+  if (!ctrl) return
+  const sessionCtrl = getSessionCtrl(ctrl.id)
+  const { controllerFetch } = await import('../composables/useApi')
+  try {
+    const res = await controllerFetch(sessionCtrl.session.ip, '/cloud-backup', {
+      method: 'GET'
+    }, sessionCtrl.session.visualToken)
+    if (res.ok) {
+      addToast('success', `Cloud backup restored to ${ctrl.name}.`)
+    } else if (res.status === 404) {
+      addToast('warning', `No cloud backup found for ${ctrl.name}.`)
+    } else {
+      let msg = `HTTP ${res.status}`
+      try { const body = await res.json(); msg = body.message ?? msg } catch { /* ignore */ }
+      addToast('error', `Restore cloud backup failed: ${msg}`)
+    }
+  } catch (e) {
+    addToast('error', `Restore cloud backup error: ${e.message}`)
+  }
+}
+
+function confirmCloudDelete(ctrl) {
+  cloudDeleteTarget.value = ctrl
+}
+
+async function doCloudDelete() {
+  const ctrl = cloudDeleteTarget.value
+  cloudDeleteTarget.value = null
+  if (!ctrl) return
+  const sessionCtrl = getSessionCtrl(ctrl.id)
+  const { controllerFetch } = await import('../composables/useApi')
+  try {
+    const res = await controllerFetch(sessionCtrl.session.ip, '/cloud-backup', {
+      method: 'DELETE'
+    }, sessionCtrl.session.visualToken)
+    if (res.status === 204) {
+      addToast('success', `Cloud backup deleted for ${ctrl.name}.`)
+    } else if (res.status === 404) {
+      addToast('warning', `No cloud backup found for ${ctrl.name}.`)
+    } else {
+      let msg = `HTTP ${res.status}`
+      try { const body = await res.json(); msg = body.message ?? msg } catch { /* ignore */ }
+      addToast('error', `Delete cloud backup failed: ${msg}`)
+    }
+  } catch (e) {
+    addToast('error', `Delete cloud backup error: ${e.message}`)
   }
 }
 
