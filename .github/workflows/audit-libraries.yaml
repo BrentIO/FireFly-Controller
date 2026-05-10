@@ -1,0 +1,98 @@
+name: 🔍 Audit Library Versions
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 09:00 UTC
+
+jobs:
+  audit:
+    name: Check for Library Updates
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Audit Arduino Library Versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          get_latest_version() {
+            local repo="$1"
+            local response http_code body tag
+
+            # Try /releases/latest first
+            response=$(curl -s -w "\n%{http_code}" \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${repo}/releases/latest")
+            http_code=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | head -n -1)
+
+            if [ "$http_code" = "200" ]; then
+              echo "$body" | grep -m1 '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/'
+              return
+            fi
+
+            # Fall back to /tags
+            response=$(curl -s -w "\n%{http_code}" \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${repo}/tags?per_page=1")
+            http_code=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | head -n -1)
+
+            if [ "$http_code" = "200" ]; then
+              tag=$(echo "$body" | grep -m1 '"name"' | sed 's/.*"name": *"\([^"]*\)".*/\1/')
+              [ -n "$tag" ] && echo "$tag" && return
+            fi
+
+            echo "unknown"
+          }
+
+          {
+            echo "## Arduino Library Version Audit"
+            echo ""
+            echo "| Library | Pinned Version | Latest Version | Status |"
+            echo "| ------- | -------------- | -------------- | ------ |"
+
+            outdated_count=0
+            lib_count=$(yq -r '.libraries | length' libraries.yaml)
+
+            for i in $(seq 0 $((lib_count - 1))); do
+              name=$(yq -r ".libraries[$i].name" libraries.yaml)
+              pinned=$(yq -r ".libraries[$i].version" libraries.yaml)
+              url=$(yq -r ".libraries[$i].url" libraries.yaml)
+              repo="${url#https://github.com/}"
+
+              latest=$(get_latest_version "$repo")
+
+              pinned_norm="${pinned#v}"
+              latest_norm="${latest#v}"
+
+              if [ "$latest" = "unknown" ]; then
+                status="⚠️ unknown"
+              elif [ "$pinned_norm" = "$latest_norm" ]; then
+                status="✅ up to date"
+              else
+                status="❌ out of date"
+                outdated_count=$((outdated_count + 1))
+              fi
+
+              echo "| [\`${name}\`](${url}) | \`${pinned}\` | \`${latest}\` | ${status} |"
+            done
+
+            echo ""
+            if [ "$outdated_count" -eq 0 ]; then
+              echo "All libraries are up to date."
+            else
+              echo "${outdated_count} library/libraries may need updating."
+            fi
+
+          } >> "$GITHUB_STEP_SUMMARY"
