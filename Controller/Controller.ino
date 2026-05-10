@@ -100,12 +100,6 @@ void http_handleCloudBackup_POST(AsyncWebServerRequest *request);
 void http_handleCloudBackup_GET(AsyncWebServerRequest *request);
 void http_handleCloudBackup_DELETE(AsyncWebServerRequest *request);
 
-/* Hardware RNG wrapper for mbedtls ECP/ECDSA calls */
-static int _espRng(void*, unsigned char* buf, size_t len) {
-    esp_fill_random(buf, len);
-    return 0;
-}
-
 exEsp32FOTA otaFirmware(APPLICATION_NAME, VERSION, false); /* OTA firmware update class */
 
 fs::LittleFSFS wwwFS;
@@ -1193,6 +1187,21 @@ void http_conflict(AsyncWebServerRequest *request, String message){
 
   serializeJson(doc, *response);
   response->setCode(409);
+  request->send(response);
+}
+
+
+/**
+ * Sends a 503 response indicating the service is temporarily unavailable
+*/
+void http_serviceUnavailable(AsyncWebServerRequest *request, String message){
+
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
+  JsonDocument doc;
+  doc["message"] = message;
+
+  serializeJson(doc, *response);
+  response->setCode(503);
   request->send(response);
 }
 
@@ -5074,6 +5083,11 @@ void resetHTPServerUsage(){
 
 
 // ─── Cloud Backup ─────────────────────────────────────────────────────────────
+
+static int _espRng(void*, unsigned char* buf, size_t len) {
+  esp_fill_random(buf, len);
+  return 0;
+}
 
 /**
  * Builds the four device-authentication headers (UUID, Nonce, Timestamp, Signature)
