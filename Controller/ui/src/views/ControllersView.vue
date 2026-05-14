@@ -197,8 +197,11 @@
     <ConfirmModal :show="!!pullBackupTarget" title="Pull Backup" :message="`Pull backup from '${pullBackupTarget?.name}'? This will replace all local configuration data and cannot be undone.`"
       variant="warning" confirm-label="Pull Backup" @confirm="doPullBackup" @cancel="pullBackupTarget = null" />
 
-    <ConfirmModal :show="!!cloudRestoreTarget" title="Restore Cloud Backup" :message="`Restore cloud backup to '${cloudRestoreTarget?.name}'? The device will overwrite its local backup.json with the decrypted payload from the cloud. This cannot be undone.`"
+    <ConfirmModal :show="!!cloudRestoreTarget" title="Restore Cloud Backup" :message="`Restore cloud backup to '${cloudRestoreTarget?.name}'? The device will retrieve and decrypt the backup from the cloud.`"
       variant="warning" confirm-label="Restore" @confirm="doCloudRestore" @cancel="cloudRestoreTarget = null" />
+
+    <ConfirmModal :show="showLoadBackupPrompt" title="Load Backup Now?" message="Load the retrieved cloud backup into the app? This will replace all local configuration data and cannot be undone."
+      variant="warning" confirm-label="Load Backup" @confirm="doLoadCloudBackup" @cancel="showLoadBackupPrompt = false" />
 
     <ConfirmModal :show="!!cloudDeleteTarget" title="Delete Cloud Backup" :message="`Delete the cloud backup for '${cloudDeleteTarget?.name}'? This is permanent and cannot be undone.`"
       variant="danger" confirm-label="Delete" @confirm="doCloudDelete" @cancel="cloudDeleteTarget = null" />
@@ -238,6 +241,8 @@ const pullBackupTarget = ref(null)
 const otaAppTarget = ref(null)
 const otaSpiffsTarget = ref(null)
 const cloudRestoreTarget = ref(null)
+const cloudRestorePayload = ref(null)
+const showLoadBackupPrompt = ref(false)
 const cloudDeleteTarget = ref(null)
 const eventLog = ref([])
 const errorLog = ref([])
@@ -662,7 +667,9 @@ async function doCloudRestore() {
       method: 'GET'
     }, sessionCtrl.session.visualToken)
     if (res.ok) {
-      addToast('success', `Cloud backup restored to ${ctrl.name}.`)
+      const payload = await res.text()
+      cloudRestorePayload.value = payload
+      showLoadBackupPrompt.value = true
     } else if (res.status === 404) {
       addToast('warning', `No cloud backup found for ${ctrl.name}.`)
     } else {
@@ -672,6 +679,31 @@ async function doCloudRestore() {
     }
   } catch (e) {
     addToast('error', `Restore cloud backup error: ${e.message}`)
+  }
+}
+
+async function doLoadCloudBackup() {
+  showLoadBackupPrompt.value = false
+  const payload = cloudRestorePayload.value
+  cloudRestorePayload.value = null
+  if (!payload) return
+  try {
+    let parsed
+    try { parsed = JSON.parse(payload) } catch {
+      addToast('error', 'Import failed: retrieved backup is not valid JSON.')
+      return
+    }
+    if (parsed.formatName !== 'dexie') {
+      addToast('error', 'Import failed: retrieved backup is not a valid Dexie export.')
+      return
+    }
+    await db.delete()
+    const blob = new Blob([payload], { type: 'application/json' })
+    await importDB(blob)
+    addToast('success', 'Cloud backup loaded! Reloading…')
+    setTimeout(() => window.location.reload(), 1500)
+  } catch (e) {
+    addToast('error', `Import failed: ${e.message}`)
   }
 }
 
