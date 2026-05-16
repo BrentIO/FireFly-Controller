@@ -12,6 +12,7 @@ jobs:
 
     permissions:
       contents: read
+      issues: write
 
     steps:
       - name: Checkout
@@ -23,9 +24,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          get_latest_version() {
+          # Returns "TAG DATE" (space-separated) for the latest release of a GitHub repo.
+          # TAG comes from /releases/latest (preferred) or /tags (fallback).
+          # DATE is the published_at from the release, or the committer date from the tag commit.
+          get_latest_version_and_date() {
             local repo="$1"
-            local response http_code body tag
+            local response http_code body tag date
 
             # Try /releases/latest first
             response=$(curl -s -w "\n%{http_code}" \
@@ -36,7 +40,9 @@ jobs:
             body=$(echo "$response" | head -n -1)
 
             if [ "$http_code" = "200" ]; then
-              echo "$body" | grep -m1 '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/'
+              tag=$(echo "$body" | grep -m1 '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
+              date=$(echo "$body" | grep -m1 '"published_at"' | sed 's/.*"published_at": *"\([^"]*\)".*/\1/')
+              echo "${tag} ${date}"
               return
             fi
 
@@ -50,19 +56,43 @@ jobs:
 
             if [ "$http_code" = "200" ]; then
               tag=$(echo "$body" | grep -m1 '"name"' | sed 's/.*"name": *"\([^"]*\)".*/\1/')
-              [ -n "$tag" ] && echo "$tag" && return
+              if [ -n "$tag" ]; then
+                # Fetch commit date for this tag
+                sha=$(echo "$body" | grep -m1 '"sha"' | sed 's/.*"sha": *"\([^"]*\)".*/\1/')
+                commit_response=$(curl -s -w "\n%{http_code}" \
+                  -H "Authorization: Bearer ${GH_TOKEN}" \
+                  -H "Accept: application/vnd.github+json" \
+                  "https://api.github.com/repos/${repo}/commits/${sha}")
+                commit_http=$(echo "$commit_response" | tail -n1)
+                commit_body=$(echo "$commit_response" | head -n -1)
+                if [ "$commit_http" = "200" ]; then
+                  date=$(echo "$commit_body" | grep -m1 '"date"' | sed 's/.*"date": *"\([^"]*\)".*/\1/')
+                else
+                  date="unknown"
+                fi
+                echo "${tag} ${date}"
+                return
+              fi
             fi
 
-            echo "unknown"
+            echo "unknown unknown"
+          }
+
+          # Compare two version strings numerically, returns 0 if v1 >= v2, 1 if v1 < v2
+          version_gte() {
+            local v1="${1#v}" v2="${2#v}"
+            # Use sort -V for natural version comparison
+            [ "$(printf '%s\n%s' "$v1" "$v2" | sort -V | head -n1)" = "$v2" ]
           }
 
           {
             echo "## Arduino Library Version Audit"
             echo ""
-            echo "| Library | Pinned Version | Latest Version | Status |"
-            echo "| ------- | -------------- | -------------- | ------ |"
+            echo "| Library | Pinned Version | Pinned Date | Latest Version | Latest Date | Status |"
+            echo "| ------- | -------------- | ----------- | -------------- | ----------- | ------ |"
 
             outdated_count=0
+            outdated_libs=""
             lib_count=$(yq -r '.libraries | length' libraries.yaml)
 
             for i in $(seq 0 $((lib_count - 1))); do
@@ -71,21 +101,75 @@ jobs:
               url=$(yq -r ".libraries[$i].url" libraries.yaml)
               repo="${url#https://github.com/}"
 
-              latest=$(get_latest_version "$repo")
+              # Fetch pinned release date
+              pinned_norm="${pinned#v}"
+              pinned_response=$(curl -s -w "\n%{http_code}" \
+                -H "Authorization: Bearer ${GH_TOKEN}" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/${repo}/releases/tags/${pinned}")
+              pinned_http=$(echo "$pinned_response" | tail -n1)
+              pinned_body=$(echo "$pinned_response" | head -n -1)
+
+              if [ "$pinned_http" = "200" ]; then
+                pinned_date=$(echo "$pinned_body" | grep -m1 '"published_at"' | sed 's/.*"published_at": *"\([^"]*\)".*/\1/')
+              else
+                # Try tags endpoint for the pinned version
+                tag_response=$(curl -s -w "\n%{http_code}" \
+                  -H "Authorization: Bearer ${GH_TOKEN}" \
+                  -H "Accept: application/vnd.github+json" \
+                  "https://api.github.com/repos/${repo}/git/refs/tags/${pinned}")
+                tag_http=$(echo "$tag_response" | tail -n1)
+                tag_body=$(echo "$tag_response" | head -n -1)
+                if [ "$tag_http" = "200" ]; then
+                  sha=$(echo "$tag_body" | grep -m1 '"sha"' | sed 's/.*"sha": *"\([^"]*\)".*/\1/')
+                  commit_r=$(curl -s \
+                    -H "Authorization: Bearer ${GH_TOKEN}" \
+                    -H "Accept: application/vnd.github+json" \
+                    "https://api.github.com/repos/${repo}/commits/${sha}")
+                  pinned_date=$(echo "$commit_r" | grep -m1 '"date"' | sed 's/.*"date": *"\([^"]*\)".*/\1/')
+                else
+                  pinned_date="unknown"
+                fi
+              fi
+
+              latest_info=$(get_latest_version_and_date "$repo")
+              latest=$(echo "$latest_info" | awk '{print $1}')
+              latest_date=$(echo "$latest_info" | awk '{print $2}')
 
               pinned_norm="${pinned#v}"
               latest_norm="${latest#v}"
+
+              # Format dates for display (YYYY-MM-DD only)
+              pinned_date_display="${pinned_date%%T*}"
+              latest_date_display="${latest_date%%T*}"
 
               if [ "$latest" = "unknown" ]; then
                 status="⚠️ unknown"
               elif [ "$pinned_norm" = "$latest_norm" ]; then
                 status="✅ up to date"
               else
-                status="❌ out of date"
-                outdated_count=$((outdated_count + 1))
+                # Check if version appears to go backwards (e.g. pinned=0.1.1, latest=1.1)
+                if ! version_gte "$latest_norm" "$pinned_norm"; then
+                  # Latest version number is lower than pinned — check dates
+                  if [ "$pinned_date" != "unknown" ] && [ "$latest_date" != "unknown" ]; then
+                    if [[ "$pinned_date" > "$latest_date" ]]; then
+                      status="⚠️ version went backwards"
+                    else
+                      status="❌ out of date"
+                      outdated_count=$((outdated_count + 1))
+                      outdated_libs="${outdated_libs}${name}|${url}|${pinned}|${latest}\n"
+                    fi
+                  else
+                    status="⚠️ version went backwards"
+                  fi
+                else
+                  status="❌ out of date"
+                  outdated_count=$((outdated_count + 1))
+                  outdated_libs="${outdated_libs}${name}|${url}|${pinned}|${latest}\n"
+                fi
               fi
 
-              echo "| [\`${name}\`](${url}) | \`${pinned}\` | \`${latest}\` | ${status} |"
+              echo "| [\`${name}\`](${url}) | \`${pinned}\` | ${pinned_date_display} | \`${latest}\` | ${latest_date_display} | ${status} |"
             done
 
             echo ""
@@ -96,3 +180,31 @@ jobs:
             fi
 
           } >> "$GITHUB_STEP_SUMMARY"
+
+          # Create GitHub issues for outdated libraries (issue #136)
+          if [ -n "$outdated_libs" ]; then
+            printf "%b" "$outdated_libs" | while IFS='|' read -r name url pinned latest; do
+              [ -z "$name" ] && continue
+
+              existing=$(gh issue list \
+                --repo "$GITHUB_REPOSITORY" \
+                --state open \
+                --label enhancement \
+                --search "Evaluate ${name} Library Upgrade in:title" \
+                --json number --jq '.[0].number // empty')
+
+              if [ -z "$existing" ]; then
+                gh issue create \
+                  --repo "$GITHUB_REPOSITORY" \
+                  --title "Evaluate ${name} Library Upgrade" \
+                  --label enhancement \
+                  --body "Evaluate upgrading the pinned [${name}](${url}) Library for any breaking changes.
+
+Pinned version ${pinned}
+Current Version ${latest}"
+                echo "Created issue for ${name} upgrade"
+              else
+                echo "Issue #${existing} already exists for ${name} upgrade, skipping"
+              fi
+            done
+          fi
