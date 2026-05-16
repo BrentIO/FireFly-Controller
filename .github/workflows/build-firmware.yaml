@@ -332,7 +332,6 @@ jobs:
       - uses: actions/upload-artifact@v7
         name: Upload Artifacts
         with:
-          retention-days: 1
           if-no-files-found: error
           name: ${{ matrix.product_id }}-${{ matrix.application }}-${{ env.BRANCH }}-${{ env.COMMIT_HASH }}
           path: ${{ env.ARTIFACT_ROOT }}/${{ matrix.product_id }}/${{ matrix.application }}/${{ env.BRANCH }}-${{ env.COMMIT_HASH }}/*
