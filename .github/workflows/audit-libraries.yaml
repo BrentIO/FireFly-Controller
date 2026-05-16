@@ -26,10 +26,10 @@ jobs:
 
           # Returns "TAG DATE" (space-separated) for the latest release of a GitHub repo.
           # TAG comes from /releases/latest (preferred) or /tags (fallback).
-          # DATE is the published_at from the release, or the committer date from the tag commit.
+          # DATE is published_at from the release, or the committer date from the tag commit.
           get_latest_version_and_date() {
             local repo="$1"
-            local response http_code body tag date
+            local response http_code body tag date sha
 
             # Try /releases/latest first
             response=$(curl -s -w "\n%{http_code}" \
@@ -40,8 +40,8 @@ jobs:
             body=$(echo "$response" | head -n -1)
 
             if [ "$http_code" = "200" ]; then
-              tag=$(echo "$body" | grep -m1 '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
-              date=$(echo "$body" | grep -m1 '"published_at"' | sed 's/.*"published_at": *"\([^"]*\)".*/\1/')
+              tag=$(echo "$body" | jq -r '.tag_name // "unknown"')
+              date=$(echo "$body" | jq -r '.published_at // "unknown"')
               echo "${tag} ${date}"
               return
             fi
@@ -55,18 +55,17 @@ jobs:
             body=$(echo "$response" | head -n -1)
 
             if [ "$http_code" = "200" ]; then
-              tag=$(echo "$body" | grep -m1 '"name"' | sed 's/.*"name": *"\([^"]*\)".*/\1/')
-              if [ -n "$tag" ]; then
-                # Fetch commit date for this tag
-                sha=$(echo "$body" | grep -m1 '"sha"' | sed 's/.*"sha": *"\([^"]*\)".*/\1/')
-                commit_response=$(curl -s -w "\n%{http_code}" \
+              tag=$(echo "$body" | jq -r '.[0].name // "unknown"')
+              sha=$(echo "$body" | jq -r '.[0].commit.sha // "unknown"')
+              if [ "$tag" != "unknown" ] && [ "$sha" != "unknown" ]; then
+                response=$(curl -s -w "\n%{http_code}" \
                   -H "Authorization: Bearer ${GH_TOKEN}" \
                   -H "Accept: application/vnd.github+json" \
                   "https://api.github.com/repos/${repo}/commits/${sha}")
-                commit_http=$(echo "$commit_response" | tail -n1)
-                commit_body=$(echo "$commit_response" | head -n -1)
-                if [ "$commit_http" = "200" ]; then
-                  date=$(echo "$commit_body" | grep -m1 '"date"' | sed 's/.*"date": *"\([^"]*\)".*/\1/')
+                http_code=$(echo "$response" | tail -n1)
+                body=$(echo "$response" | head -n -1)
+                if [ "$http_code" = "200" ]; then
+                  date=$(echo "$body" | jq -r '.commit.committer.date // .commit.author.date // "unknown"')
                 else
                   date="unknown"
                 fi
@@ -78,10 +77,54 @@ jobs:
             echo "unknown unknown"
           }
 
-          # Compare two version strings numerically, returns 0 if v1 >= v2, 1 if v1 < v2
+          # Fetch release date for a specific pinned tag.
+          get_pinned_date() {
+            local repo="$1" pinned="$2"
+            local response http_code body sha
+
+            # Try /releases/tags/{pinned}
+            response=$(curl -s -w "\n%{http_code}" \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${repo}/releases/tags/${pinned}")
+            http_code=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | head -n -1)
+
+            if [ "$http_code" = "200" ]; then
+              echo "$body" | jq -r '.published_at // "unknown"'
+              return
+            fi
+
+            # Fall back to /git/refs/tags/{pinned}
+            response=$(curl -s -w "\n%{http_code}" \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${repo}/git/refs/tags/${pinned}")
+            http_code=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | head -n -1)
+
+            if [ "$http_code" = "200" ]; then
+              sha=$(echo "$body" | jq -r '.object.sha // "unknown"')
+              if [ "$sha" != "unknown" ]; then
+                response=$(curl -s -w "\n%{http_code}" \
+                  -H "Authorization: Bearer ${GH_TOKEN}" \
+                  -H "Accept: application/vnd.github+json" \
+                  "https://api.github.com/repos/${repo}/commits/${sha}")
+                http_code=$(echo "$response" | tail -n1)
+                body=$(echo "$response" | head -n -1)
+                if [ "$http_code" = "200" ]; then
+                  echo "$body" | jq -r '.commit.committer.date // .commit.author.date // "unknown"'
+                  return
+                fi
+              fi
+            fi
+
+            echo "unknown"
+          }
+
+          # Compare two version strings; returns 0 if v1 >= v2, 1 if v1 < v2.
           version_gte() {
             local v1="${1#v}" v2="${2#v}"
-            # Use sort -V for natural version comparison
             [ "$(printf '%s\n%s' "$v1" "$v2" | sort -V | head -n1)" = "$v2" ]
           }
 
@@ -101,36 +144,7 @@ jobs:
               url=$(yq -r ".libraries[$i].url" libraries.yaml)
               repo="${url#https://github.com/}"
 
-              # Fetch pinned release date
-              pinned_norm="${pinned#v}"
-              pinned_response=$(curl -s -w "\n%{http_code}" \
-                -H "Authorization: Bearer ${GH_TOKEN}" \
-                -H "Accept: application/vnd.github+json" \
-                "https://api.github.com/repos/${repo}/releases/tags/${pinned}")
-              pinned_http=$(echo "$pinned_response" | tail -n1)
-              pinned_body=$(echo "$pinned_response" | head -n -1)
-
-              if [ "$pinned_http" = "200" ]; then
-                pinned_date=$(echo "$pinned_body" | grep -m1 '"published_at"' | sed 's/.*"published_at": *"\([^"]*\)".*/\1/')
-              else
-                # Try tags endpoint for the pinned version
-                tag_response=$(curl -s -w "\n%{http_code}" \
-                  -H "Authorization: Bearer ${GH_TOKEN}" \
-                  -H "Accept: application/vnd.github+json" \
-                  "https://api.github.com/repos/${repo}/git/refs/tags/${pinned}")
-                tag_http=$(echo "$tag_response" | tail -n1)
-                tag_body=$(echo "$tag_response" | head -n -1)
-                if [ "$tag_http" = "200" ]; then
-                  sha=$(echo "$tag_body" | grep -m1 '"sha"' | sed 's/.*"sha": *"\([^"]*\)".*/\1/')
-                  commit_r=$(curl -s \
-                    -H "Authorization: Bearer ${GH_TOKEN}" \
-                    -H "Accept: application/vnd.github+json" \
-                    "https://api.github.com/repos/${repo}/commits/${sha}")
-                  pinned_date=$(echo "$commit_r" | grep -m1 '"date"' | sed 's/.*"date": *"\([^"]*\)".*/\1/')
-                else
-                  pinned_date="unknown"
-                fi
-              fi
+              pinned_date=$(get_pinned_date "$repo" "$pinned")
 
               latest_info=$(get_latest_version_and_date "$repo")
               latest=$(echo "$latest_info" | awk '{print $1}')
@@ -139,7 +153,6 @@ jobs:
               pinned_norm="${pinned#v}"
               latest_norm="${latest#v}"
 
-              # Format dates for display (YYYY-MM-DD only)
               pinned_date_display="${pinned_date%%T*}"
               latest_date_display="${latest_date%%T*}"
 
@@ -148,9 +161,8 @@ jobs:
               elif [ "$pinned_norm" = "$latest_norm" ]; then
                 status="✅ up to date"
               else
-                # Check if version appears to go backwards (e.g. pinned=0.1.1, latest=1.1)
                 if ! version_gte "$latest_norm" "$pinned_norm"; then
-                  # Latest version number is lower than pinned — check dates
+                  # Latest version number is lower than pinned — compare by date
                   if [ "$pinned_date" != "unknown" ] && [ "$latest_date" != "unknown" ]; then
                     if [[ "$pinned_date" > "$latest_date" ]]; then
                       status="⚠️ version went backwards"
