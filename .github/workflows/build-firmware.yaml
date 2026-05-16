@@ -164,8 +164,16 @@ jobs:
         if: ${{ !env.ACT }}
         run: arduino-cli core update-index
 
-      - name: Install ESP32 Core
+      - name: Cache ESP32 core
+        id: cache-esp32-core
         if: ${{ !env.ACT }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.arduino15/packages/esp32
+          key: esp32-core-${{ env.VERSION_ESP_Core }}
+
+      - name: Install ESP32 Core
+        if: ${{ !env.ACT && steps.cache-esp32-core.outputs.cache-hit != 'true' }}
         run: arduino-cli core install esp32:esp32@$VERSION_ESP_Core
 
       - name: Create symlink for boards.local.txt
@@ -176,8 +184,16 @@ jobs:
       - name: Enable Unsafe Installation Flag to Enable Git Installs
         run: arduino-cli config set library.enable_unsafe_install true
 
-      - name: Install Required Libraries at Specified Revisions
+      - name: Cache Arduino libraries
+        id: cache-arduino-libs
         if: ${{ !env.ACT }}
+        uses: actions/cache@v4
+        with:
+          path: ~/Arduino/libraries
+          key: arduino-libs-${{ hashFiles('libraries.yaml') }}
+
+      - name: Install Required Libraries at Specified Revisions
+        if: ${{ !env.ACT && steps.cache-arduino-libs.outputs.cache-hit != 'true' }}
         run: |
           yq -r '.libraries[] | .url + ".git#" + .version' ${{ github.workspace }}/libraries.yaml | \
             xargs -I{} arduino-cli lib install --git-url {}
@@ -217,6 +233,13 @@ jobs:
               --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=0 -DVERSION=\"${VERSION}\" -DCOMMIT_HASH=\"${COMMIT_HASH}\" -I${{ github.workspace }}${EFUSE_FLAG} ${PSRAM_FLAGS}" \
               --output-dir "$OUTDIR"
           fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '${{ matrix.application }}/ui/package-lock.json'
 
       - name: Build Vue UI
         if: ${{ matrix.application == 'Hardware-Registration-and-Configuration' }}
