@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: compile-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   compile:
     name: Compile Firmware (FFC0806-2305)
