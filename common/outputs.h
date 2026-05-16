@@ -184,7 +184,6 @@ namespace nsOutputs{
             boolean enabled = true; /* If the output is enabled */
             char id[OUTPUT_ID_MAX_LENGTH+1]; /* Identifier for the output */
             uint8_t startBrightness = 10; /* Brightness (1-100) applied when a TOGGLE action turns this VARIABLE output on from off. */
-            uint16_t fadeDurationMs = 0;  /* ms to ramp between levels for VARIABLE outputs; 0 = instant */
 
             #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
                 uint16_t value = 0; /* Expected PWM value for the pin */
@@ -242,8 +241,8 @@ namespace nsOutputs{
                     return set_result::EXCESSIVE;
                 }
 
-                // Initiate a fade for VARIABLE outputs when a duration is configured
-                if(type == VARIABLE && fadeDurationMs > 0 && pwmValue != this->value){
+                // Initiate a 500 ms fade for VARIABLE outputs
+                if(type == VARIABLE && pwmValue != this->value){
                     _fadeStartPwm = this->value;
                     _fadeTargetPwm = pwmValue;
                     _fadeStartMs = millis();
@@ -251,7 +250,7 @@ namespace nsOutputs{
                     return set_result::SUCCESS;
                 }
 
-                // Immediate set: BINARY type, fadeDurationMs == 0, or target already reached
+                // Immediate set: BINARY type or target already reached
                 _fadeInProgress = false;
 
                     this->controller->hardware.setPWM(pin, pwmValue);
@@ -296,12 +295,12 @@ namespace nsOutputs{
                 unsigned long elapsed = millis() - _fadeStartMs;
                 uint16_t newPwm;
 
-                if(elapsed >= (unsigned long)fadeDurationMs){
+                if(elapsed >= 500UL){
                     newPwm = _fadeTargetPwm;
                     _fadeInProgress = false;
                 }else{
                     int32_t delta = (int32_t)_fadeTargetPwm - (int32_t)_fadeStartPwm;
-                    newPwm = (uint16_t)((int32_t)_fadeStartPwm + delta * (int32_t)elapsed / (int32_t)fadeDurationMs);
+                    newPwm = (uint16_t)((int32_t)_fadeStartPwm + delta * (int32_t)elapsed / 500);
                 }
 
                 if(newPwm == this->value){
@@ -596,22 +595,6 @@ namespace nsOutputs{
                     }
                 }
             }
-
-            /**
-             * Sets the fade duration for a VARIABLE port
-             * @param port as the physical port number to set
-             * @param fadeDurationMs ms to ramp between levels; 0 = instant
-             */
-            void setPortFadeDuration(uint8_t port, uint16_t fadeDurationMs){
-
-                for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
-                    if(this->outputs[i].port == port){
-                        this->outputs[i].fadeDurationMs = fadeDurationMs;
-                        return;
-                    }
-                }
-            }
-
 
             /**
              * Sets the start brightness for a port

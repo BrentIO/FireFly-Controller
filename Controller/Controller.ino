@@ -3373,10 +3373,6 @@ bool setup_outputs(String filename){
       outputs.setPortStartBrightness(outputPortNumber, output.value()["start_brightness"].as<uint8_t>());
     }
 
-    if(!output.value()["fade_ms"].isNull()){
-      outputs.setPortFadeDuration(outputPortNumber, output.value()["fade_ms"].as<uint16_t>());
-    }
-
   }
 
   return isOK;
