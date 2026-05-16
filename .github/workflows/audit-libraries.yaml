@@ -78,11 +78,12 @@ jobs:
           }
 
           # Fetch release date for a specific pinned tag.
+          # Handles both lightweight tags (type=commit) and annotated tags (type=tag).
           get_pinned_date() {
             local repo="$1" pinned="$2"
-            local response http_code body sha
+            local response http_code body sha obj_type
 
-            # Try /releases/tags/{pinned}
+            # Try /releases/tags/{pinned} first (most libraries publish releases)
             response=$(curl -s -w "\n%{http_code}" \
               -H "Authorization: Bearer ${GH_TOKEN}" \
               -H "Accept: application/vnd.github+json" \
@@ -105,7 +106,27 @@ jobs:
 
             if [ "$http_code" = "200" ]; then
               sha=$(echo "$body" | jq -r '.object.sha // "unknown"')
-              if [ "$sha" != "unknown" ]; then
+              obj_type=$(echo "$body" | jq -r '.object.type // "unknown"')
+
+              if [ "$sha" = "unknown" ]; then
+                echo "unknown"
+                return
+              fi
+
+              if [ "$obj_type" = "tag" ]; then
+                # Annotated tag — dereference the tag object to get tagger.date
+                response=$(curl -s -w "\n%{http_code}" \
+                  -H "Authorization: Bearer ${GH_TOKEN}" \
+                  -H "Accept: application/vnd.github+json" \
+                  "https://api.github.com/repos/${repo}/git/tags/${sha}")
+                http_code=$(echo "$response" | tail -n1)
+                body=$(echo "$response" | head -n -1)
+                if [ "$http_code" = "200" ]; then
+                  echo "$body" | jq -r '.tagger.date // "unknown"'
+                  return
+                fi
+              else
+                # Lightweight tag — SHA points directly to a commit
                 response=$(curl -s -w "\n%{http_code}" \
                   -H "Authorization: Bearer ${GH_TOKEN}" \
                   -H "Accept: application/vnd.github+json" \
@@ -160,20 +181,19 @@ jobs:
                 status="⚠️ unknown"
               elif [ "$pinned_norm" = "$latest_norm" ]; then
                 status="✅ up to date"
+              elif [ "$pinned_date" != "unknown" ] && [ "$latest_date" != "unknown" ]; then
+                # Dates available — use them as the authoritative signal
+                if [[ "$pinned_date" > "$latest_date" ]]; then
+                  status="⚠️ version went backwards"
+                else
+                  status="❌ out of date"
+                  outdated_count=$((outdated_count + 1))
+                  outdated_libs="${outdated_libs}${name}|${url}|${pinned}|${latest}\n"
+                fi
               else
+                # Dates unavailable — fall back to semver comparison
                 if ! version_gte "$latest_norm" "$pinned_norm"; then
-                  # Latest version number is lower than pinned — compare by date
-                  if [ "$pinned_date" != "unknown" ] && [ "$latest_date" != "unknown" ]; then
-                    if [[ "$pinned_date" > "$latest_date" ]]; then
-                      status="⚠️ version went backwards"
-                    else
-                      status="❌ out of date"
-                      outdated_count=$((outdated_count + 1))
-                      outdated_libs="${outdated_libs}${name}|${url}|${pinned}|${latest}\n"
-                    fi
-                  else
-                    status="⚠️ version went backwards"
-                  fi
+                  status="⚠️ version went backwards"
                 else
                   status="❌ out of date"
                   outdated_count=$((outdated_count + 1))
