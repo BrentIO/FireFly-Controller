@@ -270,6 +270,8 @@ jobs:
             "$OUTDIR/config.bin"
 
       - name: Generate manifest JSON
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ROOT="${{ env.ARTIFACT_ROOT }}"
           NAME="${{ matrix.product_id }}"
@@ -281,6 +283,13 @@ jobs:
 
           # ISO 8601 timestamp (UTC)
           CREATED_ISO=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          # Fetch the GitHub Release HTML URL for tag builds only
+          RELEASE_URL=""
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            RELEASE_URL=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${VERSION}" \
+              --jq '.html_url // empty' 2>/dev/null || true)
+          fi
 
           # Start with an empty JSON array
           FILES_JSON=$(jq -nc '[]')
@@ -302,8 +311,8 @@ jobs:
             *) FIRMWARE_TYPE="$APPLICATION" ;;
           esac
 
-          # Build the final JSON object
-          jq -nc \
+          # Build the base JSON object
+          JSON=$(jq -nc \
             --arg class "controller" \
             --arg product_id "${{ matrix.product_id }}" \
             --arg product_hex "${{ matrix.product_hex }}" \
@@ -327,7 +336,14 @@ jobs:
               created: $created,
               bootloader_addr: $bootloader_addr,
               files: $files
-            }' > "$JSON_FILE"
+            }')
+
+          # Append release_url for tag builds (omitted entirely for DEBUG)
+          if [ -n "$RELEASE_URL" ]; then
+            JSON=$(echo "$JSON" | jq --arg url "$RELEASE_URL" '. + {release_url: $url}')
+          fi
+
+          echo "$JSON" > "$JSON_FILE"
 
       - uses: actions/upload-artifact@v7
         name: Upload Artifacts
