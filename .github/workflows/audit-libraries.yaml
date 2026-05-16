@@ -194,14 +194,12 @@ jobs:
                 --json number --jq '.[0].number // empty')
 
               if [ -z "$existing" ]; then
+                body=$(printf 'Evaluate upgrading the pinned [%s](%s) Library for any breaking changes.\n\nPinned version %s\nCurrent Version %s' "$name" "$url" "$pinned" "$latest")
                 gh issue create \
                   --repo "$GITHUB_REPOSITORY" \
                   --title "Evaluate ${name} Library Upgrade" \
                   --label enhancement \
-                  --body "Evaluate upgrading the pinned [${name}](${url}) Library for any breaking changes.
-
-Pinned version ${pinned}
-Current Version ${latest}"
+                  --body "$body"
                 echo "Created issue for ${name} upgrade"
               else
                 echo "Issue #${existing} already exists for ${name} upgrade, skipping"
