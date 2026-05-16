@@ -150,6 +150,68 @@ jobs:
           }
 
           {
+            echo "## Arduino Core Version Audit"
+            echo ""
+            echo "| Core | Pinned Version | Pinned Date | Latest Version | Latest Date | Status |"
+            echo "| ---- | -------------- | ----------- | -------------- | ----------- | ------ |"
+
+            outdated_core_count=0
+            outdated_cores=""
+            core_count=$(yq -r '.cores | length' libraries.yaml)
+
+            for i in $(seq 0 $((core_count - 1))); do
+              name=$(yq -r ".cores[$i].name" libraries.yaml)
+              pinned=$(yq -r ".cores[$i].version" libraries.yaml)
+              url=$(yq -r ".cores[$i].url" libraries.yaml)
+              repo="${url#https://github.com/}"
+
+              pinned_date=$(get_pinned_date "$repo" "$pinned")
+
+              latest_info=$(get_latest_version_and_date "$repo")
+              latest=$(echo "$latest_info" | awk '{print $1}')
+              latest_date=$(echo "$latest_info" | awk '{print $2}')
+
+              pinned_norm="${pinned#v}"
+              latest_norm="${latest#v}"
+
+              pinned_date_display="${pinned_date%%T*}"
+              latest_date_display="${latest_date%%T*}"
+
+              if [ "$latest" = "unknown" ]; then
+                status="⚠️ unknown"
+              elif [ "$pinned_norm" = "$latest_norm" ]; then
+                status="✅ up to date"
+              elif [ "$pinned_date" != "unknown" ] && [ "$latest_date" != "unknown" ]; then
+                # Dates available — use them as the authoritative signal
+                if [[ "$pinned_date" > "$latest_date" ]]; then
+                  status="⚠️ version went backwards"
+                else
+                  status="❌ out of date"
+                  outdated_core_count=$((outdated_core_count + 1))
+                  outdated_cores="${outdated_cores}${name}|${url}|${pinned}|${latest}\n"
+                fi
+              else
+                # Dates unavailable — fall back to semver comparison
+                if ! version_gte "$latest_norm" "$pinned_norm"; then
+                  status="⚠️ version went backwards"
+                else
+                  status="❌ out of date"
+                  outdated_core_count=$((outdated_core_count + 1))
+                  outdated_cores="${outdated_cores}${name}|${url}|${pinned}|${latest}\n"
+                fi
+              fi
+
+              echo "| [\`${name}\`](${url}) | \`${pinned}\` | ${pinned_date_display} | \`${latest}\` | ${latest_date_display} | ${status} |"
+            done
+
+            echo ""
+            if [ "$outdated_core_count" -eq 0 ]; then
+              echo "All cores are up to date."
+            else
+              echo "${outdated_core_count} core(s) may need updating."
+            fi
+
+            echo ""
             echo "## Arduino Library Version Audit"
             echo ""
             echo "| Library | Pinned Version | Pinned Date | Latest Version | Latest Date | Status |"
@@ -213,7 +275,33 @@ jobs:
 
           } >> "$GITHUB_STEP_SUMMARY"
 
-          # Create GitHub issues for outdated libraries (issue #136)
+          # Create GitHub issues for outdated cores
+          if [ -n "$outdated_cores" ]; then
+            printf "%b" "$outdated_cores" | while IFS='|' read -r name url pinned latest; do
+              [ -z "$name" ] && continue
+
+              existing=$(gh issue list \
+                --repo "$GITHUB_REPOSITORY" \
+                --state open \
+                --label enhancement \
+                --search "Evaluate ${name} Core Upgrade in:title" \
+                --json number --jq '.[0].number // empty')
+
+              if [ -z "$existing" ]; then
+                body=$(printf 'Evaluate upgrading the pinned [%s](%s) Core for any breaking changes.\n\nPinned version %s\nCurrent Version %s' "$name" "$url" "$pinned" "$latest")
+                gh issue create \
+                  --repo "$GITHUB_REPOSITORY" \
+                  --title "Evaluate ${name} Core Upgrade" \
+                  --label enhancement \
+                  --body "$body"
+                echo "Created issue for ${name} core upgrade"
+              else
+                echo "Issue #${existing} already exists for ${name} core upgrade, skipping"
+              fi
+            done
+          fi
+
+          # Create GitHub issues for outdated libraries
           if [ -n "$outdated_libs" ]; then
             printf "%b" "$outdated_libs" | while IFS='|' read -r name url pinned latest; do
               [ -z "$name" ] && continue
