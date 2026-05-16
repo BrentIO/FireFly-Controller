@@ -685,6 +685,7 @@ void loop() {
   authToken.loop();
   frontPanel.loop();
   inputs.loop();
+  outputs.loop();
   temperatureSensors.loop();
   provisioningMode.loop();
 
@@ -3370,6 +3371,10 @@ bool setup_outputs(String filename){
 
     if(!output.value()["start_brightness"].isNull()){
       outputs.setPortStartBrightness(outputPortNumber, output.value()["start_brightness"].as<uint8_t>());
+    }
+
+    if(!output.value()["fade_ms"].isNull()){
+      outputs.setPortFadeDuration(outputPortNumber, output.value()["fade_ms"].as<uint16_t>());
     }
 
   }
