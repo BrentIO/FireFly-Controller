@@ -685,6 +685,7 @@ void loop() {
   authToken.loop();
   frontPanel.loop();
   inputs.loop();
+  outputs.loop();
   temperatureSensors.loop();
   provisioningMode.loop();
 

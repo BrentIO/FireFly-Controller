@@ -187,6 +187,10 @@ namespace nsOutputs{
 
             #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
                 uint16_t value = 0; /* Expected PWM value for the pin */
+                uint16_t _fadeTargetPwm = 0;
+                uint16_t _fadeStartPwm = 0;
+                unsigned long _fadeStartMs = 0;
+                bool _fadeInProgress = false;
             #endif
 
 
@@ -231,11 +235,24 @@ namespace nsOutputs{
                         break;
                 }
 
-                if(pwmValue == this->value){
+                #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
+
+                if(pwmValue == this->value && !_fadeInProgress){
                     return set_result::EXCESSIVE;
                 }
 
-                #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
+                // Initiate a 500 ms fade for VARIABLE outputs
+                if(type == VARIABLE && pwmValue != this->value){
+                    _fadeStartPwm = this->value;
+                    _fadeTargetPwm = pwmValue;
+                    _fadeStartMs = millis();
+                    _fadeInProgress = true;
+                    return set_result::SUCCESS;
+                }
+
+                // Immediate set: BINARY type or target already reached
+                _fadeInProgress = false;
+
                     this->controller->hardware.setPWM(pin, pwmValue);
 
                     if(this->controller->hardware.lastError() != 0){
@@ -248,7 +265,7 @@ namespace nsOutputs{
                     if(this->controller->outputValueChanged){
                         this->controller->outputValueChanged(this->id, int(map(this->value, 0, OUTPUT_CONTROLLER_MAXIMUM_PWM, 0, 100)));
                     }
-                    
+
                 #endif
 
                 return set_result::SUCCESS;
@@ -262,6 +279,48 @@ namespace nsOutputs{
 
                 #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
                     return int(map(this->value, 0, OUTPUT_CONTROLLER_MAXIMUM_PWM,  0, 100));
+                #endif
+            }
+
+
+            /** Advances an in-progress fade by one tick. Called from managerOutputs::loop(). */
+            void tick(){
+
+                #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
+
+                if(!_fadeInProgress){
+                    return;
+                }
+
+                unsigned long elapsed = millis() - _fadeStartMs;
+                uint16_t newPwm;
+
+                if(elapsed >= 500UL){
+                    newPwm = _fadeTargetPwm;
+                    _fadeInProgress = false;
+                }else{
+                    int32_t delta = (int32_t)_fadeTargetPwm - (int32_t)_fadeStartPwm;
+                    newPwm = (uint16_t)((int32_t)_fadeStartPwm + delta * (int32_t)elapsed / 500);
+                }
+
+                if(newPwm == this->value){
+                    return;
+                }
+
+                this->controller->hardware.setPWM(pin, newPwm);
+
+                if(this->controller->hardware.lastError() != 0){
+                    this->controller->fail(this->controller->hardware.lastError());
+                    _fadeInProgress = false;
+                    return;
+                }
+
+                this->value = newPwm;
+
+                if(!_fadeInProgress && this->controller->outputValueChanged){
+                    this->controller->outputValueChanged(this->id, int(map(this->value, 0, OUTPUT_CONTROLLER_MAXIMUM_PWM, 0, 100)));
+                }
+
                 #endif
             }
     };
@@ -387,6 +446,15 @@ namespace nsOutputs{
                 returnValue.count = (sizeof(this->outputControllers) / sizeof(outputController));
 
                 return returnValue;
+            }
+
+
+            /** Advances all in-progress output fades. Call from the main loop(). */
+            void loop(){
+
+                for(int i = 0; i < OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT; i++){
+                    outputs[i].tick();
+                }
             }
 
 
