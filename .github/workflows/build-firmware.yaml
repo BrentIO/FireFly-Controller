@@ -179,7 +179,7 @@ jobs:
       - name: Create symlink for boards.local.txt
         run: |
           ARDUINO_DIR=$(arduino-cli config get directories.data)
-          ln -s ${{ github.workspace }}/boards.local.txt ${ARDUINO_DIR}/packages/esp32/hardware/esp32/$VERSION_ESP_Core/boards.local.txt
+          ln -sf ${{ github.workspace }}/boards.local.txt ${ARDUINO_DIR}/packages/esp32/hardware/esp32/$VERSION_ESP_Core/boards.local.txt
 
       - name: Enable Unsafe Installation Flag to Enable Git Installs
         run: arduino-cli config set library.enable_unsafe_install true
