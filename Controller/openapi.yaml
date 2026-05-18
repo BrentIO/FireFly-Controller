@@ -1556,10 +1556,18 @@ components:
     client:
       type: object
       properties:
+        id:
+          type: string
+          description: Short port identifier used as basis for MQTT topic paths
+          maxLength: 8 #Maximum length relates to hardware.h -> PORT_ID_MAX_LENGTH
+          minLength: 1
+          pattern: ^[A-Za-z0-9~!@#$%^&*()_\+-=|]{1,8}$
+          examples:
+            - S22
         name:
           type: string
           description: Human-friendly name of the client
-          examples: 
+          examples:
             - First floor
           maxLength: 20 #Maximum length relates to hardware.h -> CLIENT_NAME_MAX_LENGTH
         mac:
@@ -1579,6 +1587,7 @@ components:
         wifi:
           $ref: '#/components/schemas/wifi'
       required:
+        - id
         - name
 
     hid:

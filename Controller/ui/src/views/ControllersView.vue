@@ -4,9 +4,8 @@
       <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl print:!text-black">Controllers</h1>
       <div class="flex gap-2 print:hidden flex-shrink-0">
         <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors" @click="printLandscape">Print</button>
-        <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors" @click="openAdd">
-          Add Controller
-        </button>
+        <button class="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium transition-colors" :class="hasConnectedControllers ? 'hover:bg-amber-700' : 'opacity-40 cursor-not-allowed'" :disabled="!hasConnectedControllers" @click="deployAll">Deploy All</button>
+        <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors" @click="openAdd">Add Controller</button>
       </div>
     </div>
 
@@ -215,14 +214,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { importDB } from 'dexie-export-import'
 import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { useControllers } from '../composables/useControllers'
 import { useAreas } from '../composables/useAreas'
 import { useControllerSession } from '../composables/useControllerSession'
-import { buildControllerPayload } from '../composables/usePayloads'
+import { buildControllerPayload, buildClientPayload, getExtendedClientIds } from '../composables/usePayloads'
 import { useToast } from '../composables/useToast'
 import { randomUUID } from '../composables/useValidators'
 import { isCloudMode } from '../composables/useCloudMode'
@@ -359,23 +358,52 @@ function logout(id) {
 
 async function deploy(ctrl) {
   const sessionCtrl = getSessionCtrl(ctrl.id)
+  const { controllerFetch } = await import('../composables/useApi')
   try {
     const payload = await buildControllerPayload(ctrl.id)
-    const { controllerFetch } = await import('../composables/useApi')
     const res = await controllerFetch(sessionCtrl.session.ip, `/controllers/${ctrl.uuid}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     }, sessionCtrl.session.visualToken)
-    if (res.ok || res.status === 204) {
-      addToast('success', `Deployed to ${ctrl.name}.`)
-    } else {
+    if (!res.ok && res.status !== 204) {
       addToast('error', `Deploy failed: HTTP ${res.status}`)
+      return
     }
+
+    const secondaryIds = new Set(await getExtendedClientIds())
+    const allClients = await db.clients.toArray()
+    for (const client of allClients.filter(c => !secondaryIds.has(c.id))) {
+      const clientPayload = await buildClientPayload(client.id)
+      const clientRes = await controllerFetch(sessionCtrl.session.ip, `/clients/${client.uuid}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(clientPayload)
+      }, sessionCtrl.session.visualToken)
+      if (!clientRes.ok && clientRes.status !== 204) {
+        addToast('error', `Deploy: failed to push client '${client.name}' (HTTP ${clientRes.status})`)
+        return
+      }
+    }
+
+    addToast('success', `Deployed to ${ctrl.name}.`)
   } catch (e) {
     addToast('error', `Deploy error: ${e.message}`)
   }
 }
+
+async function deployAll() {
+  const connected = items.value.filter(c => sessions[c.id]?.isAuthenticated)
+  if (connected.length === 0) {
+    addToast('warning', 'No controllers are connected.')
+    return
+  }
+  for (const ctrl of connected) {
+    await deploy(ctrl)
+  }
+}
+
+const hasConnectedControllers = computed(() => items.value.some(c => sessions[c.id]?.isAuthenticated))
 
 async function openEventLog(id) {
   const sessionCtrl = getSessionCtrl(id)

@@ -10,7 +10,7 @@ const MAX_URL = 128
 const MAX_CERT = 31
 const MAX_HID_PER_INPUT_PORT = 4
 
-async function getExtendedClientIds() {
+export async function getExtendedClientIds() {
   const all = await db.clients.toArray()
   return all.filter(c => c.extends !== undefined).map(c => c.extends)
 }
