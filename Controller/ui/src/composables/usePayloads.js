@@ -179,6 +179,10 @@ export async function buildClientPayload(clientId) {
         if (tag) hids[i + 1].tags.push(tag.name.trim().substring(0, MAX_TAG))
       }
     }
+
+    if (hid.defaultBrightness !== undefined) {
+      hids[i + 1].defaultBrightness = hid.defaultBrightness
+    }
   }
 
   const wifi = await db.settings.where({ setting: 'wifi' }).first()
@@ -194,7 +198,9 @@ export async function buildClientPayload(clientId) {
     mac: client.mac,
     hids,
     wifi: { ssid: wifi.value.ssid, password: wifi.value.password },
-    mqtt: { host: mqtt.value.host, username: mqtt.value.username, password: mqtt.value.password }
+    mqtt: Object.fromEntries(
+      ['host', 'port', 'username', 'password'].filter(k => mqtt.value[k] !== undefined).map(k => [k, mqtt.value[k]])
+    )
   }
 
   const ota = await getOTAConfig('client')
