@@ -1556,10 +1556,22 @@ components:
     client:
       type: object
       properties:
+        uuid:
+          type: string
+          format: uuid
+          description: UUIDv4 identifier assigned to this client record by the Configurator
+          examples:
+            - 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        id:
+          type: string
+          description: Short port identifier used as the basis for MQTT topic paths (e.g. FireFly/inputs/{id}/channels/{n}/state)
+          examples:
+            - S31
+          maxLength: 8 #Maximum length relates to hardware.h -> PORT_ID_MAX_LENGTH
         name:
           type: string
           description: Human-friendly name of the client
-          examples: 
+          examples:
             - First floor
           maxLength: 20 #Maximum length relates to hardware.h -> CLIENT_NAME_MAX_LENGTH
         mac:
@@ -1579,6 +1591,8 @@ components:
         wifi:
           $ref: '#/components/schemas/wifi'
       required:
+        - uuid
+        - id
         - name
 
     hid:

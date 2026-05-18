@@ -10,7 +10,7 @@ const MAX_URL = 128
 const MAX_CERT = 31
 const MAX_HID_PER_INPUT_PORT = 4
 
-async function getExtendedClientIds() {
+export async function getExtendedClientIds() {
   const all = await db.clients.toArray()
   return all.filter(c => c.extends !== undefined).map(c => c.extends)
 }
@@ -156,8 +156,10 @@ export async function buildClientPayload(clientId) {
   if (!client) throw new Error('Client not found')
 
   if (client.extends !== undefined) {
-    const parent = await db.clients.get(client.extends)
-    client = { ...client, hids: [...client.hids, ...(parent?.hids ?? [])] }
+    // This client extends a primary — use the primary's identity and prepend its HIDs
+    const primary = await db.clients.get(client.extends)
+    if (!primary) throw new Error('Primary client not found')
+    client = { ...primary, hids: [...primary.hids, ...client.hids] }
   }
 
   const area = await db.areas.get(client.area)
@@ -188,6 +190,7 @@ export async function buildClientPayload(clientId) {
   if (!mqtt) throw new Error('MQTT has not been configured.')
 
   const payload = {
+    uuid: client.uuid,
     id: client.name.trim().substring(0, MAX_ID),
     name: client.description?.trim().substring(0, MAX_NAME) ?? '',
     area: area.name.trim().substring(0, MAX_AREA),
