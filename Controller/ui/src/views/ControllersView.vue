@@ -73,6 +73,7 @@
               <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="openErrorLog(ctrl.id)">Errors</button>
               <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmPullBackup(ctrl)">Pull Backup</button>
               <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="pushCertificates(ctrl)">Push Certs</button>
+              <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="pushClients(ctrl)">Push Clients</button>
               <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="toggleProvisioning(ctrl.id)">{{ sessions[ctrl.id]?.provisioningModeEnabled ? 'Disable Provisioning' : 'Enable Provisioning' }}</button>
               <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaApp(ctrl)">Force App Update</button>
               <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaSpiffs(ctrl)">Force FS Update</button>
@@ -222,7 +223,7 @@ import ConfirmModal from '../components/ConfirmModal.vue'
 import { useControllers } from '../composables/useControllers'
 import { useAreas } from '../composables/useAreas'
 import { useControllerSession } from '../composables/useControllerSession'
-import { buildControllerPayload } from '../composables/usePayloads'
+import { buildControllerPayload, buildClientPayload, getExtendedClientIds } from '../composables/usePayloads'
 import { useToast } from '../composables/useToast'
 import { randomUUID } from '../composables/useValidators'
 import { isCloudMode } from '../composables/useCloudMode'
@@ -530,6 +531,46 @@ async function pushCertificates(ctrl) {
     addToast('success', `Certificates pushed to ${ctrl.name}: ${pushed} uploaded, ${skipped} already present.`)
   } catch (e) {
     addToast('error', `Push certs error: ${e.message}`)
+  }
+}
+
+// --- Push Clients ---
+
+async function pushClients(ctrl) {
+  const sessionCtrl = getSessionCtrl(ctrl.id)
+  const { session } = sessionCtrl
+  const { controllerFetch } = await import('../composables/useApi')
+
+  try {
+    const secondaryIds = new Set(await getExtendedClientIds())
+    const allClients = await db.clients.toArray()
+    const toPush = allClients.filter(c => !secondaryIds.has(c.id))
+
+    if (toPush.length === 0) {
+      addToast('warning', 'No clients to push.')
+      return
+    }
+
+    let pushed = 0
+    for (const client of toPush) {
+      const payload = await buildClientPayload(client.id)
+      const res = await controllerFetch(session.ip, `/clients/${client.uuid}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }, session.visualToken)
+
+      if (res.ok || res.status === 204) {
+        pushed++
+      } else {
+        addToast('error', `Push clients: failed for '${client.name}' (HTTP ${res.status})`)
+        return
+      }
+    }
+
+    addToast('success', `Pushed ${pushed} client${pushed !== 1 ? 's' : ''} to ${ctrl.name}.`)
+  } catch (e) {
+    addToast('error', `Push clients error: ${e.message}`)
   }
 }
 
