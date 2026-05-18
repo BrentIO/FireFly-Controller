@@ -38,7 +38,17 @@
           <tr v-for="cert in items" :key="cert.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
             <td class="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{{ cert.commonName }}</td>
             <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ cert.organization }}</td>
-            <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ cert.expiration }}</td>
+            <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
+              <span v-if="isExpired(cert)" class="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
+                <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd"/></svg>
+                {{ cert.expiration }}
+              </span>
+              <span v-else-if="isExpiringSoon(cert)" class="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+                {{ cert.expiration }}
+              </span>
+              <span v-else>{{ cert.expiration }}</span>
+            </td>
             <td class="px-4 py-3 text-right print:hidden">
               <div class="flex justify-end gap-2">
                 <button class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="doExport(cert)">Export</button>
@@ -65,7 +75,7 @@
 import { ref, onMounted } from 'vue'
 import AppLayout from '../../components/AppLayout.vue'
 import ConfirmModal from '../../components/ConfirmModal.vue'
-import { useCertificates } from '../../composables/useCertificates'
+import { useCertificates, parseCert } from '../../composables/useCertificates'
 import { useToast } from '../../composables/useToast'
 
 const { items, load, store, remove, isInUse } = useCertificates()
@@ -94,22 +104,26 @@ async function processFile(file) {
     addToast('error', 'File does not appear to be a valid PEM certificate.')
     return
   }
+  const parsed = parseCert(text)
+  if (parsed.expirationDate && new Date(parsed.expirationDate) < new Date()) {
+    addToast('error', `Certificate "${parsed.commonName || file.name}" has already expired on ${parsed.expiration}.`)
+  }
   try {
-    const parsed = parseCertBasic(text)
     await store(file.name, text, parsed)
   } catch (e) {
     addToast('error', `Failed to store certificate: ${e.message}`)
   }
 }
 
-function parseCertBasic(pem) {
-  const cnMatch = pem.match(/CN=([^,\n/]+)/)
-  const orgMatch = pem.match(/O=([^,\n/]+)/)
-  return {
-    commonName: cnMatch?.[1]?.trim() ?? '',
-    organization: orgMatch?.[1]?.trim() ?? '',
-    expiration: ''
-  }
+function isExpired(cert) {
+  return cert.expirationDate && new Date(cert.expirationDate) < new Date()
+}
+
+function isExpiringSoon(cert) {
+  if (!cert.expirationDate) return false
+  const exp = new Date(cert.expirationDate)
+  const now = new Date()
+  return exp >= now && exp < new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000)
 }
 
 function doExport(cert) {
