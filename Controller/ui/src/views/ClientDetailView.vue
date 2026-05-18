@@ -219,6 +219,13 @@
                 <label for="hidEnabled" class="text-sm text-gray-700 dark:text-gray-300">Enabled</label>
               </div>
 
+              <!-- Default Brightness -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Default Brightness <span class="font-normal text-gray-400">(optional, 1–100%)</span></label>
+                <input v-model="hidForm.defaultBrightness" type="number" min="1" max="100" placeholder="100"
+                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+
               <!-- Tags -->
               <div v-if="tags.length">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
@@ -329,7 +336,7 @@ const editIdx = ref(null)
 const removeHidIdx = ref(null)
 
 function emptyForm() {
-  return { type: 'button', color: '', switch_type: 'NORMALLY_OPEN', enabled: true, tags: [], actions: [] }
+  return { type: 'button', color: '', switch_type: 'NORMALLY_OPEN', enabled: true, defaultBrightness: '', tags: [], actions: [] }
 }
 
 const hidForm = ref(emptyForm())
@@ -469,6 +476,7 @@ function openEdit(idx) {
     color: hid.color ?? '',
     switch_type: hid.switch_type ?? 'NORMALLY_OPEN',
     enabled: hid.enabled !== false,
+    defaultBrightness: hid.defaultBrightness ?? '',
     tags: Array.isArray(hid.tags) ? [...hid.tags] : [],
     actions: JSON.parse(JSON.stringify(hid.actions ?? []))
   }
@@ -511,6 +519,10 @@ async function submitHid() {
     }
     if (hidForm.value.type === 'button' && hidForm.value.color) {
       hid.color = Number(hidForm.value.color)
+    }
+    const brightness = parseInt(hidForm.value.defaultBrightness, 10)
+    if (!isNaN(brightness) && brightness >= 1 && brightness <= 100) {
+      hid.defaultBrightness = brightness
     }
     const newMergedHids = JSON.parse(JSON.stringify(mergedHids.value))
     if (isAdd) {
