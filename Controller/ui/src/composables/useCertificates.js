@@ -16,6 +16,10 @@ export function parseCert(pem) {
       for (let k = b & 0x7f; k > 0; k--) n = (n << 8) | der[i++]
       return n
     }
+    // readLen() advances i past the length bytes and returns the content length.
+    // skipLen() then also advances i past the content — two separate statements
+    // are required because `i += readLen()` evaluates the LHS before the RHS side-effect.
+    const skipLen = () => { const l = readLen(); i += l }
     const expectTag = t => { if (der[i++] !== t) throw new Error('unexpected tag') }
     const readOIDBytes = () => { expectTag(0x06); const len = readLen(); return der.slice(i, i += len) }
     const readString = () => { i++; const len = readLen(); return new TextDecoder().decode(der.slice(i, i += len)) }
@@ -31,14 +35,14 @@ export function parseCert(pem) {
     }
     const parseName = () => {
       expectTag(0x30)
-      const nameEnd = i + readLen()
+      const nameLen = readLen(); const nameEnd = i + nameLen
       const result = { cn: '', org: '' }
       while (i < nameEnd) {
         expectTag(0x31)
-        const setEnd = i + readLen()
+        const setLen = readLen(); const setEnd = i + setLen
         while (i < setEnd) {
           expectTag(0x30)
-          const avaEnd = i + readLen()
+          const avaLen = readLen(); const avaEnd = i + avaLen
           const oid = readOIDBytes()
           const val = readString()
           if (oid.length === 3 && oid[0] === 0x55 && oid[1] === 0x04) {
@@ -55,9 +59,9 @@ export function parseCert(pem) {
 
     expectTag(0x30); readLen()
     expectTag(0x30); readLen()
-    if (der[i] === 0xa0) { i++; i += readLen() }
-    expectTag(0x02); i += readLen()
-    expectTag(0x30); i += readLen()
+    if (der[i] === 0xa0) { i++; skipLen() }
+    expectTag(0x02); skipLen()
+    expectTag(0x30); skipLen()
     parseName()
     expectTag(0x30); readLen()
     readTime()
@@ -79,7 +83,7 @@ export function useCertificates() {
   async function load() {
     const all = await db.certificates.orderBy('commonName').toArray()
 
-    const unparsed = all.filter(c => c.certificate && c.expirationDate === undefined)
+    const unparsed = all.filter(c => c.certificate && c.expirationDate == null)
     if (unparsed.length > 0) {
       await Promise.all(unparsed.map(c => {
         const parsed = parseCert(c.certificate)
