@@ -5135,10 +5135,6 @@ void mqtt_publishUpdateAvailable(JsonVariant &updateDoc){
     mqttDoc["title"] = updateDoc["title"].as<const char*>();
   }
 
-  if(!updateDoc["release_summary"].isNull()){
-    mqttDoc["release_summary"] = updateDoc["release_summary"].as<const char*>();
-  }
-
   if(!updateDoc["release_url"].isNull()){
     mqttDoc["release_url"] = updateDoc["release_url"].as<const char*>();
   }

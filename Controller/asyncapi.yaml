@@ -1099,7 +1099,6 @@ components:
             installed_version: "2025.04.01"
             latest_version: "2025.05.01"
             title: "FireFly Controller 2025.05.01"
-            release_summary: "Bug fixes and performance improvements"
             release_url: "https://docs.fireflylx.com/releases/2025.05.01"
             in_progress: false
             update_percentage: null
@@ -1324,9 +1323,6 @@ components:
           description: Human-readable release title (optional)
           examples:
             - "FireFly Controller 2025.05.01"
-        release_summary:
-          type: string
-          description: Brief summary of changes in the new release (optional)
         release_url:
           type: string
           description: URL to the full release notes (optional)
