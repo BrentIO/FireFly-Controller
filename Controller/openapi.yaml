@@ -237,6 +237,14 @@ paths:
       description: Creates a new certificate with the content in the payload
       security:
         - visualToken: []
+      parameters:
+        - in: header
+          name: X-Cert-Type
+          required: true
+          schema:
+            type: string
+            enum: [controller, client, both]
+          description: Intended use for the certificate. "controller" trusts the cert for HTTPS OTA validation; "client" designates it as the client CA distributed to clients via provisioning; "both" sets both flags.
       requestBody:
         required: true
         content:
@@ -257,7 +265,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/bad_request_message'
               example:
-                message: Filename must be 31 characters or less
+                message: X-Cert-Type header required; valid values: controller, client, both
         '401':
           description: Unauthorized
         '403':
@@ -268,6 +276,14 @@ paths:
                 $ref: '#/components/schemas/bad_request_message'
               example:
                 message: Certificate already exists
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+              example:
+                message: A client certificate is already designated
         '500':
           description: Internal Server Error
           content:
@@ -610,6 +626,70 @@ paths:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: File system not mounted
+
+
+  /api/provisioning/certs:
+    get:
+      tags:
+        - Provisioning
+      summary: Retrieve the client CA certificate for mutual TLS
+      description: Returns the designated client CA certificate (PEM text and SHA-256 fingerprint) to a registered client device connecting via the provisioning SoftAP. No nonce is required; the certificate is not sensitive. Returns 404 if no client CA certificate has been designated.
+      security:
+        - macAddress: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fingerprint:
+                    type: string
+                    description: SHA-256 fingerprint of the certificate formatted as colon-separated uppercase hex
+                    examples:
+                      - "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"
+                  pem:
+                    type: string
+                    description: PEM-encoded certificate text
+        '400':
+          description: Bad Request — mac-address header missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+              example:
+                message: mac-address header required
+        '401':
+          description: Unauthorized — MAC address not registered as a client
+        '403':
+          description: Forbidden — request did not arrive via the provisioning SoftAP network
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Only accessible via provisioning network
+        '404':
+          description: Not Found — no client CA certificate has been designated
+        '405':
+          description: Method Not Allowed
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Provisioning mode inactive
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Unable to compute fingerprint
 
 
 ##########################################################
@@ -1276,13 +1356,19 @@ components:
         file:
           type: string
           description: Certificate's filename
-          examples: 
+          examples:
              - mycert.pem
         size:
           type: integer
           description: Certificate's size in bytes
-          examples: 
+          examples:
             - 1410
+        controller:
+          type: boolean
+          description: True if this certificate is trusted for HTTPS OTA validation (replaces the Mozilla bundle for controller connections)
+        client:
+          type: boolean
+          description: True if this certificate is the designated client CA distributed to clients during provisioning
     
     certificateList:
       type: array

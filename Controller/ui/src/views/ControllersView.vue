@@ -502,8 +502,9 @@ async function pushCertificates(ctrl) {
 
   try {
     const allCerts = await db.certificates.toArray()
-    if (allCerts.length === 0) {
-      addToast('warning', 'No certificates to push.')
+    const certsToSync = allCerts.filter(c => c.isController || c.isClient)
+    if (certsToSync.length === 0) {
+      addToast('warning', 'No certificates with a type assigned to push.')
       return
     }
 
@@ -522,16 +523,21 @@ async function pushCertificates(ctrl) {
     }
 
     const existing = await listRes.json()
-    const existingNames = new Set(Array.isArray(existing) ? existing.map(c => c.filename ?? c.name ?? c) : [])
+    const existingNames = new Set(Array.isArray(existing) ? existing.map(c => c.file ?? c.filename ?? c.name ?? c) : [])
 
     let pushed = 0
     let skipped = 0
 
-    for (const cert of allCerts) {
+    for (const cert of certsToSync) {
       if (existingNames.has(cert.fileName)) {
         skipped++
         continue
       }
+
+      const certType = cert.isController && cert.isClient ? 'both'
+        : cert.isController ? 'controller'
+        : 'client'
+
       const formData = new FormData()
       const blob = new Blob([cert.certificate], { type: 'application/x-x509-ca-cert' })
       formData.append('file', blob, cert.fileName)
@@ -540,7 +546,7 @@ async function pushCertificates(ctrl) {
       timerId = setTimeout(() => abortCtrl.abort(), TIMEOUT)
       const uploadRes = await fetch(`http://${session.ip}/certs`, {
         method: 'POST',
-        headers: { 'visual-token': session.visualToken },
+        headers: { 'visual-token': session.visualToken, 'X-Cert-Type': certType },
         body: formData,
         signal: abortCtrl.signal
       })
