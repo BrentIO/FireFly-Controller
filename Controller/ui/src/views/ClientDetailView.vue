@@ -228,10 +228,16 @@
 
               <!-- Tags -->
               <div v-if="tags.length">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Tags
+                  <span v-if="hidForm.tags.length >= 5" class="ml-1 text-xs font-normal text-amber-600 dark:text-amber-400">(5 maximum)</span>
+                </label>
                 <div class="flex flex-wrap gap-x-4 gap-y-2">
-                  <label v-for="tag in tags" :key="tag.id" class="flex items-center gap-1.5 cursor-pointer">
-                    <input type="checkbox" :value="tag.id" v-model="hidForm.tags" class="rounded text-blue-600 focus:ring-blue-500" />
+                  <label v-for="tag in tags" :key="tag.id" class="flex items-center gap-1.5"
+                    :class="hidForm.tags.length >= 5 && !hidForm.tags.includes(tag.id) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'">
+                    <input type="checkbox" :value="tag.id" v-model="hidForm.tags"
+                      :disabled="hidForm.tags.length >= 5 && !hidForm.tags.includes(tag.id)"
+                      class="rounded text-blue-600 focus:ring-blue-500" />
                     <span class="text-sm text-gray-700 dark:text-gray-300">{{ tag.name }}</span>
                   </label>
                 </div>
