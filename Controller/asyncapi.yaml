@@ -4,9 +4,6 @@ info:
   title: FireFly Controller
   description: MQTT messages published and subscribed to by the FireFly Controller firmware
   version: "9999.99.99"
-  externalDocs:
-    description: View raw AsyncAPI YAML
-    url: https://raw.githubusercontent.com/BrentIO/FireFly-Controller/refs/heads/main/Controller/asyncapi.yaml
 
 servers:
   mqtt:
