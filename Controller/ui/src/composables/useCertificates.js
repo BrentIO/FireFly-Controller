@@ -100,7 +100,7 @@ export function useCertificates() {
     }
   }
 
-  async function store(fileName, certificate, parsed) {
+  async function store(fileName, certificate, parsed, isController = false, isClient = false) {
     const existing = await db.certificates.where({ certificate }).count()
     if (existing > 0) return
 
@@ -111,7 +111,9 @@ export function useCertificates() {
       organization: parsed.organization ?? '',
       expiration: parsed.expiration ?? '',
       expirationDate: parsed.expirationDate ?? null,
-      organizationalUnitName: parsed.organizationalUnitName ?? ''
+      organizationalUnitName: parsed.organizationalUnitName ?? '',
+      isController,
+      isClient
     })
     await load()
   }

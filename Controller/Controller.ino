@@ -94,6 +94,8 @@ uint64_t ntpSleepUntil = 0;
 
 void updateNTPTime(bool force = false);
 void refreshCertBundle();
+void mqtt_publishClientCertState();
+void mqtt_publishControllerCertState();
 void cloudBackup_uploadToCloud();
 void http_handleCloudBackup(AsyncWebServerRequest *request);
 void http_handleCloudBackup_POST(AsyncWebServerRequest *request);
@@ -584,6 +586,7 @@ void setup() {
     httpServer.on("/api/provisioning", http_handleProvisioning);
     httpServer.on("/api/provisioning/nonce", http_handleProvisioningNonce);
     httpServer.on("/api/provisioning/client", http_handleProvisioningClient);
+    httpServer.on("/api/provisioning/certs", http_handleProvisioningCerts);
     httpServer.on("/api/provisioning/controller", http_handleProvisioningController);
     httpServer.on("^/certs/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
@@ -2677,6 +2680,164 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
 /**
  * Handles /certs requests
 */
+/**
+ * Reads /certs/.cert_types, returning an empty object document if the file
+ * does not exist or cannot be parsed.
+ */
+JsonDocument readCertTypes(){
+  JsonDocument doc;
+  String path = CONFIGFS_PATH_CERTS + (String)"/.cert_types";
+  if(!configFS.exists(path)) return doc;
+  File f = configFS.open(path, "r");
+  if(!f) return doc;
+  deserializeJson(doc, f);
+  f.close();
+  return doc;
+}
+
+
+/**
+ * Serialises doc to /certs/.cert_types.
+ */
+void writeCertTypes(JsonDocument& doc){
+  String path = CONFIGFS_PATH_CERTS + (String)"/.cert_types";
+  File f = configFS.open(path, "w");
+  if(!f) return;
+  serializeJson(doc, f);
+  f.close();
+}
+
+
+/**
+ * Returns the SHA-256 fingerprint of a PEM certificate formatted as
+ * colon-separated uppercase hex ("AA:BB:CC:…"), or an empty String on error.
+ */
+String computeCertFingerprint(const String& pem){
+  int start = pem.indexOf("-----BEGIN CERTIFICATE-----");
+  int end   = pem.indexOf("-----END CERTIFICATE-----");
+  if(start == -1 || end == -1) return "";
+  start += strlen("-----BEGIN CERTIFICATE-----");
+
+  String b64 = pem.substring(start, end);
+  b64.replace("\r", "");
+  b64.replace("\n", "");
+  b64.replace(" ",  "");
+
+  size_t maxDerLen = (b64.length() / 4 + 1) * 3;
+  uint8_t* der = (uint8_t*)malloc(maxDerLen);
+  if(!der) return "";
+
+  size_t outLen = 0;
+  if(mbedtls_base64_decode(der, maxDerLen, &outLen,
+      (const unsigned char*)b64.c_str(), b64.length()) != 0){
+    free(der);
+    return "";
+  }
+
+  uint8_t hash[32];
+  mbedtls_sha256_context sha_ctx;
+  mbedtls_sha256_init(&sha_ctx);
+  mbedtls_sha256_starts(&sha_ctx, 0);
+  mbedtls_sha256_update(&sha_ctx, der, outLen);
+  mbedtls_sha256_finish(&sha_ctx, hash);
+  mbedtls_sha256_free(&sha_ctx);
+  free(der);
+
+  String fp = "";
+  char hex[3];
+  for(int i = 0; i < 32; i++){
+    if(i > 0) fp += ":";
+    snprintf(hex, sizeof(hex), "%02X", hash[i]);
+    fp += hex;
+  }
+  return fp;
+}
+
+
+/**
+ * GET /api/provisioning/certs — returns the designated client CA certificate
+ * (PEM + SHA-256 fingerprint) to a registered client device connecting via
+ * the provisioning SoftAP.  No nonce required; the cert is not sensitive.
+ */
+void http_handleProvisioningCerts(AsyncWebServerRequest *request){
+
+  if(request->method() == HTTP_OPTIONS){
+    http_options(request);
+    return;
+  }
+
+  if(request->method() != HTTP_GET){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  if(!isRequestViaSoftAP(request)){
+    http_forbiddenRequest(request, "Only accessible via provisioning network");
+    return;
+  }
+
+  if(provisioningMode.getStatus() != true){
+    http_conflict(request, "Provisioning mode inactive");
+    return;
+  }
+
+  if(!request->hasHeader("mac-address")){
+    http_badRequest(request, "mac-address header required");
+    return;
+  }
+
+  String mac = request->header("mac-address");
+  mac.toLowerCase();
+  String uuid = findClientUuidByMac(mac.c_str());
+  if(uuid.isEmpty()){
+    http_unauthorized(request);
+    return;
+  }
+
+  // Find the cert designated as the client cert
+  JsonDocument certTypes = readCertTypes();
+  String clientFilename = "";
+  for(JsonPair kv : certTypes.as<JsonObject>()){
+    if(kv.value()["client"].as<bool>()){
+      clientFilename = kv.key().c_str();
+      break;
+    }
+  }
+  if(clientFilename.isEmpty()){
+    request->send(404);
+    return;
+  }
+
+  String certPath = CONFIGFS_PATH_CERTS + (String)"/" + clientFilename;
+  if(!configFS.exists(certPath)){
+    request->send(404);
+    return;
+  }
+
+  File f = configFS.open(certPath, "r");
+  if(!f){
+    http_error(request, "Unable to read certificate");
+    return;
+  }
+  String pem = "";
+  while(f.available()) pem += (char)f.read();
+  f.close();
+
+  String fingerprint = computeCertFingerprint(pem);
+  if(fingerprint.isEmpty()){
+    http_error(request, "Unable to compute fingerprint");
+    return;
+  }
+
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
+  JsonDocument doc;
+  doc["fingerprint"] = fingerprint;
+  doc["pem"] = pem;
+  serializeJson(doc, *response);
+  request->send(response);
+}
+
+
 void http_handleCerts(AsyncWebServerRequest *request){
 
   switch(request->method()){
@@ -2722,14 +2883,21 @@ void http_handleCerts_GET(AsyncWebServerRequest *request){
   JsonDocument doc;
   JsonArray array = doc.to<JsonArray>();
 
+  JsonDocument certTypes = readCertTypes();
+
   File root = configFS.open(CONFIGFS_PATH_CERTS + (String)"/");
 
   File file = root.openNextFile();
   while(file){
       if(!file.isDirectory()){
-          JsonObject fileInstance = array.add<JsonObject>();
-          fileInstance["file"] = (String)file.name();
-          fileInstance["size"] = file.size();
+          String name = (String)file.name();
+          if(name != ".cert_types"){
+            JsonObject fileInstance = array.add<JsonObject>();
+            fileInstance["file"] = name;
+            fileInstance["size"] = file.size();
+            fileInstance["controller"] = certTypes[name]["controller"].as<bool>();
+            fileInstance["client"]     = certTypes[name]["client"].as<bool>();
+          }
       }
       file = root.openNextFile();
     }
@@ -2741,7 +2909,9 @@ void http_handleCerts_GET(AsyncWebServerRequest *request){
 
 
 /**
- * Handles certificate uploads.  If the certificate already exists, a 403 is returned to the client
+ * Handles certificate uploads.  Requires the X-Cert-Type header with value
+ * "controller", "client", or "both".  Only one cert may have client: true
+ * at a time; a second upload with client type returns 409.
 */
 void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
 
@@ -2751,8 +2921,8 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
   }
 
   if(!request->hasHeader("visual-token")){
-        http_unauthorized(request);
-        return;
+    http_unauthorized(request);
+    return;
   }
 
   if(!authToken.authenticate(request->header("visual-token").c_str())){
@@ -2777,6 +2947,29 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
 
   if(!index){
 
+    // Validate X-Cert-Type header
+    if(!request->hasHeader("X-Cert-Type")){
+      http_badRequest(request, "X-Cert-Type header required; valid values: controller, client, both");
+      return;
+    }
+    String certTypeHeader = request->header("X-Cert-Type");
+    if(certTypeHeader != "controller" && certTypeHeader != "client" && certTypeHeader != "both"){
+      http_badRequest(request, "X-Cert-Type must be controller, client, or both");
+      return;
+    }
+
+    // Enforce one-client rule
+    bool wantsClient = (certTypeHeader == "client" || certTypeHeader == "both");
+    if(wantsClient){
+      JsonDocument certTypes = readCertTypes();
+      for(JsonPair kv : certTypes.as<JsonObject>()){
+        if(kv.value()["client"].as<bool>()){
+          http_conflict(request, "A client certificate is already designated");
+          return;
+        }
+      }
+    }
+
     if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + filename)){
       http_forbiddenRequest(request, "Certificate already exists");
       return;
@@ -2785,12 +2978,28 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
     request->_tempFile = configFS.open(CONFIGFS_PATH_CERTS + (String)"/" + filename, "w");
   }
 
-  request->_tempFile.write(data,len);
-    
+  if(request->_tempFile) request->_tempFile.write(data, len);
+
   if(final){
-    request->_tempFile.close();
-    refreshCertBundle();
-    request->send(201);
+    if(request->_tempFile){
+      request->_tempFile.close();
+
+      // Update .cert_types
+      String certTypeHeader = request->header("X-Cert-Type");
+      bool wantsController = (certTypeHeader == "controller" || certTypeHeader == "both");
+      bool wantsClient     = (certTypeHeader == "client"     || certTypeHeader == "both");
+
+      JsonDocument certTypes = readCertTypes();
+      certTypes[filename]["controller"] = wantsController;
+      certTypes[filename]["client"]     = wantsClient;
+      writeCertTypes(certTypes);
+
+      refreshCertBundle();
+      if(wantsClient)     mqtt_publishClientCertState();
+      if(wantsController) mqtt_publishControllerCertState();
+
+      request->send(201);
+    }
   }
 }
 
@@ -2904,13 +3113,28 @@ void http_handleCert_DELETE(AsyncWebServerRequest *request){
 
   resetHTPServerUsage();
 
-  if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0))){
-    configFS.remove(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0));
-    refreshCertBundle();
-    request->send(204);
-  }else{
+  String filename = request->pathArg(0);
+
+  if(!configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + filename)){
     request->send(404);
+    return;
   }
+
+  // Read flags before removing so we know which MQTT topics to update
+  JsonDocument certTypes = readCertTypes();
+  bool wasClient     = certTypes[filename]["client"].as<bool>();
+  bool wasController = certTypes[filename]["controller"].as<bool>();
+
+  configFS.remove(CONFIGFS_PATH_CERTS + (String)"/" + filename);
+
+  certTypes.as<JsonObject>().remove(filename.c_str());
+  writeCertTypes(certTypes);
+
+  refreshCertBundle();
+  if(wasClient)     mqtt_publishClientCertState();
+  if(wasController) mqtt_publishControllerCertState();
+
+  request->send(204);
 }
 
 
@@ -2986,16 +3210,20 @@ void refreshCertBundle(){
 
   _certBundleSize = 0;
 
-  /* Concatenate any user-uploaded certs from configFS */
+  /* Concatenate certs marked controller: true in .cert_types */
   String bundle = "";
   if(configFS_isMounted){
+    JsonDocument certTypes = readCertTypes();
     File certsDir = configFS.open(CONFIGFS_PATH_CERTS);
     if(certsDir && certsDir.isDirectory()){
       File certFile = certsDir.openNextFile();
       while(certFile){
         if(!certFile.isDirectory()){
-          while(certFile.available()){
-            bundle += (char)certFile.read();
+          String name = (String)certFile.name();
+          if(name != ".cert_types" && certTypes[name]["controller"].as<bool>()){
+            while(certFile.available()){
+              bundle += (char)certFile.read();
+            }
           }
         }
         certFile = certsDir.openNextFile();
@@ -3607,6 +3835,8 @@ void mqtt_reconnect(){
         mqtt_publishMACAddress();
         mqtt_publishCountErrors();
         mqtt_publishHttpServerStateChanged(httpServerIsActive);
+        mqtt_publishClientCertState();
+        mqtt_publishControllerCertState();
         return;
     }
 
@@ -3962,6 +4192,103 @@ void mqtt_publishAllAvailability(){
   mqtt_publishTemperatureAvailability();
   mqtt_publishOutputControllerAvailability();
   mqtt_publishInputControllerAvailability();
+}
+
+
+/**
+ * Publishes the designated client CA certificate (fingerprint + PEM) to
+ * FireFly/clients/cert/state as a retained message, or clears the retained
+ * message with an empty payload when no client cert is designated.
+ */
+void mqtt_publishClientCertState(){
+
+  if(!mqttClient.connected()) return;
+
+  JsonDocument certTypes = readCertTypes();
+  String clientFilename = "";
+  for(JsonPair kv : certTypes.as<JsonObject>()){
+    if(kv.value()["client"].as<bool>()){
+      clientFilename = kv.key().c_str();
+      break;
+    }
+  }
+
+  if(clientFilename.isEmpty()){
+    mqttClient.publish("FireFly/clients/cert/state", "", true);
+    return;
+  }
+
+  String certPath = CONFIGFS_PATH_CERTS + (String)"/" + clientFilename;
+  if(!configFS.exists(certPath)){
+    mqttClient.publish("FireFly/clients/cert/state", "", true);
+    return;
+  }
+
+  File f = configFS.open(certPath, "r");
+  if(!f){
+    mqttClient.publish("FireFly/clients/cert/state", "", true);
+    return;
+  }
+  String pem = "";
+  while(f.available()) pem += (char)f.read();
+  f.close();
+
+  String fingerprint = computeCertFingerprint(pem);
+  if(fingerprint.isEmpty()){
+    mqttClient.publish("FireFly/clients/cert/state", "", true);
+    return;
+  }
+
+  JsonDocument doc;
+  doc["fingerprint"] = fingerprint;
+  doc["pem"] = pem;
+
+  mqttClient.beginPublish("FireFly/clients/cert/state", measureJson(doc), true);
+  BufferingPrint bufferedClient(mqttClient, 32);
+  serializeJson(doc, bufferedClient);
+  bufferedClient.flush();
+  mqttClient.endPublish();
+}
+
+
+/**
+ * Publishes the set of controller CA certificates (fingerprint + filename for each)
+ * to FireFly/controllers/cert/state as a retained message.  Publishes an empty
+ * JSON array when no controller-typed certs are present (Mozilla bundle in use).
+ */
+void mqtt_publishControllerCertState(){
+
+  if(!mqttClient.connected()) return;
+
+  JsonDocument certTypes = readCertTypes();
+  JsonDocument doc;
+  JsonArray array = doc.to<JsonArray>();
+
+  for(JsonPair kv : certTypes.as<JsonObject>()){
+    if(!kv.value()["controller"].as<bool>()) continue;
+    String name = kv.key().c_str();
+    String certPath = CONFIGFS_PATH_CERTS + (String)"/" + name;
+    if(!configFS.exists(certPath)) continue;
+
+    File f = configFS.open(certPath, "r");
+    if(!f) continue;
+    String pem = "";
+    while(f.available()) pem += (char)f.read();
+    f.close();
+
+    String fingerprint = computeCertFingerprint(pem);
+    if(fingerprint.isEmpty()) continue;
+
+    JsonObject entry = array.add<JsonObject>();
+    entry["filename"]    = name;
+    entry["fingerprint"] = fingerprint;
+  }
+
+  mqttClient.beginPublish("FireFly/controllers/cert/state", measureJson(doc), true);
+  BufferingPrint bufferedClient(mqttClient, 32);
+  serializeJson(doc, bufferedClient);
+  bufferedClient.flush();
+  mqttClient.endPublish();
 }
 
 

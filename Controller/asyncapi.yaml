@@ -441,6 +441,33 @@ channels:
         $ref: "#/components/messages/haDiscoveryConfig"
 
 
+  ##########################################################
+  ## Certificate state                                    ##
+  ##########################################################
+
+  clientCertState:
+    address: "FireFly/clients/cert/state"
+    description: >
+      The designated client CA certificate. Published as a retained message whenever the
+      client-typed certificate changes (upload or delete). The payload contains the PEM text
+      and SHA-256 fingerprint so subscribing client devices can verify trust. An empty
+      retained payload signals that no client CA certificate is currently designated.
+    messages:
+      clientCertState:
+        $ref: "#/components/messages/clientCertState"
+
+  controllerCertState:
+    address: "FireFly/controllers/cert/state"
+    description: >
+      The set of controller CA certificates currently trusted for HTTPS OTA validation.
+      Published as a retained message whenever the set of controller-typed certificates
+      changes (upload or delete). An empty JSON array means no custom CAs are uploaded
+      and the Mozilla root bundle is in use.
+    messages:
+      controllerCertState:
+        $ref: "#/components/messages/controllerCertState"
+
+
 ##########################################################
 ## Operations                                           ##
 ##########################################################
@@ -756,6 +783,31 @@ operations:
       the entity is linked to the controller device via the device identifier.
     messages:
       - $ref: "#/channels/haDiscoveryOutputController/messages/haDiscoveryGeneric"
+
+  publishClientCertState:
+    action: send
+    channel:
+      $ref: "#/channels/clientCertState"
+    summary: Publish the designated client CA certificate
+    description: >
+      Published whenever the client-typed certificate changes (on upload, on delete, and
+      on every MQTT reconnect). The retain flag is set. An empty retained payload is
+      published when no client certificate is designated, clearing any previous value.
+    messages:
+      - $ref: "#/channels/clientCertState/messages/clientCertState"
+
+  publishControllerCertState:
+    action: send
+    channel:
+      $ref: "#/channels/controllerCertState"
+    summary: Publish the set of controller CA certificates
+    description: >
+      Published whenever the set of controller-typed certificates changes (on upload, on
+      delete, and on every MQTT reconnect). The retain flag is set. An empty JSON array
+      is published when no controller certificates are designated, indicating that the
+      Mozilla root bundle is in use.
+    messages:
+      - $ref: "#/channels/controllerCertState/messages/controllerCertState"
 
   ##########################################################
   ## Subscribe (controller receives)                      ##
@@ -1161,6 +1213,34 @@ components:
       payload:
         $ref: "#/components/schemas/haDiscoveryConfigPayload"
 
+    clientCertState:
+      name: clientCertState
+      title: Client CA Certificate State
+      summary: The designated client CA certificate (PEM + fingerprint), or empty when none is set
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/clientCertStatePayload"
+      examples:
+        - name: cert-present
+          payload:
+            fingerprint: "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"
+            pem: "-----BEGIN CERTIFICATE-----\nMIID0zCCArugAwIBAgIQ...\n-----END CERTIFICATE-----\n"
+
+    controllerCertState:
+      name: controllerCertState
+      title: Controller CA Certificates State
+      summary: The set of controller CA certificates trusted for HTTPS OTA validation
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/controllerCertStatePayload"
+      examples:
+        - name: one-cert
+          payload:
+            - filename: "my-ca.pem"
+              fingerprint: "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"
+        - name: no-certs
+          payload: []
+
   ##########################################################
   ## Schemas                                              ##
   ##########################################################
@@ -1415,3 +1495,37 @@ components:
         device:
           type: object
           description: Device grouping information
+
+    clientCertStatePayload:
+      type: object
+      description: >
+        The designated client CA certificate. Empty payload (zero-length string) is
+        published when no client certificate is designated.
+      properties:
+        fingerprint:
+          type: string
+          description: SHA-256 fingerprint of the certificate formatted as colon-separated uppercase hex
+          examples:
+            - "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"
+        pem:
+          type: string
+          description: Full PEM-encoded certificate text
+
+    controllerCertStatePayload:
+      type: array
+      description: >
+        The set of controller CA certificates trusted for HTTPS OTA validation.
+        An empty array means no custom CAs are uploaded and the Mozilla root bundle is in use.
+      items:
+        type: object
+        properties:
+          filename:
+            type: string
+            description: Certificate filename as stored in flash
+            examples:
+              - my-ca.pem
+          fingerprint:
+            type: string
+            description: SHA-256 fingerprint of the certificate formatted as colon-separated uppercase hex
+            examples:
+              - "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"
