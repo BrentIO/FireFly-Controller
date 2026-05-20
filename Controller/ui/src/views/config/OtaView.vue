@@ -5,11 +5,15 @@
     <div class="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 text-sm text-amber-800 dark:text-amber-300">
       <p class="font-medium mb-2">Wildcard substitutions in URL:</p>
       <table class="text-xs">
-        <tr><td class="font-mono pr-4">$$class$$</td><td>hardware class (e.g. controller, client)</td></tr>
-        <tr><td class="font-mono pr-4">$$product_hex$$</td><td>product hex identifier</td></tr>
+        <tr><td class="font-mono pr-4">$$mac$$</td><td>MAC address without separators</td></tr>
+        <tr><td class="font-mono pr-4">$$mac_dashes$$</td><td>MAC address with dashes</td></tr>
+        <tr><td class="font-mono pr-4">$$mac_colons$$</td><td>MAC address with colons</td></tr>
+        <tr><td class="font-mono pr-4">$$uuid$$</td><td>Device UUID</td></tr>
+        <tr><td class="font-mono pr-4">$$class$$</td><td>hardware class</td></tr>
+        <tr><td class="font-mono pr-4">$$product_hex$$</td><td>product ID</td></tr>
         <tr><td class="font-mono pr-4">$$application$$</td><td>application name</td></tr>
+        <tr><td class="font-mono pr-4">$$current_version$$</td><td>currently installed firmware version</td></tr>
       </table>
-      <p class="mt-2 text-xs">The <span class="font-mono">current_version</span> query parameter is appended automatically by the firmware.</p>
     </div>
 
     <div class="space-y-6 max-w-lg">
