@@ -7,6 +7,7 @@
       <table class="text-xs">
         <tr><td class="font-mono pr-4">$$class$$</td><td>hardware class (e.g. controller, client)</td></tr>
         <tr><td class="font-mono pr-4">$$product_hex$$</td><td>product hex identifier</td></tr>
+        <tr><td class="font-mono pr-4">$$application$$</td><td>application name</td></tr>
       </table>
       <p class="mt-2 text-xs">The <span class="font-mono">current_version</span> query parameter is appended automatically by the firmware.</p>
     </div>

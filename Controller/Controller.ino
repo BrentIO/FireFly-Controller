@@ -28,6 +28,7 @@
 #endif
 
 #define APPLICATION_NAME "FireFly Controller"
+#define APPLICATION      "Controller"
 
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
@@ -3332,7 +3333,12 @@ void setup_OtaFirmware(){
   if(deviceIdentity.enabled == true){
     url.replace("$$uuid$$", deviceIdentity.data.uuid);
   }
+  String otaApplication = APPLICATION;
+  otaApplication.toLowerCase();
+  otaApplication.replace(" ", "-");
+
   url.replace("$$class$$", HARDWARE_CLASS);
+  url.replace("$$application$$", otaApplication.c_str());
   url.replace("$$product_hex$$", otaProductHex);
   url.replace("$$current_version$$", VERSION);
 
