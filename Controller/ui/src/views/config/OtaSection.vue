@@ -51,7 +51,7 @@ const props = defineProps({
 
 const { getSetting, setSetting } = useSettings()
 const { addToast } = useToast()
-const DEFAULT_URL = 'api.fireflylx.com/ota/$$class$$/$$hex$$'
+const DEFAULT_URL = 'api.fireflylx.com/ota/$$class$$/$$product_hex$$?current_version=$$current_version$$'
 
 const filteredCertificates = computed(() => {
   if (!props.certificates) return []
