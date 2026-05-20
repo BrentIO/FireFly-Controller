@@ -4,7 +4,7 @@
       <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl print:!text-black">Controllers</h1>
       <div class="flex gap-2 print:hidden flex-shrink-0">
         <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors" @click="printLandscape">Print</button>
-        <button class="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium transition-colors" :class="hasConnectedControllers ? 'hover:bg-amber-700' : 'opacity-40 cursor-not-allowed'" :disabled="!hasConnectedControllers" @click="deployAll">Deploy All</button>
+        <button v-if="!isCloudMode" class="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium transition-colors" :class="hasConnectedControllers ? 'hover:bg-amber-700' : 'opacity-40 cursor-not-allowed'" :disabled="!hasConnectedControllers" @click="deployAll">Deploy All</button>
         <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors" @click="openAdd">Add Controller</button>
       </div>
     </div>
@@ -56,13 +56,13 @@
 
         <!-- Auth / deploy section -->
         <div class="print:hidden border-t border-gray-100 dark:border-gray-800 pt-3 mt-3 space-y-2">
-          <div v-if="!sessions[ctrl.id]?.isAuthenticated" class="space-y-2">
+          <div v-if="!isCloudMode && !sessions[ctrl.id]?.isAuthenticated" class="space-y-2">
             <input v-model="ipInputs[ctrl.id]" type="text" placeholder="192.168.1.x"
               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" />
             <div class="flex gap-2">
               <input v-model="tokenInputs[ctrl.id]" type="text" placeholder="Visual token" maxlength="8"
                 class="flex-1 min-w-0 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <button class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg transition-colors flex-shrink-0" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-700'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="authenticate(ctrl.id)">Connect</button>
+              <button class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex-shrink-0" @click="authenticate(ctrl.id)">Connect</button>
             </div>
           </div>
           <div v-else class="space-y-2">
