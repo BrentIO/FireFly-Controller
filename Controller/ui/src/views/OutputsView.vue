@@ -85,8 +85,8 @@
               <button class="mt-1 text-red-500 hover:text-red-700 text-xs print:hidden leading-none" title="Unassign" @click.stop="unassign(ctrl.id, port.num)">✕</button>
             </template>
             <template v-else>
-              <span class="print:hidden text-xs" :class="canDrop(ctrl.id, port) ? 'text-blue-400 dark:text-blue-500' : 'text-gray-300 dark:text-gray-600'">
-                {{ canDrop(ctrl.id, port) ? 'Drop here' : 'Empty' }}
+              <span class="print:hidden text-xs" :class="portEmptyTextClass(ctrl.id, port)">
+                {{ portEmptyLabel(ctrl.id, port) }}
               </span>
             </template>
           </div>
@@ -108,11 +108,13 @@ import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { useControllers } from '../composables/useControllers'
 import { useCircuits } from '../composables/useCircuits'
+import { useClients } from '../composables/useClients'
 import { useAreas } from '../composables/useAreas'
 import { useToast } from '../composables/useToast'
 
 const { items: controllers, products, load: loadControllers, assignOutput } = useControllers()
 const { items: allCircuits, load: loadCircuits } = useCircuits()
+const { items: allClients, load: loadClients } = useClients()
 const { items: areas, load: loadAreas } = useAreas()
 const { addToast } = useToast()
 
@@ -129,7 +131,7 @@ function toggleCollapse(id) {
 const dragging = ref(null) // { circuitId, fromControllerId, fromPort }
 const dragOver = ref(null)
 
-onMounted(() => Promise.all([loadControllers(), loadCircuits(), loadAreas()]))
+onMounted(() => Promise.all([loadControllers(), loadCircuits(), loadClients(), loadAreas()]))
 
 const assignedCircuitIds = computed(() => {
   const ids = new Set()
@@ -158,9 +160,29 @@ function portKey(controllerId, portNum) {
   return `${controllerId}:${portNum}`
 }
 
+// Returns the controller ID that the active circuit must be placed on (due to existing
+// client actions targeting it), or null if there is no constraint.
+function requiredControllerId(circuitId) {
+  if (!circuitId) return null
+  const required = new Set()
+  for (const client of allClients.value) {
+    const hasAction = (client.hids ?? []).some(h =>
+      (h.actions ?? []).some(a => a.circuit === circuitId)
+    )
+    if (!hasAction) continue
+    const ctrl = controllers.value.find(c => Object.values(c.inputs || {}).includes(client.id))
+    if (ctrl) required.add(ctrl.id)
+  }
+  return required.size === 1 ? [...required][0] : null
+}
+
 function canDrop(controllerId, port) {
   if (port.circuit) return false
-  return !!dragging.value || !!selectedCircuitId.value
+  const activeCircuitId = dragging.value?.circuitId ?? selectedCircuitId.value
+  if (!activeCircuitId) return false
+  const required = requiredControllerId(activeCircuitId)
+  if (required !== null && required !== controllerId) return false
+  return true
 }
 
 function portClass(controllerId, port) {
@@ -173,10 +195,31 @@ function portClass(controllerId, port) {
   if (dragOver.value === key) {
     return 'border-blue-500 bg-blue-100 dark:bg-blue-900/30 cursor-copy'
   }
-  if (canDrop(controllerId, port)) {
+  const activeCircuitId = dragging.value?.circuitId ?? selectedCircuitId.value
+  if (activeCircuitId) {
+    const required = requiredControllerId(activeCircuitId)
+    if (required !== null && required !== controllerId) {
+      return 'border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/10 border-dashed cursor-not-allowed'
+    }
     return 'border-blue-300 bg-blue-50 dark:bg-blue-900/10 cursor-pointer border-dashed'
   }
   return 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 print:border-gray-400 print:bg-white'
+}
+
+function portEmptyLabel(controllerId, port) {
+  const activeCircuitId = dragging.value?.circuitId ?? selectedCircuitId.value
+  if (!activeCircuitId) return 'Empty'
+  const required = requiredControllerId(activeCircuitId)
+  if (required !== null && required !== controllerId) return 'Blocked'
+  return 'Drop here'
+}
+
+function portEmptyTextClass(controllerId, port) {
+  const activeCircuitId = dragging.value?.circuitId ?? selectedCircuitId.value
+  if (!activeCircuitId) return 'text-gray-300 dark:text-gray-600'
+  const required = requiredControllerId(activeCircuitId)
+  if (required !== null && required !== controllerId) return 'text-red-400 dark:text-red-600'
+  return 'text-blue-400 dark:text-blue-500'
 }
 
 function portStyle(controllerId, port) {

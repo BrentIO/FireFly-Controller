@@ -191,6 +191,17 @@ function requiredControllerId(clientId) {
     return getAssignedControllerId(primaryClient.id)
   }
 
+  // If this client has actions, lock to the controller those circuits are assigned to
+  const actionCircuitIds = (client.hids ?? []).flatMap(h => (h.actions ?? []).map(a => a.circuit))
+  if (actionCircuitIds.length > 0) {
+    const required = new Set()
+    for (const circuitId of actionCircuitIds) {
+      const ctrl = controllers.value.find(c => Object.values(c.outputs || {}).includes(circuitId))
+      if (ctrl) required.add(ctrl.id)
+    }
+    if (required.size === 1) return [...required][0]
+  }
+
   return null
 }
 

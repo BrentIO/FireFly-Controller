@@ -264,12 +264,16 @@
                   </div>
                 </div>
 
-                <div v-if="circuits.length" class="border border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-3">
+                <div v-if="!myController" class="text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 flex-shrink-0 mt-px"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>
+                  <span>Assign this client to a controller on the Inputs page before adding actions.</span>
+                </div>
+                <div v-else-if="sameControllerCircuits.length" class="border border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-3">
                   <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Add action</p>
                   <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
                     <select v-model="actionDraft.circuit" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
                       <option value="">Circuit…</option>
-                      <option v-for="c in circuits" :key="c.id" :value="c.id">{{ circuitLabel(c) }}</option>
+                      <option v-for="c in sameControllerCircuits" :key="c.id" :value="c.id">{{ circuitLabel(c) }}</option>
                     </select>
                     <select v-model="actionDraft.change_state" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
                       <option value="SHORT">Short Press</option>
@@ -286,7 +290,7 @@
                     Add Action
                   </button>
                 </div>
-                <p v-else class="text-xs text-gray-400 dark:text-gray-500">No circuits defined — add circuits first to configure actions.</p>
+                <p v-else class="text-xs text-gray-400 dark:text-gray-500">No circuits are assigned to this client's controller — assign outputs on the Outputs page first.</p>
               </div>
 
               <div class="flex gap-3 justify-end pt-2 border-t border-gray-100 dark:border-gray-800">
@@ -312,6 +316,7 @@ import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import ClientSvg from '../components/ClientSvg.vue'
 import { useClients } from '../composables/useClients'
+import { useControllers } from '../composables/useControllers'
 import { useAreas } from '../composables/useAreas'
 import { useColors } from '../composables/useColors'
 import { useTags } from '../composables/useTags'
@@ -324,6 +329,7 @@ const MAC_RE = /^[0-9A-Fa-f]{2}[:-]([0-9A-Fa-f]{2}[:-]){4}[0-9A-Fa-f]{2}$/
 const route = useRoute()
 const router = useRouter()
 const { get, update, getPrimaryId, getSecondaryClient, saveHids } = useClients()
+const { items: controllers, load: loadControllers } = useControllers()
 const { items: areas, load: loadAreas } = useAreas()
 const { items: colors, load: loadColors } = useColors()
 const { items: tags, load: loadTags } = useTags()
@@ -348,6 +354,18 @@ function emptyForm() {
 const hidForm = ref(emptyForm())
 const actionDraft = ref({ circuit: '', change_state: 'SHORT', action: 'TOGGLE' })
 
+const myController = computed(() =>
+  client.value
+    ? controllers.value.find(c => Object.values(c.inputs || {}).includes(client.value.id)) ?? null
+    : null
+)
+
+const sameControllerCircuits = computed(() => {
+  if (!myController.value) return []
+  const assignedIds = new Set(Object.values(myController.value.outputs || {}))
+  return circuits.value.filter(c => assignedIds.has(c.id))
+})
+
 const selectedColor = computed(() =>
   hidForm.value.color ? colors.value.find(c => c.id === hidForm.value.color) ?? null : null
 )
@@ -355,7 +373,7 @@ const selectedColor = computed(() =>
 const availableActions = computed(() => {
   const circuitId = Number(actionDraft.value.circuit)
   if (!circuitId) return allActions
-  const circuit = circuits.value.find(c => c.id === circuitId)
+  const circuit = sameControllerCircuits.value.find(c => c.id === circuitId)
   if (!circuit) return allActions
   const rm = relayModels.value.find(r => r.id === circuit.relay_model)
   if (!rm) return allActions
@@ -405,7 +423,7 @@ onMounted(async () => {
   ]
 
   svgInverted.value = !!client.value?.inverted
-  await Promise.all([loadAreas(), loadColors(), loadTags(), loadCircuits()])
+  await Promise.all([loadControllers(), loadAreas(), loadColors(), loadTags(), loadCircuits()])
 })
 
 function colorHex(id) { return colors.value.find(c => c.id === id)?.hex ?? '#888' }
