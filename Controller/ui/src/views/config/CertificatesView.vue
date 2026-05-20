@@ -8,33 +8,13 @@
       <p>By default, the system validates HTTPS OTA connections using the Mozilla root CA bundle (~130 CAs). Uploading a certificate <strong>replaces</strong> the bundle for the selected type — only uploaded certificates will be trusted for that purpose. Only upload if your OTA server or client devices use a CA not included in the Mozilla bundle.</p>
     </div>
 
-    <!-- Certificate type selection -->
-    <div class="mb-4 p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 print:hidden">
-      <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Certificate type (select at least one before uploading):</p>
-      <div class="flex flex-wrap gap-6">
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input v-model="typeController" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-          <span class="text-sm text-gray-700 dark:text-gray-300">Controller — trusted for HTTPS OTA validation</span>
-        </label>
-        <label class="flex items-center gap-2 cursor-pointer" :class="{ 'opacity-50 cursor-not-allowed': hasClientCert }">
-          <input v-model="typeClient" type="checkbox" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" :disabled="hasClientCert" />
-          <span class="text-sm text-gray-700 dark:text-gray-300">
-            Client — distributed to clients for mutual TLS
-            <span v-if="hasClientCert" class="ml-1 text-xs text-amber-600 dark:text-amber-400">(a client cert is already designated)</span>
-          </span>
-        </label>
-      </div>
-      <p v-if="!typeController && !typeClient" class="mt-2 text-xs text-red-600 dark:text-red-400">Select at least one type before uploading.</p>
-    </div>
-
     <!-- Drop zone -->
     <div
-      class="mb-6 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 p-8 text-center transition-colors print:hidden"
-      :class="typeController || typeClient ? 'cursor-pointer hover:border-blue-400' : 'opacity-50 cursor-not-allowed'"
-      @dragover.prevent="(typeController || typeClient) && (dragging = true)"
+      class="mb-6 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 p-8 text-center transition-colors cursor-pointer hover:border-blue-400 print:hidden"
+      @dragover.prevent="dragging = true"
       @dragleave="dragging = false"
-      @drop.prevent="(typeController || typeClient) && onDrop($event)"
-      @click="(typeController || typeClient) && fileInput.click()"
+      @drop.prevent="onDrop($event)"
+      @click="fileInput.click()"
     >
       <p class="text-sm text-gray-500 dark:text-gray-400">Drag and drop a certificate file (.pem, .crt) here, or click to browse.</p>
       <input ref="fileInput" type="file" accept=".pem,.crt,.cer" class="hidden" @change="onFileSelect" />
@@ -70,15 +50,21 @@
               </span>
               <span v-else>{{ cert.expiration }}</span>
             </td>
-            <td class="px-4 py-3 text-center">
-              <span v-if="cert.isController" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
-                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-              </span>
+            <td class="px-4 py-3 text-center print:hidden">
+              <input
+                type="checkbox"
+                :checked="cert.isController"
+                class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                @change="toggleType(cert, 'controller')"
+              />
             </td>
-            <td class="px-4 py-3 text-center">
-              <span v-if="cert.isClient" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
-                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-              </span>
+            <td class="px-4 py-3 text-center print:hidden">
+              <input
+                type="checkbox"
+                :checked="cert.isClient"
+                class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                @change="toggleType(cert, 'client')"
+              />
             </td>
             <td class="px-4 py-3 text-right print:hidden">
               <div class="flex justify-end gap-2">
@@ -103,21 +89,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import AppLayout from '../../components/AppLayout.vue'
 import ConfirmModal from '../../components/ConfirmModal.vue'
 import { useCertificates, parseCert } from '../../composables/useCertificates'
 import { useToast } from '../../composables/useToast'
 
-const { items, load, store, remove, isInUse } = useCertificates()
+const { items, load, store, updateTypes, remove, isInUse } = useCertificates()
 const { addToast } = useToast()
 const fileInput = ref(null)
 const dragging = ref(false)
 const deleteTarget = ref(null)
-const typeController = ref(false)
-const typeClient = ref(false)
-
-const hasClientCert = computed(() => items.value.some(c => c.isClient))
 
 onMounted(load)
 
@@ -134,10 +116,6 @@ function onFileSelect(e) {
 }
 
 async function processFile(file) {
-  if (!typeController.value && !typeClient.value) {
-    addToast('error', 'Select at least one certificate type before uploading.')
-    return
-  }
   const text = await file.text()
   if (!text.includes('-----BEGIN CERTIFICATE-----')) {
     addToast('error', 'File does not appear to be a valid PEM certificate.')
@@ -148,10 +126,33 @@ async function processFile(file) {
     addToast('error', `Certificate "${parsed.commonName || file.name}" has already expired on ${parsed.expiration}.`)
   }
   try {
-    await store(file.name, text, parsed, typeController.value, typeClient.value)
+    await store(file.name, text, parsed, false, false)
   } catch (e) {
     addToast('error', `Failed to store certificate: ${e.message}`)
   }
+}
+
+async function toggleType(cert, type) {
+  const isController = type === 'controller' ? !cert.isController : cert.isController
+  const isClient = type === 'client' ? !cert.isClient : cert.isClient
+
+  if (type === 'controller' && isController) {
+    for (const other of items.value) {
+      if (other.id !== cert.id && other.isController) {
+        await updateTypes(other.id, false, other.isClient)
+      }
+    }
+  }
+
+  if (type === 'client' && isClient) {
+    for (const other of items.value) {
+      if (other.id !== cert.id && other.isClient) {
+        await updateTypes(other.id, other.isController, false)
+      }
+    }
+  }
+
+  await updateTypes(cert.id, isController, isClient)
 }
 
 function isExpired(cert) {

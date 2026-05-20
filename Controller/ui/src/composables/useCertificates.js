@@ -118,6 +118,11 @@ export function useCertificates() {
     await load()
   }
 
+  async function updateTypes(id, isController, isClient) {
+    await db.certificates.update(id, { isController, isClient })
+    await load()
+  }
+
   async function remove(id) {
     await db.certificates.delete(id)
     await load()
@@ -137,5 +142,5 @@ export function useCertificates() {
     return count > 0
   }
 
-  return { items, load, store, remove, exportCert, isInUse }
+  return { items, load, store, updateTypes, remove, exportCert, isInUse }
 }
