@@ -1,15 +1,7 @@
 import Dexie from 'dexie'
-
-const dbVersion = 20260520
+import { controllerProducts } from '../generated/controller_products.js'
 
 export const db = new Dexie('FireFly-Controller')
-
-const defaultControllerProducts = [
-  { pid: 'FFC3232-2305', inputs: { count: 32 }, outputs: { count: 32 } },
-  { pid: 'FFC0806-2305', inputs: { count: 8 }, outputs: { count: 6 } },
-  { pid: 'FFC3232-2505', inputs: { count: 32 }, outputs: { count: 32 } },
-  { pid: 'FFC0806-2505', inputs: { count: 8 }, outputs: { count: 6 } }
-]
 
 const defaultColors = [
   { name: 'Blue', hex: '#2a36e5' },
@@ -73,15 +65,20 @@ const schema = {
 
 db.version(20240405).stores(schema)
 
-db.version(dbVersion).stores(schema).upgrade(async (tx) => {
+db.version(20260520).stores(schema).upgrade(async (tx) => {
   const existing = await tx.circuit_icons.toArray()
   const existingNames = new Set(existing.map(i => i.name))
   const toAdd = additionalDefaultCircuitIcons.filter(i => !existingNames.has(i.name))
   if (toAdd.length > 0) await tx.circuit_icons.bulkAdd(toAdd)
 })
 
+db.version(20260521).stores(schema).upgrade(async (tx) => {
+  await tx.controller_products.clear()
+  await tx.controller_products.bulkAdd(controllerProducts)
+})
+
 db.on('populate', (transaction) => {
-  transaction.controller_products.bulkAdd(defaultControllerProducts)
+  transaction.controller_products.bulkAdd(controllerProducts)
   transaction.colors.bulkAdd(defaultColors)
   transaction.relay_models.bulkAdd(defaultRelayModels)
   transaction.circuit_icons.bulkAdd(defaultCircuitIcons)
