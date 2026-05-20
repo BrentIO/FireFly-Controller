@@ -269,7 +269,7 @@
                   <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
                     <select v-model="actionDraft.circuit" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
                       <option value="">Circuit…</option>
-                      <option v-for="c in circuits" :key="c.id" :value="c.id">{{ c.name }} — {{ c.description }}</option>
+                      <option v-for="c in circuits" :key="c.id" :value="c.id">{{ circuitLabel(c) }}</option>
                     </select>
                     <select v-model="actionDraft.change_state" class="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
                       <option value="SHORT">Short Press</option>
@@ -411,9 +411,14 @@ onMounted(async () => {
 function colorHex(id) { return colors.value.find(c => c.id === id)?.hex ?? '#888' }
 function colorName(id) { return colors.value.find(c => c.id === id)?.name ?? '?' }
 function tagName(id) { return tags.value.find(t => t.id === id)?.name ?? '?' }
+function circuitLabel(c) {
+  const area = areas.value.find(a => a.id === c.area)
+  return `${c.name} — ${c.description}${area ? ` (${area.name})` : ''}`
+}
+
 function circuitName(id) {
   const c = circuits.value.find(c => c.id === id)
-  return c ? `${c.name} — ${c.description}` : `Circuit #${id}`
+  return c ? circuitLabel(c) : `Circuit #${id}`
 }
 
 function formatSwitchType(type) {

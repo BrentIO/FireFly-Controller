@@ -52,6 +52,8 @@ export async function buildControllerPayload(controllerId, returnOnlyErrors = fa
     resolvedOutputs[port] = circuit
   }
 
+  const allControllers = await db.controllers.toArray()
+
   const ports = {}
   for (const [portNumber, client] of Object.entries(resolvedInputs)) {
     const channels = {}
@@ -78,8 +80,14 @@ export async function buildControllerPayload(controllerId, returnOnlyErrors = fa
         if (!matchedPort) {
           const requestedCircuit = await db.circuits.get(action.circuit)
           const circuitArea = await db.areas.get(requestedCircuit?.area)
+          const circuitController = allControllers.find(c =>
+            Object.values(c.outputs || {}).includes(action.circuit)
+          )
+          const circuitLocation = circuitController
+            ? `on controller "${circuitController.name}"`
+            : 'not assigned to any controller'
           errorList.push(
-            `Client '${client.id}' channel ${i + 1} has an invalid action for circuit "${circuitArea?.name} ${requestedCircuit?.description} (${requestedCircuit?.name}).\n\nThe client is assigned to this controller, but the circuit is not.\n\nThe action will be ignored.`
+            `Client ${client.name} channel ${i + 1} has an invalid action for circuit "${requestedCircuit?.name} — ${requestedCircuit?.description} (${circuitArea?.name})". Client ${client.name} is on controller "${controller.name}", but the circuit is ${circuitLocation}. The action will be ignored.`
           )
           continue
         }
@@ -231,10 +239,10 @@ export async function checkConfiguration() {
 
   for (const client of clients) {
     if (client.mac === 'ff:ff:ff:ff:ff:ff') {
-      errorList.push(`Client "${client.name}" has an invalid MAC address and will not be able to be provisioned.`)
+      errorList.push(`Client ${client.name} has an invalid MAC address and will not be able to be provisioned.`)
     }
     if (!client.hids?.length) {
-      errorList.push(`Client "${client.name}" does not have any buttons or switches defined.`)
+      errorList.push(`Client ${client.name} does not have any buttons or switches defined.`)
     }
   }
 
