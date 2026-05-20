@@ -3965,6 +3965,10 @@ void setupMQTT(){
   char mqttProductHex[11] = {0};
   snprintf(mqttProductHex, sizeof(mqttProductHex), "0x%08lx", (uint32_t)PRODUCT_HEX);
 
+  String mqttApplication = APPLICATION;
+  mqttApplication.toLowerCase();
+  mqttApplication.replace(" ", "-");
+
   String host = mqtt["host"].as<String>();
   host.replace("$$mac$$", macOnly);
   host.replace("$$mac_dashes$$", macDashes);
@@ -3973,6 +3977,7 @@ void setupMQTT(){
     host.replace("$$uuid$$", deviceIdentity.data.uuid);
   }
   host.replace("$$class$$", HARDWARE_CLASS);
+  host.replace("$$application$$", mqttApplication.c_str());
   host.replace("$$product_hex$$", mqttProductHex);
   host.replace("$$current_version$$", VERSION);
   mqttClient.setServer(host.c_str(), port);
@@ -3985,6 +3990,7 @@ void setupMQTT(){
     username.replace("$$uuid$$", deviceIdentity.data.uuid);
   }
   username.replace("$$class$$", HARDWARE_CLASS);
+  username.replace("$$application$$", mqttApplication.c_str());
   username.replace("$$product_hex$$", mqttProductHex);
   username.replace("$$current_version$$", VERSION);
   mqttClient.setUsername(username.c_str());
@@ -3995,6 +4001,7 @@ void setupMQTT(){
   password.replace("$$mac_colons$$", macColons);
   password.replace("$$uuid$$", deviceIdentity.data.uuid);
   password.replace("$$class$$", HARDWARE_CLASS);
+  password.replace("$$application$$", mqttApplication.c_str());
   password.replace("$$product_hex$$", mqttProductHex);
   password.replace("$$current_version$$", VERSION);
   mqttClient.setPassword(password.c_str());

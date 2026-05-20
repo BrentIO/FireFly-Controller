@@ -11,6 +11,7 @@
         <tr><td class="font-mono pr-4">$$uuid$$</td><td>Device UUID</td></tr>
         <tr><td class="font-mono pr-4">$$class$$</td><td>hardware class</td></tr>
         <tr><td class="font-mono pr-4">$$product_hex$$</td><td>product ID</td></tr>
+        <tr><td class="font-mono pr-4">$$application$$</td><td>application name</td></tr>
         <tr><td class="font-mono pr-4">$$current_version$$</td><td>currently installed firmware version</td></tr>
       </table>
     </div>
