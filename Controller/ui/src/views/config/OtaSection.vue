@@ -26,7 +26,7 @@
         <select v-model="form.certificate"
           class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="">Built-in root CA bundle</option>
-          <option v-for="cert in certificates" :key="cert.id" :value="cert.id">{{ cert.commonName }}</option>
+          <option v-for="cert in filteredCertificates" :key="cert.id" :value="cert.id">{{ cert.commonName }}</option>
         </select>
       </div>
     </div>
@@ -38,19 +38,27 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useSettings } from '../../composables/useSettings'
 import { useToast } from '../../composables/useToast'
 
 const props = defineProps({
   title: String,
   settingKey: String,
+  certType: String,
   certificates: Array
 })
 
 const { getSetting, setSetting } = useSettings()
 const { addToast } = useToast()
-const DEFAULT_URL = 'api.fireflylx.com/ota/$$pid$$/$$app$$'
+const DEFAULT_URL = 'api.fireflylx.com/ota/$$class$$/$$hex$$'
+
+const filteredCertificates = computed(() => {
+  if (!props.certificates) return []
+  if (props.certType === 'controller') return props.certificates.filter(c => c.isController)
+  if (props.certType === 'client') return props.certificates.filter(c => c.isClient)
+  return props.certificates
+})
 const form = ref({ enabled: false, protocol: 'https', url: DEFAULT_URL, certificate: '' })
 
 onMounted(async () => {
