@@ -45,7 +45,7 @@
                 class="px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors min-h-[44px]"
                 @click="$emit('cancel')"
               >
-                Cancel
+                {{ cancelLabel }}
               </button>
               <button
                 type="button"
@@ -74,7 +74,8 @@ defineProps({
   message: { type: String, default: 'Are you sure?' },
   details: { type: Object, default: null },
   variant: { type: String, default: 'danger' },
-  confirmLabel: { type: String, default: 'Confirm' }
+  confirmLabel: { type: String, default: 'Confirm' },
+  cancelLabel: { type: String, default: 'Cancel' }
 })
 defineEmits(['confirm', 'cancel'])
 </script>

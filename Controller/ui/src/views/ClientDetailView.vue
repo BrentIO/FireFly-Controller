@@ -161,7 +161,7 @@
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
               {{ editIdx === null ? 'Add' : 'Edit' }} Button / Switch
             </h3>
-            <form @submit.prevent="submitHid" class="space-y-4">
+            <form @submit.prevent="handleSaveHid" class="space-y-4">
 
               <!-- Type -->
               <div>
@@ -306,6 +306,11 @@
     <ConfirmModal :show="removeHidIdx !== null" title="Remove"
       :message="`Are you sure you wish to delete ${mergedHids[removeHidIdx]?.type === 'switch' ? 'switch' : 'button'} #${(removeHidIdx ?? 0) + 1}?`"
       confirm-label="Remove" @confirm="doRemoveHid" @cancel="removeHidIdx = null" />
+
+    <ConfirmModal :show="showDraftPrompt" title="Unsaved Action"
+      message="A circuit is selected in the 'Add action' form but hasn't been added yet. Add it before saving?"
+      confirm-label="Add &amp; Save" cancel-label="Save Without"
+      variant="success" @confirm="confirmDraftAdd" @cancel="discardDraft" />
   </AppLayout>
 </template>
 
@@ -346,6 +351,7 @@ const showHidModal = ref(false)
 const showColorDropdown = ref(false)
 const editIdx = ref(null)
 const removeHidIdx = ref(null)
+const showDraftPrompt = ref(false)
 
 function emptyForm() {
   return { type: 'button', color: '', switch_type: 'NORMALLY_OPEN', enabled: true, defaultBrightness: '', tags: [], actions: [] }
@@ -526,6 +532,26 @@ function addAction() {
     }
   ]
   actionDraft.value.circuit = ''
+}
+
+function handleSaveHid() {
+  if (actionDraft.value.circuit) {
+    showDraftPrompt.value = true
+    return
+  }
+  submitHid()
+}
+
+function confirmDraftAdd() {
+  showDraftPrompt.value = false
+  addAction()
+  submitHid()
+}
+
+function discardDraft() {
+  showDraftPrompt.value = false
+  actionDraft.value.circuit = ''
+  submitHid()
 }
 
 function removeAction(i) {
