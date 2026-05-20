@@ -90,7 +90,7 @@
     <Teleport to="body">
       <Transition enter-active-class="ease-out duration-200" enter-from-class="opacity-0" enter-to-class="opacity-100"
                   leave-active-class="ease-in duration-150" leave-from-class="opacity-100" leave-to-class="opacity-0">
-        <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" @click.self="showModal = false">
+        <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div class="w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6">
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">{{ editing ? 'Edit Controller' : 'Add Controller' }}</h3>
             <form @submit.prevent="save" class="space-y-4">
@@ -135,7 +135,7 @@
     <Teleport to="body">
       <Transition enter-active-class="ease-out duration-200" enter-from-class="opacity-0" enter-to-class="opacity-100"
                   leave-active-class="ease-in duration-150" leave-from-class="opacity-100" leave-to-class="opacity-0">
-        <div v-if="showEventLog" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" @click.self="showEventLog = false">
+        <div v-if="showEventLog" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div class="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6 max-h-[80vh] flex flex-col">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Event Log</h3>
@@ -163,7 +163,7 @@
     <Teleport to="body">
       <Transition enter-active-class="ease-out duration-200" enter-from-class="opacity-0" enter-to-class="opacity-100"
                   leave-active-class="ease-in duration-150" leave-from-class="opacity-100" leave-to-class="opacity-0">
-        <div v-if="showErrorLog" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" @click.self="showErrorLog = false">
+        <div v-if="showErrorLog" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div class="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6 max-h-[80vh] flex flex-col">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Error Log</h3>

@@ -31,7 +31,7 @@
     <Teleport to="body">
       <Transition enter-active-class="ease-out duration-200" enter-from-class="opacity-0" enter-to-class="opacity-100"
                   leave-active-class="ease-in duration-150" leave-from-class="opacity-100" leave-to-class="opacity-0">
-        <div v-if="showConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" @click.self="showConfirm = false">
+        <div v-if="showConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div class="w-full max-w-sm bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6">
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-3">Erase All and Import Configuration</h3>
             <p class="text-sm text-amber-700 dark:text-amber-400 mb-5">

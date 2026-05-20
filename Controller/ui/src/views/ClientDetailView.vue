@@ -105,7 +105,7 @@
     <Teleport to="body">
       <Transition enter-active-class="ease-out duration-200" enter-from-class="opacity-0" enter-to-class="opacity-100"
                   leave-active-class="ease-in duration-150" leave-from-class="opacity-100" leave-to-class="opacity-0">
-        <div v-if="showClientModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" @click.self="showClientModal = false">
+        <div v-if="showClientModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div class="w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6">
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Edit Client</h3>
             <form @submit.prevent="saveClient" class="space-y-4">
@@ -156,7 +156,7 @@
     <Teleport to="body">
       <Transition enter-active-class="ease-out duration-200" enter-from-class="opacity-0" enter-to-class="opacity-100"
                   leave-active-class="ease-in duration-150" leave-from-class="opacity-100" leave-to-class="opacity-0">
-        <div v-if="showHidModal" class="fixed inset-0 z-50 flex items-start justify-center p-4 pt-10 bg-black/50 overflow-y-auto" @click.self="showHidModal = false">
+        <div v-if="showHidModal" class="fixed inset-0 z-50 flex items-start justify-center p-4 pt-10 bg-black/50 overflow-y-auto">
           <div class="w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6 mb-8">
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
               {{ editIdx === null ? 'Add' : 'Edit' }} Button / Switch
