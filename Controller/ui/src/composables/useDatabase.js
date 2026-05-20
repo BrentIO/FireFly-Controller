@@ -1,6 +1,6 @@
 import Dexie from 'dexie'
 
-const dbVersion = 20240405
+const dbVersion = 20260520
 
 export const db = new Dexie('FireFly-Controller')
 
@@ -26,10 +26,25 @@ const defaultRelayModels = [
 ]
 
 const defaultCircuitIcons = [
+  { name: 'Ceiling Fan', icon: 'mdi:ceiling-fan' },
+  { name: 'Ceiling Fan Light', icon: 'mdi:ceiling-fan-light' },
   { name: 'Chandelier', icon: 'mdi:chandelier' },
-  { name: 'Recessed Light', icon: 'mdi:light-recessed' },
+  { name: 'Exhaust Fan', icon: 'mdi:fan' },
   { name: 'Floor Lamp', icon: 'mdi:floor-lamp' },
+  { name: 'Power Socket', icon: 'mdi:power-socket-us' },
+  { name: 'Pump', icon: 'mdi:pump' },
+  { name: 'Recessed Light', icon: 'mdi:light-recessed' },
+  { name: 'Vanity Light', icon: 'mdi:vanity-light' },
   { name: 'Wall Sconce', icon: 'mdi:wall-sconce' }
+]
+
+const additionalDefaultCircuitIcons = [
+  { name: 'Ceiling Fan', icon: 'mdi:ceiling-fan' },
+  { name: 'Ceiling Fan Light', icon: 'mdi:ceiling-fan-light' },
+  { name: 'Exhaust Fan', icon: 'mdi:fan' },
+  { name: 'Power Socket', icon: 'mdi:power-socket-us' },
+  { name: 'Pump', icon: 'mdi:pump' },
+  { name: 'Vanity Light', icon: 'mdi:vanity-light' }
 ]
 
 const defaultAreas = [
@@ -41,7 +56,7 @@ const defaultAreas = [
   { name: 'Guest Bedroom' }
 ]
 
-db.version(dbVersion).stores({
+const schema = {
   colors: '++id, name',
   controllers: '++id, &uuid, name, product',
   areas: '++id, name',
@@ -54,6 +69,15 @@ db.version(dbVersion).stores({
   relay_models: '++id, [manufacturer+model], is_custom',
   clients: '++id, name, &uuid',
   settings: '&setting, value'
+}
+
+db.version(20240405).stores(schema)
+
+db.version(dbVersion).stores(schema).upgrade(async (tx) => {
+  const existing = await tx.circuit_icons.toArray()
+  const existingNames = new Set(existing.map(i => i.name))
+  const toAdd = additionalDefaultCircuitIcons.filter(i => !existingNames.has(i.name))
+  if (toAdd.length > 0) await tx.circuit_icons.bulkAdd(toAdd)
 })
 
 db.on('populate', (transaction) => {
