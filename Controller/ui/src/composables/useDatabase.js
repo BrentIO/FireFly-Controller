@@ -1,7 +1,12 @@
 import Dexie from 'dexie'
-import { controllerProducts } from '../generated/controller_products.js'
 
 export const db = new Dexie('FireFly-Controller')
+
+const defaultControllerProducts = [
+  { pid: 'FFC0806-2305', inputs: { count: 8 }, outputs: { count: 6 } },
+  { pid: 'FFC3232-2211', inputs: { count: 32 }, outputs: { count: 32 } },
+  { pid: 'FFC3232-2603', inputs: { count: 32 }, outputs: { count: 32 } }
+]
 
 const defaultColors = [
   { name: 'Blue', hex: '#2a36e5' },
@@ -74,11 +79,11 @@ db.version(20260520).stores(schema).upgrade(async (tx) => {
 
 db.version(20260521).stores(schema).upgrade(async (tx) => {
   await tx.controller_products.clear()
-  await tx.controller_products.bulkAdd(controllerProducts)
+  await tx.controller_products.bulkAdd(defaultControllerProducts)
 })
 
 db.on('populate', (transaction) => {
-  transaction.controller_products.bulkAdd(controllerProducts)
+  transaction.controller_products.bulkAdd(defaultControllerProducts)
   transaction.colors.bulkAdd(defaultColors)
   transaction.relay_models.bulkAdd(defaultRelayModels)
   transaction.circuit_icons.bulkAdd(defaultCircuitIcons)
