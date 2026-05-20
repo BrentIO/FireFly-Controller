@@ -1422,7 +1422,7 @@ components:
         name:
           type: string
           description: Human-friendly name of the controller
-          examples: 
+          examples:
             - First floor
           maxLength: 20 #Maximum length relates to hardware.h -> CONTROLLER_NAME_MAX_LENGTH
         area:
@@ -1431,6 +1431,8 @@ components:
           examples:
             - Tech Room
           maxLength: 20 #Maximum length relates to hardware.h -> CONTROLLER_AREA_MAX_LENGTH
+        mac:
+          $ref: '#/components/schemas/macAddress'
         ports:
           $ref: '#/components/schemas/inputPort'
         outputs:
@@ -1441,6 +1443,7 @@ components:
           $ref: '#/components/schemas/mqtt'
       required:
         - name
+        - mac
 
     inputPort:
       type: object

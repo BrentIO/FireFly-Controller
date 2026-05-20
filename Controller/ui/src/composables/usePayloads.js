@@ -233,6 +233,9 @@ export async function checkConfiguration() {
     errors.forEach(e => {
       if (!seenErrors.has(e)) { seenErrors.add(e); errorList.push(e) }
     })
+    if (!controller.mac || controller.mac === 'ff:ff:ff:ff:ff:ff') {
+      errorList.push(`Controller "${controller.name}" has an invalid MAC address and will not be able to be provisioned.`)
+    }
     Object.values(controller.inputs || {}).forEach(id => assignedClientIds.push(id))
     Object.values(controller.outputs || {}).forEach(id => assignedCircuitIds.push(id))
   }
