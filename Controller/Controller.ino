@@ -3311,10 +3311,30 @@ void setup_OtaFirmware(){
 
   String url = doc["ota"]["url"];
 
-  char hex_str[11];
-  snprintf(hex_str, sizeof(hex_str), "0x%08lx", (uint32_t)PRODUCT_HEX);
-  url.replace("$$hex$$", hex_str);
+  uint8_t otaEthMac[6];
+  esp_read_mac(otaEthMac, ESP_MAC_ETH);
+
+  char otaMacOnly[13] = {0};
+  sprintf(otaMacOnly, "%02X%02X%02X%02X%02X%02X", otaEthMac[0], otaEthMac[1], otaEthMac[2], otaEthMac[3], otaEthMac[4], otaEthMac[5]);
+
+  char otaMacDashes[18] = {0};
+  sprintf(otaMacDashes, "%02X-%02X-%02X-%02X-%02X-%02X", otaEthMac[0], otaEthMac[1], otaEthMac[2], otaEthMac[3], otaEthMac[4], otaEthMac[5]);
+
+  char otaMacColons[18] = {0};
+  sprintf(otaMacColons, "%02X:%02X:%02X:%02X:%02X:%02X", otaEthMac[0], otaEthMac[1], otaEthMac[2], otaEthMac[3], otaEthMac[4], otaEthMac[5]);
+
+  char otaProductHex[11] = {0};
+  snprintf(otaProductHex, sizeof(otaProductHex), "0x%08lx", (uint32_t)PRODUCT_HEX);
+
+  url.replace("$$mac$$", otaMacOnly);
+  url.replace("$$mac_dashes$$", otaMacDashes);
+  url.replace("$$mac_colons$$", otaMacColons);
+  if(deviceIdentity.enabled == true){
+    url.replace("$$uuid$$", deviceIdentity.data.uuid);
+  }
   url.replace("$$class$$", HARDWARE_CLASS);
+  url.replace("$$product_hex$$", otaProductHex);
+  url.replace("$$current_version$$", VERSION);
 
   if(url.indexOf("current_version=") == -1){
     url += (url.indexOf('?') == -1 ? "?" : "&");
@@ -3930,19 +3950,32 @@ void setupMQTT(){
     port = mqtt["port"];
   }
 
-  mqttClient.setServer(mqtt["host"].as<const char*>(), port);
-
   uint8_t ethMac[6];
   esp_read_mac(ethMac, ESP_MAC_ETH);
 
   char macOnly[13] = {0};
   sprintf(macOnly, "%02X%02X%02X%02X%02X%02X", ethMac[0],ethMac[1],ethMac[2],ethMac[3], ethMac[4], ethMac[5]);
-  
+
   char macDashes[18] = {0};
   sprintf(macDashes, "%02X-%02X-%02X-%02X-%02X-%02X", ethMac[0],ethMac[1],ethMac[2],ethMac[3], ethMac[4], ethMac[5]);
 
   char macColons[18] = {0};
   sprintf(macColons, "%02X:%02X:%02X:%02X:%02X:%02X", ethMac[0],ethMac[1],ethMac[2],ethMac[3], ethMac[4], ethMac[5]);
+
+  char mqttProductHex[11] = {0};
+  snprintf(mqttProductHex, sizeof(mqttProductHex), "0x%08lx", (uint32_t)PRODUCT_HEX);
+
+  String host = mqtt["host"].as<String>();
+  host.replace("$$mac$$", macOnly);
+  host.replace("$$mac_dashes$$", macDashes);
+  host.replace("$$mac_colons$$", macColons);
+  if(deviceIdentity.enabled == true){
+    host.replace("$$uuid$$", deviceIdentity.data.uuid);
+  }
+  host.replace("$$class$$", HARDWARE_CLASS);
+  host.replace("$$product_hex$$", mqttProductHex);
+  host.replace("$$current_version$$", VERSION);
+  mqttClient.setServer(host.c_str(), port);
 
   String username = mqtt["username"].as<String>();
   username.replace("$$mac$$", macOnly);
@@ -3951,6 +3984,9 @@ void setupMQTT(){
   if(deviceIdentity.enabled == true){
     username.replace("$$uuid$$", deviceIdentity.data.uuid);
   }
+  username.replace("$$class$$", HARDWARE_CLASS);
+  username.replace("$$product_hex$$", mqttProductHex);
+  username.replace("$$current_version$$", VERSION);
   mqttClient.setUsername(username.c_str());
 
   String password = mqtt["password"].as<String>();
@@ -3958,6 +3994,9 @@ void setupMQTT(){
   password.replace("$$mac_dashes$$", macDashes);
   password.replace("$$mac_colons$$", macColons);
   password.replace("$$uuid$$", deviceIdentity.data.uuid);
+  password.replace("$$class$$", HARDWARE_CLASS);
+  password.replace("$$product_hex$$", mqttProductHex);
+  password.replace("$$current_version$$", VERSION);
   mqttClient.setPassword(password.c_str());
 
   mqttClient.enabled = true;
