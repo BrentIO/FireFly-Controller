@@ -1,4 +1,5 @@
 name: 🚀 Trigger Configurator UI Deploy
+run-name: "Deploy Configurator UI to ${{ inputs.target_env }}"
 
 on:
   workflow_dispatch:
