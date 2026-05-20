@@ -2,11 +2,7 @@ import Dexie from 'dexie'
 
 export const db = new Dexie('FireFly-Controller')
 
-const defaultControllerProducts = [
-  { pid: 'FFC0806-2305', inputs: { count: 8 }, outputs: { count: 6 } },
-  { pid: 'FFC3232-2211', inputs: { count: 32 }, outputs: { count: 32 } },
-  { pid: 'FFC3232-2603', inputs: { count: 32 }, outputs: { count: 32 } }
-]
+const defaultControllerProducts = []
 
 const defaultColors = [
   { name: 'Blue', hex: '#2a36e5' },
