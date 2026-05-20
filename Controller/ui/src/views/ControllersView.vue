@@ -18,6 +18,7 @@
             <th class="py-2 text-left font-semibold">Area</th>
             <th class="py-2 text-left font-semibold">Product ID</th>
             <th class="py-2 text-left font-semibold">UUID</th>
+            <th class="py-2 text-left font-semibold">MAC Address</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-300">
@@ -26,6 +27,7 @@
             <td class="py-2">{{ areaName(ctrl.area) }}</td>
             <td class="py-2">{{ ctrl.product }}</td>
             <td class="py-2 font-mono">{{ ctrl.uuid }}</td>
+            <td class="py-2 font-mono">{{ ctrl.mac || '—' }}</td>
           </tr>
         </tbody>
       </table>
@@ -41,8 +43,10 @@
           <div>
             <p class="font-semibold text-gray-900 dark:text-gray-100">{{ ctrl.name }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ ctrl.uuid }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ ctrl.mac || '—' }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ ctrl.product }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ areaName(ctrl.area) }}</p>
+            <p v-if="!ctrl.mac || ctrl.mac === 'ff:ff:ff:ff:ff:ff'" class="text-xs text-yellow-700 dark:text-yellow-500 mt-1 font-medium">MAC Address is invalid</p>
           </div>
           <div class="flex gap-2 print:hidden flex-shrink-0">
             <button class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="openEdit(ctrl)">Edit</button>
@@ -111,6 +115,20 @@
                   <option value="">Select product…</option>
                   <option v-for="p in products" :key="p.pid" :value="p.pid">{{ p.pid }}</option>
                 </select>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">MAC Address</label>
+                  <button type="button" class="text-xs text-blue-600 dark:text-blue-400 hover:underline" @click="generateMac">Generate</button>
+                </div>
+                <input v-model="form.mac" type="text" placeholder="aa:bb:cc:dd:ee:ff"
+                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  :class="macError ? 'border-red-400 focus:ring-red-400' : ''" />
+                <p v-if="macError" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ macError }}</p>
+                <div v-if="form.mac === 'ff:ff:ff:ff:ff:ff'" class="mt-1 flex items-start gap-1.5 text-xs text-yellow-600 dark:text-yellow-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 flex-shrink-0 mt-px"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>
+                  <span>Placeholder MAC — update before provisioning.</span>
+                </div>
               </div>
               <div>
                 <div class="flex items-center justify-between mb-1">
@@ -224,6 +242,8 @@ import { useControllerSession } from '../composables/useControllerSession'
 import { buildControllerPayload, buildClientPayload, getExtendedClientIds } from '../composables/usePayloads'
 import { useToast } from '../composables/useToast'
 import { randomUUID } from '../composables/useValidators'
+
+const MAC_RE = /^[0-9A-Fa-f]{2}[:-]([0-9A-Fa-f]{2}[:-]){4}[0-9A-Fa-f]{2}$/
 import { isCloudMode } from '../composables/useCloudMode'
 import { db } from '../composables/useDatabase'
 
@@ -246,7 +266,8 @@ const cloudDeleteTarget = ref(null)
 const eventLog = ref([])
 const errorLog = ref([])
 const activeErrorLogId = ref(null)
-const emptyForm = () => ({ name: '', area: '', product: '', uuid: '' })
+const macError = ref('')
+const emptyForm = () => ({ name: '', area: '', product: '', mac: '', uuid: '' })
 const form = ref(emptyForm())
 
 const ipInputs = reactive({})
@@ -294,21 +315,34 @@ function printLandscape() {
 function openAdd() {
   editing.value = null
   form.value = emptyForm()
+  macError.value = ''
   showModal.value = true
 }
 
 function openEdit(c) {
   editing.value = c
-  form.value = { name: c.name, area: c.area, product: c.product, uuid: c.uuid }
+  form.value = { name: c.name, area: c.area, product: c.product, mac: c.mac ?? '', uuid: c.uuid }
+  macError.value = ''
   showModal.value = true
 }
 
+function generateMac() {
+  form.value.mac = 'ff:ff:ff:ff:ff:ff'
+  macError.value = ''
+}
+
 async function save() {
+  macError.value = ''
+  const mac = form.value.mac.toLowerCase()
+  if (!MAC_RE.test(mac)) {
+    macError.value = 'Enter a valid MAC address (e.g. aa:bb:cc:dd:ee:ff)'
+    return
+  }
   try {
     if (editing.value) {
-      await update(editing.value.id, form.value)
+      await update(editing.value.id, { ...form.value, mac })
     } else {
-      await create(form.value)
+      await create({ ...form.value, mac })
     }
     showModal.value = false
     await load()
