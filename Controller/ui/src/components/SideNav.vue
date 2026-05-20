@@ -2,7 +2,7 @@
   <nav class="w-64 bg-gray-900 dark:bg-gray-950 text-white flex flex-col flex-shrink-0 h-screen border-r border-gray-700 dark:border-gray-800">
     <!-- Header -->
     <div class="px-4 py-4 flex items-center justify-between border-b border-gray-700 dark:border-gray-800">
-      <span class="text-base font-semibold text-gray-100">FireFly Controller</span>
+      <span class="text-base font-semibold text-gray-100">FireFly Configurator</span>
       <div class="flex items-center gap-1">
         <button
           class="p-1 rounded text-gray-400 hover:text-gray-100 hover:bg-gray-800 transition-colors md:hidden"
