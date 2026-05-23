@@ -10,6 +10,7 @@ const state = reactive({
     network: false,
     identity: false,
     registration: false,
+    firmware: false,
     partitions: false,
     peripherals: false,
     events: false,

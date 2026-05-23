@@ -8,6 +8,7 @@ import PartitionsView from '../views/PartitionsView.vue'
 import PeripheralsView from '../views/PeripheralsView.vue'
 import EventLogView from '../views/EventLogView.vue'
 import ErrorLogView from '../views/ErrorLogView.vue'
+import FirmwareView from '../views/FirmwareView.vue'
 
 const routes = [
   { path: '/', redirect: '/mcu' },
@@ -16,6 +17,7 @@ const routes = [
   { path: '/network', component: NetworkView },
   { path: '/identity', component: IdentityView },
   { path: '/registration', component: RegistrationView },
+  { path: '/firmware', component: FirmwareView },
   { path: '/partitions', component: PartitionsView },
   { path: '/peripherals', component: PeripheralsView },
   { path: '/events', component: EventLogView },
