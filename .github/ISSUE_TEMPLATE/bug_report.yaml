@@ -49,7 +49,7 @@ body:
       label: Firmware version
       placeholder: "e.g. 2025.04.01"
     validations:
-      required: false
+      required: true
 
   - type: dropdown
     id: application
@@ -60,7 +60,7 @@ body:
         - Hardware Registration and Configuration
         - Configurator
     validations:
-      required: false
+      required: true
 
   - type: dropdown
     id: product
@@ -72,7 +72,7 @@ body:
         - FFC3232-2603
         - Other / Unknown
     validations:
-      required: false
+      required: true
 
   - type: textarea
     id: logs
