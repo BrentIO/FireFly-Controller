@@ -68,8 +68,8 @@ body:
       label: Hardware variant
       options:
         - FFC0806-2305
-        - FFC0806-2505
-        - FFC3232-2505
+        - FFC3232-2211
+        - FFC3232-2603
         - Other / Unknown
     validations:
       required: false
