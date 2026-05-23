@@ -52,6 +52,17 @@ body:
       required: false
 
   - type: dropdown
+    id: application
+    attributes:
+      label: Application
+      options:
+        - Controller
+        - Hardware Registration and Configuration (HW-Reg)
+        - Configurator
+    validations:
+      required: false
+
+  - type: dropdown
     id: product
     attributes:
       label: Hardware variant
