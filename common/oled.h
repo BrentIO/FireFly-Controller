@@ -72,8 +72,8 @@
             uint32_t _mismatch_fw_hex = 0;
             EventLog *_eventLog;
             authorizationToken *_authorizationToken;
-            unsigned long _timeLastAction = 0;
-            unsigned long _timeIntroShown = 0;
+            uint32_t _timeLastAction = 0;
+            uint32_t _timeIntroShown = 0;
 
             #define DIM_AFTER_MS 10000
             #define SLEEP_AFTER_MS 15000
@@ -205,7 +205,7 @@
 
                 log_v("Extending OLED wake");
 
-                _timeLastAction = millis();
+                _timeLastAction = (uint32_t)(esp_timer_get_time() / 1000ULL);
             }
 
 
@@ -370,7 +370,7 @@
 
                 #endif
 
-                _timeIntroShown = millis();
+                _timeIntroShown = (uint32_t)(esp_timer_get_time() / 1000ULL);
                 this->_commit();   
             }
 
@@ -423,7 +423,7 @@
 
                 #endif
 
-                _timeIntroShown = millis();
+                _timeIntroShown = (uint32_t)(esp_timer_get_time() / 1000ULL);
                 this->_commit();  
             }
 
@@ -476,7 +476,7 @@
                 
                 #endif
 
-                _timeIntroShown = millis();
+                _timeIntroShown = (uint32_t)(esp_timer_get_time() / 1000ULL);
                 this->_commit();  
 
             }
@@ -530,7 +530,7 @@
 
                 #endif
 
-                _timeIntroShown = millis();
+                _timeIntroShown = (uint32_t)(esp_timer_get_time() / 1000ULL);
                 this->_commit();  
 
             }
@@ -584,7 +584,7 @@
 
                 #endif
 
-                _timeIntroShown = millis();
+                _timeIntroShown = (uint32_t)(esp_timer_get_time() / 1000ULL);
                 this->_commit();   
             }
 
@@ -617,7 +617,7 @@
 
                 #endif
 
-                _timeIntroShown = millis();
+                _timeIntroShown = (uint32_t)(esp_timer_get_time() / 1000ULL);
                 this->_commit();   
             }
 
@@ -902,7 +902,7 @@
 
                 #endif
 
-                _timeIntroShown = millis();
+                _timeIntroShown = (uint32_t)(esp_timer_get_time() / 1000ULL);
                 this->_commit(); 
 
             }
@@ -1176,7 +1176,7 @@
 
                 //See if it is time to turn off
                 if(this->_isDimmed == true){
-                    if((unsigned long)(millis() - this->_timeLastAction) > SLEEP_AFTER_MS){
+                    if((unsigned long)((uint32_t)(esp_timer_get_time() / 1000ULL) - this->_timeLastAction) > SLEEP_AFTER_MS){
 
                         log_v("Sleeping OLED");
                         this->_sleep();
@@ -1184,7 +1184,7 @@
                     return;
                 }
 
-                if((unsigned long)(millis() - this->_timeLastAction) > DIM_AFTER_MS){
+                if((unsigned long)((uint32_t)(esp_timer_get_time() / 1000ULL) - this->_timeLastAction) > DIM_AFTER_MS){
 
                     log_v("Dimming OLED");
                     this->_dim();
@@ -1198,7 +1198,7 @@
 
                     case PAGE_EVENT_LOG_INTRO:
 
-                        if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
+                        if((unsigned long)((uint32_t)(esp_timer_get_time() / 1000ULL) - this->_timeIntroShown) > INTRO_DWELL_MS){
                             setPage(PAGE_EVENT_LOG);
                         } 
                         break;
@@ -1206,7 +1206,7 @@
 
                     case PAGE_NETWORK_INTRO:
 
-                        if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
+                        if((unsigned long)((uint32_t)(esp_timer_get_time() / 1000ULL) - this->_timeIntroShown) > INTRO_DWELL_MS){
 
                             #if WIFI_MODEL != ENUM_WIFI_NONE
                                 setPage(PAGE_WIFI);
@@ -1223,28 +1223,28 @@
 
                     case PAGE_HARDWARE_INTRO:
 
-                        if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
+                        if((unsigned long)((uint32_t)(esp_timer_get_time() / 1000ULL) - this->_timeIntroShown) > INTRO_DWELL_MS){
                             setPage(PAGE_HARDWARE);
                         } 
                         break;
 
                     case PAGE_SOFTWARE_INTRO:
 
-                        if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
+                        if((unsigned long)((uint32_t)(esp_timer_get_time() / 1000ULL) - this->_timeIntroShown) > INTRO_DWELL_MS){
                             setPage(PAGE_SOFTWARE);
                         } 
                         break;
 
                     case PAGE_ERROR_INTRO:
                         
-                        if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
+                        if((unsigned long)((uint32_t)(esp_timer_get_time() / 1000ULL) - this->_timeIntroShown) > INTRO_DWELL_MS){
                             setPage(PAGE_ERROR);
                         } 
                         break;
 
                     case PAGE_AUTH_TOKEN_INTRO:
                         
-                        if((unsigned long)(millis() - this->_timeIntroShown) > INTRO_DWELL_MS){
+                        if((unsigned long)((uint32_t)(esp_timer_get_time() / 1000ULL) - this->_timeIntroShown) > INTRO_DWELL_MS){
                             setPage(PAGE_AUTH_TOKEN);
                         } 
                         break;

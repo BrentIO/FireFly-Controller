@@ -36,7 +36,7 @@ class managerFrontPanel{
 
         }
 
-        unsigned long timePreviousChange = 0; /* Time (millis) when the input state last changed.  Value is set to 0 when the state returns to its input type. Default 0.*/
+        uint32_t timePreviousChange = 0; /* Milliseconds (esp_timer_get_time / 1000) when the input state last changed.  Value is set to 0 when the state returns to its input type. Default 0.*/
         inputState state = STATE_OPEN; /* The state entered at timePreviousChange. Default STATE_OPEN.*/
         inputType type = NORMALLY_OPEN; /* Defines if the input is normally open or normally closed. Default NORMALLY_OPEN.*/
 
@@ -112,13 +112,13 @@ class managerFrontPanel{
             }
 
             //Values are different; Check if we are within the debounce delay and that the status isn't its normal state
-            if((millis() - timePreviousChange < DEBOUNCE_DELAY) && ((type == NORMALLY_OPEN && currentState != STATE_OPEN) || (type == NORMALLY_CLOSED && currentState != STATE_CLOSED))){
+            if(((uint32_t)(esp_timer_get_time() / 1000ULL) - timePreviousChange < DEBOUNCE_DELAY) && ((type == NORMALLY_OPEN && currentState != STATE_OPEN) || (type == NORMALLY_CLOSED && currentState != STATE_CLOSED))){
 
-                log_v("Front Panel Button: DEBOUNCE_DELAY (%i) not satisfied. Time Previous Change: %i Current Time: %i Difference: %i Current State: %s State: %s", DEBOUNCE_DELAY, timePreviousChange, millis(), (millis() - timePreviousChange), String(currentState), String(state));
+                log_v("Front Panel Button: DEBOUNCE_DELAY (%i) not satisfied. Time Previous Change: %i Current Time: %i Difference: %i Current State: %s State: %s", DEBOUNCE_DELAY, timePreviousChange, (uint32_t)(esp_timer_get_time() / 1000ULL), ((uint32_t)(esp_timer_get_time() / 1000ULL) - timePreviousChange), String(currentState), String(state));
                 return;
             }
 
-            timePreviousChange = millis();
+            timePreviousChange = (uint32_t)(esp_timer_get_time() / 1000ULL);
 
             //Check if input is in an abnormal state
             if(currentState == inputState::STATE_CLOSED){

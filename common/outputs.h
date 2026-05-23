@@ -189,7 +189,7 @@ namespace nsOutputs{
                 uint16_t value = 0; /* Expected PWM value for the pin */
                 uint16_t _fadeTargetPwm = 0;
                 uint16_t _fadeStartPwm = 0;
-                unsigned long _fadeStartMs = 0;
+                uint32_t _fadeStartMs = 0;
                 bool _fadeInProgress = false;
             #endif
 
@@ -245,7 +245,7 @@ namespace nsOutputs{
                 if(type == VARIABLE && pwmValue != this->value){
                     _fadeStartPwm = this->value;
                     _fadeTargetPwm = pwmValue;
-                    _fadeStartMs = millis();
+                    _fadeStartMs = (uint32_t)(esp_timer_get_time() / 1000ULL);
                     _fadeInProgress = true;
                     return set_result::SUCCESS;
                 }
@@ -292,7 +292,7 @@ namespace nsOutputs{
                     return;
                 }
 
-                unsigned long elapsed = millis() - _fadeStartMs;
+                uint32_t elapsed = (uint32_t)(esp_timer_get_time() / 1000ULL) - _fadeStartMs;
                 uint16_t newPwm;
 
                 if(elapsed >= 500UL){
