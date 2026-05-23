@@ -66,24 +66,22 @@
             </div>
           </div>
           <div v-else class="space-y-2">
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center justify-between">
               <span class="text-xs text-green-600 dark:text-green-400 font-medium">Connected · {{ sessions[ctrl.id].ip }}</span>
               <button class="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 underline" @click="logout(ctrl.id)">Disconnect</button>
-              <button class="ml-auto px-2 py-1.5 text-xs font-medium text-white bg-amber-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-amber-700'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="deploy(ctrl)">Deploy</button>
-              <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="openEventLog(ctrl.id)">Events</button>
             </div>
-            <div class="flex flex-wrap gap-2">
-              <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="openErrorLog(ctrl.id)">Errors</button>
-              <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmPullBackup(ctrl)">Pull Backup</button>
-              <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="pushCertificates(ctrl)">Push Certs</button>
-              <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="toggleProvisioning(ctrl.id)">{{ sessions[ctrl.id]?.provisioningModeEnabled ? 'Disable Provisioning' : 'Enable Provisioning' }}</button>
-              <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaApp(ctrl)">Force App Update</button>
-              <button class="px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaSpiffs(ctrl)">Force FS Update</button>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <button class="px-2 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="pushCloudBackup(ctrl)">Push Cloud Backup</button>
-              <button class="px-2 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmCloudRestore(ctrl)">Restore Cloud Backup</button>
-              <button class="px-2 py-1.5 text-xs font-medium text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-red-50 dark:hover:bg-red-900/20'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmCloudDelete(ctrl)">Delete Cloud Backup</button>
+            <div class="flex flex-col gap-1.5">
+              <button class="w-full px-2 py-1.5 text-xs font-medium text-white bg-amber-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-amber-700'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="deploy(ctrl)">Deploy</button>
+              <button class="w-full px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="openEventLog(ctrl.id)">Event Log</button>
+              <button class="w-full px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="openErrorLog(ctrl.id)">Errors</button>
+              <button class="w-full px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmPullBackup(ctrl)">Pull Backup</button>
+              <button class="w-full px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="pushCertificates(ctrl)">Push Certs</button>
+              <button class="w-full px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="toggleProvisioning(ctrl.id)">{{ sessions[ctrl.id]?.provisioningModeEnabled ? 'Disable Provisioning' : 'Enable Provisioning' }}</button>
+              <button class="w-full px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaApp(ctrl)">Force App Update</button>
+              <button class="w-full px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaSpiffs(ctrl)">Force FS Update</button>
+              <button class="w-full px-2 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="pushCloudBackup(ctrl)">Push Cloud Backup</button>
+              <button class="w-full px-2 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmCloudRestore(ctrl)">Restore Cloud Backup</button>
+              <button class="w-full px-2 py-1.5 text-xs font-medium text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-red-50 dark:hover:bg-red-900/20'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmCloudDelete(ctrl)">Delete Cloud Backup</button>
             </div>
           </div>
         </div>
@@ -157,17 +155,30 @@
           <div class="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6 max-h-[80vh] flex flex-col">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Event Log</h3>
-              <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl leading-none" @click="showEventLog = false">&times;</button>
+              <div class="flex items-center gap-3">
+                <button class="px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="refreshEventLog">Refresh</button>
+                <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl leading-none" @click="showEventLog = false">&times;</button>
+              </div>
             </div>
             <div class="overflow-y-auto flex-1">
               <table class="w-full text-xs">
+                <thead class="border-b border-gray-200 dark:border-gray-700">
+                  <tr>
+                    <th class="py-1.5 pr-4 text-left font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Time</th>
+                    <th class="py-1.5 pr-4 text-left font-medium text-gray-500 dark:text-gray-400">Level</th>
+                    <th class="py-1.5 text-left font-medium text-gray-500 dark:text-gray-400">Message</th>
+                  </tr>
+                </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                   <tr v-if="!eventLog.length">
-                    <td class="py-4 text-center text-gray-400 dark:text-gray-500">No events.</td>
+                    <td colspan="3" class="py-4 text-center text-gray-400 dark:text-gray-500">No events.</td>
                   </tr>
                   <tr v-for="(e, i) in eventLog" :key="i">
-                    <td class="py-1.5 pr-4 text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ e.time || e.timestamp || '' }}</td>
-                    <td class="py-1.5 text-gray-900 dark:text-gray-100">{{ e.message || e }}</td>
+                    <td class="py-1.5 pr-4 text-gray-500 dark:text-gray-400 whitespace-nowrap font-mono">{{ formatEventTime(e.time) }}</td>
+                    <td class="py-1.5 pr-4 whitespace-nowrap">
+                      <span :class="eventLevelClass(e.level)" class="px-1.5 py-0.5 rounded text-xs font-medium uppercase">{{ e.level || '—' }}</span>
+                    </td>
+                    <td class="py-1.5 text-gray-900 dark:text-gray-100">{{ e.text }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -206,6 +217,45 @@
           </div>
         </div>
       </Transition>
+    </Teleport>
+
+    <!-- Deploy progress modal -->
+    <Teleport to="body">
+      <div v-if="deployProgress.show" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+        <div class="w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6">
+          <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 mb-5">Deploying…</h3>
+          <!-- Bar 1: overall controller progress (deployAll only) -->
+          <div v-if="deployProgress.ctrlTotal > 1" class="mb-4">
+            <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+              <span>{{ deployProgress.ctrlLabel }}</span>
+              <span>{{ deployProgress.ctrlCurrent }} / {{ deployProgress.ctrlTotal }}</span>
+            </div>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div class="bg-amber-500 h-2 rounded-full transition-all duration-300" :style="{ width: `${deployProgress.ctrlTotal ? (deployProgress.ctrlCurrent / deployProgress.ctrlTotal * 100) : 0}%` }"></div>
+            </div>
+          </div>
+          <!-- Bar 2: step progress -->
+          <div class="mb-4">
+            <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+              <span>{{ deployProgress.stepLabel }}</span>
+              <span>{{ deployProgress.stepCurrent }} / {{ deployProgress.stepTotal }}</span>
+            </div>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div class="bg-blue-500 h-2 rounded-full transition-all duration-300" :style="{ width: `${deployProgress.stepTotal ? (deployProgress.stepCurrent / deployProgress.stepTotal * 100) : 0}%` }"></div>
+            </div>
+          </div>
+          <!-- Bar 3: item progress -->
+          <div v-if="deployProgress.itemTotal > 0">
+            <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+              <span>{{ deployProgress.itemLabel }}</span>
+              <span>{{ deployProgress.itemCurrent }} / {{ deployProgress.itemTotal }}</span>
+            </div>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div class="bg-green-500 h-2 rounded-full transition-all duration-300" :style="{ width: `${deployProgress.itemTotal ? (deployProgress.itemCurrent / deployProgress.itemTotal * 100) : 0}%` }"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </Teleport>
 
     <ConfirmModal :show="!!deleteTarget" title="Delete Controller" :message="`Delete controller '${deleteTarget?.name}'? All assignments will be lost.`"
@@ -265,7 +315,20 @@ const showLoadBackupPrompt = ref(false)
 const cloudDeleteTarget = ref(null)
 const eventLog = ref([])
 const errorLog = ref([])
+const activeEventLogId = ref(null)
 const activeErrorLogId = ref(null)
+const deployProgress = reactive({
+  show: false,
+  ctrlLabel: '',
+  ctrlCurrent: 0,
+  ctrlTotal: 1,
+  stepLabel: '',
+  stepCurrent: 0,
+  stepTotal: 6,
+  itemLabel: '',
+  itemCurrent: 0,
+  itemTotal: 0
+})
 const macError = ref('')
 const emptyForm = () => ({ name: '', area: '', product: '', mac: '', uuid: '' })
 const form = ref(emptyForm())
@@ -388,38 +451,127 @@ async function authenticate(id) {
 
 function logout(id) {
   getSessionCtrl(id).logout()
+  tokenInputs[id] = ''
+}
+
+function handleUnauthorized(id) {
+  const ctrl = items.value.find(c => c.id === id)
+  addToast('error', `Authentication failed`)
+  logout(id)
+}
+
+function handleFetchError(id) {
+  const ctrl = items.value.find(c => c.id === id)
+  addToast('error', `Controller ${ctrl?.name ?? id} is unavailable, check the HTTP server.`)
+  logout(id)
 }
 
 async function deploy(ctrl) {
+  deployProgress.show = true
+  deployProgress.ctrlLabel = ctrl.name
+  deployProgress.ctrlTotal = 1
+  deployProgress.ctrlCurrent = 0
+  await _doDeployController(ctrl, 0, 1)
+  deployProgress.show = false
+}
+
+async function _doDeployController(ctrl, ctrlIndex, ctrlTotal) {
   const sessionCtrl = getSessionCtrl(ctrl.id)
   const { controllerFetch } = await import('../composables/useApi')
+  const STEPS = 6
+  let step = 0
+
+  function setStep(label) {
+    deployProgress.stepLabel = label
+    deployProgress.stepCurrent = step
+    deployProgress.stepTotal = STEPS
+    deployProgress.itemLabel = ''
+    deployProgress.itemCurrent = 0
+    deployProgress.itemTotal = 0
+    step++
+  }
+
+  function setItem(label, current, total) {
+    deployProgress.itemLabel = label
+    deployProgress.itemCurrent = current
+    deployProgress.itemTotal = total
+  }
+
+  async function fetchOrHandle(path, options = {}) {
+    try {
+      const res = await controllerFetch(sessionCtrl.session.ip, path, options, sessionCtrl.session.visualToken)
+      if (res.status === 401) { handleUnauthorized(ctrl.id); return null }
+      return res
+    } catch {
+      handleFetchError(ctrl.id)
+      return null
+    }
+  }
+
   try {
+    setStep('Reading controllers…')
+    const ctrlsRes = await fetchOrHandle('/controllers')
+    if (!ctrlsRes) return
+    const existingCtrls = ctrlsRes.ok ? await ctrlsRes.json() : []
+
+    setStep('Deleting controllers…')
+    setItem('', 0, existingCtrls.length)
+    for (let i = 0; i < existingCtrls.length; i++) {
+      const c = existingCtrls[i]
+      setItem(c.uuid ?? '', i, existingCtrls.length)
+      const r = await fetchOrHandle(`/controllers/${c.uuid}`, { method: 'DELETE' })
+      if (!r) return
+      setItem(c.uuid ?? '', i + 1, existingCtrls.length)
+    }
+
+    setStep('Deploying controller…')
+    setItem(ctrl.name, 0, 1)
     const payload = await buildControllerPayload(ctrl.id)
-    const res = await controllerFetch(sessionCtrl.session.ip, `/controllers/${ctrl.uuid}`, {
+    const putRes = await fetchOrHandle(`/controllers/${ctrl.uuid}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
-    }, sessionCtrl.session.visualToken)
-    if (!res.ok && res.status !== 204) {
-      addToast('error', `Deploy failed: HTTP ${res.status}`)
-      return
+    })
+    if (!putRes) return
+    if (!putRes.ok && putRes.status !== 204) { addToast('error', `Deploy failed: HTTP ${putRes.status}`); return }
+    setItem(ctrl.name, 1, 1)
+
+    setStep('Reading clients…')
+    const clientsRes = await fetchOrHandle('/clients')
+    if (!clientsRes) return
+    const existingClients = clientsRes.ok ? await clientsRes.json() : []
+
+    setStep('Deleting clients…')
+    setItem('', 0, existingClients.length)
+    for (let i = 0; i < existingClients.length; i++) {
+      const c = existingClients[i]
+      setItem(c.uuid ?? '', i, existingClients.length)
+      const r = await fetchOrHandle(`/clients/${c.uuid}`, { method: 'DELETE' })
+      if (!r) return
+      setItem(c.uuid ?? '', i + 1, existingClients.length)
     }
 
+    setStep('Deploying clients…')
     const secondaryIds = new Set(await getExtendedClientIds())
     const allClients = await db.clients.toArray()
-    for (const client of allClients.filter(c => !secondaryIds.has(c.id))) {
+    const primaryClients = allClients.filter(c => !secondaryIds.has(c.id))
+    setItem('', 0, primaryClients.length)
+    for (let i = 0; i < primaryClients.length; i++) {
+      const client = primaryClients[i]
+      setItem(client.name, i, primaryClients.length)
       const clientPayload = await buildClientPayload(client.id)
-      const clientRes = await controllerFetch(sessionCtrl.session.ip, `/clients/${client.uuid}`, {
+      const clientRes = await fetchOrHandle(`/clients/${client.uuid}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(clientPayload)
-      }, sessionCtrl.session.visualToken)
-      if (!clientRes.ok && clientRes.status !== 204) {
-        addToast('error', `Deploy: failed to push client '${client.name}' (HTTP ${clientRes.status})`)
-        return
-      }
+      })
+      if (!clientRes) return
+      if (!clientRes.ok && clientRes.status !== 204) { addToast('error', `Deploy: failed to push client '${client.name}' (HTTP ${clientRes.status})`); return }
+      setItem(client.name, i + 1, primaryClients.length)
     }
 
+    deployProgress.stepCurrent = STEPS
+    deployProgress.ctrlCurrent = ctrlIndex + 1
     addToast('success', `Deployed to ${ctrl.name}.`)
   } catch (e) {
     addToast('error', `Deploy error: ${e.message}`)
@@ -432,23 +584,51 @@ async function deployAll() {
     addToast('warning', 'No controllers are connected.')
     return
   }
-  for (const ctrl of connected) {
-    await deploy(ctrl)
+  deployProgress.show = true
+  deployProgress.ctrlTotal = connected.length
+  deployProgress.ctrlCurrent = 0
+  for (let i = 0; i < connected.length; i++) {
+    deployProgress.ctrlLabel = connected[i].name
+    await _doDeployController(connected[i], i, connected.length)
   }
+  deployProgress.show = false
 }
 
 const hasConnectedControllers = computed(() => items.value.some(c => sessions[c.id]?.isAuthenticated))
 
-async function openEventLog(id) {
+async function fetchEventLog(id) {
   const sessionCtrl = getSessionCtrl(id)
   const { controllerFetch } = await import('../composables/useApi')
   try {
     const res = await controllerFetch(sessionCtrl.session.ip, '/events', {}, sessionCtrl.session.visualToken)
+    if (res.status === 401) { handleUnauthorized(id); showEventLog.value = false; return }
     eventLog.value = res.ok ? await res.json() : []
   } catch {
-    eventLog.value = []
+    handleFetchError(id)
+    showEventLog.value = false
   }
+}
+
+async function openEventLog(id) {
+  activeEventLogId.value = id
+  eventLog.value = []
   showEventLog.value = true
+  await fetchEventLog(id)
+}
+
+async function refreshEventLog() {
+  if (activeEventLogId.value) await fetchEventLog(activeEventLogId.value)
+}
+
+function formatEventTime(t) {
+  if (!t) return '—'
+  return new Date(t * 1000).toLocaleString()
+}
+
+function eventLevelClass(level) {
+  if (level === 'error') return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200'
+  if (level === 'notify') return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200'
+  return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200'
 }
 
 // --- Error Log ---
@@ -464,9 +644,11 @@ async function fetchErrorLog(id) {
   const { controllerFetch } = await import('../composables/useApi')
   try {
     const res = await controllerFetch(sessionCtrl.session.ip, '/errors', {}, sessionCtrl.session.visualToken)
+    if (res.status === 401) { handleUnauthorized(id); showErrorLog.value = false; return }
     errorLog.value = res.ok ? await res.json() : []
   } catch {
-    errorLog.value = []
+    handleFetchError(id)
+    showErrorLog.value = false
   }
 }
 
