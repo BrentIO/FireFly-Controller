@@ -65,7 +65,7 @@ uint64_t bootTime = 0; /* Approximate Epoch time the device booted */
 #if CORE_DEBUG_LEVEL >= 4
 uint64_t lastTimeMemoryBroadcast = 0; /* The last time memory usage was broadcast */
 #endif /* CORE_DEBUG_LEVEL >= 4 */
-volatile uint64_t lastTimeHttpServerUsed = 0;  /* The last time the HTTP server responded to a request */
+volatile uint32_t lastTimeHttpServerUsed = 0;  /* millis() timestamp of the last authorized HTTP request */
 bool httpServerIsActive = false; /* If the HTTP server has been started */
 bool _mqttWasConnected = false; /* Tracks prior MQTT connected state to detect disconnect transitions */
 AsyncWebServer httpServer(80);
@@ -675,10 +675,7 @@ void loop() {
 #endif /* CORE_DEBUG_LEVEL >= 4 */
 
   if(httpServerIsActive){
-    uint64_t now = esp_timer_get_time();
-    uint64_t diff = now - lastTimeHttpServerUsed;
-
-    if (diff >= (uint64_t)HTTP_SERVER_MAX_IDLE_SECONDS * 1000000ULL) {
+    if((uint32_t)(millis() - lastTimeHttpServerUsed) >= (uint32_t)HTTP_SERVER_MAX_IDLE_SECONDS * 1000UL) {
       stopHttpServer();
     }
   }
@@ -5591,11 +5588,7 @@ void stopHttpServer(){
  * with an authorized request
  */
 void resetHTPServerUsage(){
-
-  if(lastTimeHttpServerUsed < esp_timer_get_time()){
-      lastTimeHttpServerUsed = esp_timer_get_time();
-  }
-
+  lastTimeHttpServerUsed = millis();
 }
 
 
