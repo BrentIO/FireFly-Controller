@@ -379,11 +379,27 @@ async function authenticate(id) {
   try {
     await ctrl.authenticate()
     addToast('success', 'Connected.')
-    // Fetch provisioning state after authenticating
     await fetchProvisioningState(id)
+    await verifyDeviceUuid(id)
   } catch (e) {
     addToast('error', `Connection failed: ${e.message}`)
   }
+}
+
+async function verifyDeviceUuid(id) {
+  const sessionCtrl = getSessionCtrl(id)
+  const ctrlRecord = items.value.find(c => c.id === id)
+  if (!ctrlRecord) return
+  const { controllerFetch } = await import('../composables/useApi')
+  try {
+    const res = await controllerFetch(sessionCtrl.session.ip, '/version', {}, sessionCtrl.session.visualToken)
+    if (res.ok) {
+      const version = await res.json()
+      if (version.uuid && version.uuid !== ctrlRecord.uuid) {
+        addToast('warning', `Connected, but device UUID (${version.uuid}) does not match configured UUID (${ctrlRecord.uuid}). Verify the correct controller is connected.`)
+      }
+    }
+  } catch { /* Non-fatal — UUID verification is best-effort */ }
 }
 
 function logout(id) {
