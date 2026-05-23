@@ -98,7 +98,7 @@ class managerTemperatureSensors{
             float previousRead = 0; /* Last published EMA temperature in degrees celsius. Default 0 */
             float ema = 0; /* Current exponential moving average. Default 0 */
             bool emaInitialized = false; /* True once the EMA has been seeded with a real reading */
-            unsigned long timePreviousRead = 0; /* Time (millis) when the sensor was last read. Default 0 */
+            uint32_t timePreviousRead = 0; /* Milliseconds (esp_timer_get_time / 1000) when the sensor was last read. Default 0 */
             const char* location; /* Physical location of the sensor */
             bool enabled = true; /* Indicates if the sensor is enabled. Default true */
         };
@@ -247,7 +247,7 @@ class managerTemperatureSensors{
                 }
 
                 //If the timer has expired OR if the temperature sensor has never been read, read it
-                if((millis() - temperatureSensors[i].timePreviousRead > TEMPERATURE_SENSOR_SLEEP_DURATION_MILLIS) || (temperatureSensors[i].timePreviousRead == 0)){
+                if(((uint32_t)(esp_timer_get_time() / 1000ULL) - temperatureSensors[i].timePreviousRead > TEMPERATURE_SENSOR_SLEEP_DURATION_MILLIS) || (temperatureSensors[i].timePreviousRead == 0)){
 
                     //Temperatures will be reported in degrees C
                     #if TEMPERATURE_SENSOR_MODEL == ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075
@@ -255,7 +255,7 @@ class managerTemperatureSensors{
                     #endif
 
                     //Set the new read time time
-                    temperatureSensors[i].timePreviousRead = millis();
+                    temperatureSensors[i].timePreviousRead = (uint32_t)(esp_timer_get_time() / 1000ULL);
 
                     //Ensure the hardware is still online
                     #if TEMPERATURE_SENSOR_MODEL == ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075

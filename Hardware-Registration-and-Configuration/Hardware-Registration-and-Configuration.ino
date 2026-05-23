@@ -178,7 +178,7 @@ void setup() {
     ETH.setHostname(hostname);
     esp_read_mac(baseMac, ESP_MAC_WIFI_STA);
 
-    unsigned long ethernet_start_time = millis();
+    uint32_t ethernet_start_time = (uint32_t)(esp_timer_get_time() / 1000ULL);
     ETH.begin(ETH_PHY_W5500, 1, ETHERNET_PIN, ETHERNET_PIN_INTERRUPT, ETHERNET_PIN_RESET,
               ETH_SPI_HOST, SPI_SCK_PIN, SPI_MISO_PIN, SPI_MOSI_PIN, SPI_CLOCK_MHZ);
 
@@ -186,7 +186,7 @@ void setup() {
 
       delay(100);
 
-      if(millis() > ethernet_start_time + ETHERNET_TIMEOUT){
+      if((uint32_t)(esp_timer_get_time() / 1000ULL) - ethernet_start_time > ETHERNET_TIMEOUT){
           log_w("Ethernet connection timeout");
         break;
       }
