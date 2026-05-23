@@ -57,7 +57,7 @@ body:
       label: Application
       options:
         - Controller
-        - Hardware Registration and Configuration (HW-Reg)
+        - Hardware Registration and Configuration
         - Configurator
     validations:
       required: false
