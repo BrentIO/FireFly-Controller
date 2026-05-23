@@ -302,15 +302,17 @@
                         this->hardware.println("UNKNOWN");
                     #endif
 
+                    #ifdef COMMIT_HASH
+                        this->hardware.print("(");
+                        this->hardware.print(COMMIT_HASH);
+                        this->hardware.println(")");
+                    #endif
+
                     if(this->_name){
                         this->hardware.println(this->_name);
                     }else{
                         this->hardware.println("No Device Name");
                     }
-
-                    #ifdef COMMIT_HASH
-                        this->hardware.println(COMMIT_HASH);
-                    #endif
 
                 #endif
 
@@ -637,7 +639,12 @@
                         this->hardware.print("PID: ");
                         this->hardware.println(this->_productId);
                     }else{
-                        this->hardware.println("Unknown Product ID");
+                        #ifdef PRODUCT_HEX
+                            this->hardware.print("0x");
+                            this->hardware.println(PRODUCT_HEX, HEX);
+                        #else
+                            this->hardware.println("Unknown Product ID");
+                        #endif
                     }
 
                     if(this->_uuid){
