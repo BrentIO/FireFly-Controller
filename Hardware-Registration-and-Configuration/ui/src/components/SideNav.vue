@@ -83,7 +83,8 @@ const navItems = computed(() => [
   { path: '/network',      label: 'Network',             key: 'network' },
   { path: '/identity',     label: 'Identity',            key: 'identity' },
   { path: '/registration', label: 'Cloud Registration',  key: 'registration', disabled: !state.identityLoaded },
-  { path: '/partitions',   label: 'Partition Table',     key: 'partitions',   disabled: !state.identityLoaded },
+  { path: '/firmware',    label: 'Firmware',             key: 'firmware',     disabled: !state.identityLoaded },
+  { path: '/partitions',  label: 'Partition Table',      key: 'partitions',   disabled: !state.identityLoaded },
   { path: '/peripherals',  label: 'Peripherals',         key: 'peripherals',  disabled: !state.identityLoaded },
   { path: '/events',       label: 'Event Log',           key: 'events' },
   { path: '/errors',       label: 'Error Log',           key: 'errors' }

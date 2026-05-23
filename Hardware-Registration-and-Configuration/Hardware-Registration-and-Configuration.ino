@@ -45,6 +45,7 @@
 #include "common/outputs.h"
 #include "common/eventLog.h"
 #include "common/authorizationToken.h"
+#include "common/otaConfig.h"
 #include <ArduinoJson.h>
 #include "AsyncJson.h"
 #include <NTPClient.h>
@@ -59,6 +60,7 @@
 
 unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
 AsyncWebServer httpServer(80);
+exEsp32FOTA otaFirmware(APPLICATION_NAME, VERSION, false);
 managerDeviceIdentity deviceIdentity; /* Device identity instance */
 managerOled oled; /* OLED instance */
 managerFrontPanel frontPanel; /* Front panel instance */
@@ -83,6 +85,12 @@ struct {
   time_t checkedAt  = 0;
 } _registrationState;
 
+struct {
+  String json;
+  bool   ready   = false;
+  bool   pending = false;
+} _firmwareState;
+
 /* Hardware RNG wrapper for mbedtls ECP/ECDSA calls */
 static int _espRng(void*, unsigned char* buf, size_t len) {
     esp_fill_random(buf, len);
@@ -90,6 +98,11 @@ static int _espRng(void*, unsigned char* buf, size_t len) {
 }
 
 void updateNTPTime(bool force = false);
+void fetchFirmwareList();
+void otaFirmware_checkPending();
+void eventHandler_otaFirmwareProgress(size_t progress, size_t size);
+void eventHandler_otaFirmwareFailed(int partition);
+void eventHandler_otaFirmwareFinished(int partition, bool needs_restart);
 
 fs::LittleFSFS wwwFS;
 bool wwwFS_isMounted = false;
@@ -255,6 +268,10 @@ void setup() {
   httpServer.on("/api/errors", http_handleErrorLog);
   httpServer.on("^/api/network/([a-z_]+)$", http_handleNetworkInterface);
   httpServer.on("/api/network", http_handleNetworkInterfaceAll);
+  httpServer.on("/api/firmware", http_handleFirmware);
+  AsyncCallbackJsonWebHandler *jsonHandler_handleOTA_POST = new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced_POST);
+  jsonHandler_handleOTA_POST->setMethod(HTTP_POST);
+  httpServer.addHandler(jsonHandler_handleOTA_POST);
   httpServer.on("/auth", http_handleAuth);
 
   if(wwwFS_isMounted){
@@ -305,6 +322,12 @@ void loop() {
   if (_registrationState.checkedAt == 0 && deviceIdentity.enabled && timeClient.isTimeSet()) {
     checkCloudRegistration();
   }
+
+  if (_firmwareState.pending && deviceIdentity.enabled) {
+    fetchFirmwareList();
+  }
+
+  otaFirmware_checkPending();
 
   oled.loop();
   authToken.loop();
@@ -602,6 +625,242 @@ void http_handleMCU(AsyncWebServerRequest *request){
 
   serializeJson(doc, *response);
   request->send(response);
+}
+
+
+/**
+ * Fetches the list of released Controller firmware from FireFly-Cloud for this device's product.
+ * Called from loop() when _firmwareState.pending is set. Stores up to 5 most recent versions
+ * (newest-first) in _firmwareState.json.
+*/
+void fetchFirmwareList() {
+
+  _firmwareState.pending = false;
+
+  char url[128];
+  snprintf(url, sizeof(url), "%s/ota/controller/0x%08" PRIx32 "/controller",
+           FIREFLY_CLOUD_API_ROOT, deviceIdentity.data.product_hex);
+
+  esp_http_client_config_t cfg = {};
+  cfg.url                = url;
+  cfg.crt_bundle_attach  = esp_crt_bundle_attach;
+  cfg.timeout_ms         = 10000;
+
+  esp_http_client_handle_t client = esp_http_client_init(&cfg);
+  esp_err_t err = esp_http_client_open(client, 0);
+
+  if (err != ESP_OK) {
+    esp_http_client_cleanup(client);
+    eventLog.createEvent("Firmware list failed", EventLog::LOG_LEVEL_NOTIFICATION);
+    return;
+  }
+
+  int content_length = esp_http_client_fetch_headers(client);
+  int status = esp_http_client_get_status_code(client);
+
+  if (status == 200) {
+    const int BUF_SIZE = 4096;
+    char* buf = new char[BUF_SIZE];
+    if (buf) {
+      int total = 0, read_len;
+      while ((read_len = esp_http_client_read(client, buf + total, BUF_SIZE - total - 1)) > 0) {
+        total += read_len;
+        if (total >= BUF_SIZE - 1) break;
+      }
+      buf[total] = '\0';
+
+      JsonDocument parsed;
+      DeserializationError parseErr = deserializeJson(parsed, buf);
+      delete[] buf;
+
+      if (!parseErr && parsed["versions"].is<JsonArray>()) {
+        JsonArray versions = parsed["versions"].as<JsonArray>();
+        int count = versions.size();
+        int start = (count > 5) ? count - 5 : 0;
+
+        JsonDocument out;
+        JsonArray arr = out["versions"].to<JsonArray>();
+        for (int i = count - 1; i >= start; i--) {
+          arr.add(versions[i]);
+        }
+
+        _firmwareState.json = "";
+        serializeJson(out, _firmwareState.json);
+        _firmwareState.ready = true;
+        eventLog.createEvent("Firmware list fetched", EventLog::LOG_LEVEL_INFO);
+      }
+    } else {
+      delete[] buf;
+    }
+  } else if (status == 404) {
+    /* No released firmware for this product — return an empty list */
+    _firmwareState.json = "{\"versions\":[]}";
+    _firmwareState.ready = true;
+  }
+
+  esp_http_client_close(client);
+  esp_http_client_cleanup(client);
+}
+
+
+/**
+ * GET /api/firmware — returns cached list of released Controller firmware for this device.
+ * Returns 202 and triggers a background fetch if the list is not yet ready.
+*/
+void http_handleFirmware(AsyncWebServerRequest *request) {
+
+  if (request->method() != HTTP_GET) {
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  if (!request->hasHeader("visual-token") ||
+      !authToken.authenticate(request->header("visual-token").c_str())) {
+    http_unauthorized(request);
+    return;
+  }
+
+  if (!deviceIdentity.enabled) {
+    http_conflict(request, "Device not provisioned");
+    return;
+  }
+
+  if (!_firmwareState.ready) {
+    _firmwareState.pending = true;
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    JsonDocument doc;
+    doc["status"] = "loading";
+    serializeJson(doc, *response);
+    response->setCode(202);
+    request->send(response);
+    return;
+  }
+
+  request->send(200, "application/json", _firmwareState.json);
+}
+
+
+/**
+ * POST /api/ota/app — queues a forced OTA app firmware update from the provided URL.
+*/
+void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant &doc) {
+
+  if (!request->hasHeader("visual-token") ||
+      !authToken.authenticate(request->header("visual-token").c_str())) {
+    http_unauthorized(request);
+    return;
+  }
+
+  if (request->method() != HTTP_POST) {
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  if (doc["url"].isNull()) {
+    http_badRequest(request, "Field url is required");
+    return;
+  }
+
+  forcedOtaUpdateConfig newFirmwareRequest;
+  newFirmwareRequest.url = doc["url"].as<String>();
+
+  if (!newFirmwareRequest.url.endsWith(".bin")) {
+    http_badRequest(request, "Bad url; File must be of type '.bin'");
+    return;
+  }
+
+  if (!newFirmwareRequest.url.startsWith("http:") && !newFirmwareRequest.url.startsWith("https:")) {
+    http_badRequest(request, "Bad url; http or https required");
+    return;
+  }
+
+  newFirmwareRequest.type = OTA_UPDATE_APP;
+  otaFirmware.pending.add(newFirmwareRequest);
+
+  request->send(202);
+}
+
+
+/**
+ * Checks if there are any pending OTA firmware updates in the queue.
+ * This is necessary to allow the async web server to raise requests to the main loop.
+*/
+void otaFirmware_checkPending() {
+
+  if (otaFirmware.pending.size() == 0) {
+    return;
+  }
+
+  if (otaFirmware.updateInProcess == true) {
+    return;
+  }
+
+  for (int i = 0; i < otaFirmware.pending.size(); i++) {
+
+    exEsp32FOTA::esp32FOTA forceFirmwareUpdate;
+    forceFirmwareUpdate.setProgressCb(eventHandler_otaFirmwareProgress);
+    forceFirmwareUpdate.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
+    forceFirmwareUpdate.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
+    forceFirmwareUpdate.setSPIFFsPartitionLabel("www");
+    forceFirmwareUpdate.useBundledCerts();
+
+    bool updateSuccess = false;
+    eventLog.createEvent("OTA app forced", EventLog::LOG_LEVEL_NOTIFICATION);
+    updateSuccess = forceFirmwareUpdate.forceUpdate(otaFirmware.pending.get(i).url.c_str(), false);
+
+    if (!updateSuccess) {
+      eventLog.createEvent("OTA update failed", EventLog::LOG_LEVEL_NOTIFICATION);
+    }
+
+    otaFirmware.pending.remove(i);
+  }
+}
+
+
+/**
+ * A callback function to report firmware upgrade progress, which draws a status on the OLED.
+ * @param progress The number of bytes that have been processed so far
+ * @param size The total size of the update in bytes
+*/
+void eventHandler_otaFirmwareProgress(size_t progress, size_t size) {
+
+  otaFirmware.updateInProcess = true;
+
+  float percentage = ((float)progress / (float)size);
+
+  if (progress == 0) {
+    eventLog.createEvent("OTA firmware started", EventLog::LOG_LEVEL_NOTIFICATION);
+    oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
+  }
+
+  oled.setProgressBar(percentage);
+}
+
+
+/**
+ * Callback function to report that the OTA update has failed.
+ * @param partition inherited from esp32FOTA library
+*/
+void eventHandler_otaFirmwareFailed(int partition) {
+  log_e("OTA failed partition: [%i]", partition);
+  eventLog.createEvent("OTA firmware failed", EventLog::LOG_LEVEL_NOTIFICATION);
+  otaFirmware.updateInProcess = false;
+}
+
+
+/**
+ * A callback function for when the OTA firmware update has finished.
+*/
+void eventHandler_otaFirmwareFinished(int partition, bool needs_restart) {
+  log_i("OTA finished partition: [%i] needs restart: [%s]", partition, needs_restart ? "true" : "false");
+  eventLog.createEvent("OTA update finished", EventLog::LOG_LEVEL_NOTIFICATION);
+
+  if (needs_restart) {
+    eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
+    delay(5000);
+  }
+
+  otaFirmware.updateInProcess = false;
 }
 
 
