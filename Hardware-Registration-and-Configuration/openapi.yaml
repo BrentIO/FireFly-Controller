@@ -16,6 +16,8 @@ tags:
     description: Operations for managing the device identity data
   - name: Event and Error Logs
     description: Operations for the event and error logs
+  - name: Firmware
+    description: Operations for retrieving and installing Controller firmware via OTA
   - name: Network
     description: Operations for network communications
   - name: Partitions
@@ -228,6 +230,93 @@ paths:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: Clock not synchronized
+  /api/firmware:
+    get:
+      tags:
+        - Firmware
+      summary: List available Controller firmware
+      description: |
+        Returns up to 5 of the most recent released Controller firmware versions for this device's
+        product, newest-first, sourced from FireFly-Cloud. Returns `202 Accepted` with
+        `{"status":"loading"}` if the list is not yet cached; the caller should retry after a short
+        delay. Returns `409 Conflict` if device identity is not provisioned.
+      security:
+        - visualToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/firmwareListResponse'
+              example:
+                versions:
+                  - type: "FireFly Controller"
+                    version: "2026.03.01"
+                    url: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/Controller.ino.bin"
+                    littlefs: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/www.bin"
+                    release_url: "https://github.com/BrentIO/FireFly-Controller/releases/tag/2026.03.01"
+        '202':
+          description: Accepted — firmware list is being fetched; retry after a short delay
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: loading
+        '401':
+          description: Unauthorized
+        '409':
+          description: Conflict — device identity not provisioned in eFuse
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Device not provisioned
+  /api/ota/app:
+    post:
+      tags:
+        - Firmware
+      summary: Force OTA app firmware update
+      description: |
+        Queues a forced over-the-air application firmware update from the URL provided. The device
+        downloads and installs the binary, then reboots automatically. The URL must be an `http` or
+        `https` address ending in `.bin`. Returns `202 Accepted` immediately; the update runs
+        asynchronously on the main loop.
+      security:
+        - visualToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/otaRequest'
+            example:
+              url: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/Controller.ino.bin"
+      responses:
+        '202':
+          description: Accepted — OTA update queued
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+              examples:
+                missing_url:
+                  value:
+                    message: Field url is required
+                bad_extension:
+                  value:
+                    message: "Bad url; File must be of type '.bin'"
+                bad_protocol:
+                  value:
+                    message: "Bad url; http or https required"
+        '401':
+          description: Unauthorized
   /api/mcu:
     get:
       tags:
@@ -630,6 +719,47 @@ components:
           $ref: '#/components/schemas/applicationVersion'
         product_hex:
           $ref: '#/components/schemas/productHex'
+    firmwareVersion:
+      type: object
+      description: A single released firmware version entry, as returned by the FireFly-Cloud OTA endpoint.
+      properties:
+        type:
+          type: string
+          description: Firmware type string
+          example: "FireFly Controller"
+        version:
+          type: string
+          description: Firmware version string
+          example: "2026.03.01"
+        url:
+          type: string
+          description: URL to the application firmware binary (.bin)
+          example: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/Controller.ino.bin"
+        littlefs:
+          type: string
+          description: URL to the LittleFS partition image. Omitted if not present.
+          example: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/www.bin"
+        release_url:
+          type: string
+          description: URL to the release announcement. Omitted if not provided.
+          example: "https://github.com/BrentIO/FireFly-Controller/releases/tag/2026.03.01"
+    firmwareListResponse:
+      type: object
+      properties:
+        versions:
+          type: array
+          description: Up to 5 most recent released firmware versions, newest-first.
+          items:
+            $ref: '#/components/schemas/firmwareVersion'
+    otaRequest:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          description: URL of the firmware binary to download and install. Must be http or https and end in .bin.
+          example: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/Controller.ino.bin"
   examples:
     emptyArray:
       value: []
