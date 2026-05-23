@@ -57,7 +57,7 @@ body:
       label: Application
       options:
         - Controller
-        - Hardware Registration and Configuration (HW-Reg)
+        - Hardware Registration and Configuration
         - Configurator
     validations:
       required: false
@@ -67,9 +67,6 @@ body:
     attributes:
       label: Hardware variant
       options:
-        - FFC0806-2305
-        - FFC0806-2505
-        - FFC3232-2505
         - Other / Unknown
     validations:
       required: false
