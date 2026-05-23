@@ -34,8 +34,12 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password <span class="font-normal text-gray-400">(optional)</span></label>
-        <input v-model="form.password" type="password" autocomplete="current-password"
-          class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <div class="relative">
+          <input v-model="form.password" :type="showPassword ? 'text' : 'password'" autocomplete="current-password"
+            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 pr-16 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-blue-600 dark:text-blue-400"
+            @click="showPassword = !showPassword">{{ showPassword ? 'Hide' : 'Show' }}</button>
+        </div>
       </div>
       <div class="flex justify-end pt-2">
         <button type="submit" class="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors print:hidden">Save</button>
@@ -53,6 +57,7 @@ import { useToast } from '../../composables/useToast'
 const { getSetting, setSetting } = useSettings()
 const { addToast } = useToast()
 const form = ref({ host: '', port: 1883, username: '', password: '' })
+const showPassword = ref(false)
 
 onMounted(async () => {
   const saved = await getSetting('mqtt')
