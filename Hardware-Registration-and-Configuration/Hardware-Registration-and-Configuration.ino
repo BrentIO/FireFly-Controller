@@ -22,9 +22,7 @@
   #else
     #define VERSION "9999.99.99"
   #endif
-  #ifdef COMMIT_HASH
-    #error "COMMIT_HASH may not be specified for a debug build."
-  #else
+  #ifndef COMMIT_HASH
     #define COMMIT_HASH "DEBUG"
   #endif
 #endif
