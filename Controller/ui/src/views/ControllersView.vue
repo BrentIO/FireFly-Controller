@@ -60,7 +60,7 @@
             <input v-model="ipInputs[ctrl.id]" type="text" placeholder="192.168.1.x"
               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" />
             <div class="flex gap-2">
-              <input v-model="tokenInputs[ctrl.id]" type="text" placeholder="Visual token" maxlength="8"
+              <input v-model="tokenInputs[ctrl.id]" type="text" placeholder="Visual token" maxlength="6"
                 class="flex-1 min-w-0 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
               <button class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex-shrink-0" @click="authenticate(ctrl.id)">Connect</button>
             </div>

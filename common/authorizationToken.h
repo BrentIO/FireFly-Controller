@@ -12,7 +12,10 @@
     #endif
 
     #ifndef AUTH_TOKEN_LENGTH
-        #define AUTH_TOKEN_LENGTH 9 //Length of the token, including null terminator
+        // NOTE: If this value changes, also update the placeholder text in
+        // Hardware-Registration-and-Configuration/ui/src/views/LoginView.vue
+        // and the maxlength attribute in Controller/ui/src/views/ControllersView.vue
+        #define AUTH_TOKEN_LENGTH 7 //Length of the token, including null terminator
     #endif
 
     class authorizationToken{
@@ -37,7 +40,7 @@
 
 
         private:
-            const char* letters = "AaBbCcDdEeFfGgHhiJjKkLMmnPpQqRrSsTtUuVvWwXxYyZz123456789!@#$%&+=*"; //List of letters that can be used when generating visual tokens
+            const char* characters = "ACDEFGHJKLMNPRTUVWXY3467"; //List of characters that can be used when generating visual tokens
             LinkedList<token> _authorizations; //List of authorizations used for long-time use
             token _visualToken; //The current visual token
             void (*_ptrVisualTokenChanged)(); //Function to call when the visual token changes
@@ -49,7 +52,7 @@
             void _newVisualToken(){
 
                 for(uint8_t i=0; i < sizeof(this->_visualToken.code) - 1; i++){
-                    this->_visualToken.code[i] = letters[random(0, strlen(letters)-1)];
+                    this->_visualToken.code[i] = characters[random(0, strlen(characters)-1)];
                 }
 
                 #ifdef ESP32

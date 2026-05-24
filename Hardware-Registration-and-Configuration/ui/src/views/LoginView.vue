@@ -9,11 +9,11 @@
         <input
           v-model="token"
           type="text"
-          minlength="8"
-          maxlength="8"
+          minlength="6"
+          maxlength="6"
           autocomplete="off"
           class="block w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 text-sm font-mono mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Enter 8-character token"
+          placeholder="Enter 6-character token"
           required
         />
         <button
