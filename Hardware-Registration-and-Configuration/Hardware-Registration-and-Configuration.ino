@@ -1005,7 +1005,11 @@ void checkCloudRegistration() {
     } else {
       _registrationState.errorMessage = "Cloud verification failed";
     }
-    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_NOTIFICATION);
+    if (status == 401) {
+      eventLog.createEvent("Cloud reg sig vf fail", EventLog::LOG_LEVEL_ERROR);
+    } else {
+      eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_NOTIFICATION);
+    }
   }
 }
 
