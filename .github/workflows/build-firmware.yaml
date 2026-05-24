@@ -286,7 +286,7 @@ jobs:
           ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/mklittlefs \
             -s ${{ matrix.partition_size_www }} \
             -c ${{ github.workspace }}/${{ matrix.application }}/www \
-            "$OUTDIR/www.bin"
+            "$OUTDIR/ui.bin"
 
           ${ARDUINO_DIR}/packages/esp32/tools/mklittlefs/**/mklittlefs \
             -s ${{ matrix.partition_size_config }} \
