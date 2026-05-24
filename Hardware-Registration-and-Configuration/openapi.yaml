@@ -270,7 +270,7 @@ paths:
                   - type: "FireFly Controller"
                     version: "2026.03.01"
                     url: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/Controller.ino.bin"
-                    littlefs: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/www.bin"
+                    ui: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/ui.bin"
                     release_url: "https://github.com/BrentIO/FireFly-Controller/releases/tag/2026.03.01"
         '202':
           description: Accepted — firmware list is being fetched; retry after a short delay
@@ -312,6 +312,47 @@ paths:
               $ref: '#/components/schemas/otaRequest'
             example:
               url: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/Controller.ino.bin"
+      responses:
+        '202':
+          description: Accepted — OTA update queued
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+              examples:
+                missing_url:
+                  value:
+                    message: Field url is required
+                bad_extension:
+                  value:
+                    message: "Bad url; File must be of type '.bin'"
+                bad_protocol:
+                  value:
+                    message: "Bad url; http or https required"
+        '401':
+          description: Unauthorized
+  /api/ota/ui:
+    post:
+      tags:
+        - Firmware
+      summary: Force OTA UI firmware update
+      description: |
+        Queues a forced over-the-air UI (LittleFS) firmware update from the URL provided. The device
+        downloads and installs the binary, then reboots automatically. The URL must be an `http` or
+        `https` address ending in `.bin`. Returns `202 Accepted` immediately; the update runs
+        asynchronously on the main loop.
+      security:
+        - visualToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/otaRequest'
+            example:
+              url: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/ui.bin"
       responses:
         '202':
           description: Accepted — OTA update queued
@@ -751,10 +792,10 @@ components:
           type: string
           description: URL to the application firmware binary (.bin)
           example: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/Controller.ino.bin"
-        littlefs:
+        ui:
           type: string
-          description: URL to the LittleFS partition image. Omitted if not present.
-          example: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/www.bin"
+          description: URL to the UI (LittleFS) partition image. Omitted if not present.
+          example: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/ui.bin"
         release_url:
           type: string
           description: URL to the release announcement. Omitted if not provided.

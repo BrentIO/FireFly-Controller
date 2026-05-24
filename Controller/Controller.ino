@@ -592,8 +592,8 @@ void setup() {
     httpServer.on("^/certs$", HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
     httpServer.on("/api/ota/app", HTTP_OPTIONS, http_options);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced_POST));
-    httpServer.on("/api/ota/spiffs", HTTP_OPTIONS, http_options);
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/spiffs", http_handleOTA_forced_POST));
+    httpServer.on("/api/ota/ui", HTTP_OPTIONS, http_options);
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/ui", http_handleOTA_forced_POST));
     httpServer.on("/api/cloud-backup", http_handleCloudBackup);
     httpServer.on("/ui/version", http_handleUIVersion);
     setup_OtaFirmware();
@@ -3179,7 +3179,7 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
       newFirmwareRequest.type = OTA_UPDATE_APP;
 
   }else{
-    newFirmwareRequest.type = OTA_UPDATE_SPIFFS;
+    newFirmwareRequest.type = OTA_UPDATE_UI;
   }
 
   otaFirmware.pending.add(newFirmwareRequest);
@@ -3403,8 +3403,8 @@ void otaFirmware_checkPending(){
         break;
 
 
-      case OTA_UPDATE_SPIFFS:
-        eventLog.createEvent("OTA SPIFFS forced");
+      case OTA_UPDATE_UI:
+        eventLog.createEvent("OTA UI forced");
         updateSuccess = forceFirmwareUpdate.forceUpdateSPIFFS(otaFirmware.pending.get(i).url.c_str(), false);
         break;
     }

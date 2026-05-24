@@ -272,9 +272,12 @@ void setup() {
   httpServer.on("^/api/network/([a-z_]+)$", http_handleNetworkInterface);
   httpServer.on("/api/network", http_handleNetworkInterfaceAll);
   httpServer.on("/api/firmware", http_handleFirmware);
-  AsyncCallbackJsonWebHandler *jsonHandler_handleOTA_POST = new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced_POST);
-  jsonHandler_handleOTA_POST->setMethod(HTTP_POST);
-  httpServer.addHandler(jsonHandler_handleOTA_POST);
+  AsyncCallbackJsonWebHandler *jsonHandler_handleOTA_app_POST = new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced_POST);
+  jsonHandler_handleOTA_app_POST->setMethod(HTTP_POST);
+  httpServer.addHandler(jsonHandler_handleOTA_app_POST);
+  AsyncCallbackJsonWebHandler *jsonHandler_handleOTA_ui_POST = new AsyncCallbackJsonWebHandler("/api/ota/ui", http_handleOTA_forced_POST);
+  jsonHandler_handleOTA_ui_POST->setMethod(HTTP_POST);
+  httpServer.addHandler(jsonHandler_handleOTA_ui_POST);
 
   httpServer.on("/auth", http_handleAuth);
 
@@ -761,6 +764,7 @@ void http_handleFirmware(AsyncWebServerRequest *request) {
 
 /**
  * POST /api/ota/app — queues a forced OTA app firmware update from the provided URL.
+ * POST /api/ota/ui  — queues a forced OTA UI firmware update from the provided URL.
 */
 void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant &doc) {
 
@@ -793,7 +797,7 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant &doc
     return;
   }
 
-  newFirmwareRequest.type = OTA_UPDATE_APP;
+  newFirmwareRequest.type = request->url().endsWith("app") ? OTA_UPDATE_APP : OTA_UPDATE_UI;
   otaFirmware.pending.add(newFirmwareRequest);
 
   request->send(202);

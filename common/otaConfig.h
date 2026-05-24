@@ -15,7 +15,7 @@
 
     enum otaUpdateType{
         OTA_UPDATE_APP = 2,
-        OTA_UPDATE_SPIFFS = 1
+        OTA_UPDATE_UI = 1
     };
     
     
