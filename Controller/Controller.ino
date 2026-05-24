@@ -1035,9 +1035,26 @@ void failureHandler_inputs(uint8_t address, managerInputs::failureReason failure
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 
   if(mqttClient.connected()){
-    char availability_topic[MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
-    snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, address);
-    mqttClient.publish(availability_topic, "offline", true);
+    uint8_t portCount = (IO_EXTENDER_COUNT_PINS / IO_EXTENDER_COUNT_CHANNELS_PER_PORT) * IO_EXTENDER_COUNT;
+    for(uint8_t p = 0; p < portCount; p++){
+      if(inputPorts[p].id[0] == '\0'){
+        continue;
+      }
+      for(uint8_t c = 0; c < IO_EXTENDER_COUNT_CHANNELS_PER_PORT; c++){
+        if(inputPorts[p].channels[c].channel == 0){
+          continue;
+        }
+        managerInputs::portChannel pc = {(uint8_t)(p+1), inputPorts[p].channels[c].channel};
+        managerInputs::portChannelInfo info = inputs.getPortChannelInfo(pc);
+        if(!info.found || info.chipAddress != address){
+          continue;
+        }
+        uint8_t logicalChannel = inputPorts[p].channels[c].channel + info.offset;
+        char state_topic[MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH+1];
+        snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_INPUT_STATE_PATTERN, inputPorts[p].id, logicalChannel);
+        mqttClient.publish(state_topic, "offline", true);
+      }
+    }
   }
 }
 
@@ -1059,9 +1076,24 @@ void failureHandler_outputs(uint8_t address, nsOutputs::failureReason failureRea
   frontPanel.setStatus(managerFrontPanel::status::FAILURE);
 
   if(mqttClient.connected()){
-    char availability_topic[MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
-    snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, address);
-    mqttClient.publish(availability_topic, "offline", true);
+    const uint8_t chipAddresses[] = OUTPUT_CONTROLLER_ADDRESSES;
+    uint8_t totalPorts = OUTPUT_CONTROLLER_COUNT * OUTPUT_CONTROLLER_COUNT_PINS;
+    for(uint8_t port = 1; port <= totalPorts; port++){
+      uint8_t chipIdx = (port - 1) / OUTPUT_CONTROLLER_COUNT_PINS;
+      if(chipAddresses[chipIdx] != address){
+        continue;
+      }
+      char portId[OUTPUT_ID_MAX_LENGTH+1];
+      char* portIdPtr = portId;
+      portId[0] = '\0';
+      outputs.getPortId(port, portIdPtr, sizeof(portId));
+      if(portId[0] == '\0'){
+        continue;
+      }
+      char state_topic[MQTT_TOPIC_OUTPUT_STATE_LENGTH+1];
+      snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_OUTPUT_STATE_PATTERN, portId);
+      mqttClient.publish(state_topic, "offline", true);
+    }
   }
 }
 
@@ -4229,12 +4261,102 @@ void mqtt_publishInputControllerAvailability(){
 
 
 /**
+ * Publishes "offline" to the state topic of each output channel whose controller chip is disabled.
+ * Called on MQTT reconnect so HA reflects chip-offline in entity state rather than entity availability.
+ */
+void mqtt_publishOfflineOutputStates(){
+
+  if(deviceIdentity.enabled == false){
+    return;
+  }
+
+  if(!mqttClient.connected()){
+    return;
+  }
+
+  nsOutputs::managerOutputs::healthResult health = outputs.health();
+  const uint8_t chipAddresses[] = OUTPUT_CONTROLLER_ADDRESSES;
+
+  for(int i = 0; i < health.count; i++){
+    if(health.outputControllers[i].enabled){
+      continue;
+    }
+    uint8_t chipAddress = health.outputControllers[i].address;
+    uint8_t totalPorts = OUTPUT_CONTROLLER_COUNT * OUTPUT_CONTROLLER_COUNT_PINS;
+    for(uint8_t port = 1; port <= totalPorts; port++){
+      uint8_t chipIdx = (port - 1) / OUTPUT_CONTROLLER_COUNT_PINS;
+      if(chipAddresses[chipIdx] != chipAddress){
+        continue;
+      }
+      char portId[OUTPUT_ID_MAX_LENGTH+1];
+      char* portIdPtr = portId;
+      portId[0] = '\0';
+      outputs.getPortId(port, portIdPtr, sizeof(portId));
+      if(portId[0] == '\0'){
+        continue;
+      }
+      char state_topic[MQTT_TOPIC_OUTPUT_STATE_LENGTH+1];
+      snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_OUTPUT_STATE_PATTERN, portId);
+      mqttClient.publish(state_topic, "offline", true);
+    }
+  }
+}
+
+
+/**
+ * Publishes "offline" to the state topic of each input channel whose controller chip is disabled.
+ * Called on MQTT reconnect so HA reflects chip-offline in entity state rather than entity availability.
+ */
+void mqtt_publishOfflineInputStates(){
+
+  if(deviceIdentity.enabled == false){
+    return;
+  }
+
+  if(!mqttClient.connected()){
+    return;
+  }
+
+  managerInputs::healthResult health = inputs.health();
+
+  for(int i = 0; i < health.count; i++){
+    if(health.inputControllers[i].enabled){
+      continue;
+    }
+    uint8_t chipAddress = health.inputControllers[i].address;
+    uint8_t portCount = (IO_EXTENDER_COUNT_PINS / IO_EXTENDER_COUNT_CHANNELS_PER_PORT) * IO_EXTENDER_COUNT;
+    for(uint8_t p = 0; p < portCount; p++){
+      if(inputPorts[p].id[0] == '\0'){
+        continue;
+      }
+      for(uint8_t c = 0; c < IO_EXTENDER_COUNT_CHANNELS_PER_PORT; c++){
+        if(inputPorts[p].channels[c].channel == 0){
+          continue;
+        }
+        managerInputs::portChannel pc = {(uint8_t)(p+1), inputPorts[p].channels[c].channel};
+        managerInputs::portChannelInfo info = inputs.getPortChannelInfo(pc);
+        if(!info.found || info.chipAddress != chipAddress){
+          continue;
+        }
+        uint8_t logicalChannel = inputPorts[p].channels[c].channel + info.offset;
+        char state_topic[MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH+1];
+        snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_INPUT_STATE_PATTERN, inputPorts[p].id, logicalChannel);
+        mqttClient.publish(state_topic, "offline", true);
+      }
+    }
+  }
+}
+
+
+/**
  * Publishes MQTT availability for all per-component availability topics
  */
 void mqtt_publishAllAvailability(){
   mqtt_publishTemperatureAvailability();
   mqtt_publishOutputControllerAvailability();
   mqtt_publishInputControllerAvailability();
+  mqtt_publishOfflineOutputStates();
+  mqtt_publishOfflineInputStates();
 }
 
 
@@ -4501,17 +4623,9 @@ void mqtt_autoDiscovery_outputs(){
     mqttDoc["state_topic"] = state_topic;
     mqttDoc["command_topic"] = command_topic;
 
-    uint8_t chipIndex = (outputPortNumber - 1) / OUTPUT_CONTROLLER_COUNT_PINS;
-    const uint8_t chipAddresses[] = OUTPUT_CONTROLLER_ADDRESSES;
-    char chip_availability_topic[MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
-    snprintf(chip_availability_topic, sizeof(chip_availability_topic), MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, chipAddresses[chipIndex]);
-
     JsonArray availability = mqttDoc["availability"].to<JsonArray>();
-    JsonObject chip_specific = availability.add<JsonObject>();
     JsonObject controller_level = availability.add<JsonObject>();
-    chip_specific["topic"] = chip_availability_topic;
     controller_level["topic"] = mqttClient.topic_availability;
-    mqttDoc["availability_mode"] = "all";
 
     mqttClient.beginPublish(autodiscovery_topic, measureJson(mqttDoc), true);
     BufferingPrint bufferedClient(mqttClient, 32);
@@ -4554,7 +4668,6 @@ void mqtt_autoDiscovery_inputs(){
 
       managerInputs::portChannel pc = {(uint8_t)(p+1), inputPorts[p].channels[c].channel};
       managerInputs::portChannelInfo info = inputs.getPortChannelInfo(pc);
-      uint8_t chipAddress = info.chipAddress;
       uint8_t channelOffset = info.offset;
 
       uint8_t logicalChannel = inputPorts[p].channels[c].channel + channelOffset;
@@ -4578,10 +4691,6 @@ void mqtt_autoDiscovery_inputs(){
       snprintf(device_id, sizeof(device_id), MQTT_INPUT_AUTO_DISCOVERY_DEVICE_ID_PATTERN,
         deviceIdentity.data.uuid, inputPorts[p].id);
 
-      char chip_availability_topic[MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
-      snprintf(chip_availability_topic, sizeof(chip_availability_topic), MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_PATTERN,
-        deviceIdentity.data.uuid, chipAddress);
-
       JsonDocument mqttDoc;
       mqttDoc["name"] = (char*)NULL;
       mqttDoc["unique_id"] = unique_id;
@@ -4595,11 +4704,8 @@ void mqtt_autoDiscovery_inputs(){
       device["via_device"] = deviceIdentity.data.uuid;
 
       JsonArray availability = mqttDoc["availability"].to<JsonArray>();
-      JsonObject chip_avail = availability.add<JsonObject>();
       JsonObject controller_avail = availability.add<JsonObject>();
-      chip_avail["topic"] = chip_availability_topic;
       controller_avail["topic"] = mqttClient.topic_availability;
-      mqttDoc["availability_mode"] = "all";
 
       mqttClient.beginPublish(autodiscovery_topic, measureJson(mqttDoc), true);
       BufferingPrint bufferedClient(mqttClient, 32);
