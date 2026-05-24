@@ -78,7 +78,7 @@
               <button class="w-full px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="pushCertificates(ctrl)">Push Certs</button>
               <button class="w-full px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="toggleProvisioning(ctrl.id)">{{ sessions[ctrl.id]?.provisioningModeEnabled ? 'Disable Provisioning' : 'Enable Provisioning' }}</button>
               <button class="w-full px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaApp(ctrl)">Force App Update</button>
-              <button class="w-full px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaSpiffs(ctrl)">Force FS Update</button>
+              <button class="w-full px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaUi(ctrl)">Force UI Update</button>
               <button class="w-full px-2 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="pushCloudBackup(ctrl)">Push Cloud Backup</button>
               <button class="w-full px-2 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmCloudRestore(ctrl)">Restore Cloud Backup</button>
               <button class="w-full px-2 py-1.5 text-xs font-medium text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-red-50 dark:hover:bg-red-900/20'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmCloudDelete(ctrl)">Delete Cloud Backup</button>
@@ -274,10 +274,10 @@
       variant="danger" confirm-label="Delete" @confirm="doCloudDelete" @cancel="cloudDeleteTarget = null" />
 
     <ConfirmModal :show="!!otaAppTarget" title="Force Application Update" :message="`Force firmware update on '${otaAppTarget?.name}'? The controller will reboot after downloading the update.`"
-      variant="warning" confirm-label="Force Update" @confirm="doOtaApp" @cancel="otaAppTarget = null" />
+      variant="warning" confirm-label="Force Update" input-placeholder="https://example.com/firmware.bin" @confirm="(url) => doOtaApp(url)" @cancel="otaAppTarget = null" />
 
-    <ConfirmModal :show="!!otaSpiffsTarget" title="Force Filesystem Update" :message="`Force filesystem update on '${otaSpiffsTarget?.name}'? The controller will reboot after downloading the update.`"
-      variant="warning" confirm-label="Force Update" @confirm="doOtaSpiffs" @cancel="otaSpiffsTarget = null" />
+    <ConfirmModal :show="!!otaUiTarget" title="Force UI Update" :message="`Force UI update on '${otaUiTarget?.name}'? The controller will reboot after downloading the update.`"
+      variant="warning" confirm-label="Force Update" input-placeholder="https://example.com/ui.bin" @confirm="(url) => doOtaUi(url)" @cancel="otaUiTarget = null" />
   </AppLayout>
 </template>
 
@@ -308,7 +308,7 @@ const editing = ref(null)
 const deleteTarget = ref(null)
 const pullBackupTarget = ref(null)
 const otaAppTarget = ref(null)
-const otaSpiffsTarget = ref(null)
+const otaUiTarget = ref(null)
 const cloudRestoreTarget = ref(null)
 const cloudRestorePayload = ref(null)
 const showLoadBackupPrompt = ref(false)
@@ -842,37 +842,27 @@ function confirmOtaApp(ctrl) {
   otaAppTarget.value = ctrl
 }
 
-function confirmOtaSpiffs(ctrl) {
-  otaSpiffsTarget.value = ctrl
+function confirmOtaUi(ctrl) {
+  otaUiTarget.value = ctrl
 }
 
-async function doOtaApp() {
+async function doOtaApp(url) {
   const ctrl = otaAppTarget.value
   otaAppTarget.value = null
   if (!ctrl) return
-  await triggerOta(ctrl, '/ota/app')
+  await triggerOta(ctrl, '/ota/app', url)
 }
 
-async function doOtaSpiffs() {
-  const ctrl = otaSpiffsTarget.value
-  otaSpiffsTarget.value = null
+async function doOtaUi(url) {
+  const ctrl = otaUiTarget.value
+  otaUiTarget.value = null
   if (!ctrl) return
-  await triggerOta(ctrl, '/ota/spiffs')
+  await triggerOta(ctrl, '/ota/ui', url)
 }
 
-async function triggerOta(ctrl, endpoint) {
+async function triggerOta(ctrl, endpoint, url) {
   const sessionCtrl = getSessionCtrl(ctrl.id)
   const { controllerFetch } = await import('../composables/useApi')
-
-  // Read OTA URL from settings
-  const settingKey = endpoint.includes('app') ? 'ota_controller' : 'ota_controller'
-  const otaSetting = await db.settings.where({ setting: settingKey }).first()
-  if (!otaSetting || !otaSetting.value?.url) {
-    addToast('error', 'OTA URL is not configured. Set it in Settings > OTA.')
-    return
-  }
-
-  const url = `${otaSetting.value.protocol ?? 'https'}://${otaSetting.value.url}`
 
   try {
     const res = await controllerFetch(sessionCtrl.session.ip, endpoint, {

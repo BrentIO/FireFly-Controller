@@ -166,13 +166,13 @@ paths:
         '401':
           description: Unauthorized
 
-  /api/ota/spiffs:
+  /api/ota/ui:
     post:
       tags:
         - Clients
         - Controllers
-      summary: Force SPIFFs OTA update
-      description: Forces an over-the-air (OTA) SPIFFs retrieval with the URL provided
+      summary: Force UI OTA update
+      description: Forces an over-the-air (OTA) UI retrieval with the URL provided
       security:
         - visualToken: []
       requestBody:
@@ -184,10 +184,10 @@ paths:
             examples:
               http:
                 value:
-                  url: http://www.somewhere.com/spiffs.bin
+                  url: http://www.somewhere.com/ui.bin
               https:
                 value:
-                  url: https://www.somewhere.com/spiffs.bin
+                  url: https://www.somewhere.com/ui.bin
       responses:
         '202':
           description: Request accepted

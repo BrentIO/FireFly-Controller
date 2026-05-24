@@ -38,6 +38,15 @@
               </div>
             </div>
 
+            <div v-if="inputPlaceholder" class="mb-4">
+              <input
+                v-model="inputValue"
+                type="url"
+                :placeholder="inputPlaceholder"
+                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
             <div class="flex gap-3 justify-end">
               <button
                 type="button"
@@ -52,9 +61,11 @@
                 :class="{
                   'bg-green-600 hover:bg-green-700': variant === 'success',
                   'bg-amber-500 hover:bg-amber-600': variant === 'warning',
-                  'bg-red-600 hover:bg-red-700': !['success', 'warning'].includes(variant)
+                  'bg-red-600 hover:bg-red-700': !['success', 'warning'].includes(variant),
+                  'opacity-50 cursor-not-allowed': inputPlaceholder && !inputValue.trim()
                 }"
-                @click="$emit('confirm')"
+                :disabled="inputPlaceholder && !inputValue.trim()"
+                @click="inputPlaceholder ? $emit('confirm', inputValue) : $emit('confirm')"
               >
                 {{ confirmLabel }}
               </button>
@@ -67,14 +78,20 @@
 </template>
 
 <script setup>
-defineProps({
+import { ref, watch } from 'vue'
+
+const props = defineProps({
   show: Boolean,
   title: { type: String, default: 'Confirm' },
   message: { type: String, default: 'Are you sure?' },
   details: { type: Object, default: null },
   variant: { type: String, default: 'danger' },
   confirmLabel: { type: String, default: 'Confirm' },
-  cancelLabel: { type: String, default: 'Cancel' }
+  cancelLabel: { type: String, default: 'Cancel' },
+  inputPlaceholder: { type: String, default: null }
 })
 defineEmits(['confirm', 'cancel'])
+
+const inputValue = ref('')
+watch(() => props.show, (val) => { if (!val) inputValue.value = '' })
 </script>
