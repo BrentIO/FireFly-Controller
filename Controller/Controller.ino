@@ -236,7 +236,8 @@ void setup() {
     oled.setUUID(deviceIdentity.data.uuid);
 
     log_d("eFuse UUID: %s", deviceIdentity.data.uuid);
-    log_d("eFuse Product ID: %s", deviceIdentity.data.product_id);
+    log_d("eFuse Product Hex: 0x%08lX", (unsigned long)deviceIdentity.data.product_hex);
+    log_d("Product ID: %s", deviceIdentity.data.product_id);
     log_d("eFuse master key loaded");
 
     if(deviceIdentity.data.product_hex != 0 && deviceIdentity.data.product_hex != PRODUCT_HEX){
