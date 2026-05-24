@@ -105,9 +105,17 @@ void otaFirmware_checkPending();
 void eventHandler_otaFirmwareProgress(size_t progress, size_t size);
 void eventHandler_otaFirmwareFailed(int partition);
 void eventHandler_otaFirmwareFinished(int partition, bool needs_restart);
+void refreshCertBundle();
 
 fs::LittleFSFS wwwFS;
 bool wwwFS_isMounted = false;
+
+fs::LittleFSFS configFS;
+bool configFS_isMounted = false;
+char* _certBundle = nullptr;
+size_t _certBundleSize = 0;
+CryptoMemAsset* _certBundleAsset = nullptr;
+#define CONFIGFS_PATH_CERTS "/certs"
 
 
 /**
@@ -252,6 +260,26 @@ void setup() {
   }
 
 
+  /* Start LittleFS for config (certs) */
+  if (configFS.begin(false, "/configFS", (uint8_t)10U, "config"))
+  {
+    configFS_isMounted = true;
+
+    if (!configFS.exists(CONFIGFS_PATH_CERTS + (String)"/")) {
+      if (!configFS.mkdir(CONFIGFS_PATH_CERTS)) {
+        eventLog.createEvent("certs dir create fail", EventLog::LOG_LEVEL_ERROR);
+        log_e("Failed to create %s", CONFIGFS_PATH_CERTS);
+      }
+    }
+  }
+  else {
+    eventLog.createEvent("configFS mount fail", EventLog::LOG_LEVEL_ERROR);
+    log_e("An Error has occurred while mounting configFS");
+  }
+
+  refreshCertBundle();
+
+
   /* Configure the web server.  
     IMPORTANT: *** Sequence below matters, they are sorted specific to generic *** 
   */
@@ -276,6 +304,15 @@ void setup() {
   AsyncCallbackJsonWebHandler *jsonHandler_handleOTA_POST = new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced_POST);
   jsonHandler_handleOTA_POST->setMethod(HTTP_POST);
   httpServer.addHandler(jsonHandler_handleOTA_POST);
+
+  if (configFS_isMounted) {
+    httpServer.on("^/api/certs/([a-z0-9_.]+)$", http_handleCert);
+    httpServer.on("^/api/certs$", HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
+  } else {
+    httpServer.on("^/api/certs/([a-z0-9_.]+)$", http_configFSNotMounted);
+    httpServer.on("^/api/certs$", HTTP_ANY, http_configFSNotMounted);
+  }
+
   httpServer.on("/auth", http_handleAuth);
 
   if(wwwFS_isMounted){
@@ -801,6 +838,66 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant &doc
 
 
 /**
+ * Reads all .pem files from configFS /certs/ and builds a concatenated PEM bundle for OTA TLS.
+ * Falls back to bundled Mozilla CAs when no user certs exist.
+*/
+void refreshCertBundle() {
+
+  if (_certBundle != nullptr) {
+    free(_certBundle);
+    _certBundle = nullptr;
+  }
+
+  if (_certBundleAsset != nullptr) {
+    delete _certBundleAsset;
+    _certBundleAsset = nullptr;
+  }
+
+  _certBundleSize = 0;
+
+  String bundle = "";
+
+  if (configFS_isMounted) {
+    File certsDir = configFS.open(CONFIGFS_PATH_CERTS);
+    if (certsDir && certsDir.isDirectory()) {
+      File certFile = certsDir.openNextFile();
+      while (certFile) {
+        if (!certFile.isDirectory()) {
+          while (certFile.available()) {
+            bundle += (char)certFile.read();
+          }
+        }
+        certFile = certsDir.openNextFile();
+      }
+    }
+  }
+
+  _certBundleSize = bundle.length();
+
+  if (_certBundleSize == 0) {
+    log_i("No user certs found; will use bundled Mozilla root CAs");
+    return;
+  }
+
+  _certBundle = (char*)ps_malloc(_certBundleSize + 1);
+  if (_certBundle == nullptr) {
+    _certBundle = (char*)malloc(_certBundleSize + 1);
+  }
+
+  if (_certBundle == nullptr) {
+    log_e("Failed to allocate cert bundle (%u bytes)", (unsigned int)(_certBundleSize + 1));
+    _certBundleSize = 0;
+    return;
+  }
+
+  memcpy(_certBundle, bundle.c_str(), _certBundleSize + 1);
+  _certBundleAsset = new CryptoMemAsset("bundle", _certBundle, _certBundleSize);
+
+  log_i("Cert bundle built: %u bytes", (unsigned int)_certBundleSize);
+}
+
+
+/**
  * Checks if there are any pending OTA firmware updates in the queue.
  * This is necessary to allow the async web server to raise requests to the main loop.
 */
@@ -821,7 +918,14 @@ void otaFirmware_checkPending() {
     forceFirmwareUpdate.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
     forceFirmwareUpdate.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
     forceFirmwareUpdate.setSPIFFsPartitionLabel("www");
-    forceFirmwareUpdate.useBundledCerts();
+
+    if (otaFirmware.pending.get(i).url.startsWith("https:")) {
+      if (_certBundleAsset != nullptr) {
+        forceFirmwareUpdate.setRootCA(_certBundleAsset);
+      } else {
+        forceFirmwareUpdate.useBundledCerts();
+      }
+    }
 
     bool updateSuccess = false;
     eventLog.createEvent("OTA app forced", EventLog::LOG_LEVEL_NOTIFICATION);
@@ -1803,3 +1907,187 @@ void eventHandler_visualAuthChanged(){
   }
 
 #endif
+
+
+/**
+ * Returns HTTP/503 when configFS is not mounted
+*/
+void http_configFSNotMounted(AsyncWebServerRequest *request) {
+  request->send(503, "application/json", "{\"message\":\"Storage unavailable\"}");
+}
+
+
+/**
+ * Handles /api/certs requests (GET list, POST upload)
+*/
+void http_handleCerts(AsyncWebServerRequest *request) {
+
+  switch (request->method()) {
+
+    case HTTP_OPTIONS:
+      http_options(request);
+      break;
+
+    case HTTP_POST:
+      break; // http_handleCerts_Upload handles all auth and responses
+
+    case HTTP_GET: {
+
+      if (!request->hasHeader("visual-token")) {
+        http_unauthorized(request);
+        return;
+      }
+
+      if (!authToken.authenticate(request->header("visual-token").c_str())) {
+        http_unauthorized(request);
+        return;
+      }
+
+      AsyncResponseStream *response = request->beginResponseStream("application/json");
+      JsonDocument doc;
+      JsonArray array = doc.to<JsonArray>();
+
+      File root = configFS.open(CONFIGFS_PATH_CERTS + (String)"/");
+      File file = root.openNextFile();
+      while (file) {
+        if (!file.isDirectory()) {
+          JsonObject entry = array.add<JsonObject>();
+          entry["file"] = (String)file.name();
+          entry["size"] = file.size();
+        }
+        file = root.openNextFile();
+      }
+
+      serializeJson(doc, *response);
+      request->send(response);
+      break;
+    }
+
+    default:
+      http_methodNotAllowed(request);
+      break;
+  }
+}
+
+
+/**
+ * Handles certificate file uploads to /api/certs
+*/
+void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) {
+
+  if (request->method() == HTTP_OPTIONS) {
+    http_options(request);
+    return;
+  }
+
+  if (!request->hasHeader("visual-token")) {
+    http_unauthorized(request);
+    return;
+  }
+
+  if (!authToken.authenticate(request->header("visual-token").c_str())) {
+    http_unauthorized(request);
+    return;
+  }
+
+  if (request->method() != HTTP_POST) {
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  MatchState ms;
+  ms.Target((char*)filename.c_str());
+
+  if (ms.MatchCount("[^a-z0-9_.]") > 0) {
+    http_badRequest(request, "Invalid filename; Only [a-z0-9_.] permitted");
+    return;
+  }
+
+  if (!index) {
+
+    if (configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + filename)) {
+      http_forbidden(request, "Certificate already exists");
+      return;
+    }
+
+    request->_tempFile = configFS.open(CONFIGFS_PATH_CERTS + (String)"/" + filename, "w");
+  }
+
+  if (request->_tempFile) request->_tempFile.write(data, len);
+
+  if (final) {
+    if (request->_tempFile) {
+      request->_tempFile.close();
+      refreshCertBundle();
+      request->send(201);
+    }
+  }
+}
+
+
+/**
+ * Handles /api/certs/{filename} requests (GET content, DELETE)
+*/
+void http_handleCert(AsyncWebServerRequest *request) {
+
+  switch (request->method()) {
+
+    case HTTP_OPTIONS:
+      http_options(request);
+      break;
+
+    case HTTP_GET: {
+
+      if (!request->hasHeader("visual-token")) {
+        http_unauthorized(request);
+        return;
+      }
+
+      if (!authToken.authenticate(request->header("visual-token").c_str())) {
+        http_unauthorized(request);
+        return;
+      }
+
+      String path = CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0);
+
+      if (!configFS.exists(path)) {
+        request->send(404);
+        return;
+      }
+
+      AsyncWebServerResponse *response = request->beginResponse(configFS, path, "text/plain");
+      response->setCode(200);
+      request->send(response);
+      break;
+    }
+
+    case HTTP_DELETE: {
+
+      if (!request->hasHeader("visual-token")) {
+        http_unauthorized(request);
+        return;
+      }
+
+      if (!authToken.authenticate(request->header("visual-token").c_str())) {
+        http_unauthorized(request);
+        return;
+      }
+
+      String path = CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0);
+
+      if (!configFS.exists(path)) {
+        request->send(404);
+        return;
+      }
+
+      configFS.remove(path);
+      refreshCertBundle();
+      request->send(204);
+      break;
+    }
+
+    default:
+      http_methodNotAllowed(request);
+      break;
+  }
+}
