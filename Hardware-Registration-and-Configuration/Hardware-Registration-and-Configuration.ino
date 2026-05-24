@@ -252,6 +252,7 @@ void setup() {
   }
 
 
+
   /* Configure the web server.  
     IMPORTANT: *** Sequence below matters, they are sorted specific to generic *** 
   */
@@ -276,6 +277,7 @@ void setup() {
   AsyncCallbackJsonWebHandler *jsonHandler_handleOTA_POST = new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced_POST);
   jsonHandler_handleOTA_POST->setMethod(HTTP_POST);
   httpServer.addHandler(jsonHandler_handleOTA_POST);
+
   httpServer.on("/auth", http_handleAuth);
 
   if(wwwFS_isMounted){
@@ -821,7 +823,10 @@ void otaFirmware_checkPending() {
     forceFirmwareUpdate.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
     forceFirmwareUpdate.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
     forceFirmwareUpdate.setSPIFFsPartitionLabel("www");
-    forceFirmwareUpdate.useBundledCerts();
+
+    if (otaFirmware.pending.get(i).url.startsWith("https:")) {
+      forceFirmwareUpdate.useBundledCerts();
+    }
 
     bool updateSuccess = false;
     eventLog.createEvent("OTA app forced", EventLog::LOG_LEVEL_NOTIFICATION);
@@ -1803,3 +1808,5 @@ void eventHandler_visualAuthChanged(){
   }
 
 #endif
+
+
