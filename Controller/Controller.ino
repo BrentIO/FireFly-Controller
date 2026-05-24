@@ -220,7 +220,7 @@ void setup() {
   eventLog.setCallback_error(&eventHandler_eventLogErrorEvent);
   eventLog.setCallback_resolveError(&eventHandler_eventLogResolvedErrorEvent);
 
-  /* Start device identity (NVS) */
+  /* Start device identity */
   deviceIdentity.begin();
 
   if(deviceIdentity.enabled == true){
@@ -235,8 +235,9 @@ void setup() {
     oled.setProductID(deviceIdentity.data.product_id);
     oled.setUUID(deviceIdentity.data.uuid);
 
-    log_d("NVS UUID: %s", deviceIdentity.data.uuid);
-    log_d("NVS Product ID: %s", deviceIdentity.data.product_id);
+    log_d("eFuse UUID: %s", deviceIdentity.data.uuid);
+    log_d("eFuse Product Hex: 0x%08lX", (unsigned long)deviceIdentity.data.product_hex);
+    log_d("Product ID: %s", deviceIdentity.data.product_id);
     log_d("eFuse master key loaded");
 
     if(deviceIdentity.data.product_hex != 0 && deviceIdentity.data.product_hex != PRODUCT_HEX){

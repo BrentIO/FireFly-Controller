@@ -1,9 +1,6 @@
 #pragma once
-#include <Preferences.h>
 #include <esp_efuse.h>
 #include "esp_efuse_table.h"
-
-#define DEVICE_IDENTITY_NVS_NAMESPACE "device"
 
 // BLOCK1: bytes 0-15 = UUID (128 bits), bytes 16-19 = product_hex (32 bits)
 // BLOCK3: bytes 0-31 = master key (256 bits)
@@ -67,18 +64,18 @@ class managerDeviceIdentity {
 
             if (enabled) {
                 uuidBytesToString(uuidBytes, data.uuid);
+                if (data.product_hex != 0) {
+                    char hex[9];
+                    snprintf(hex, sizeof(hex), "%08lX", (unsigned long)data.product_hex);
+                    snprintf(data.product_id, sizeof(data.product_id), "FFC%.4s-%.4s", hex, hex + 4);
+                }
             } else {
                 memset(&data, 0, sizeof(data));
             }
-
-            Preferences prefs;
-            prefs.begin(DEVICE_IDENTITY_NVS_NAMESPACE, true);
-            strlcpy(data.product_id, prefs.getString("pid", "").c_str(), sizeof(data.product_id));
-            prefs.end();
         }
 
         /**
-         * Burns identity data to eFuse and writes product_id to NVS.
+         * Burns identity data to eFuse.
          * Returns false if already provisioned or if any eFuse write fails.
          */
         bool write() {
@@ -112,14 +109,6 @@ class managerDeviceIdentity {
                 log_e("eFuse batch commit failed");
                 return false;
             }
-
-            Preferences prefs;
-            if (!prefs.begin(DEVICE_IDENTITY_NVS_NAMESPACE, false)) {
-                log_e("Failed to open NVS namespace '%s' for writing", DEVICE_IDENTITY_NVS_NAMESPACE);
-                return false;
-            }
-            prefs.putString("pid", data.product_id);
-            prefs.end();
 
             enabled = true;
             return true;
