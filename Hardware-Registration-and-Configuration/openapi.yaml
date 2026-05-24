@@ -163,6 +163,22 @@ paths:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: Device identity not provisioned
+        '502':
+          description: Bad Gateway — FireFly-Cloud returned an error during the registration check
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Signature verification failed
+        '503':
+          description: Service Unavailable — registration check has not yet run (clock not synchronized)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Registration check pending
     post:
       tags:
         - Cloud Registration
