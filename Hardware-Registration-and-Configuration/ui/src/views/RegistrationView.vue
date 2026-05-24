@@ -12,11 +12,16 @@
             class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
             :class="registrationState.registered
               ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-              : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'"
+              : registrationState.error
+                ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'"
           >
-            {{ registrationState.registered ? 'Registered' : 'Not Registered' }}
+            {{ registrationState.registered ? 'Registered' : registrationState.error ? 'Error' : 'Not Registered' }}
           </span>
-          <span v-if="registrationState.checkedAt" class="text-xs text-gray-500 dark:text-gray-400">
+          <span v-if="registrationState.error" class="text-xs text-red-600 dark:text-red-400">
+            {{ registrationState.message }}
+          </span>
+          <span v-else-if="registrationState.checkedAt" class="text-xs text-gray-500 dark:text-gray-400">
             Last checked: {{ new Date(registrationState.checkedAt * 1000).toLocaleString() }}
           </span>
         </div>

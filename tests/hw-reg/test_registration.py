@@ -6,21 +6,28 @@ class TestRegistration:
         r = requests.get(f"{base_url}/api/registration")
         assert r.status_code == 401
 
-    def test_get_registration_returns_200(self, base_url, auth_headers):
+    def test_get_registration_returns_valid_status(self, base_url, auth_headers):
         r = requests.get(f"{base_url}/api/registration", headers=auth_headers)
-        assert r.status_code == 200
+        assert r.status_code in (200, 502, 503)
 
     def test_get_registration_returns_json_content_type(self, base_url, auth_headers):
         r = requests.get(f"{base_url}/api/registration", headers=auth_headers)
         assert "application/json" in r.headers.get("Content-Type", "")
 
-    def test_get_registration_has_registered_field(self, base_url, auth_headers):
+    def test_get_registration_200_has_registered_field(self, base_url, auth_headers):
         r = requests.get(f"{base_url}/api/registration", headers=auth_headers)
-        assert isinstance(r.json().get("registered"), bool)
+        if r.status_code == 200:
+            assert isinstance(r.json().get("registered"), bool)
 
-    def test_get_registration_has_checked_at_field(self, base_url, auth_headers):
+    def test_get_registration_200_has_checked_at_field(self, base_url, auth_headers):
         r = requests.get(f"{base_url}/api/registration", headers=auth_headers)
-        assert isinstance(r.json().get("checked_at"), int)
+        if r.status_code == 200:
+            assert isinstance(r.json().get("checked_at"), int)
+
+    def test_get_registration_error_response_has_message_field(self, base_url, auth_headers):
+        r = requests.get(f"{base_url}/api/registration", headers=auth_headers)
+        if r.status_code in (502, 503):
+            assert isinstance(r.json().get("message"), str)
 
     def test_post_registration_missing_auth_returns_401(self, base_url):
         r = requests.post(f"{base_url}/api/registration", json={})

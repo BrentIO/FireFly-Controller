@@ -81,8 +81,10 @@ uint64_t ntpSleepUntil = 0;
 #define REGISTRATION_APPLICATION_NAME "Hardware-Registration-and-Configuration"
 
 struct {
-  bool   registered = false;
-  time_t checkedAt  = 0;
+  bool   registered    = false;
+  bool   error         = false;
+  String errorMessage;
+  time_t checkedAt     = 0;
 } _registrationState;
 
 struct {
@@ -218,7 +220,9 @@ void setup() {
 
     log_i("eFuse UUID: %s", deviceIdentity.data.uuid);
     log_i("eFuse Product ID: %s", deviceIdentity.data.product_id);
-    log_i("eFuse master key loaded");
+    log_i("eFuse master key bytes 0-3: %02x %02x %02x %02x",
+          deviceIdentity.data.key[0], deviceIdentity.data.key[1],
+          deviceIdentity.data.key[2], deviceIdentity.data.key[3]);
   }
 
 
@@ -441,6 +445,21 @@ void http_serviceUnavailable(AsyncWebServerRequest *request, String message){
 
   serializeJson(doc, *response);
   response->setCode(503);
+  request->send(response);
+}
+
+
+/**
+ * Sends a 502 response indicating an upstream gateway error
+*/
+void http_badGateway(AsyncWebServerRequest *request, String message){
+
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
+  JsonDocument doc;
+  doc["message"] = message;
+
+  serializeJson(doc, *response);
+  response->setCode(502);
   request->send(response);
 }
 
@@ -947,20 +966,50 @@ void checkCloudRegistration() {
   esp_http_client_set_header(client, "X-Device-Timestamp", timestampBuf);
   esp_http_client_set_header(client, "X-Device-Signature", (char*)sigB64);
 
-  esp_err_t err    = esp_http_client_perform(client);
-  int       status = esp_http_client_get_status_code(client);
+  int  status  = 0;
+  char bodyBuf[256] = {0};
+
+  esp_err_t err = esp_http_client_open(client, 0);
+  if (err == ESP_OK) {
+    esp_http_client_fetch_headers(client);
+    status = esp_http_client_get_status_code(client);
+    int bodyLen = esp_http_client_read(client, bodyBuf, sizeof(bodyBuf) - 1);
+    if (bodyLen > 0) {
+      log_i("checkCloudRegistration: response body: %s", bodyBuf);
+    }
+  }
+  esp_http_client_close(client);
   esp_http_client_cleanup(client);
 
   log_i("checkCloudRegistration: err=%d status=%d", (int)err, status);
 
-  if (status == 200) {
+  _registrationState.error        = false;
+  _registrationState.errorMessage = String();
+
+  if (err != ESP_OK) {
+    _registrationState.registered   = false;
+    _registrationState.error        = true;
+    _registrationState.errorMessage = "Cloud unreachable";
+    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_NOTIFICATION);
+  } else if (status == 200) {
     _registrationState.registered = true;
     eventLog.createEvent("Cloud registered", EventLog::LOG_LEVEL_INFO);
-  } else if (status == 401 || status == 404) {
+  } else if (status == 404) {
     _registrationState.registered = false;
   } else {
     _registrationState.registered = false;
-    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_NOTIFICATION);
+    _registrationState.error      = true;
+    JsonDocument cloudBody;
+    if (strlen(bodyBuf) > 0 && deserializeJson(cloudBody, bodyBuf) == DeserializationError::Ok) {
+      _registrationState.errorMessage = cloudBody["message"].as<String>();
+    } else {
+      _registrationState.errorMessage = "Cloud verification failed";
+    }
+    if (status == 401) {
+      eventLog.createEvent("Cloud reg sig vf fail", EventLog::LOG_LEVEL_ERROR);
+    } else {
+      eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_NOTIFICATION);
+    }
   }
 }
 
@@ -977,6 +1026,16 @@ void http_handleRegistration_GET(AsyncWebServerRequest *request) {
 
   if (!deviceIdentity.enabled) {
     http_conflict(request, "Device not provisioned");
+    return;
+  }
+
+  if (_registrationState.checkedAt == 0) {
+    http_serviceUnavailable(request, "Registration check pending");
+    return;
+  }
+
+  if (_registrationState.error) {
+    http_badGateway(request, _registrationState.errorMessage);
     return;
   }
 
