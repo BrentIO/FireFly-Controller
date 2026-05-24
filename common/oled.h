@@ -1,6 +1,6 @@
 #include "hardware.h"
 #include "Prototype9pt7b.h"         // used on all other OLED pages
-#include <Fonts/FreeMonoBold18pt7b.h>  // visual token page only
+#include <Fonts/FreeMonoBold12pt7b.h>  // visual token page only
 #include <NTPClient.h>
 #include "eventLog.h"
 #include "authorizationToken.h"
@@ -994,8 +994,8 @@
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
-                    this->hardware.setCursor(3, 26);
-                    this->hardware.setFont(&FreeMonoBold18pt7b);
+                    this->hardware.setCursor(21, 20);
+                    this->hardware.setFont(&FreeMonoBold12pt7b);
                     this->hardware.println(this->_authorizationToken->getVisualToken().code);
                     this->hardware.setFont();
 
