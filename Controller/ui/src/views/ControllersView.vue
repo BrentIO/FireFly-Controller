@@ -305,7 +305,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { importDB, exportDB } from 'dexie-export-import'
 import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
@@ -343,6 +343,8 @@ const eventLog = ref([])
 const errorLog = ref([])
 const activeEventLogId = ref(null)
 const activeErrorLogId = ref(null)
+const eventLogRefreshTimer = ref(null)
+const errorLogRefreshTimer = ref(null)
 const deployProgress = reactive({
   show: false,
   ctrlLabel: '',
@@ -414,6 +416,25 @@ onMounted(async () => {
       .filter(c => sessions[c.id]?.isAuthenticated && c.uuid && !(c.uuid in etagCache))
       .map(c => fetchBackupEtag(c))
   )
+})
+
+onUnmounted(() => {
+  if (eventLogRefreshTimer.value) clearInterval(eventLogRefreshTimer.value)
+  if (errorLogRefreshTimer.value) clearInterval(errorLogRefreshTimer.value)
+})
+
+watch(showEventLog, val => {
+  if (!val && eventLogRefreshTimer.value) {
+    clearInterval(eventLogRefreshTimer.value)
+    eventLogRefreshTimer.value = null
+  }
+})
+
+watch(showErrorLog, val => {
+  if (!val && errorLogRefreshTimer.value) {
+    clearInterval(errorLogRefreshTimer.value)
+    errorLogRefreshTimer.value = null
+  }
 })
 
 function areaName(id) { return areas.value.find(a => a.id === id)?.name ?? '—' }
@@ -827,6 +848,7 @@ async function openEventLog(id) {
   eventLog.value = []
   showEventLog.value = true
   await fetchEventLog(id)
+  eventLogRefreshTimer.value = setInterval(() => fetchEventLog(activeEventLogId.value), 5000)
 }
 
 async function refreshEventLog() {
@@ -850,6 +872,7 @@ async function openErrorLog(id) {
   activeErrorLogId.value = id
   await fetchErrorLog(id)
   showErrorLog.value = true
+  errorLogRefreshTimer.value = setInterval(() => fetchErrorLog(activeErrorLogId.value), 5000)
 }
 
 async function fetchErrorLog(id) {
