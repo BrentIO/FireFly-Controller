@@ -43,7 +43,7 @@
           <div>
             <div class="flex items-center gap-2 flex-wrap">
               <p class="font-semibold text-gray-900 dark:text-gray-100">{{ ctrl.name }}</p>
-              <span v-if="sessions[ctrl.id]?.isAuthenticated && localDexieHash !== null && etagCache[ctrl.uuid] !== undefined && etagCache[ctrl.uuid] !== localDexieHash"
+              <span v-if="isDeployRequired(ctrl)"
                 class="px-1.5 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200 print:hidden">
                 Deployment Required
               </span>
@@ -91,7 +91,17 @@
                 :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="toggleProvisioning(ctrl.id)">{{ sessions[ctrl.id]?.provisioningModeEnabled ? 'Disable Provisioning' : 'Enable Provisioning' }}</button>
               <button class="w-full px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaApp(ctrl)">Force App Update</button>
               <button class="w-full px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaUi(ctrl)">Force UI Update</button>
-              <button class="w-full px-2 py-1.5 text-sm font-medium text-white bg-amber-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-amber-700'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="deploy(ctrl)">Deploy</button>
+              <button
+                class="w-full px-2 py-1.5 text-sm font-medium rounded-lg transition-colors"
+                :class="[
+                  isCloudMode ? 'opacity-40 cursor-not-allowed' : '',
+                  isDeployRequired(ctrl)
+                    ? 'bg-amber-600 text-white hover:bg-amber-700'
+                    : 'border border-amber-600 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                ]"
+                :disabled="isCloudMode"
+                :title="isCloudMode ? 'Not available in hosted mode' : undefined"
+                @click="deploy(ctrl)">Deploy</button>
               <button class="w-full px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="pushCloudBackup(ctrl)">Push Cloud Backup</button>
               <button class="w-full px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmCloudRestore(ctrl)">Restore Cloud Backup</button>
               <button class="w-full px-2 py-1.5 text-sm font-medium text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-red-50 dark:hover:bg-red-900/20'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmCloudDelete(ctrl)">Delete Cloud Backup</button>
@@ -384,10 +394,24 @@ async function computeLocalDexieHash() {
   }
 }
 
+function isDeployRequired(ctrl) {
+  return (
+    sessions[ctrl.id]?.isAuthenticated &&
+    localDexieHash.value !== null &&
+    etagCache[ctrl.uuid] !== undefined &&
+    etagCache[ctrl.uuid] !== localDexieHash.value
+  )
+}
+
 onMounted(async () => {
   await Promise.all([load(), loadAreas()])
   items.value.forEach(c => initSession(c.id))
   await computeLocalDexieHash()
+  await Promise.all(
+    items.value
+      .filter(c => sessions[c.id]?.isAuthenticated && c.uuid && !(c.uuid in etagCache))
+      .map(c => fetchBackupEtag(c))
+  )
 })
 
 function areaName(id) { return areas.value.find(a => a.id === id)?.name ?? '—' }
