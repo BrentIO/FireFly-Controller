@@ -375,10 +375,6 @@ void setup() {
     log_e("An Error has occurred while mounting configFS");
   }
 
-  if(configFS.exists("/backup.upload_in_progress")){
-    configFS.remove("/backup.upload_in_progress");
-  }
-
   if(configFS.exists("/backup.json.upload_in_progress")){
     configFS.remove("/backup.json.upload_in_progress");
   }
@@ -5594,10 +5590,6 @@ void startHttpServer(){
 
     #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
-      if(configFS.exists("/backup.upload_in_progress")){
-        configFS.remove("/backup.upload_in_progress");
-      }
-
       if(configFS.exists("/backup.json.upload_in_progress")){
         configFS.remove("/backup.json.upload_in_progress");
       }
@@ -5627,10 +5619,6 @@ void stopHttpServer(){
   }
 
   #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
-
-    if(configFS.exists("/backup.upload_in_progress")){
-      configFS.remove("/backup.upload_in_progress");
-    }
 
     if(configFS.exists("/backup.json.upload_in_progress")){
       configFS.remove("/backup.json.upload_in_progress");
