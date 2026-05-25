@@ -13,19 +13,17 @@
           <tr>
             <th class="px-4 py-3 text-left">Manufacturer</th>
             <th class="px-4 py-3 text-left">Model</th>
-            <th class="px-4 py-3 text-left">Description</th>
             <th class="px-4 py-3 text-left">Type</th>
             <th class="px-4 py-3 text-right print:hidden">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
           <tr v-if="items.length === 0">
-            <td colspan="5" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">No relay types defined.</td>
+            <td colspan="4" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">No relay types defined.</td>
           </tr>
           <tr v-for="r in sortedItems" :key="r.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
             <td class="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{{ r.manufacturer }}</td>
             <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ r.model }}</td>
-            <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ r.description }}</td>
             <td class="px-4 py-3">
               <span :class="r.type === 'BINARY'
                 ? 'px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
