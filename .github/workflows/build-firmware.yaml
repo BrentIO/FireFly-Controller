@@ -224,14 +224,14 @@ jobs:
             arduino-cli compile \
               -b esp32:esp32:firefly_controller ./${APPLICATION} \
               --warnings more --clean \
-              --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -DCOMMIT_HASH=\"${COMMIT_HASH}\" -I${{ github.workspace }}${EFUSE_FLAG} ${PSRAM_FLAGS}" \
+              --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -DCOMMIT_HASH=\"${COMMIT_HASH}\" -DFIREFLY_CLOUD_API_ROOT=\"${{ vars.FIREFLY_CLOUD_API_ROOT }}\" -I${{ github.workspace }}${EFUSE_FLAG} ${PSRAM_FLAGS}" \
               --output-dir "$OUTDIR"
           else
             echo "Building RELEASE firmware"
             arduino-cli compile \
               -b esp32:esp32:firefly_controller ./${APPLICATION} \
               --warnings more --clean \
-              --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=0 -DVERSION=\"${VERSION}\" -DCOMMIT_HASH=\"${COMMIT_HASH}\" -I${{ github.workspace }}${EFUSE_FLAG} ${PSRAM_FLAGS}" \
+              --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=0 -DVERSION=\"${VERSION}\" -DCOMMIT_HASH=\"${COMMIT_HASH}\" -DFIREFLY_CLOUD_API_ROOT=\"${{ vars.FIREFLY_CLOUD_API_ROOT }}\" -I${{ github.workspace }}${EFUSE_FLAG} ${PSRAM_FLAGS}" \
               --output-dir "$OUTDIR"
           fi
 

@@ -1,7 +1,5 @@
 #pragma once
 
-/**
- * FireFly Cloud API root URL.
- * All cloud endpoints are resolved relative to this base.
- */
-#define FIREFLY_CLOUD_API_ROOT "https://api.fireflylx.com"
+#ifndef FIREFLY_CLOUD_API_ROOT
+  #error "FIREFLY_CLOUD_API_ROOT must be defined via build flags"
+#endif
