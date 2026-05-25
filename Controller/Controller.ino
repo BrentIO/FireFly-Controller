@@ -5974,6 +5974,8 @@ void http_handleCloudBackup_POST(AsyncWebServerRequest *request) {
   int       code = esp_http_client_get_status_code(client);
   esp_http_client_cleanup(client);
 
+  log_i("http_handleCloudBackup_POST: url=%s err=%d status=%d", url.c_str(), (int)err, code);
+
   memset(blob, 0, blobLen);
   free(blob);
 
