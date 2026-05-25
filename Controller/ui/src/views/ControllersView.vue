@@ -51,6 +51,10 @@
             <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ ctrl.uuid }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ ctrl.mac || '—' }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ ctrl.product }}</p>
+            <template v-if="sessions[ctrl.id]?.isAuthenticated && versionCache[ctrl.id]">
+              <p class="text-xs text-gray-500 dark:text-gray-400">App: {{ versionCache[ctrl.id].app }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">UI: {{ versionCache[ctrl.id].ui }}</p>
+            </template>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ areaName(ctrl.area) }}</p>
             <p v-if="!ctrl.mac || ctrl.mac === 'ff:ff:ff:ff:ff:ff'" class="text-xs text-yellow-700 dark:text-yellow-500 mt-1 font-medium">MAC Address is invalid</p>
           </div>
@@ -322,6 +326,8 @@ import { db } from '../composables/useDatabase'
 
 // Module-level ETag cache keyed by controller UUID — persists across navigation
 const etagCache = reactive({})
+// Version cache keyed by controller ID — cleared on logout
+const versionCache = reactive({})
 
 const { items, products, load, create, update, remove } = useControllers()
 const { items: areas, load: loadAreas } = useAreas()
@@ -499,7 +505,10 @@ async function authenticate(id) {
     await ctrl.authenticate()
     addToast('success', 'Connected.')
     const ctrlRecord = items.value.find(c => c.id === id)
-    if (ctrlRecord) await fetchBackupEtag(ctrlRecord)
+    if (ctrlRecord) {
+      await fetchBackupEtag(ctrlRecord)
+      fetchVersions(ctrlRecord)
+    }
     await fetchProvisioningState(id)
     await verifyDeviceUuid(id)
   } catch (e) {
@@ -523,9 +532,26 @@ async function verifyDeviceUuid(id) {
   } catch { /* Non-fatal — UUID verification is best-effort */ }
 }
 
+async function fetchVersions(ctrl) {
+  const sessionCtrl = getSessionCtrl(ctrl.id)
+  const { controllerFetch } = await import('../composables/useApi')
+  try {
+    const [appRes, uiRes] = await Promise.all([
+      controllerFetch(sessionCtrl.session.ip, '/version', {}, sessionCtrl.session.visualToken),
+      controllerFetch(sessionCtrl.session.ip, '/ui/version', {}, sessionCtrl.session.visualToken)
+    ])
+    const appVersion = appRes.ok ? ((await appRes.json()).application ?? '—') : '—'
+    const uiVersion = uiRes.ok ? ((await uiRes.json()).version ?? '—') : '—'
+    versionCache[ctrl.id] = { app: appVersion, ui: uiVersion }
+  } catch {
+    versionCache[ctrl.id] = { app: '—', ui: '—' }
+  }
+}
+
 function logout(id) {
   const ctrlRecord = items.value.find(c => c.id === id)
   if (ctrlRecord?.uuid) delete etagCache[ctrlRecord.uuid]
+  delete versionCache[id]
   getSessionCtrl(id).logout()
   tokenInputs[id] = ''
 }
