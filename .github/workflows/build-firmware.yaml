@@ -11,8 +11,8 @@ on:
         type: choice
         description: "Select destination environment"
         options:
-          - production
           - dev
+          - production
 
 env:
   ARTIFACT_ROOT: /home/runner/artifacts
