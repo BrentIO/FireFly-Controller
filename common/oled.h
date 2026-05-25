@@ -994,7 +994,7 @@
 
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
-                    this->hardware.setCursor(21, 20);
+                    this->hardware.setCursor(21, 13);
                     this->hardware.setFont(&FreeMonoBold12pt7b);
                     this->hardware.println(this->_authorizationToken->getVisualToken().code);
                     this->hardware.setFont();
