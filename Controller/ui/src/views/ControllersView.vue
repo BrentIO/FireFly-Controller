@@ -41,7 +41,13 @@
         <!-- Header -->
         <div class="flex items-start justify-between gap-2 mb-3">
           <div>
-            <p class="font-semibold text-gray-900 dark:text-gray-100">{{ ctrl.name }}</p>
+            <div class="flex items-center gap-2 flex-wrap">
+              <p class="font-semibold text-gray-900 dark:text-gray-100">{{ ctrl.name }}</p>
+              <span v-if="sessions[ctrl.id]?.isAuthenticated && localDexieHash !== null && etagCache[ctrl.uuid] !== undefined && etagCache[ctrl.uuid] !== localDexieHash"
+                class="px-1.5 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200 print:hidden">
+                Deployment Required
+              </span>
+            </div>
             <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ ctrl.uuid }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ ctrl.mac || '—' }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ ctrl.product }}</p>
@@ -290,7 +296,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { importDB } from 'dexie-export-import'
+import { importDB, exportDB } from 'dexie-export-import'
 import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { useControllers } from '../composables/useControllers'
@@ -303,6 +309,9 @@ import { randomUUID } from '../composables/useValidators'
 const MAC_RE = /^[0-9A-Fa-f]{2}[:-]([0-9A-Fa-f]{2}[:-]){4}[0-9A-Fa-f]{2}$/
 import { isCloudMode } from '../composables/useCloudMode'
 import { db } from '../composables/useDatabase'
+
+// Module-level ETag cache keyed by controller UUID — persists across navigation
+const etagCache = reactive({})
 
 const { items, products, load, create, update, remove } = useControllers()
 const { items: areas, load: loadAreas } = useAreas()
@@ -339,6 +348,7 @@ const deployProgress = reactive({
 const macError = ref('')
 const emptyForm = () => ({ name: '', area: '', product: '', mac: '', uuid: '' })
 const form = ref(emptyForm())
+const localDexieHash = ref(null)
 
 const ipInputs = reactive({})
 const tokenInputs = reactive({})
@@ -362,9 +372,22 @@ function getSessionCtrl(id) {
   return sessionCtrls[id]
 }
 
+async function computeLocalDexieHash() {
+  try {
+    const blob = await exportDB(db)
+    const arrayBuf = await blob.arrayBuffer()
+    const hashBuf = await crypto.subtle.digest('SHA-256', arrayBuf)
+    const hex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('')
+    localDexieHash.value = hex
+  } catch {
+    localDexieHash.value = null
+  }
+}
+
 onMounted(async () => {
   await Promise.all([load(), loadAreas()])
   items.value.forEach(c => initSession(c.id))
+  await computeLocalDexieHash()
 })
 
 function areaName(id) { return areas.value.find(a => a.id === id)?.name ?? '—' }
@@ -449,6 +472,8 @@ async function authenticate(id) {
   try {
     await ctrl.authenticate()
     addToast('success', 'Connected.')
+    const ctrlRecord = items.value.find(c => c.id === id)
+    if (ctrlRecord) await fetchBackupEtag(ctrlRecord)
     await fetchProvisioningState(id)
     await verifyDeviceUuid(id)
   } catch (e) {
@@ -473,13 +498,15 @@ async function verifyDeviceUuid(id) {
 }
 
 function logout(id) {
+  const ctrlRecord = items.value.find(c => c.id === id)
+  if (ctrlRecord?.uuid) delete etagCache[ctrlRecord.uuid]
   getSessionCtrl(id).logout()
   tokenInputs[id] = ''
 }
 
 function handleUnauthorized(id) {
   const ctrl = items.value.find(c => c.id === id)
-  addToast('error', `Authentication failed`)
+  addToast('error', `${ctrl?.name ?? id}: Authentication failed`)
   logout(id)
 }
 
@@ -487,6 +514,29 @@ function handleFetchError(id) {
   const ctrl = items.value.find(c => c.id === id)
   addToast('error', `Controller ${ctrl?.name ?? id} is unavailable, check the HTTP server.`)
   logout(id)
+}
+
+async function fetchBackupEtag(ctrl) {
+  const sessionCtrl = getSessionCtrl(ctrl.id)
+  try {
+    const abortCtrl = new AbortController()
+    const timerId = setTimeout(() => abortCtrl.abort(), 5000)
+    const res = await fetch(`http://${sessionCtrl.session.ip}/backup`, {
+      method: 'HEAD',
+      headers: { 'visual-token': sessionCtrl.session.visualToken },
+      signal: abortCtrl.signal
+    })
+    clearTimeout(timerId)
+    if (res.status === 200) {
+      const etag = res.headers.get('ETag')
+      etagCache[ctrl.uuid] = etag ? etag.replace(/"/g, '') : ''
+    } else if (res.status === 404) {
+      etagCache[ctrl.uuid] = ''
+    }
+    // 405 or other errors: leave cache entry untouched (show no indicator)
+  } catch {
+    // Network error: leave cache entry untouched
+  }
 }
 
 async function deploy(ctrl) {
@@ -501,7 +551,11 @@ async function deploy(ctrl) {
 async function _doDeployController(ctrl, ctrlIndex, ctrlTotal) {
   const sessionCtrl = getSessionCtrl(ctrl.id)
   const { controllerFetch } = await import('../composables/useApi')
-  const STEPS = 6
+
+  const allCerts = await db.certificates.toArray()
+  const certsToSync = allCerts.filter(c => c.isController || c.isClient)
+  const hasCerts = certsToSync.length > 0
+  const STEPS = hasCerts ? 8 : 7
   let step = 0
 
   function setStep(label) {
@@ -520,9 +574,13 @@ async function _doDeployController(ctrl, ctrlIndex, ctrlTotal) {
     deployProgress.itemTotal = total
   }
 
+  const ip = sessionCtrl.session.ip
+  const token = sessionCtrl.session.visualToken
+
+  // For /api/* endpoints (controllers, clients, etc.)
   async function fetchOrHandle(path, options = {}) {
     try {
-      const res = await controllerFetch(sessionCtrl.session.ip, path, options, sessionCtrl.session.visualToken)
+      const res = await controllerFetch(ip, path, options, token)
       if (res.status === 401) { handleUnauthorized(ctrl.id); return null }
       return res
     } catch {
@@ -531,49 +589,122 @@ async function _doDeployController(ctrl, ctrlIndex, ctrlTotal) {
     }
   }
 
+  // For non-/api endpoints (/backup, /certs) that need full URL control
+  async function fetchDirectOrHandle(path, options = {}, timeoutMs = 5000) {
+    const abortCtrl = new AbortController()
+    const timerId = setTimeout(() => abortCtrl.abort(), timeoutMs)
+    try {
+      const res = await fetch(`http://${ip}${path}`, {
+        ...options,
+        headers: { 'visual-token': token, ...options.headers },
+        signal: abortCtrl.signal
+      })
+      clearTimeout(timerId)
+      if (res.status === 401) { handleUnauthorized(ctrl.id); return null }
+      return res
+    } catch {
+      clearTimeout(timerId)
+      handleFetchError(ctrl.id)
+      return null
+    }
+  }
+
+  let success = false
   try {
+    // Step 1 (conditional): Push certificates
+    if (hasCerts) {
+      setStep('Pushing certificates…')
+      const listRes = await fetchDirectOrHandle('/certs', {}, 10000)
+      if (!listRes) { deployProgress.ctrlCurrent = ctrlIndex + 1; return false }
+      if (!listRes.ok) {
+        addToast('error', `${ctrl.name}: could not read cert list (HTTP ${listRes.status})`)
+        deployProgress.ctrlCurrent = ctrlIndex + 1
+        return false
+      }
+      const existing = await listRes.json()
+      const existingNames = new Set(Array.isArray(existing) ? existing.map(c => c.file ?? c.filename ?? c.name ?? c) : [])
+      setItem('', 0, certsToSync.length)
+      for (let i = 0; i < certsToSync.length; i++) {
+        const cert = certsToSync[i]
+        if (existingNames.has(cert.fileName)) {
+          setItem(cert.fileName, i + 1, certsToSync.length)
+          continue
+        }
+        const certType = cert.isController && cert.isClient ? 'both' : cert.isController ? 'controller' : 'client'
+        const formData = new FormData()
+        formData.append('file', new Blob([cert.certificate], { type: 'application/x-x509-ca-cert' }), cert.fileName)
+        const uploadRes = await fetchDirectOrHandle('/certs', {
+          method: 'POST',
+          headers: { 'X-Cert-Type': certType },
+          body: formData
+        }, 10000)
+        if (!uploadRes) { deployProgress.ctrlCurrent = ctrlIndex + 1; return false }
+        if (uploadRes.status !== 201 && uploadRes.status !== 403) {
+          addToast('error', `${ctrl.name}: failed to upload cert '${cert.fileName}' (HTTP ${uploadRes.status})`)
+          deployProgress.ctrlCurrent = ctrlIndex + 1
+          return false
+        }
+        setItem(cert.fileName, i + 1, certsToSync.length)
+      }
+    }
+
+    // Step 2: Read controllers
     setStep('Reading controllers…')
     const ctrlsRes = await fetchOrHandle('/controllers')
-    if (!ctrlsRes) return
+    if (!ctrlsRes) { deployProgress.ctrlCurrent = ctrlIndex + 1; return false }
     const existingCtrls = ctrlsRes.ok ? await ctrlsRes.json() : []
 
+    // Step 3: Delete controllers
     setStep('Deleting controllers…')
     setItem('', 0, existingCtrls.length)
     for (let i = 0; i < existingCtrls.length; i++) {
       const c = existingCtrls[i]
       setItem(c.uuid ?? '', i, existingCtrls.length)
       const r = await fetchOrHandle(`/controllers/${c.uuid}`, { method: 'DELETE' })
-      if (!r) return
+      if (!r) { deployProgress.ctrlCurrent = ctrlIndex + 1; return false }
       setItem(c.uuid ?? '', i + 1, existingCtrls.length)
     }
 
-    setStep('Deploying controller…')
-    setItem(ctrl.name, 0, 1)
-    const payload = await buildControllerPayload(ctrl.id)
-    const putRes = await fetchOrHandle(`/controllers/${ctrl.uuid}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    if (!putRes) return
-    if (!putRes.ok && putRes.status !== 204) { addToast('error', `Deploy failed: HTTP ${putRes.status}`); return }
-    setItem(ctrl.name, 1, 1)
+    // Step 4: Deploy all controllers
+    setStep('Deploying controllers…')
+    const allControllers = await db.controllers.toArray()
+    setItem('', 0, allControllers.length)
+    for (let i = 0; i < allControllers.length; i++) {
+      const c = allControllers[i]
+      setItem(c.name, i, allControllers.length)
+      const payload = await buildControllerPayload(c.id)
+      const putRes = await fetchOrHandle(`/controllers/${c.uuid}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (!putRes) { deployProgress.ctrlCurrent = ctrlIndex + 1; return false }
+      if (!putRes.ok && putRes.status !== 204) {
+        addToast('error', `${ctrl.name}: failed to deploy controller '${c.name}' (HTTP ${putRes.status})`)
+        deployProgress.ctrlCurrent = ctrlIndex + 1
+        return false
+      }
+      setItem(c.name, i + 1, allControllers.length)
+    }
 
+    // Step 5: Read clients
     setStep('Reading clients…')
     const clientsRes = await fetchOrHandle('/clients')
-    if (!clientsRes) return
+    if (!clientsRes) { deployProgress.ctrlCurrent = ctrlIndex + 1; return false }
     const existingClients = clientsRes.ok ? await clientsRes.json() : []
 
+    // Step 6: Delete clients
     setStep('Deleting clients…')
     setItem('', 0, existingClients.length)
     for (let i = 0; i < existingClients.length; i++) {
       const c = existingClients[i]
       setItem(c.uuid ?? '', i, existingClients.length)
       const r = await fetchOrHandle(`/clients/${c.uuid}`, { method: 'DELETE' })
-      if (!r) return
+      if (!r) { deployProgress.ctrlCurrent = ctrlIndex + 1; return false }
       setItem(c.uuid ?? '', i + 1, existingClients.length)
     }
 
+    // Step 7: Deploy clients
     setStep('Deploying clients…')
     const secondaryIds = new Set(await getExtendedClientIds())
     const allClients = await db.clients.toArray()
@@ -588,17 +719,44 @@ async function _doDeployController(ctrl, ctrlIndex, ctrlTotal) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(clientPayload)
       })
-      if (!clientRes) return
-      if (!clientRes.ok && clientRes.status !== 204) { addToast('error', `Deploy: failed to push client '${client.name}' (HTTP ${clientRes.status})`); return }
+      if (!clientRes) { deployProgress.ctrlCurrent = ctrlIndex + 1; return false }
+      if (!clientRes.ok && clientRes.status !== 204) {
+        addToast('error', `${ctrl.name}: failed to push client '${client.name}' (HTTP ${clientRes.status})`)
+        deployProgress.ctrlCurrent = ctrlIndex + 1
+        return false
+      }
       setItem(client.name, i + 1, primaryClients.length)
+    }
+
+    // Step 8: Push backup
+    setStep('Pushing backup…')
+    const backupBlob = await exportDB(db)
+    const backupRes = await fetchDirectOrHandle('/backup', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: backupBlob
+    }, 30000)
+    if (!backupRes) { deployProgress.ctrlCurrent = ctrlIndex + 1; return false }
+    if (!backupRes.ok && backupRes.status !== 204) {
+      addToast('error', `${ctrl.name}: failed to push backup (HTTP ${backupRes.status})`)
+      deployProgress.ctrlCurrent = ctrlIndex + 1
+      return false
     }
 
     deployProgress.stepCurrent = STEPS
     deployProgress.ctrlCurrent = ctrlIndex + 1
     addToast('success', `Deployed to ${ctrl.name}.`)
+    success = true
+
+    // Verify deployment by comparing ETag to local hash
+    await fetchBackupEtag(ctrl)
+
   } catch (e) {
-    addToast('error', `Deploy error: ${e.message}`)
+    addToast('error', `${ctrl.name}: deploy error: ${e.message}`)
+    deployProgress.ctrlCurrent = ctrlIndex + 1
   }
+
+  return success
 }
 
 async function deployAll() {
@@ -610,11 +768,15 @@ async function deployAll() {
   deployProgress.show = true
   deployProgress.ctrlTotal = connected.length
   deployProgress.ctrlCurrent = 0
+  const results = []
   for (let i = 0; i < connected.length; i++) {
     deployProgress.ctrlLabel = connected[i].name
-    await _doDeployController(connected[i], i, connected.length)
+    results.push(await _doDeployController(connected[i], i, connected.length))
   }
   deployProgress.show = false
+  if (results.some(r => r === false)) {
+    addToast('error', 'One or more controllers failed to deploy.')
+  }
 }
 
 const hasConnectedControllers = computed(() => items.value.some(c => sessions[c.id]?.isAuthenticated))
