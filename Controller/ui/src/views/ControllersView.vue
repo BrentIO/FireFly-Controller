@@ -904,7 +904,7 @@ async function pushCloudBackup(ctrl) {
       try { const body = await res.json(); statusCode = ` (cloud: ${body.status})` } catch { /* ignore */ }
       addToast('success', `Cloud backup pushed for ${ctrl.name}.${statusCode}`)
     } else if (res.status === 404) {
-      addToast('warning', `No local backup.json found on ${ctrl.name}.`)
+      addToast('warning', `No local backup found on ${ctrl.name}.`)
     } else {
       let msg = `HTTP ${res.status}`
       try { const body = await res.json(); msg = body.message ?? msg } catch { /* ignore */ }

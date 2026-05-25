@@ -1065,9 +1065,9 @@ paths:
     post:
       tags:
         - Cloud Backup
-      summary: Push local backup.json to cloud
+      summary: Push local backup to cloud
       description: |
-        Reads `backup.json` from the config file system, encrypts it on-device with
+        Reads the backup from the config file system, encrypts it on-device with
         `key_backup` (AES-256-GCM, HKDF-derived from the eFuse master key with the
         label `firefly-backup-v1`), and uploads the ciphertext blob to the FireFly
         Cloud. Returns the HTTP status code returned by the cloud.
@@ -1087,11 +1087,11 @@ paths:
         '401':
           description: Unauthorized
         '404':
-          description: No local backup.json found
+          description: No local backup found
         '409':
           description: Device not provisioned
         '413':
-          description: backup.json exceeds 512 KB limit
+          description: Backup exceeds 512 KB limit
         '500':
           description: Encryption or internal failure
           content:
@@ -1117,8 +1117,8 @@ paths:
       summary: Restore backup from cloud
       description: |
         Downloads the encrypted backup blob from the FireFly Cloud, decrypts it
-        on-device with `key_backup`, writes the result to `backup.json` on the
-        config file system, and returns the plaintext JSON to the caller.
+        on-device with `key_backup`, writes the result to the config file system,
+        and returns the plaintext JSON to the caller.
       security:
         - visualToken: []
       responses:
@@ -1159,7 +1159,7 @@ paths:
       summary: Delete cloud backup
       description: |
         Sends a DELETE request to the FireFly Cloud to remove the stored backup for
-        this device. If a local `backup.json` also exists, it is removed as well.
+        this device. If a local backup also exists, it is removed as well.
       security:
         - visualToken: []
       responses:
