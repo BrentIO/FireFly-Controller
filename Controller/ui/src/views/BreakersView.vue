@@ -21,7 +21,7 @@
           <tr v-if="items.length === 0">
             <td colspan="4" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">No breakers defined.</td>
           </tr>
-          <tr v-for="b in enrichedBreakers" :key="b.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 break-inside-avoid">
+          <tr v-for="b in enrichedBreakers" :key="b.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 even:bg-gray-50 dark:even:bg-gray-800/50 break-inside-avoid">
             <td class="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{{ b.name }}</td>
             <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400">{{ b.amperage }}</td>
             <td class="px-4 py-3 text-right">

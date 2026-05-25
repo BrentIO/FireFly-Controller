@@ -23,7 +23,7 @@
           <tr v-if="items.length === 0">
             <td colspan="3" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">No colors defined.</td>
           </tr>
-          <tr v-for="color in sortedColors" :key="color.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+          <tr v-for="color in sortedColors" :key="color.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 even:bg-gray-50 dark:even:bg-gray-800/50">
             <td class="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{{ color.name }}</td>
             <td class="px-4 py-3">
               <div class="w-8 h-8 rounded border border-gray-300 dark:border-gray-600" :style="{ backgroundColor: color.hex }" :title="color.hex"></div>

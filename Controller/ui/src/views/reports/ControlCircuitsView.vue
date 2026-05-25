@@ -21,7 +21,7 @@
             <td colspan="5" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">No circuits defined.</td>
           </tr>
           <template v-for="(group, breakerName) in grouped" :key="breakerName">
-            <tr v-for="row in group" :key="row.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 break-inside-avoid print:even:bg-gray-100" :class="row.enabled === false ? 'opacity-60' : ''">
+            <tr v-for="row in group" :key="row.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 even:bg-gray-50 dark:even:bg-gray-800/50 break-inside-avoid print:even:bg-gray-100" :class="row.enabled === false ? 'opacity-60' : ''">
               <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-medium print:!text-black">{{ breakerName }}</td>
               <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 print:!text-black">
                 <div class="flex items-center gap-2">

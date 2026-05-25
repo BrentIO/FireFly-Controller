@@ -16,7 +16,7 @@
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
               <tr v-if="!controllerBom.length"><td colspan="2" class="px-4 py-4 text-center text-gray-400 print:!text-black">None.</td></tr>
-              <tr v-for="row in controllerBom" :key="row.pid" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+              <tr v-for="row in controllerBom" :key="row.pid" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 even:bg-gray-50 dark:even:bg-gray-800/50 print:even:bg-gray-100">
                 <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.pid }}</td>
                 <td class="px-4 py-2 text-right text-gray-700 dark:text-gray-300 font-semibold print:!text-black">{{ row.qty }}</td>
               </tr>
@@ -35,7 +35,7 @@
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
               <tr v-if="!clientBom.length"><td colspan="2" class="px-4 py-4 text-center text-gray-400 print:!text-black">None.</td></tr>
-              <tr v-for="row in clientBom" :key="row.key" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+              <tr v-for="row in clientBom" :key="row.key" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 even:bg-gray-50 dark:even:bg-gray-800/50 print:even:bg-gray-100">
                 <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.label }}</td>
                 <td class="px-4 py-2 text-right text-gray-700 dark:text-gray-300 font-semibold print:!text-black">{{ row.qty }}</td>
               </tr>
@@ -59,7 +59,7 @@
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
               <tr v-if="!hidBom.length"><td colspan="4" class="px-4 py-4 text-center text-gray-400 print:!text-black">None.</td></tr>
-              <tr v-for="row in hidBom" :key="`${row.type}|${row.contact}|${row.colorName}`" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+              <tr v-for="row in hidBom" :key="`${row.type}|${row.contact}|${row.colorName}`" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 even:bg-gray-50 dark:even:bg-gray-800/50 print:even:bg-gray-100">
                 <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.type }}</td>
                 <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.contact }}</td>
                 <td class="px-4 py-2 print:!text-black">
@@ -86,7 +86,7 @@
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
               <tr v-if="!relayBom.length"><td colspan="4" class="px-4 py-4 text-center text-gray-400 print:!text-black">None.</td></tr>
-              <tr v-for="row in relayBom" :key="row.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+              <tr v-for="row in relayBom" :key="row.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 even:bg-gray-50 dark:even:bg-gray-800/50 print:even:bg-gray-100">
                 <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.manufacturer }}</td>
                 <td class="px-4 py-2 text-gray-700 dark:text-gray-300 print:!text-black">{{ row.model }}</td>
                 <td class="px-4 py-2 text-gray-900 dark:text-gray-100 print:!text-black">{{ row.description }}</td>

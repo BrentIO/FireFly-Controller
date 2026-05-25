@@ -22,7 +22,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-300">
-          <tr v-for="ctrl in items" :key="ctrl.id">
+          <tr v-for="ctrl in items" :key="ctrl.id" class="print:even:bg-gray-100">
             <td class="py-2 font-semibold">{{ ctrl.name }}</td>
             <td class="py-2">{{ areaName(ctrl.area) }}</td>
             <td class="py-2">{{ ctrl.product }}</td>
@@ -186,7 +186,7 @@
                   <tr v-if="!eventLog.length">
                     <td colspan="3" class="py-4 text-center text-gray-400 dark:text-gray-500">No events.</td>
                   </tr>
-                  <tr v-for="(e, i) in eventLog" :key="i">
+                  <tr v-for="(e, i) in eventLog" :key="i" class="even:bg-gray-50 dark:even:bg-gray-800/50">
                     <td class="py-1.5 pr-4 text-gray-500 dark:text-gray-400 whitespace-nowrap font-mono">{{ formatEventTime(e.time) }}</td>
                     <td class="py-1.5 pr-4 whitespace-nowrap">
                       <span :class="eventLevelClass(e.level)" class="px-1.5 py-0.5 rounded text-xs font-medium uppercase">{{ e.level || '—' }}</span>
@@ -220,7 +220,7 @@
                   <tr v-if="!errorLog.length">
                     <td class="py-4 text-center text-gray-400 dark:text-gray-500">No errors.</td>
                   </tr>
-                  <tr v-for="(e, i) in errorLog" :key="i">
+                  <tr v-for="(e, i) in errorLog" :key="i" class="even:bg-gray-50 dark:even:bg-gray-800/50">
                     <td class="py-1.5 pr-4 text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ e.time || e.timestamp || '' }}</td>
                     <td class="py-1.5 text-gray-900 dark:text-gray-100">{{ e.message || e }}</td>
                   </tr>
