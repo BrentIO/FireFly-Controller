@@ -61,6 +61,7 @@
 
 uint64_t bootTime = 0; /* Approximate Epoch time the device booted */
 uint64_t lastTimeMemoryBroadcast = 0; /* The last time memory usage was broadcast */
+uint64_t lastTimeCloudBackup = 0; /* The last time an automatic cloud backup upload was attempted */
 uint32_t lastPublishedHeapFree = UINT32_MAX;         /* Last heap-free value published to MQTT; UINT32_MAX forces publish on first read */
 uint32_t lastPublishedLargestFreeBlock = UINT32_MAX; /* Last largest-free-block value published to MQTT */
 volatile uint32_t lastTimeHttpServerUsed = 0;  /* Lower 32 bits of esp_timer_get_time() at last authorized HTTP request */
@@ -666,17 +667,21 @@ void loop() {
 
   updateNTPTime();
 
-  if(otaFirmware.enabled && esp_timer_get_time() > 30ULL * 1000000ULL){ //Wait 30 seconds after booting before checking the firmware
+  if(configFS_isMounted && esp_timer_get_time() > 30ULL * 1000000ULL){ //Wait 30 seconds after booting before uploading cloud backup
+    if((esp_timer_get_time() - lastTimeCloudBackup >= (uint64_t)CLOUD_BACKUP_INTERVAL_SECONDS * 1000000ULL) || (lastTimeCloudBackup == 0)){
+      if(configFS.exists("/backup.json")){
+        cloudBackup_uploadToCloud();
+      }
+      lastTimeCloudBackup = esp_timer_get_time();
+    }
+  }
+
+  if(otaFirmware.enabled && esp_timer_get_time() > 60ULL * 1000000ULL){ //Wait 60 seconds after booting before checking the firmware
     if((esp_timer_get_time() - otaFirmware.lastCheckedTime >= (uint64_t)FIRMWARE_CHECK_SECONDS * 1000000ULL) || (otaFirmware.lastCheckedTime == 0)){
       if(!otaFirmware.updateInProcess){
         #if CORE_DEBUG_LEVEL >= 4
           reportMemoryUsage("Starting firmware check.");
         #endif /* CORE_DEBUG_LEVEL >= 4 */
-
-        // Upload pending cloud backup before firmware check
-        if(configFS_isMounted && configFS.exists("/backup.json")){
-          cloudBackup_uploadToCloud();
-        }
 
         if(otaFirmware.execHTTPcheck() == 0){
           eventLog.createEvent("OTA firmware checked");
@@ -3471,6 +3476,7 @@ void otaFirmware_checkPending(){
     forceFirmwareUpdate.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
     forceFirmwareUpdate.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
     forceFirmwareUpdate.setSPIFFsPartitionLabel("www");
+    forceFirmwareUpdate.setCertFileSystem(nullptr);
 
     bool updateSuccess = false;
 
@@ -5825,6 +5831,7 @@ void cloudBackup_uploadToCloud() {
   cfg.crt_bundle_attach = esp_crt_bundle_attach;
   cfg.timeout_ms        = 30000;
   cfg.method            = HTTP_METHOD_POST;
+  cfg.buffer_size_tx    = 2048;
 
   esp_http_client_handle_t client = esp_http_client_init(&cfg);
 

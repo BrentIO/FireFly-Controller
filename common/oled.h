@@ -909,6 +909,20 @@
             }
 
         
+            void _printAsciiLine(const char* str) {
+                for (const char* p = str; *p; ++p) {
+                    uint8_t b = (uint8_t)*p;
+                    if (b >= 0xC0) {       // UTF-8 lead byte → emit one space, skip sequence
+                        this->hardware.print(' ');
+                    } else if (b < 0x80) { // plain ASCII → pass through
+                        this->hardware.print((char)b);
+                    }
+                    // 0x80–0xBF: continuation byte → silently skip
+                }
+                this->hardware.println();
+            }
+
+
             void _showPage_EventLog(){
 
                 if(this->_initialized != true){
@@ -932,7 +946,7 @@
                         }
 
                         for(int8_t i = iteratorOledStart; i < this->_eventLog->getEventCount(); i++){
-                            this->hardware.println(this->_eventLog->getEvent(i).text);
+                            this->_printAsciiLine(this->_eventLog->getEvent(i).text);
                         }
                     }
 
@@ -969,7 +983,7 @@
                         }
 
                         for(int8_t i = iteratorOledStart; i < this->_eventLog->getErrors()->size(); i++){
-                            this->hardware.println(this->_eventLog->getErrors()->get(i));
+                            this->_printAsciiLine(this->_eventLog->getErrors()->get(i));
                         }
                     }
                 #endif

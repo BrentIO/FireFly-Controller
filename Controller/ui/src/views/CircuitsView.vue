@@ -22,8 +22,8 @@
             <th class="py-2 text-center font-semibold">Enabled</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-300">
-          <tr v-for="c in enriched" :key="c.id">
+        <tbody class="divide-y divide-gray-300 [print-color-adjust:exact]">
+          <tr v-for="c in enriched" :key="c.id" class="even:bg-gray-50 dark:even:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/50 print:even:!bg-gray-100">
             <td class="py-2 font-mono">{{ c.name }}</td>
             <td class="py-2">{{ c.description }}</td>
             <td class="py-2">{{ c.areaName }}</td>
