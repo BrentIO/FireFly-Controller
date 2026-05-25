@@ -44,6 +44,7 @@
 #include "common/eventLog.h"
 #include "common/authorizationToken.h"
 #include "common/otaConfig.h"
+#include "common/cloudDeviceAuth.h"
 #include <ArduinoJson.h>
 #include "AsyncJson.h"
 #include <NTPClient.h>
@@ -221,6 +222,7 @@ void setup() {
     log_i("eFuse master key bytes 0-3: %02x %02x %02x %02x",
           deviceIdentity.data.key[0], deviceIdentity.data.key[1],
           deviceIdentity.data.key[2], deviceIdentity.data.key[3]);
+    memset(deviceIdentity.data.key, 0, sizeof(deviceIdentity.data.key));
   }
 
 
@@ -897,66 +899,6 @@ void eventHandler_otaFirmwareFinished(int partition, bool needs_restart) {
 void checkCloudRegistration() {
   eventLog.createEvent("Cloud reg check", EventLog::LOG_LEVEL_INFO);
 
-  uint8_t key_auth[32];
-  if (mbedtls_hkdf(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256),
-                   nullptr, 0,
-                   deviceIdentity.data.key, sizeof(deviceIdentity.data.key),
-                   (const uint8_t*)"firefly-auth-v1", 15,
-                   key_auth, 32) != 0) {
-    memset(key_auth, 0, 32);
-    _registrationState.checkedAt = timeClient.getEpochTime();
-    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_NOTIFICATION);
-    return;
-  }
-
-  uint8_t nonce[32];
-  esp_fill_random(nonce, 32);
-
-  // Build ISO 8601 UTC timestamp string
-  time_t now_ts = (time_t)timeClient.getEpochTime();
-  char timestampBuf[25];
-  struct tm tmNow;
-  gmtime_r(&now_ts, &tmNow);
-  strftime(timestampBuf, sizeof(timestampBuf), "%Y-%m-%dT%H:%M:%SZ", &tmNow);
-
-  // Sign over nonce (32 bytes) || timestamp (ASCII bytes, no NUL)
-  size_t tsLen = strlen(timestampBuf);
-  uint8_t sigInput[32 + 25]; // nonce + timestamp bytes
-  memcpy(sigInput, nonce, 32);
-  memcpy(sigInput + 32, timestampBuf, tsLen);
-
-  uint8_t hash[32];
-  mbedtls_sha256_context sha_ctx;
-  mbedtls_sha256_init(&sha_ctx);
-  mbedtls_sha256_starts(&sha_ctx, 0);
-  mbedtls_sha256_update(&sha_ctx, sigInput, 32 + tsLen);
-  mbedtls_sha256_finish(&sha_ctx, hash);
-  mbedtls_sha256_free(&sha_ctx);
-
-  mbedtls_ecdsa_context ecdsa;
-  mbedtls_ecdsa_init(&ecdsa);
-  mbedtls_ecp_group_load(&ecdsa.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP256R1);
-  mbedtls_mpi_read_binary(&ecdsa.MBEDTLS_PRIVATE(d), key_auth, 32);
-  memset(key_auth, 0, 32);
-
-  uint8_t sig[72]; size_t sigLen = 0;
-  bool signOk = (mbedtls_ecdsa_write_signature(&ecdsa, MBEDTLS_MD_SHA256,
-                                               hash, 32, sig, sizeof(sig), &sigLen,
-                                               _espRng, nullptr) == 0);
-  mbedtls_ecdsa_free(&ecdsa);
-
-  _registrationState.checkedAt = timeClient.getEpochTime();
-
-  if (!signOk) {
-    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_NOTIFICATION);
-    return;
-  }
-
-  uint8_t nonceB64[48]; size_t nonceB64Len = 0;
-  uint8_t sigB64[100];  size_t sigB64Len = 0;
-  mbedtls_base64_encode(nonceB64, sizeof(nonceB64), &nonceB64Len, nonce, 32);
-  mbedtls_base64_encode(sigB64,   sizeof(sigB64),   &sigB64Len,   sig,   sigLen);
-
   String url = FIREFLY_CLOUD_API_ROOT;
   url += "/devices/";
   url += deviceIdentity.data.uuid;
@@ -968,10 +910,14 @@ void checkCloudRegistration() {
   cfg.timeout_ms         = 10000;
 
   esp_http_client_handle_t client = esp_http_client_init(&cfg);
-  esp_http_client_set_header(client, "X-Device-UUID",      deviceIdentity.data.uuid);
-  esp_http_client_set_header(client, "X-Device-Nonce",     (char*)nonceB64);
-  esp_http_client_set_header(client, "X-Device-Timestamp", timestampBuf);
-  esp_http_client_set_header(client, "X-Device-Signature", (char*)sigB64);
+
+  _registrationState.checkedAt = timeClient.getEpochTime();
+
+  if (!cloudDeviceAuth_setHeaders(client, deviceIdentity.data.uuid, (time_t)timeClient.getEpochTime())) {
+    esp_http_client_cleanup(client);
+    eventLog.createEvent("Cloud reg fail", EventLog::LOG_LEVEL_NOTIFICATION);
+    return;
+  }
 
   int  status  = 0;
   char bodyBuf[256] = {0};
@@ -1091,16 +1037,20 @@ void http_handleRegistration_POST(AsyncWebServerRequest *request, JsonVariant &d
   }
 
   /* Derive key_auth and compute P-256 public key */
+  uint8_t master_key[32] = {};
+  esp_efuse_read_block(EFUSE_BLK3, master_key, EFUSE_KEY_OFFSET_BITS, EFUSE_KEY_SIZE_BITS);
   uint8_t key_auth[32];
   if (mbedtls_hkdf(mbedtls_md_info_from_type(MBEDTLS_MD_SHA256),
                    nullptr, 0,
-                   deviceIdentity.data.key, sizeof(deviceIdentity.data.key),
+                   master_key, sizeof(master_key),
                    (const uint8_t*)"firefly-auth-v1", 15,
                    key_auth, 32) != 0) {
+    memset(master_key, 0, 32);
     memset(key_auth, 0, 32);
     http_error(request, "Key derivation failed");
     return;
   }
+  memset(master_key, 0, 32);
 
   mbedtls_ecp_group  grp;  mbedtls_ecp_group_init(&grp);
   mbedtls_mpi        d;    mbedtls_mpi_init(&d);

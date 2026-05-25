@@ -51,6 +51,10 @@
             <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ ctrl.uuid }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ ctrl.mac || '—' }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ ctrl.product }}</p>
+            <template v-if="sessions[ctrl.id]?.isAuthenticated && versionCache[ctrl.id]">
+              <p class="text-xs text-gray-500 dark:text-gray-400">App: {{ versionCache[ctrl.id].app }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">UI: {{ versionCache[ctrl.id].ui }}</p>
+            </template>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ areaName(ctrl.area) }}</p>
             <p v-if="!ctrl.mac || ctrl.mac === 'ff:ff:ff:ff:ff:ff'" class="text-xs text-yellow-700 dark:text-yellow-500 mt-1 font-medium">MAC Address is invalid</p>
           </div>
@@ -78,7 +82,7 @@
             </div>
             <div class="flex flex-col gap-1.5">
               <button class="w-full px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="openEventLog(ctrl.id)">Event Log</button>
-              <button class="w-full px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="openErrorLog(ctrl.id)">Errors</button>
+              <button class="w-full px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="openErrorLog(ctrl.id)">Error Log</button>
               <button class="w-full px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmPullBackup(ctrl)">Pull Backup</button>
               <button class="w-full px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="pushCertificates(ctrl)">Push Certs</button>
               <button class="w-full px-2 py-1.5 text-sm font-medium border rounded-lg transition-colors"
@@ -323,6 +327,8 @@ import { db } from '../composables/useDatabase'
 
 // Module-level ETag cache keyed by controller UUID — persists across navigation
 const etagCache = reactive({})
+// Version cache keyed by controller ID — cleared on logout
+const versionCache = reactive({})
 
 const { items, products, load, create, update, remove } = useControllers()
 const { items: areas, load: loadAreas } = useAreas()
@@ -344,6 +350,8 @@ const eventLog = ref([])
 const errorLog = ref([])
 const activeEventLogId = ref(null)
 const activeErrorLogId = ref(null)
+const eventLogRefreshTimer = ref(null)
+const errorLogRefreshTimer = ref(null)
 const deployProgress = reactive({
   show: false,
   ctrlLabel: '',
@@ -412,6 +420,25 @@ onMounted(async () => {
       .filter(c => sessions[c.id]?.isAuthenticated && c.uuid && !(c.uuid in etagCache))
       .map(c => fetchBackupEtag(c))
   )
+})
+
+onUnmounted(() => {
+  if (eventLogRefreshTimer.value) clearInterval(eventLogRefreshTimer.value)
+  if (errorLogRefreshTimer.value) clearInterval(errorLogRefreshTimer.value)
+})
+
+watch(showEventLog, val => {
+  if (!val && eventLogRefreshTimer.value) {
+    clearInterval(eventLogRefreshTimer.value)
+    eventLogRefreshTimer.value = null
+  }
+})
+
+watch(showErrorLog, val => {
+  if (!val && errorLogRefreshTimer.value) {
+    clearInterval(errorLogRefreshTimer.value)
+    errorLogRefreshTimer.value = null
+  }
 })
 
 function areaName(id) { return areas.value.find(a => a.id === id)?.name ?? '—' }
@@ -497,7 +524,10 @@ async function authenticate(id) {
     await ctrl.authenticate()
     addToast('success', 'Connected.')
     const ctrlRecord = items.value.find(c => c.id === id)
-    if (ctrlRecord) await fetchBackupEtag(ctrlRecord)
+    if (ctrlRecord) {
+      await fetchBackupEtag(ctrlRecord)
+      fetchVersions(ctrlRecord)
+    }
     await fetchProvisioningState(id)
     await verifyDeviceUuid(id)
   } catch (e) {
@@ -521,9 +551,26 @@ async function verifyDeviceUuid(id) {
   } catch { /* Non-fatal — UUID verification is best-effort */ }
 }
 
+async function fetchVersions(ctrl) {
+  const sessionCtrl = getSessionCtrl(ctrl.id)
+  const { controllerFetch } = await import('../composables/useApi')
+  try {
+    const [appRes, uiRes] = await Promise.all([
+      controllerFetch(sessionCtrl.session.ip, '/version', {}, sessionCtrl.session.visualToken),
+      controllerFetch(sessionCtrl.session.ip, '/ui/version', {}, sessionCtrl.session.visualToken)
+    ])
+    const appVersion = appRes.ok ? ((await appRes.json()).application ?? '—') : '—'
+    const uiVersion = uiRes.ok ? ((await uiRes.json()).version ?? '—') : '—'
+    versionCache[ctrl.id] = { app: appVersion, ui: uiVersion }
+  } catch {
+    versionCache[ctrl.id] = { app: '—', ui: '—' }
+  }
+}
+
 function logout(id) {
   const ctrlRecord = items.value.find(c => c.id === id)
   if (ctrlRecord?.uuid) delete etagCache[ctrlRecord.uuid]
+  delete versionCache[id]
   getSessionCtrl(id).logout()
   tokenInputs[id] = ''
 }
@@ -823,6 +870,7 @@ async function openEventLog(id) {
   eventLog.value = []
   showEventLog.value = true
   await fetchEventLog(id)
+  eventLogRefreshTimer.value = setInterval(() => fetchEventLog(activeEventLogId.value), 5000)
 }
 
 async function refreshEventLog() {
@@ -846,6 +894,7 @@ async function openErrorLog(id) {
   activeErrorLogId.value = id
   await fetchErrorLog(id)
   showErrorLog.value = true
+  errorLogRefreshTimer.value = setInterval(() => fetchErrorLog(activeErrorLogId.value), 5000)
 }
 
 async function fetchErrorLog(id) {
