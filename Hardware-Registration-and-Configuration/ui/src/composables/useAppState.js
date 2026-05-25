@@ -4,7 +4,7 @@ import { apiFetch } from './useApi'
 const state = reactive({
   apiVersion: '',
   identityLoaded: false,
-  registrationState: { registered: false, checkedAt: 0, error: false, message: '' },
+  registrationState: { registered: false, checkedAt: 0, error: false, message: '', cloudApiRoot: '' },
   navErrors: {
     mcu: false,
     network: false,
@@ -24,10 +24,11 @@ export function useAppState() {
       const res = await apiFetch('/registration')
       if (res.ok) {
         const data = await res.json()
-        state.registrationState.registered = data.registered ?? false
-        state.registrationState.checkedAt  = data.checked_at ?? 0
-        state.registrationState.error      = false
-        state.registrationState.message    = ''
+        state.registrationState.registered   = data.registered ?? false
+        state.registrationState.checkedAt    = data.checked_at ?? 0
+        state.registrationState.error        = false
+        state.registrationState.message      = ''
+        state.registrationState.cloudApiRoot = data.cloud_api_root ?? ''
         state.navErrors.registration       = !data.registered
       } else {
         const body = await res.json().catch(() => ({}))

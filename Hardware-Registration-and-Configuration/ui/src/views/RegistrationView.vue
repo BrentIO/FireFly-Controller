@@ -101,6 +101,9 @@ async function load() {
   loading.value = true
   try {
     await loadRegistrationState()
+    if (state.registrationState.cloudApiRoot) {
+      form.value.url = state.registrationState.cloudApiRoot
+    }
   } finally {
     loading.value = false
   }

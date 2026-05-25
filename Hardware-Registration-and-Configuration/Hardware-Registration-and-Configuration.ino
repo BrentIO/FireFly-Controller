@@ -1048,8 +1048,9 @@ void http_handleRegistration_GET(AsyncWebServerRequest *request) {
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   JsonDocument doc;
-  doc["registered"] = _registrationState.registered;
-  doc["checked_at"] = (long)_registrationState.checkedAt;
+  doc["registered"]     = _registrationState.registered;
+  doc["checked_at"]     = (long)_registrationState.checkedAt;
+  doc["cloud_api_root"] = FIREFLY_CLOUD_API_ROOT;
   serializeJson(doc, *response);
   request->send(response);
 }
