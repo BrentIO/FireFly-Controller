@@ -36,7 +36,7 @@
           <tr v-if="items.length === 0">
             <td colspan="6" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">No certificates stored.</td>
           </tr>
-          <tr v-for="cert in items" :key="cert.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+          <tr v-for="cert in items" :key="cert.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 even:bg-gray-50 dark:even:bg-gray-800/50">
             <td class="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{{ cert.commonName }}</td>
             <td class="px-4 py-3 text-gray-600 dark:text-gray-400">{{ cert.organization }}</td>
             <td class="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">

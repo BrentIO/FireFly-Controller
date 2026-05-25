@@ -61,7 +61,7 @@
               <tr v-if="!mergedHids.length">
                 <td colspan="8" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">No buttons or switches defined.</td>
               </tr>
-              <tr v-for="(hid, idx) in mergedHids" :key="idx" class="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+              <tr v-for="(hid, idx) in mergedHids" :key="idx" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 even:bg-gray-50 dark:even:bg-gray-800/50"
                 :class="idx === 4 ? 'border-t-2 border-blue-200 dark:border-blue-800' : ''">
                 <td class="px-4 py-3 text-center text-gray-500 dark:text-gray-400">{{ idx + 1 }}</td>
                 <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ hid.type === 'switch' ? 'Switch' : 'Button' }}</td>

@@ -21,7 +21,7 @@
           <tr v-if="items.length === 0">
             <td colspan="4" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">No relay types defined.</td>
           </tr>
-          <tr v-for="r in sortedItems" :key="r.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+          <tr v-for="r in sortedItems" :key="r.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 even:bg-gray-50 dark:even:bg-gray-800/50">
             <td class="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{{ r.manufacturer }}</td>
             <td class="px-4 py-3 text-gray-900 dark:text-gray-100">{{ r.model }}</td>
             <td class="px-4 py-3">
