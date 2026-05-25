@@ -8,6 +8,9 @@
     #ifndef FIRMWARE_CHECK_SECONDS
         #define FIRMWARE_CHECK_SECONDS 86400 /* Number of seconds between OTA firmware checks */
     #endif
+    #ifndef CLOUD_BACKUP_INTERVAL_SECONDS
+        #define CLOUD_BACKUP_INTERVAL_SECONDS 86400 /* Number of seconds between automatic cloud backup uploads */
+    #endif
     #ifndef JSON_FW_BUFF_SIZE
         #define JSON_FW_BUFF_SIZE 3072 //Supports 5 versions with maximum recommended string lengths
     #endif

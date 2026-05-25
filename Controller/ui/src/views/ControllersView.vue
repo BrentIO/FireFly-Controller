@@ -21,8 +21,8 @@
             <th class="py-2 text-left font-semibold">MAC Address</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-300">
-          <tr v-for="ctrl in items" :key="ctrl.id" class="print:even:bg-gray-100">
+        <tbody class="divide-y divide-gray-300 [print-color-adjust:exact]">
+          <tr v-for="ctrl in items" :key="ctrl.id" class="print:even:!bg-gray-100">
             <td class="py-2 font-semibold">{{ ctrl.name }}</td>
             <td class="py-2">{{ areaName(ctrl.area) }}</td>
             <td class="py-2">{{ ctrl.product }}</td>
@@ -389,8 +389,10 @@ async function computeLocalDexieHash() {
     const hashBuf = await crypto.subtle.digest('SHA-256', arrayBuf)
     const hex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('')
     localDexieHash.value = hex
+    console.log('[deploy-debug] localDexieHash:', localDexieHash.value)
   } catch {
     localDexieHash.value = null
+    console.log('[deploy-debug] localDexieHash: null (hash failed)')
   }
 }
 
@@ -554,8 +556,10 @@ async function fetchBackupEtag(ctrl) {
     if (res.status === 200) {
       const etag = res.headers.get('ETag')
       etagCache[ctrl.uuid] = etag ? etag.replace(/"/g, '') : ''
+      console.log('[deploy-debug] etagCache:', ctrl.uuid, '→', etagCache[ctrl.uuid], '(raw ETag header:', etag, ')')
     } else if (res.status === 404) {
       etagCache[ctrl.uuid] = ''
+      console.log('[deploy-debug] etagCache:', ctrl.uuid, '→ "" (404 — no backup on controller)')
     }
     // 405 or other errors: leave cache entry untouched (show no indicator)
   } catch {
