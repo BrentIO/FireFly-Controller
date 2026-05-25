@@ -60,9 +60,9 @@
 #include <esp_crt_bundle.h>
 
 uint64_t bootTime = 0; /* Approximate Epoch time the device booted */
-#if CORE_DEBUG_LEVEL >= 4
 uint64_t lastTimeMemoryBroadcast = 0; /* The last time memory usage was broadcast */
-#endif /* CORE_DEBUG_LEVEL >= 4 */
+uint32_t lastPublishedHeapFree = UINT32_MAX;         /* Last heap-free value published to MQTT; UINT32_MAX forces publish on first read */
+uint32_t lastPublishedLargestFreeBlock = UINT32_MAX; /* Last largest-free-block value published to MQTT */
 volatile uint32_t lastTimeHttpServerUsed = 0;  /* Lower 32 bits of esp_timer_get_time() at last authorized HTTP request */
 bool httpServerIsActive = false; /* If the HTTP server has been started */
 bool _mqttWasConnected = false; /* Tracks prior MQTT connected state to detect disconnect transitions */
@@ -170,12 +170,11 @@ inputPort inputPorts[(IO_EXTENDER_COUNT_PINS / IO_EXTENDER_COUNT_CHANNELS_PER_PO
 
 
 void reportMemoryUsage(const char* tag) {
-
-  log_d("[%lu] ***Memory Usage Report***\tHeap Free: %lu, Largest Free Heap Block: %lu",
+  log_d("[%lu] ***Memory Usage Report*** [%s]\tHeap Free: %lu, Largest Free Heap Block: %lu",
           timeClient.getEpochTime(),
+          tag,
           (unsigned long)ESP.getFreeHeap(),
-          (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT),
-          tag);
+          (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
 }
 
 
@@ -184,7 +183,9 @@ void reportMemoryUsage(const char* tag) {
 */
 void setup() {
 
-  reportMemoryUsage("Setup begin.");
+  #if CORE_DEBUG_LEVEL >= 4
+    reportMemoryUsage("Setup begin.");
+  #endif /* CORE_DEBUG_LEVEL >= 4 */
 
   if(!psramFound()){
     eventLog.createEvent("No PSRAM found", EventLog::LOG_LEVEL_INFO);
@@ -198,7 +199,9 @@ void setup() {
   
   Wire.begin();
 
-  reportMemoryUsage("Wire started.");
+  #if CORE_DEBUG_LEVEL >= 4
+    reportMemoryUsage("Wire started.");
+  #endif /* CORE_DEBUG_LEVEL >= 4 */
 
   /* Start the auth token service */
   authToken.begin();
@@ -263,7 +266,9 @@ void setup() {
     provisioningMode.setWiFI(&WiFi);
   #endif
 
-  reportMemoryUsage("Starting Ethernet.");
+  #if CORE_DEBUG_LEVEL >= 4
+    reportMemoryUsage("Starting Ethernet.");
+  #endif /* CORE_DEBUG_LEVEL >= 4 */
 
   #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 && defined(ESP32)
 
@@ -307,30 +312,40 @@ void setup() {
 
   #endif
 
-  reportMemoryUsage("Ethernet started.");
+  #if CORE_DEBUG_LEVEL >= 4
+    reportMemoryUsage("Ethernet started.");
+  #endif /* CORE_DEBUG_LEVEL >= 4 */
 
-  reportMemoryUsage("Starting Inputs.");
+  #if CORE_DEBUG_LEVEL >= 4
+    reportMemoryUsage("Starting Inputs.");
+  #endif /* CORE_DEBUG_LEVEL >= 4 */
 
   /* Start inputs */
   inputs.setCallback_failure(&failureHandler_inputs);
   inputs.setCallback_publisher(&eventHandler_inputs);
   inputs.begin();
 
-  reportMemoryUsage("Inputs started; starting outputs.");
+  #if CORE_DEBUG_LEVEL >= 4
+    reportMemoryUsage("Inputs started; starting outputs.");
+  #endif /* CORE_DEBUG_LEVEL >= 4 */
 
   /* Start outputs */
   outputs.setCallback_failure(&failureHandler_outputs);
   outputs.setCallback_outputValueChanged(&mqtt_publishOutputValueChanged);
   outputs.begin();
 
-  reportMemoryUsage("Outputs started; starting temperature sensors.");
+  #if CORE_DEBUG_LEVEL >= 4
+    reportMemoryUsage("Outputs started; starting temperature sensors.");
+  #endif /* CORE_DEBUG_LEVEL >= 4 */
 
   /* Start temperature sensors */
   temperatureSensors.setCallback_publisher(&eventHandler_temperature);
   temperatureSensors.setCallback_failure(&failureHandler_temperatureSensors);
   temperatureSensors.begin();
 
-  reportMemoryUsage("Temperature sensors started; starting http server.");
+  #if CORE_DEBUG_LEVEL >= 4
+    reportMemoryUsage("Temperature sensors started; starting http server.");
+  #endif /* CORE_DEBUG_LEVEL >= 4 */
 
   /* Start LittleFS for www */
   if(wwwFS.begin(false, "/wwwFS", (uint8_t)10U, "www"))
@@ -621,11 +636,15 @@ void setup() {
 
   startHttpServer();
 
-  reportMemoryUsage("Setting up MQTT.");
+  #if CORE_DEBUG_LEVEL >= 4
+    reportMemoryUsage("Setting up MQTT.");
+  #endif /* CORE_DEBUG_LEVEL >= 4 */
 
   setupMQTT();
 
-  reportMemoryUsage("MQTT Started.  Setting up IO.");
+  #if CORE_DEBUG_LEVEL >= 4
+    reportMemoryUsage("MQTT Started.  Setting up IO.");
+  #endif /* CORE_DEBUG_LEVEL >= 4 */
 
   setupIO();
 
@@ -633,7 +652,9 @@ void setup() {
 
   oled.setPage(managerOled::PAGE_EVENT_LOG);
 
-  reportMemoryUsage("Setup complete.");
+  #if CORE_DEBUG_LEVEL >= 4
+    reportMemoryUsage("Setup complete.");
+  #endif /* CORE_DEBUG_LEVEL >= 4 */
 
 }
 
@@ -648,7 +669,9 @@ void loop() {
   if(otaFirmware.enabled && esp_timer_get_time() > 30ULL * 1000000ULL){ //Wait 30 seconds after booting before checking the firmware
     if((esp_timer_get_time() - otaFirmware.lastCheckedTime >= (uint64_t)FIRMWARE_CHECK_SECONDS * 1000000ULL) || (otaFirmware.lastCheckedTime == 0)){
       if(!otaFirmware.updateInProcess){
-        reportMemoryUsage("Starting firmware check.");
+        #if CORE_DEBUG_LEVEL >= 4
+          reportMemoryUsage("Starting firmware check.");
+        #endif /* CORE_DEBUG_LEVEL >= 4 */
 
         // Upload pending cloud backup before firmware check
         if(configFS_isMounted && configFS.exists("/backup.json")){
@@ -661,17 +684,25 @@ void loop() {
       }
 
       otaFirmware.lastCheckedTime = esp_timer_get_time();
-      reportMemoryUsage("Firmware check complete.");
+      #if CORE_DEBUG_LEVEL >= 4
+        reportMemoryUsage("Firmware check complete.");
+      #endif /* CORE_DEBUG_LEVEL >= 4 */
     }
   }
 
-#if CORE_DEBUG_LEVEL >= 4
   if(esp_timer_get_time() - lastTimeMemoryBroadcast >= (uint64_t)MEMORY_USAGE_REPORT_SECONDS * 1000000ULL){
     lastTimeMemoryBroadcast = esp_timer_get_time();
-    reportMemoryUsage("Main loop timer elapsed.");
-    mqtt_publishMemoryUsage();
+    uint32_t currentHeapFree         = (uint32_t)ESP.getFreeHeap();
+    uint32_t currentLargestFreeBlock = (uint32_t)heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT);
+    if(currentHeapFree != lastPublishedHeapFree || currentLargestFreeBlock != lastPublishedLargestFreeBlock){
+      lastPublishedHeapFree         = currentHeapFree;
+      lastPublishedLargestFreeBlock = currentLargestFreeBlock;
+      #if CORE_DEBUG_LEVEL >= 4
+        reportMemoryUsage("Main loop timer elapsed.");
+      #endif /* CORE_DEBUG_LEVEL >= 4 */
+      mqtt_publishMemoryUsage();
+    }
   }
-#endif /* CORE_DEBUG_LEVEL >= 4 */
 
   if(httpServerIsActive){
     if((uint32_t)esp_timer_get_time() - lastTimeHttpServerUsed >= (uint32_t)HTTP_SERVER_MAX_IDLE_SECONDS * 1000000UL) {
@@ -3894,10 +3925,8 @@ void mqtt_reconnect(){
           mqtt_autoDiscovery_mac_address();
           mqtt_autoDiscovery_count_errors();
           mqtt_autoDiscovery_http_server();
-#if CORE_DEBUG_LEVEL >= 4
           mqtt_autoDiscovery_heapFree();
           mqtt_autoDiscovery_heapLargestFreeBlock();
-#endif /* CORE_DEBUG_LEVEL >= 4 */
           mqttClient.autoDiscovery.sent = true;
         }
         mqtt_publishAllAvailability();
@@ -5342,7 +5371,6 @@ void mqtt_publishHttpServerStateChanged(boolean state){
 }
 
 
-#if CORE_DEBUG_LEVEL >= 4
 /**
  * Handles heap free auto discovery broadcasts
  */
@@ -5515,7 +5543,6 @@ void mqtt_publishMemoryUsage(){
     mqtt_publish_heapFree();
     mqtt_publish_heapLargestFreeBlock();
 }
-#endif /* CORE_DEBUG_LEVEL >= 4 */
 
 
 /**
@@ -5598,7 +5625,9 @@ void startHttpServer(){
       httpServerIsActive = true;
 
       eventLog.createEvent("HTTP server started");
-      reportMemoryUsage("HTTP server started.");
+      #if CORE_DEBUG_LEVEL >= 4
+        reportMemoryUsage("HTTP server started.");
+      #endif /* CORE_DEBUG_LEVEL >= 4 */
 
       resetHTPServerUsage();
       
@@ -5628,7 +5657,9 @@ void stopHttpServer(){
     httpServerIsActive = false;
 
     eventLog.createEvent("HTTP server stopped");
-    reportMemoryUsage("HTTP server stopped.");
+    #if CORE_DEBUG_LEVEL >= 4
+      reportMemoryUsage("HTTP server stopped.");
+    #endif /* CORE_DEBUG_LEVEL >= 4 */
 
     lastTimeHttpServerUsed = 0;
 
