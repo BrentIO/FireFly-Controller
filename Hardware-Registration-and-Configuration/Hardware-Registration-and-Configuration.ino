@@ -988,7 +988,7 @@ void checkCloudRegistration() {
   esp_http_client_close(client);
   esp_http_client_cleanup(client);
 
-  log_i("checkCloudRegistration: err=%d status=%d", (int)err, status);
+  log_i("checkCloudRegistration: url=%s err=%d status=%d", url.c_str(), (int)err, status);
 
   _registrationState.error        = false;
   _registrationState.errorMessage = String();
