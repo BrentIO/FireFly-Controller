@@ -375,8 +375,8 @@ void setup() {
     log_e("An Error has occurred while mounting configFS");
   }
 
-  if(configFS.exists("/backup.upload_in_progress")){
-    configFS.remove("/backup.upload_in_progress");
+  if(configFS.exists("/backup.json.upload_in_progress")){
+    configFS.remove("/backup.json.upload_in_progress");
   }
 
   refreshCertBundle();
@@ -2362,6 +2362,10 @@ void http_handleBackup(AsyncWebServerRequest *request){
       http_options(request);
       break;
 
+    case HTTP_HEAD:
+      http_handleBackup_HEAD(request);
+      break;
+
     case HTTP_GET:
       http_handleBackup_GET(request);
       break;
@@ -2378,13 +2382,13 @@ void http_handleBackup(AsyncWebServerRequest *request){
 
 
 /**
- * Handles Backup GETs
+ * Handles Backup HEADs — returns ETag of stored backup without body
 */
-void http_handleBackup_GET(AsyncWebServerRequest *request){
+void http_handleBackup_HEAD(AsyncWebServerRequest *request){
 
   if(!request->hasHeader("visual-token")){
-        http_unauthorized(request);
-        return;
+    http_unauthorized(request);
+    return;
   }
 
   if(!authToken.authenticate(request->header("visual-token").c_str())){
@@ -2392,19 +2396,70 @@ void http_handleBackup_GET(AsyncWebServerRequest *request){
     return;
   }
 
-  if(!configFS.exists("/backup")){
+  if(!configFS.exists("/backup.json")){
     http_notFound(request);
     return;
   }
 
   resetHTPServerUsage();
 
-  String plaintext;
-  if(!secretEncryption.decryptFromFile(configFS, "/backup", plaintext)){
-    http_error(request, "Unable to decrypt file");
+  AsyncWebServerResponse *response = request->beginResponse(200, "application/json", "");
+
+  if(configFS.exists("/backup.etag")){
+    File etagFile = configFS.open("/backup.etag", "r");
+    if(etagFile){
+      String etag = etagFile.readString();
+      etagFile.close();
+      response->addHeader("ETag", "\"" + etag + "\"");
+    }
+  }
+
+  request->send(response);
+}
+
+
+/**
+ * Handles Backup GETs
+*/
+void http_handleBackup_GET(AsyncWebServerRequest *request){
+
+  if(!request->hasHeader("visual-token")){
+    http_unauthorized(request);
     return;
   }
-  request->send(200, "application/json", plaintext);
+
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(!configFS.exists("/backup.json")){
+    http_notFound(request);
+    return;
+  }
+
+  resetHTPServerUsage();
+
+  File f = configFS.open("/backup.json", "r");
+  if(!f){
+    http_error(request, "Unable to open backup file");
+    return;
+  }
+  String plaintext = f.readString();
+  f.close();
+
+  AsyncWebServerResponse *response = request->beginResponse(200, "application/json", plaintext);
+
+  if(configFS.exists("/backup.etag")){
+    File etagFile = configFS.open("/backup.etag", "r");
+    if(etagFile){
+      String etag = etagFile.readString();
+      etagFile.close();
+      response->addHeader("ETag", "\"" + etag + "\"");
+    }
+  }
+
+  request->send(response);
 }
 
 
@@ -2412,6 +2467,7 @@ static File _backupUploadFile;
 static bool _backupUploadAuthorized = false;
 static size_t _backupUploadBytesExpected = 0;
 static size_t _backupUploadBytesWritten = 0;
+static mbedtls_sha256_context _backupSha256Ctx;
 
 /**
  * Body handler for streaming Backup PUTs directly to LittleFS
@@ -2431,20 +2487,24 @@ void http_handleBackup_PUT_body(AsyncWebServerRequest *request, uint8_t *data, s
       return;
     }
 
-    if(configFS.exists("/backup.upload_in_progress")){
-      configFS.remove("/backup.upload_in_progress");
+    if(configFS.exists("/backup.json.upload_in_progress")){
+      configFS.remove("/backup.json.upload_in_progress");
     }
 
-    _backupUploadFile = configFS.open("/backup.upload_in_progress", "w");
+    _backupUploadFile = configFS.open("/backup.json.upload_in_progress", "w");
     if(!_backupUploadFile){
       return;
     }
+
+    mbedtls_sha256_init(&_backupSha256Ctx);
+    mbedtls_sha256_starts(&_backupSha256Ctx, 0);
 
     _backupUploadAuthorized = true;
   }
 
   if(_backupUploadAuthorized && _backupUploadFile){
     _backupUploadFile.write(data, len);
+    mbedtls_sha256_update(&_backupSha256Ctx, data, len);
     _backupUploadBytesWritten += len;
   }
 }
@@ -2457,8 +2517,9 @@ void http_handleBackup_PUT(AsyncWebServerRequest *request){
   if(!_backupUploadAuthorized){
     if(_backupUploadFile){
       _backupUploadFile.close();
-      configFS.remove("/backup.upload_in_progress");
+      configFS.remove("/backup.json.upload_in_progress");
     }
+    mbedtls_sha256_free(&_backupSha256Ctx);
     if(!request->hasHeader("visual-token") || !authToken.authenticate(request->header("visual-token").c_str())){
       http_unauthorized(request);
     }else{
@@ -2470,42 +2531,36 @@ void http_handleBackup_PUT(AsyncWebServerRequest *request){
   _backupUploadFile.close();
 
   if(_backupUploadBytesExpected > 0 && _backupUploadBytesWritten != _backupUploadBytesExpected){
-    configFS.remove("/backup.upload_in_progress");
+    configFS.remove("/backup.json.upload_in_progress");
+    mbedtls_sha256_free(&_backupSha256Ctx);
     http_error(request, "Incomplete transfer");
     return;
   }
 
-  {
-    File tmp = configFS.open("/backup.upload_in_progress", "r");
-    if(!tmp){
-      http_error(request, "Unable to open the file for writing");
-      return;
-    }
+  uint8_t sha256[32];
+  mbedtls_sha256_finish(&_backupSha256Ctx, sha256);
+  mbedtls_sha256_free(&_backupSha256Ctx);
 
-    size_t sz = tmp.size();
-    uint8_t* buf = (uint8_t*)(psramFound() ? ps_malloc(sz) : malloc(sz));
-    if(!buf){
-      tmp.close();
-      configFS.remove("/backup.upload_in_progress");
-      http_error(request, "Out of memory");
-      return;
-    }
+  if(configFS.exists("/backup.json")){
+    configFS.remove("/backup.json");
+  }
+  if(!configFS.rename("/backup.json.upload_in_progress", "/backup.json")){
+    http_error(request, "Unable to finalize the file");
+    return;
+  }
 
-    tmp.read(buf, sz);
-    tmp.close();
-    configFS.remove("/backup.upload_in_progress");
-
-    if(configFS.exists("/backup")){
-      configFS.remove("/backup");
-    }
-
-    bool ok = secretEncryption.encryptToFile(configFS, "/backup", buf, sz);
-    free(buf);
-
-    if(!ok){
-      http_error(request, "Unable to open the file for writing");
-      return;
-    }
+  char etagHex[65];
+  for(int i = 0; i < 32; i++){
+    sprintf(etagHex + i*2, "%02x", sha256[i]);
+  }
+  etagHex[64] = '\0';
+  if(configFS.exists("/backup.etag")){
+    configFS.remove("/backup.etag");
+  }
+  File etagFile = configFS.open("/backup.etag", "w");
+  if(etagFile){
+    etagFile.print(etagHex);
+    etagFile.close();
   }
 
   resetHTPServerUsage();
@@ -2519,8 +2574,8 @@ void http_handleBackup_PUT(AsyncWebServerRequest *request){
 void http_handleBackup_DELETE(AsyncWebServerRequest *request){
 
   if(!request->hasHeader("visual-token")){
-        http_unauthorized(request);
-        return;
+    http_unauthorized(request);
+    return;
   }
 
   if(!authToken.authenticate(request->header("visual-token").c_str())){
@@ -2530,12 +2585,13 @@ void http_handleBackup_DELETE(AsyncWebServerRequest *request){
 
   resetHTPServerUsage();
 
-  if(!configFS.exists("/backup")){
+  if(!configFS.exists("/backup.json")){
     http_notFound(request);
     return;
   }
 
-  if(configFS.remove("/backup")){
+  if(configFS.remove("/backup.json")){
+    configFS.remove("/backup.etag");
     request->send(204);
   }else{
     http_error(request, "Failed when trying to delete file");
@@ -5534,8 +5590,8 @@ void startHttpServer(){
 
     #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
-      if(configFS.exists("/backup.upload_in_progress")){
-        configFS.remove("/backup.upload_in_progress");
+      if(configFS.exists("/backup.json.upload_in_progress")){
+        configFS.remove("/backup.json.upload_in_progress");
       }
 
       httpServer.begin();
@@ -5564,8 +5620,8 @@ void stopHttpServer(){
 
   #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500 || WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
 
-    if(configFS.exists("/backup.upload_in_progress")){
-      configFS.remove("/backup.upload_in_progress");
+    if(configFS.exists("/backup.json.upload_in_progress")){
+      configFS.remove("/backup.json.upload_in_progress");
     }
 
     httpServer.end();
@@ -5750,6 +5806,17 @@ void cloudBackup_uploadToCloud() {
   }
 
   esp_http_client_set_header(client, "Content-Type", "application/octet-stream");
+
+  if(configFS.exists("/backup.etag")){
+    File etagFile = configFS.open("/backup.etag", "r");
+    if(etagFile){
+      String etag = etagFile.readString();
+      etagFile.close();
+      String etagHeader = "\"" + etag + "\"";
+      esp_http_client_set_header(client, "ETag", etagHeader.c_str());
+    }
+  }
+
   esp_http_client_set_post_field(client, (const char*)blob, blobLen);
 
   esp_err_t err  = esp_http_client_perform(client);
@@ -5984,6 +6051,16 @@ void http_handleCloudBackup_GET(AsyncWebServerRequest *request) {
   int64_t contentLength = esp_http_client_fetch_headers(client);
   int     code          = esp_http_client_get_status_code(client);
 
+  // Capture ETag from response headers before client is closed
+  String etagFromCloud;
+  {
+    char* etagValue = nullptr;
+    if(esp_http_client_get_header(client, "ETag", &etagValue) == ESP_OK && etagValue != nullptr){
+      etagFromCloud = String(etagValue);
+      etagFromCloud.replace("\"", "");
+    }
+  }
+
   if (code == 404) {
     esp_http_client_close(client);
     esp_http_client_cleanup(client);
@@ -6042,6 +6119,18 @@ void http_handleCloudBackup_GET(AsyncWebServerRequest *request) {
   }
   outFile.print(plaintext);
   outFile.close();
+
+  // Persist ETag sidecar if cloud provided one
+  if(etagFromCloud.length() == 64){
+    if(configFS.exists("/backup.etag")){
+      configFS.remove("/backup.etag");
+    }
+    File etagFile = configFS.open("/backup.etag", "w");
+    if(etagFile){
+      etagFile.print(etagFromCloud);
+      etagFile.close();
+    }
+  }
 
   request->send(200, "application/json", plaintext);
 }

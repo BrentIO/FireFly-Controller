@@ -985,6 +985,31 @@ paths:
   ##########################################################
   
   /backup:
+    head:
+      tags:
+        - General
+      summary: Retrieve the ETag of the stored backup
+      description: >
+        Returns headers only. The `ETag` header contains the SHA-256 hex digest of the
+        plaintext backup content, computed at `PUT` time. Use this to determine whether
+        the controller's stored backup matches a locally-known hash without downloading
+        the full file. If the backup exists but was written by firmware that predates
+        this feature, the `ETag` header will be absent.
+      security:
+        - visualToken: []
+      responses:
+        '200':
+          description: OK
+          headers:
+            ETag:
+              description: SHA-256 hex digest of the plaintext backup, quoted per RFC 7232. Absent if no sidecar exists.
+              schema:
+                type: string
+              example: '"a3f1c2d4e5b6..."'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
     get:
       tags:
         - General
@@ -995,6 +1020,11 @@ paths:
       responses:
         '200':
           description: OK
+          headers:
+            ETag:
+              description: SHA-256 hex digest of the plaintext backup, quoted per RFC 7232. Absent if no sidecar exists.
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -1015,7 +1045,7 @@ paths:
       tags:
         - General
       summary: Create or replace a backup of the database
-      description: Create or replace a backup of the database in Dexie format.  Note that contents are not validated and are immediately stored to the file system.
+      description: Create or replace a backup of the database in Dexie format. Note that contents are not validated and are immediately stored to the file system.
       security:
         - visualToken: []
       requestBody:
