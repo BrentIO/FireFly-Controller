@@ -4,7 +4,7 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   build: {
-    outDir: '../lfs',
+    outDir: '../ui-dist',
     emptyOutDir: true
   }
 })
