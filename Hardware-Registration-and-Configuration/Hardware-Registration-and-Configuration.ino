@@ -680,7 +680,7 @@ void fetchFirmwareList() {
     return;
   }
 
-  int content_length = esp_http_client_fetch_headers(client);
+  esp_http_client_fetch_headers(client);
   int status = esp_http_client_get_status_code(client);
 
   if (status == 200) {
