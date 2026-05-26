@@ -106,8 +106,8 @@ void eventHandler_otaFirmwareProgress(size_t progress, size_t size);
 void eventHandler_otaFirmwareFailed(int partition);
 void eventHandler_otaFirmwareFinished(int partition, bool needs_restart);
 
-fs::LittleFSFS wwwFS;
-bool wwwFS_isMounted = false;
+fs::LittleFSFS uiFS;
+bool uiFS_isMounted = false;
 
 
 /**
@@ -242,14 +242,14 @@ void setup() {
   temperatureSensors.begin();
 
 
-  /* Start LittleFS for www */
-  if (wwwFS.begin(false, "/wwwFS", (uint8_t)10U, "www"))
+  /* Start LittleFS for ui */
+  if (uiFS.begin(false, "/uiFS", (uint8_t)10U, "ui"))
   {
-    wwwFS_isMounted = true;
+    uiFS_isMounted = true;
   }
   else{
-    eventLog.createEvent("wwwFS mount fail", EventLog::LOG_LEVEL_ERROR);
-    log_e("An Error has occurred while mounting www");
+    eventLog.createEvent("uiFS mount fail", EventLog::LOG_LEVEL_ERROR);
+    log_e("An Error has occurred while mounting ui");
   }
 
 
@@ -284,8 +284,8 @@ void setup() {
 
   httpServer.on("/auth", http_handleAuth);
 
-  if(wwwFS_isMounted){
-    httpServer.serveStatic("/", wwwFS, "/", "public, max-age=86400");
+  if(uiFS_isMounted){
+    httpServer.serveStatic("/", uiFS, "/", "public, max-age=86400");
     httpServer.rewrite("/", "/index.html");
   }
 
@@ -828,7 +828,7 @@ void otaFirmware_checkPending() {
     forceFirmwareUpdate.setProgressCb(eventHandler_otaFirmwareProgress);
     forceFirmwareUpdate.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
     forceFirmwareUpdate.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
-    forceFirmwareUpdate.setSPIFFsPartitionLabel("www");
+    forceFirmwareUpdate.setSPIFFsPartitionLabel("ui");
     forceFirmwareUpdate.setBlockedPartitions({"config"});
     forceFirmwareUpdate.setCertFileSystem(nullptr);
 

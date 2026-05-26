@@ -16,7 +16,7 @@ export default defineConfig({
     __DEVICES__: JSON.stringify(activeDevices)
   },
   build: {
-    outDir: '../www',
+    outDir: '../ui-dist',
     emptyOutDir: true
   }
 })

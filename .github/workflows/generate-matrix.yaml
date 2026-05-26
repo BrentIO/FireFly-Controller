@@ -43,9 +43,9 @@ jobs:
                       | select(.label == "config")
                       | .size
                     ),
-                    partition_size_www: (
+                    partition_size_ui: (
                       .partition_scheme[]
-                      | select(.label == "www")
+                      | select(.label == "ui")
                       | .size
                     )
                   }
