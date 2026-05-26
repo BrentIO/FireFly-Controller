@@ -34,7 +34,7 @@ libraries:
     version: "v3.11.0"
     url: "https://github.com/ESP32Async/ESPAsyncWebServer"
   - name: "BrentIO_esp32FOTA"
-    version: "2026.05.02"
+    version: "2026.05.03"
     url: "https://github.com/BrentIO/esp32FOTA"
   - name: "BrentIO_PCA95x5"
     version: "2023.10.2"
