@@ -150,10 +150,10 @@ paths:
             examples:
               http:
                 value:
-                  url: http://www.somewhere.com/firmware.bin
+                  app: http://www.somewhere.com/firmware.bin
               https:
                 value:
-                  url: https://www.somewhere.com/firmware.bin
+                  app: https://www.somewhere.com/firmware.bin
       responses:
         '202':
           description: Request accepted
@@ -188,6 +188,7 @@ paths:
               https:
                 value:
                   url: https://www.somewhere.com/ui.bin
+
       responses:
         '202':
           description: Request accepted
@@ -1432,14 +1433,14 @@ components:
     forceOTAConfiguration:
       type: object
       properties:
-        url:
+        app:
           type: string
           format: url
           minLength: 1
           maxLength: 128
           description: URL for the binary file to flash
       required:
-        - url
+        - app
 
 
     ##########################################################

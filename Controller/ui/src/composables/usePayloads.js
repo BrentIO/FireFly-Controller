@@ -25,7 +25,7 @@ async function getOTAConfig(deviceType) {
     if (!cert) throw new Error(`Unknown certificate ID ${ota.value.certificate} in OTA configuration.`)
     result.certificate = cert.fileName.substring(0, MAX_CERT)
   }
-  result.url = `${ota.value.protocol}://${ota.value.url}`.substring(0, MAX_URL)
+  result.app = `${ota.value.protocol}://${ota.value.url}`.substring(0, MAX_URL)
   return result
 }
 

@@ -783,13 +783,13 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant &doc
     return;
   }
 
-  if (doc["url"].isNull()) {
-    http_badRequest(request, "Field url is required");
+  if (doc["app"].isNull()) {
+    http_badRequest(request, "Field app is required");
     return;
   }
 
   forcedOtaUpdateConfig newFirmwareRequest;
-  newFirmwareRequest.url = doc["url"].as<String>();
+  newFirmwareRequest.url = doc["app"].as<String>();
 
   if (!newFirmwareRequest.url.endsWith(".bin")) {
     http_badRequest(request, "Bad url; File must be of type '.bin'");

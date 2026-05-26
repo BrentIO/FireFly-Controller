@@ -16,7 +16,7 @@
         </div>
         <div class="flex-1">
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL</label>
-          <input v-model="form.url" type="text" maxlength="128" required
+          <input v-model="form.app" type="text" maxlength="128" required
             class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
       </div>
@@ -59,11 +59,11 @@ const filteredCertificates = computed(() => {
   if (props.certType === 'client') return props.certificates.filter(c => c.isClient)
   return props.certificates
 })
-const form = ref({ enabled: false, protocol: 'https', url: DEFAULT_URL, certificate: '' })
+const form = ref({ enabled: false, protocol: 'https', app: DEFAULT_URL, certificate: '' })
 
 onMounted(async () => {
   const saved = await getSetting(props.settingKey)
-  if (saved) form.value = { enabled: saved.enabled ?? false, protocol: saved.protocol ?? 'https', url: saved.url ?? DEFAULT_URL, certificate: saved.certificate ?? '' }
+  if (saved) form.value = { enabled: saved.enabled ?? false, protocol: saved.protocol ?? 'https', app: saved.app ?? DEFAULT_URL, certificate: saved.certificate ?? '' }
 })
 
 async function save() {

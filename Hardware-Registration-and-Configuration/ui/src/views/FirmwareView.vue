@@ -171,7 +171,7 @@ async function doFlash() {
     const res = await apiFetch('/ota/app', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: item.url })
+      body: JSON.stringify({ app: item.app })
     })
     if (res.status !== 202) {
       const body = await res.json().catch(() => ({}))
