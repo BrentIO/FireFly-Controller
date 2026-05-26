@@ -829,6 +829,7 @@ void otaFirmware_checkPending() {
     forceFirmwareUpdate.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
     forceFirmwareUpdate.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
     forceFirmwareUpdate.setSPIFFsPartitionLabel("www");
+    forceFirmwareUpdate.setCertFileSystem(nullptr);
 
     if (otaFirmware.pending.get(0).url.startsWith("https:")) {
       forceFirmwareUpdate.useBundledCerts();
@@ -843,11 +844,15 @@ void otaFirmware_checkPending() {
       updateSuccess = forceFirmwareUpdate.forceUpdate(otaFirmware.pending.get(0).url.c_str(), false);
     }
 
+    otaFirmware.pending.remove(0);
+
     if (!updateSuccess) {
       eventLog.createEvent("OTA update failed", EventLog::LOG_LEVEL_NOTIFICATION);
+      while (otaFirmware.pending.size() > 0) {
+        otaFirmware.pending.remove(0);
+      }
+      return;
     }
-
-    otaFirmware.pending.remove(0);
   }
 }
 
