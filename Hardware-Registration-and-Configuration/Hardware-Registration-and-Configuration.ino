@@ -87,9 +87,10 @@ struct {
 } _registrationState;
 
 struct {
-  String json;
-  bool   ready   = false;
-  bool   pending = false;
+  String  json;
+  bool    ready     = false;
+  bool    pending   = false;
+  int64_t lastFetch = 0;
 } _firmwareState;
 
 /* Hardware RNG wrapper for mbedtls ECP/ECDSA calls */
@@ -728,8 +729,9 @@ void fetchFirmwareList() {
 
 
 /**
- * GET /api/firmware — returns cached list of released Controller firmware for this device.
- * Returns 202 and triggers a background fetch if the list is not yet ready.
+ * GET /api/firmware — returns the list of released Controller firmware for this device.
+ * Always triggers a fresh cloud fetch unless one is already in flight (rate-limited to
+ * once per 5 seconds). Returns 202 while the fetch is pending, 200 with data when ready.
 */
 void http_handleFirmware(AsyncWebServerRequest *request) {
 
@@ -749,14 +751,14 @@ void http_handleFirmware(AsyncWebServerRequest *request) {
     return;
   }
 
+  if (esp_timer_get_time() - _firmwareState.lastFetch >= 5000000LL) {
+    _firmwareState.ready     = false;
+    _firmwareState.pending   = true;
+    _firmwareState.lastFetch = esp_timer_get_time();
+  }
+
   if (!_firmwareState.ready) {
-    _firmwareState.pending = true;
-    AsyncResponseStream *response = request->beginResponseStream("application/json");
-    JsonDocument doc;
-    doc["status"] = "loading";
-    serializeJson(doc, *response);
-    response->setCode(202);
-    request->send(response);
+    request->send(202);
     return;
   }
 

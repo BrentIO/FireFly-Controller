@@ -1,7 +1,14 @@
 <template>
   <AppLayout>
     <div class="max-w-2xl">
-      <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Firmware</h2>
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Firmware</h2>
+        <button
+          @click="load()"
+          :disabled="loading"
+          class="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >Refresh</button>
+      </div>
 
       <div v-if="loading" class="text-gray-500 dark:text-gray-400 text-sm">Loading firmware list…</div>
 
