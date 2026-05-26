@@ -3470,7 +3470,7 @@ void otaFirmware_checkPending(){
     return;
   }
 
-  for(int i=0; i < otaFirmware.pending.size(); i++){
+  while(otaFirmware.pending.size() > 0){
 
     exEsp32FOTA::esp32FOTA forceFirmwareUpdate;
     forceFirmwareUpdate.setProgressCb(eventHandler_otaFirmwareProgress);
@@ -3481,7 +3481,7 @@ void otaFirmware_checkPending(){
 
     bool updateSuccess = false;
 
-    if(otaFirmware.pending.get(i).url.startsWith("https:")){
+    if(otaFirmware.pending.get(0).url.startsWith("https:")){
       if(_certBundleAsset != nullptr){
         forceFirmwareUpdate.setRootCA(_certBundleAsset);
       } else {
@@ -3489,25 +3489,29 @@ void otaFirmware_checkPending(){
       }
     }
 
-    switch(otaFirmware.pending.get(i).type){
+    switch(otaFirmware.pending.get(0).type){
 
       case OTA_UPDATE_APP:
         eventLog.createEvent("OTA app forced");
-        updateSuccess = forceFirmwareUpdate.forceUpdate(otaFirmware.pending.get(i).url.c_str(), false);
+        updateSuccess = forceFirmwareUpdate.forceUpdate(otaFirmware.pending.get(0).url.c_str(), false);
         break;
 
 
       case OTA_UPDATE_UI:
         eventLog.createEvent("OTA UI forced");
-        updateSuccess = forceFirmwareUpdate.forceUpdateSPIFFS(otaFirmware.pending.get(i).url.c_str(), false);
+        updateSuccess = forceFirmwareUpdate.forceUpdateSPIFFS(otaFirmware.pending.get(0).url.c_str(), false);
         break;
     }
 
+    otaFirmware.pending.remove(0);
+
     if(!updateSuccess){
       eventLog.createEvent("OTA update failed", EventLog::LOG_LEVEL_NOTIFICATION);
+      while(otaFirmware.pending.size() > 0){
+        otaFirmware.pending.remove(0);
+      }
+      return;
     }
-
-    otaFirmware.pending.remove(i);
   }
 
 }
