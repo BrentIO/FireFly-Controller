@@ -829,6 +829,7 @@ void otaFirmware_checkPending() {
     forceFirmwareUpdate.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
     forceFirmwareUpdate.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
     forceFirmwareUpdate.setSPIFFsPartitionLabel("www");
+    forceFirmwareUpdate.setBlockedPartitions({"config"});
     forceFirmwareUpdate.setCertFileSystem(nullptr);
 
     if (otaFirmware.pending.get(0).url.startsWith("https:")) {
