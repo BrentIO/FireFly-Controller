@@ -105,9 +105,9 @@ void http_handleCloudBackup_DELETE(AsyncWebServerRequest *request);
 
 exEsp32FOTA otaFirmware(APPLICATION_NAME, VERSION, false); /* OTA firmware update class */
 
-fs::LittleFSFS wwwFS;
+fs::LittleFSFS uiFS;
 fs::LittleFSFS configFS;
-bool wwwFS_isMounted = false;
+bool uiFS_isMounted = false;
 bool configFS_isMounted = false;
 
 char* _certBundle = nullptr;            /* PSRAM-backed concatenated PEM bundle for OTA TLS */
@@ -349,14 +349,14 @@ void setup() {
     reportMemoryUsage("Temperature sensors started; starting http server.");
   #endif /* CORE_DEBUG_LEVEL >= 4 */
 
-  /* Start LittleFS for www */
-  if(wwwFS.begin(false, "/wwwFS", (uint8_t)10U, "www"))
+  /* Start LittleFS for ui */
+  if(uiFS.begin(false, "/uiFS", (uint8_t)10U, "ui"))
   {
-    wwwFS_isMounted = true;
+    uiFS_isMounted = true;
   }
   else{
-    eventLog.createEvent("wwwFS mount fail", EventLog::LOG_LEVEL_ERROR);
-    log_e("An Error has occurred while mounting wwwFS");
+    eventLog.createEvent("uiFS mount fail", EventLog::LOG_LEVEL_ERROR);
+    log_e("An Error has occurred while mounting uiFS");
   }
 
 
@@ -624,8 +624,8 @@ void setup() {
     httpServer.on("/ui/version", http_configFSNotMunted);
   }
 
-  if(wwwFS_isMounted){
-    httpServer.serveStatic("/", wwwFS, "/", "public, max-age=86400");
+  if(uiFS_isMounted){
+    httpServer.serveStatic("/", uiFS, "/", "public, max-age=86400");
     httpServer.rewrite("/", "/index.html");
   }
 
@@ -2674,12 +2674,12 @@ void http_handleUIVersion_GET(AsyncWebServerRequest *request){
 
   resetHTPServerUsage();
 
-  if(!wwwFS.exists("/version.json")){
+  if(!uiFS.exists("/version.json")){
     http_notFound(request);
     return;
   }
 
-  AsyncWebServerResponse *response = request->beginResponse(wwwFS, "/version.json", "application/json");
+  AsyncWebServerResponse *response = request->beginResponse(uiFS, "/version.json", "application/json");
   request->send(response);
 }
 
@@ -2742,7 +2742,7 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
   JsonDocument doc(&spiRamAllocator);  //Supports approx 128 controllers, 128 clients, and 64 files in www
   JsonObject root = doc.to<JsonObject>();
   JsonObject configObject = root["config"].to<JsonObject>();
-  JsonObject wwwObject = root["www"].to<JsonObject>();
+  JsonObject uiObject = root["ui"].to<JsonObject>();
 
   if(configFS_isMounted){
     configObject["total"] = configFS.totalBytes();
@@ -2753,13 +2753,13 @@ void http_handleFileList_GET(AsyncWebServerRequest *request){
     configObject["error"] = "File system not mounted";
   }
 
-  if(wwwFS_isMounted){
-    wwwObject["total"] = wwwFS.totalBytes();
-    wwwObject["used"] = wwwFS.usedBytes();
-    JsonArray fileList = wwwObject["files"].to<JsonArray>();
-    listDirToJsonArray(wwwFS, "/", fileList);
+  if(uiFS_isMounted){
+    uiObject["total"] = uiFS.totalBytes();
+    uiObject["used"] = uiFS.usedBytes();
+    JsonArray fileList = uiObject["files"].to<JsonArray>();
+    listDirToJsonArray(uiFS, "/", fileList);
   }else{
-    wwwObject["error"] = "File system not mounted";
+    uiObject["error"] = "File system not mounted";
   }
 
   serializeJson(doc, *response);
@@ -3365,7 +3365,7 @@ void setup_OtaFirmware(){
     return;
   }
 
-  otaFirmware.setSPIFFsPartitionLabel("www");
+  otaFirmware.setSPIFFsPartitionLabel("ui");
   otaFirmware.setCertFileSystem(nullptr);
 
   otaFirmware.setExtraHTTPHeader("uuid", deviceIdentity.data.uuid);
@@ -3476,7 +3476,7 @@ void otaFirmware_checkPending(){
     forceFirmwareUpdate.setProgressCb(eventHandler_otaFirmwareProgress);
     forceFirmwareUpdate.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
     forceFirmwareUpdate.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
-    forceFirmwareUpdate.setSPIFFsPartitionLabel("www");
+    forceFirmwareUpdate.setSPIFFsPartitionLabel("ui");
     forceFirmwareUpdate.setCertFileSystem(nullptr);
 
     bool updateSuccess = false;

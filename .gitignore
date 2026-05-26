@@ -5,5 +5,5 @@ artifacts
 node_modules/
 Controller/ui/node_modules/
 Hardware-Registration-and-Configuration/ui/node_modules/
-Controller/www/
-Hardware-Registration-and-Configuration/www/
+Controller/lfs/
+Hardware-Registration-and-Configuration/lfs/

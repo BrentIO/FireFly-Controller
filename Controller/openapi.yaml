@@ -1776,7 +1776,7 @@ components:
       type: object
       propertyNames:
         type: string
-        enum: [config, www]
+        enum: [config, ui]
       additionalProperties:
         type: object
         properties:
@@ -1810,7 +1810,7 @@ components:
             files:
               - path: /devices/controllers/3fa85f64-5717-4562-b3fc-2c963f66afa6
                 size: 912
-          www:
+          ui:
             error: File system not mounted
 
     dexieFormat:
