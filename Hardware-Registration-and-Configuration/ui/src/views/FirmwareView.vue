@@ -154,6 +154,20 @@ async function doFlash() {
   flashing.value = true
 
   try {
+    if (item.ui) {
+      const uiRes = await apiFetch('/ota/ui', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: item.ui })
+      })
+      if (uiRes.status !== 202) {
+        const body = await uiRes.json().catch(() => ({}))
+        addToast('error', body.message ?? `UI flash failed (${uiRes.status})`)
+        flashing.value = false
+        return
+      }
+    }
+
     const res = await apiFetch('/ota/app', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

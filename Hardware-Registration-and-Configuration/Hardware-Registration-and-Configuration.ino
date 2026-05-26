@@ -835,8 +835,13 @@ void otaFirmware_checkPending() {
     }
 
     bool updateSuccess = false;
-    eventLog.createEvent("OTA app forced", EventLog::LOG_LEVEL_NOTIFICATION);
-    updateSuccess = forceFirmwareUpdate.forceUpdate(otaFirmware.pending.get(i).url.c_str(), false);
+    if (otaFirmware.pending.get(i).type == OTA_UPDATE_UI) {
+      eventLog.createEvent("OTA UI forced", EventLog::LOG_LEVEL_NOTIFICATION);
+      updateSuccess = forceFirmwareUpdate.forceUpdateSPIFFS(otaFirmware.pending.get(i).url.c_str(), false);
+    } else {
+      eventLog.createEvent("OTA app forced", EventLog::LOG_LEVEL_NOTIFICATION);
+      updateSuccess = forceFirmwareUpdate.forceUpdate(otaFirmware.pending.get(i).url.c_str(), false);
+    }
 
     if (!updateSuccess) {
       eventLog.createEvent("OTA update failed", EventLog::LOG_LEVEL_NOTIFICATION);
