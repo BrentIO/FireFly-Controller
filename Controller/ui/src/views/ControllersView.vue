@@ -309,7 +309,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { sha256 } from '@noble/hashes/sha256'
 import { importDB, exportDB } from 'dexie-export-import'
 import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
@@ -394,13 +395,10 @@ async function computeLocalDexieHash() {
   try {
     const blob = await exportDB(db)
     const arrayBuf = await blob.arrayBuffer()
-    const hashBuf = await crypto.subtle.digest('SHA-256', arrayBuf)
-    const hex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('')
-    localDexieHash.value = hex
-    console.log('[deploy-debug] localDexieHash:', localDexieHash.value)
+    const hashBytes = sha256(new Uint8Array(arrayBuf))
+    localDexieHash.value = Array.from(hashBytes).map(b => b.toString(16).padStart(2, '0')).join('')
   } catch {
     localDexieHash.value = null
-    console.log('[deploy-debug] localDexieHash: null (hash failed)')
   }
 }
 
@@ -603,10 +601,8 @@ async function fetchBackupEtag(ctrl) {
     if (res.status === 200) {
       const etag = res.headers.get('ETag')
       etagCache[ctrl.uuid] = etag ? etag.replace(/"/g, '') : ''
-      console.log('[deploy-debug] etagCache:', ctrl.uuid, '→', etagCache[ctrl.uuid], '(raw ETag header:', etag, ')')
     } else if (res.status === 404) {
       etagCache[ctrl.uuid] = ''
-      console.log('[deploy-debug] etagCache:', ctrl.uuid, '→ "" (404 — no backup on controller)')
     }
     // 405 or other errors: leave cache entry untouched (show no indicator)
   } catch {
