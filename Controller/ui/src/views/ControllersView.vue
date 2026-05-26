@@ -309,7 +309,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { sha256 } from '@noble/hashes/sha256'
 import { importDB, exportDB } from 'dexie-export-import'
 import AppLayout from '../components/AppLayout.vue'
