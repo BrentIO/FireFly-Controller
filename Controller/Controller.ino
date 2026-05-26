@@ -3366,6 +3366,7 @@ void setup_OtaFirmware(){
   }
 
   otaFirmware.setSPIFFsPartitionLabel("ui");
+  otaFirmware.setBlockedPartitions({"config"});
   otaFirmware.setCertFileSystem(nullptr);
 
   otaFirmware.setExtraHTTPHeader("uuid", deviceIdentity.data.uuid);
@@ -3477,6 +3478,7 @@ void otaFirmware_checkPending(){
     forceFirmwareUpdate.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
     forceFirmwareUpdate.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
     forceFirmwareUpdate.setSPIFFsPartitionLabel("ui");
+    forceFirmwareUpdate.setBlockedPartitions({"config"});
     forceFirmwareUpdate.setCertFileSystem(nullptr);
 
     bool updateSuccess = false;
