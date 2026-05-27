@@ -1340,7 +1340,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
   doc["uuid"] = deviceIdentity.data.uuid;
   doc["product_id"] = deviceIdentity.data.product_id;
   doc["product_hex"] = product_hex;
-  doc["application"] = VERSION;
+  doc["application"] = VERSION " (" COMMIT_HASH ")";
   doc["ui"] = (_uiVersion[0] != '\0') ? (const char*)_uiVersion : (const char*)nullptr;
 
   serializeJson(doc, *response);

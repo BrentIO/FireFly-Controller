@@ -1320,9 +1320,9 @@ components:
 
     applicationVersion:
       type: string
-      description: Software version
-      examples: 
-        - '2024.2.1'
+      description: Software version and commit hash
+      examples:
+        - '2026.05.12 (1234c67)'
 
     productHex:
       type: string
