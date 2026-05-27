@@ -48,6 +48,7 @@
 #include <mbedtls/hkdf.h>
 #include <mbedtls/md.h>
 #include <mbedtls/ecdsa.h>
+#include <WiFiClientSecure.h>
 #include <mbedtls/base64.h>
 #include <esp_http_client.h>
 #include <esp_crt_bundle.h>
@@ -136,8 +137,8 @@ void setup() {
   /* Startup the OLED display */
   oled.setCallback_failure(&failureHandler_oled);
   oled.begin();
-  oled.setApplicationName(esp_ota_get_app_description()->project_name);
-  oled.setApplicationVersion(esp_ota_get_app_description()->version);
+  oled.setApplicationName(esp_app_get_description()->project_name);
+  oled.setApplicationVersion(esp_app_get_description()->version);
   oled.setEventLog(&eventLog);
   oled.setAuthorizationToken(&authToken);
   authToken.setCallback_visualTokenChanged(&eventHandler_visualAuthChanged);
@@ -291,9 +292,9 @@ void setup() {
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "visual-token, Content-Type, X-Registration-Key"); //Ignore CORS
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE"); //Ignore CORS
 
-  String serverHeader = String(esp_ota_get_app_description()->project_name);
+  String serverHeader = String(esp_app_get_description()->project_name);
   serverHeader.replace(" ", "-");
-  serverHeader += "/" + String(esp_ota_get_app_description()->version);
+  serverHeader += "/" + String(esp_app_get_description()->version);
   DefaultHeaders::Instance().addHeader("Server", serverHeader);
 
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
@@ -529,7 +530,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   JsonDocument doc;
-  doc["application"] = esp_ota_get_app_description()->version;
+  doc["application"] = esp_app_get_description()->version;
   char product_hex[16] = {0};
   sprintf(product_hex, "0x%08X", PRODUCT_HEX);
   doc["product_hex"] = product_hex;
@@ -1089,7 +1090,7 @@ void http_handleRegistration_POST(AsyncWebServerRequest *request, JsonVariant &d
   payloadDoc["device_class"]            = DEVICE_CLASS;
   payloadDoc["public_key"]              = (char*)pubKeyB64;
   payloadDoc["registering_application"] = REGISTRATION_APPLICATION_NAME;
-  payloadDoc["registering_version"]     = esp_ota_get_app_description()->version;
+  payloadDoc["registering_version"]     = esp_app_get_description()->version;
 
   JsonObject mcu = payloadDoc["mcu"].to<JsonObject>();
   mcu["model"]           = ESP.getChipModel();

@@ -52,6 +52,7 @@
 #include <mbedtls/ecdsa.h>
 #include <mbedtls/base64.h>
 #include <esp_http_client.h>
+#include <WiFiClientSecure.h>
 #include <esp_crt_bundle.h>
 
 uint64_t bootTime = 0; /* Approximate Epoch time the device booted */
@@ -213,8 +214,8 @@ void setup() {
   //Configure the peripherals
   oled.setCallback_failure(&failureHandler_oled);
   oled.begin();
-  oled.setApplicationName(esp_ota_get_app_description()->project_name);
-  oled.setApplicationVersion(esp_ota_get_app_description()->version);
+  oled.setApplicationName(esp_app_get_description()->project_name);
+  oled.setApplicationVersion(esp_app_get_description()->version);
   oled.setEventLog(&eventLog);
   oled.setAuthorizationToken(&authToken);
   authToken.setCallback_visualTokenChanged(&eventHandler_visualAuthChanged);
@@ -704,8 +705,8 @@ void loop() {
             mqttClient.publish(availability_topic, "online");
 
             JsonDocument mqttDoc;
-            mqttDoc["installed_version"] = esp_ota_get_app_description()->version;
-            mqttDoc["latest_version"] = esp_ota_get_app_description()->version;
+            mqttDoc["installed_version"] = esp_app_get_description()->version;
+            mqttDoc["latest_version"] = esp_app_get_description()->version;
             char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
             snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
             mqttClient.beginPublish(topic, measureJson(mqttDoc), false);
@@ -1361,7 +1362,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
   doc["uuid"] = deviceIdentity.data.uuid;
   doc["product_id"] = deviceIdentity.data.product_id;
   doc["product_hex"] = product_hex;
-  doc["application"] = esp_ota_get_app_description()->version;
+  doc["application"] = esp_app_get_description()->version;
 
   serializeJson(doc, *response);
   request->send(response);
@@ -3462,7 +3463,7 @@ void setup_OtaFirmware(){
   url.replace("$$class$$", HARDWARE_CLASS);
   url.replace("$$application$$", otaApplication.c_str());
   url.replace("$$product_hex$$", otaProductHex);
-  url.replace("$$current_version$$", esp_ota_get_app_description()->version);
+  url.replace("$$current_version$$", esp_app_get_description()->version);
 
   if(!url.startsWith("http:") && !url.startsWith("https:")){
     eventLog.createEvent("OTA cfg inv proto");
@@ -3531,13 +3532,12 @@ void setup_OtaFirmware(){
     eventLog.createEvent("OTA update available");
 
     JsonDocument mqttDoc;
-    mqttDoc["installed_version"] = esp_ota_get_app_description()->version;
+    mqttDoc["installed_version"] = esp_app_get_description()->version;
     mqttDoc["latest_version"] = version;
     if(releaseUrl && strlen(releaseUrl) > 0){
       mqttDoc["release_url"] = releaseUrl;
     }
     mqttDoc["in_progress"] = false;
-    mqttDoc["update_percentage"] = (JsonVariant)nullptr;
 
     char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
     snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
@@ -3548,8 +3548,8 @@ void setup_OtaFirmware(){
     mqttClient.endPublish();
   });
 
-  otaFirmware.onError([](esp_err_t err){
-    log_e("OTA error: %d", err);
+  otaFirmware.onError([](const char* partition, int err){
+    log_e("OTA error on %s: %d", partition, err);
     if(deviceIdentity.enabled == false){ return; }
     if(!mqttClient.connected()){ return; }
     char availability_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
@@ -4106,7 +4106,7 @@ void setupMQTT(){
   host.replace("$$class$$", HARDWARE_CLASS);
   host.replace("$$application$$", mqttApplication.c_str());
   host.replace("$$product_hex$$", mqttProductHex);
-  host.replace("$$current_version$$", esp_ota_get_app_description()->version);
+  host.replace("$$current_version$$", esp_app_get_description()->version);
   mqttClient.setServer(host.c_str(), port);
 
   String username = mqtt["username"].as<String>();
@@ -4119,7 +4119,7 @@ void setupMQTT(){
   username.replace("$$class$$", HARDWARE_CLASS);
   username.replace("$$application$$", mqttApplication.c_str());
   username.replace("$$product_hex$$", mqttProductHex);
-  username.replace("$$current_version$$", esp_ota_get_app_description()->version);
+  username.replace("$$current_version$$", esp_app_get_description()->version);
   mqttClient.setUsername(username.c_str());
 
   String password = mqtt["password"].as<String>();
@@ -4130,7 +4130,7 @@ void setupMQTT(){
   password.replace("$$class$$", HARDWARE_CLASS);
   password.replace("$$application$$", mqttApplication.c_str());
   password.replace("$$product_hex$$", mqttProductHex);
-  password.replace("$$current_version$$", esp_ota_get_app_description()->version);
+  password.replace("$$current_version$$", esp_app_get_description()->version);
   mqttClient.setPassword(password.c_str());
 
   mqttClient.enabled = true;
@@ -4255,10 +4255,10 @@ void mqtt_autoDiscovery_temperature(){
     }
 
     device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-    device["model"] = esp_ota_get_app_description()->project_name;
+    device["model"] = esp_app_get_description()->project_name;
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
-    device["sw_version"] = esp_ota_get_app_description()->version;
+    device["sw_version"] = esp_app_get_description()->version;
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
       device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -4796,10 +4796,10 @@ void mqtt_autoDiscovery_inputControllers(){
     }
 
     device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-    device["model"] = esp_ota_get_app_description()->project_name;
+    device["model"] = esp_app_get_description()->project_name;
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
-    device["sw_version"] = esp_ota_get_app_description()->version;
+    device["sw_version"] = esp_app_get_description()->version;
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
       device["suggested_area"] = mqttClient.autoDiscovery.suggestedArea;
@@ -4868,10 +4868,10 @@ void mqtt_autoDiscovery_outputControllers(){
     }
 
     device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-    device["model"] = esp_ota_get_app_description()->project_name;
+    device["model"] = esp_app_get_description()->project_name;
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
-    device["sw_version"] = esp_ota_get_app_description()->version;
+    device["sw_version"] = esp_app_get_description()->version;
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
       device["suggested_area"] = mqttClient.autoDiscovery.suggestedArea;
@@ -4926,10 +4926,10 @@ void mqtt_autoDiscovery_start_time(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = esp_ota_get_app_description()->project_name;
+  device["model"] = esp_app_get_description()->project_name;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = esp_ota_get_app_description()->version;
+  device["sw_version"] = esp_app_get_description()->version;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5009,10 +5009,10 @@ void mqtt_autoDiscovery_mac_address(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = esp_ota_get_app_description()->project_name;
+  device["model"] = esp_app_get_description()->project_name;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = esp_ota_get_app_description()->version;
+  device["sw_version"] = esp_app_get_description()->version;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5088,10 +5088,10 @@ void mqtt_autoDiscovery_ip_address(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = esp_ota_get_app_description()->project_name;
+  device["model"] = esp_app_get_description()->project_name;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = esp_ota_get_app_description()->version;
+  device["sw_version"] = esp_app_get_description()->version;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5170,10 +5170,10 @@ void mqtt_autoDiscovery_count_errors(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = esp_ota_get_app_description()->project_name;
+  device["model"] = esp_app_get_description()->project_name;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = esp_ota_get_app_description()->version;
+  device["sw_version"] = esp_app_get_description()->version;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5256,10 +5256,10 @@ void mqtt_autoDiscovery_update(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = esp_ota_get_app_description()->project_name;
+  device["model"] = esp_app_get_description()->project_name;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = esp_ota_get_app_description()->version;
+  device["sw_version"] = esp_app_get_description()->version;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5322,10 +5322,10 @@ void mqtt_autoDiscovery_http_server(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = esp_ota_get_app_description()->project_name;
+  device["model"] = esp_app_get_description()->project_name;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = esp_ota_get_app_description()->version;
+  device["sw_version"] = esp_app_get_description()->version;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5415,10 +5415,10 @@ void mqtt_autoDiscovery_heapFree(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = esp_ota_get_app_description()->project_name;
+  device["model"] = esp_app_get_description()->project_name;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = esp_ota_get_app_description()->version;
+  device["sw_version"] = esp_app_get_description()->version;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5497,10 +5497,10 @@ void mqtt_autoDiscovery_heapLargestFreeBlock(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = esp_ota_get_app_description()->project_name;
+  device["model"] = esp_app_get_description()->project_name;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = esp_ota_get_app_description()->version;
+  device["sw_version"] = esp_app_get_description()->version;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
