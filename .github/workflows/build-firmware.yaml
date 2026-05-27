@@ -247,7 +247,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/ui
           npm ci
-          VITE_UI_VERSION="${BRANCH} (${COMMIT_HASH})" npm run build
+          npm run build
           cp $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/openapi.yaml \
              $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/ui-dist/openapi.yaml
           gzip -r -9 $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/ui-dist
@@ -256,13 +256,14 @@ jobs:
             echo "ERROR: ui-dist/ exceeds 2MB (${TOTAL} bytes)"
             exit 1
           fi
+          echo "${{ env.VERSION }}" > $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/ui-dist/VERSION
 
       - name: Build Vue UI (Controller)
         if: ${{ matrix.application == 'Controller' }}
         run: |
           cd $GITHUB_WORKSPACE/Controller/ui
           npm ci --legacy-peer-deps
-          VITE_UI_VERSION="${{ env.BRANCH }} (${{ env.COMMIT_HASH }})" npm run build
+          npm run build
           cp $GITHUB_WORKSPACE/Controller/openapi.yaml \
              $GITHUB_WORKSPACE/Controller/ui-dist/openapi.yaml
           gzip -r -9 $GITHUB_WORKSPACE/Controller/ui-dist
@@ -271,6 +272,7 @@ jobs:
             echo "ERROR: ui-dist/ exceeds partition size of 0x2e0000 (${TOTAL} bytes)"
             exit 1
           fi
+          echo "${{ env.VERSION }}" > $GITHUB_WORKSPACE/Controller/ui-dist/VERSION
 
       - name: Create Empty Directory for Use by LittleFS
         run: mkdir -p "${{ env.ARTIFACT_ROOT }}/LittleFS"

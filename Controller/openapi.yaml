@@ -56,26 +56,6 @@ paths:
                 $ref: '#/components/schemas/applicationVersionInfo'
         '401':
           description: Unauthorized
-  /ui/version:
-    get:
-      tags:
-        - Version
-      summary: User interface version information
-      description: Retrieves the user interface version information
-      security:
-        - visualToken: []
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/uiVersionInfo'
-        '401':
-          description: Unauthorized
-        '404':
-          description: File system failure
-
 
 ##########################################################
 ## Events and Errors                                    ##
@@ -1361,6 +1341,11 @@ components:
           $ref: '#/components/schemas/productHex'
         application:
           $ref: '#/components/schemas/applicationVersion'
+        ui:
+          oneOf:
+            - $ref: '#/components/schemas/applicationVersion'
+            - type: 'null'
+          description: User interface version installed on the ui partition; null if the partition is not mounted or the VERSION file is absent
 
     productId:
       type: string
@@ -1368,13 +1353,6 @@ components:
       examples: 
         - FFC3232-2211
       maxLength: 32
-
-    uiVersionInfo:
-      type: object
-      properties:
-        ui:
-          $ref: '#/components/schemas/applicationVersion'
-
 
     ##########################################################
     ## Certificates                                         ##
