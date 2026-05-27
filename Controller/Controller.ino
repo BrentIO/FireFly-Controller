@@ -363,6 +363,10 @@ void setup() {
         _uiVersion[i] = '\0';
     }
     if(vf) vf.close();
+
+    if(_uiVersion[0] != '\0' && strcmp(_uiVersion, VERSION " (" COMMIT_HASH ")") != 0){
+      eventLog.createEvent("App/UI version mismatch", EventLog::LOG_LEVEL_ERROR);
+    }
   }
   else{
     eventLog.createEvent("uiFS mount fail", EventLog::LOG_LEVEL_ERROR);
