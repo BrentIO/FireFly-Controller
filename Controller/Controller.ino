@@ -54,6 +54,7 @@
 #include <esp_http_client.h>
 #include <WiFiClientSecure.h>
 #include <esp_crt_bundle.h>
+#include <esp_crt_bundle.h>
 
 uint64_t bootTime = 0; /* Approximate Epoch time the device booted */
 uint64_t lastTimeMemoryBroadcast = 0; /* The last time memory usage was broadcast */

@@ -49,6 +49,7 @@
 #include <mbedtls/md.h>
 #include <mbedtls/ecdsa.h>
 #include <WiFiClientSecure.h>
+#include <esp_crt_bundle.h>
 #include <mbedtls/base64.h>
 #include <esp_http_client.h>
 #include <esp_crt_bundle.h>
