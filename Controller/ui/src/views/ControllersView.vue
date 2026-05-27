@@ -93,8 +93,7 @@
                     : 'border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
                 ]"
                 :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="toggleProvisioning(ctrl.id)">{{ sessions[ctrl.id]?.provisioningModeEnabled ? 'Disable Provisioning' : 'Enable Provisioning' }}</button>
-              <button class="w-full px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaApp(ctrl)">Force App Update</button>
-              <button class="w-full px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOtaUi(ctrl)">Force UI Update</button>
+              <button class="w-full px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOta(ctrl)">Force OTA Update</button>
               <button
                 class="w-full px-2 py-1.5 text-sm font-medium rounded-lg transition-colors"
                 :class="[
@@ -300,11 +299,8 @@
     <ConfirmModal :show="!!cloudDeleteTarget" title="Delete Cloud Backup" :message="`Delete the cloud backup for '${cloudDeleteTarget?.name}'? This is permanent and cannot be undone.`"
       variant="danger" confirm-label="Delete" @confirm="doCloudDelete" @cancel="cloudDeleteTarget = null" />
 
-    <ConfirmModal :show="!!otaAppTarget" title="Force Application Update" :message="`Force firmware update on '${otaAppTarget?.name}'? The controller will reboot after downloading the update.`"
-      variant="warning" confirm-label="Force Update" input-placeholder="https://example.com/firmware.bin" @confirm="(url) => doOtaApp(url)" @cancel="otaAppTarget = null" />
-
-    <ConfirmModal :show="!!otaUiTarget" title="Force UI Update" :message="`Force UI update on '${otaUiTarget?.name}'? The controller will reboot after downloading the update.`"
-      variant="warning" confirm-label="Force Update" input-placeholder="https://example.com/ui.bin" @confirm="(url) => doOtaUi(url)" @cancel="otaUiTarget = null" />
+    <ConfirmModal :show="!!otaTarget" title="Force OTA Update" :message="`Paste the firmware version payload for '${otaTarget?.name}'. Any combination of app and ui binaries is accepted. The controller reboots after the app partition is written.`"
+      variant="warning" confirm-label="Force Update" textarea-placeholder='{"binaries":[{"partition":"app","url":"https://..."},{"partition":"ui","url":"https://..."}]}' @confirm="(payload) => doOta(payload)" @cancel="otaTarget = null" />
   </AppLayout>
 </template>
 
@@ -340,8 +336,7 @@ const showErrorLog = ref(false)
 const editing = ref(null)
 const deleteTarget = ref(null)
 const pullBackupTarget = ref(null)
-const otaAppTarget = ref(null)
-const otaUiTarget = ref(null)
+const otaTarget = ref(null)
 const cloudRestoreTarget = ref(null)
 const cloudRestorePayload = ref(null)
 const showLoadBackupPrompt = ref(false)
@@ -1080,37 +1075,31 @@ async function toggleProvisioning(id) {
 
 // --- OTA ---
 
-function confirmOtaApp(ctrl) {
-  otaAppTarget.value = ctrl
+function confirmOta(ctrl) {
+  otaTarget.value = ctrl
 }
 
-function confirmOtaUi(ctrl) {
-  otaUiTarget.value = ctrl
-}
-
-async function doOtaApp(url) {
-  const ctrl = otaAppTarget.value
-  otaAppTarget.value = null
+async function doOta(payloadText) {
+  const ctrl = otaTarget.value
+  otaTarget.value = null
   if (!ctrl) return
-  await triggerOta(ctrl, '/ota/app', url)
-}
 
-async function doOtaUi(url) {
-  const ctrl = otaUiTarget.value
-  otaUiTarget.value = null
-  if (!ctrl) return
-  await triggerOta(ctrl, '/ota/ui', url)
-}
+  let payload
+  try {
+    payload = JSON.parse(payloadText)
+  } catch {
+    addToast('error', 'OTA failed: invalid JSON payload')
+    return
+  }
 
-async function triggerOta(ctrl, endpoint, url) {
   const sessionCtrl = getSessionCtrl(ctrl.id)
   const { controllerFetch } = await import('../composables/useApi')
 
   try {
-    const res = await controllerFetch(sessionCtrl.session.ip, endpoint, {
+    const res = await controllerFetch(sessionCtrl.session.ip, '/ota', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
+      body: JSON.stringify(payload)
     }, sessionCtrl.session.visualToken)
 
     if (res.status === 202) {
