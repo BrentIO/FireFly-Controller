@@ -10,23 +10,18 @@
 */
 
 #if CORE_DEBUG_LEVEL == 0
-  #ifndef VERSION
-    #error "VERSION must be specified for a production build."
+  #ifndef PROJECT_VER
+    #error "PROJECT_VER must be specified for a production build."
   #endif
   #ifndef COMMIT_HASH
     #error "COMMIT_HASH must be specified for a production build."
   #endif
 #else
-  #ifdef VERSION
-    #error "VERSION may not be specified for a debug build."
-  #else
-    #define VERSION "9999.99.99"
-  #endif
   #ifndef COMMIT_HASH
     #define COMMIT_HASH "DEBUG"
   #endif
 #endif
-#define APPLICATION_NAME "HW Reg and Config"
+#define APPLICATION "Hardware-Registration-and-Configuration"
 
 #if BURN_VDD_SDIO_EFUSE
   #include "esp_efuse.h"
@@ -59,7 +54,12 @@
 
 unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
 AsyncWebServer httpServer(80);
-exEsp32FOTA otaFirmware(APPLICATION_NAME, VERSION, false);
+esp32OTA otaFirmware;
+WiFiClientSecure _otaHttpsClient;
+bool _otaUpdateInProcess = false;
+bool _otaPendingRequest = false;
+String _otaPendingPartition;
+String _otaPendingUrl;
 managerDeviceIdentity deviceIdentity; /* Device identity instance */
 managerOled oled; /* OLED instance */
 managerFrontPanel frontPanel; /* Front panel instance */
@@ -102,9 +102,6 @@ static int _espRng(void*, unsigned char* buf, size_t len) {
 void updateNTPTime(bool force = false);
 void fetchFirmwareList();
 void otaFirmware_checkPending();
-void eventHandler_otaFirmwareProgress(size_t progress, size_t size);
-void eventHandler_otaFirmwareFailed(int partition);
-void eventHandler_otaFirmwareFinished(int partition, bool needs_restart);
 
 fs::LittleFSFS uiFS;
 bool uiFS_isMounted = false;
@@ -295,9 +292,9 @@ void setup() {
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "visual-token, Content-Type, X-Registration-Key"); //Ignore CORS
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE"); //Ignore CORS
 
-  String serverHeader = String(APPLICATION_NAME);
+  String serverHeader = String(esp_ota_get_app_description()->project_name);
   serverHeader.replace(" ", "-");
-  serverHeader += "/" + String(VERSION);
+  serverHeader += "/" + String(esp_ota_get_app_description()->version);
   DefaultHeaders::Instance().addHeader("Server", serverHeader);
 
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
@@ -319,6 +316,8 @@ void setup() {
   #endif
 
   oled.setPage(managerOled::PAGE_EVENT_LOG);
+
+  otaFirmware.markAppValid();
 }
 
 
@@ -531,7 +530,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   JsonDocument doc;
-  doc["application"] = VERSION;
+  doc["application"] = esp_ota_get_app_description()->version;
   char product_hex[16] = {0};
   sprintf(product_hex, "0x%08X", PRODUCT_HEX);
   doc["product_hex"] = product_hex;
@@ -783,125 +782,85 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant &doc
     return;
   }
 
+  if (_otaUpdateInProcess || _otaPendingRequest) {
+    http_conflict(request, "Update already in progress");
+    return;
+  }
+
   if (doc["url"].isNull()) {
     http_badRequest(request, "Field url is required");
     return;
   }
 
-  forcedOtaUpdateConfig newFirmwareRequest;
-  newFirmwareRequest.url = doc["url"].as<String>();
+  String url = doc["url"].as<String>();
 
-  if (!newFirmwareRequest.url.endsWith(".bin")) {
+  if (!url.endsWith(".bin")) {
     http_badRequest(request, "Bad url; File must be of type '.bin'");
     return;
   }
 
-  if (!newFirmwareRequest.url.startsWith("http:") && !newFirmwareRequest.url.startsWith("https:")) {
+  if (!url.startsWith("http:") && !url.startsWith("https:")) {
     http_badRequest(request, "Bad url; http or https required");
     return;
   }
 
-  newFirmwareRequest.type = request->url().endsWith("app") ? OTA_UPDATE_APP : OTA_UPDATE_UI;
-  otaFirmware.pending.add(newFirmwareRequest);
+  _otaPendingPartition = request->url().endsWith("app") ? "app" : "ui";
+  _otaPendingUrl = url;
+  _otaPendingRequest = true;
 
   request->send(202);
 }
 
 
 /**
- * Checks if there are any pending OTA firmware updates in the queue.
- * This is necessary to allow the async web server to raise requests to the main loop.
+ * Executes any pending forced OTA request queued by the HTTP handler.
 */
 void otaFirmware_checkPending() {
 
-  if (otaFirmware.pending.size() == 0) {
+  if (!_otaPendingRequest || _otaUpdateInProcess) {
     return;
   }
 
-  if (otaFirmware.updateInProcess == true) {
-    return;
+  _otaUpdateInProcess = true;
+
+  char msg[OLED_CHARACTERS_PER_LINE+1];
+  snprintf(msg, sizeof(msg), "OTA %s forced", _otaPendingPartition.c_str());
+  eventLog.createEvent(msg, EventLog::LOG_LEVEL_NOTIFICATION);
+  oled.setOTAPartition(_otaPendingPartition.c_str());
+  oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
+
+  if (_otaPendingUrl.startsWith("https:")) {
+    _otaHttpsClient.setCACertBundle(x509_crt_imported_bundle_bin_start);
+    otaFirmware.setClient(&_otaHttpsClient);
   }
 
-  while (otaFirmware.pending.size() > 0) {
+  otaFirmware.setBlockedPartitions({"config"});
 
-    exEsp32FOTA::esp32FOTA forceFirmwareUpdate;
-    forceFirmwareUpdate.setProgressCb(eventHandler_otaFirmwareProgress);
-    forceFirmwareUpdate.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
-    forceFirmwareUpdate.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
-    forceFirmwareUpdate.setSPIFFsPartitionLabel("ui");
-    forceFirmwareUpdate.setBlockedPartitions({"config"});
-    forceFirmwareUpdate.setCertFileSystem(nullptr);
+  otaFirmware.onProgress([](const char* partition, size_t written, size_t total){
+    oled.setProgressBar((float)written / (float)total);
+  });
 
-    if (otaFirmware.pending.get(0).url.startsWith("https:")) {
-      forceFirmwareUpdate.useBundledCerts();
+  otaFirmware.onComplete([](bool success){
+    eventLog.createEvent(success ? "OTA update finished" : "OTA firmware failed",
+                         EventLog::LOG_LEVEL_NOTIFICATION);
+    _otaUpdateInProcess = false;
+    _otaPendingRequest = false;
+    if (success) {
+      eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
+      delay(5000);
+      ESP.restart();
     }
+  });
 
-    bool updateSuccess = false;
-    if (otaFirmware.pending.get(0).type == OTA_UPDATE_UI) {
-      eventLog.createEvent("OTA UI forced", EventLog::LOG_LEVEL_NOTIFICATION);
-      updateSuccess = forceFirmwareUpdate.forceUpdateSPIFFS(otaFirmware.pending.get(0).url.c_str(), false);
-    } else {
-      eventLog.createEvent("OTA app forced", EventLog::LOG_LEVEL_NOTIFICATION);
-      updateSuccess = forceFirmwareUpdate.forceUpdate(otaFirmware.pending.get(0).url.c_str(), false);
-    }
+  bool success = otaFirmware.flashPartition(_otaPendingPartition.c_str(), _otaPendingUrl.c_str());
 
-    otaFirmware.pending.remove(0);
+  _otaPendingRequest = false;
 
-    if (!updateSuccess) {
-      eventLog.createEvent("OTA update failed", EventLog::LOG_LEVEL_NOTIFICATION);
-      while (otaFirmware.pending.size() > 0) {
-        otaFirmware.pending.remove(0);
-      }
-      return;
-    }
+  if (!success) {
+    eventLog.createEvent("OTA update failed", EventLog::LOG_LEVEL_NOTIFICATION);
+    _otaUpdateInProcess = false;
   }
-}
-
-
-/**
- * A callback function to report firmware upgrade progress, which draws a status on the OLED.
- * @param progress The number of bytes that have been processed so far
- * @param size The total size of the update in bytes
-*/
-void eventHandler_otaFirmwareProgress(size_t progress, size_t size) {
-
-  otaFirmware.updateInProcess = true;
-
-  float percentage = ((float)progress / (float)size);
-
-  if (progress == 0) {
-    eventLog.createEvent("OTA firmware started", EventLog::LOG_LEVEL_NOTIFICATION);
-    oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
-  }
-
-  oled.setProgressBar(percentage);
-}
-
-
-/**
- * Callback function to report that the OTA update has failed.
- * @param partition inherited from esp32FOTA library
-*/
-void eventHandler_otaFirmwareFailed(int partition) {
-  log_e("OTA failed partition: [%i]", partition);
-  eventLog.createEvent("OTA firmware failed", EventLog::LOG_LEVEL_NOTIFICATION);
-  otaFirmware.updateInProcess = false;
-}
-
-
-/**
- * A callback function for when the OTA firmware update has finished.
-*/
-void eventHandler_otaFirmwareFinished(int partition, bool needs_restart) {
-  log_i("OTA finished partition: [%i] needs restart: [%s]", partition, needs_restart ? "true" : "false");
-  eventLog.createEvent("OTA update finished", EventLog::LOG_LEVEL_NOTIFICATION);
-
-  if (needs_restart) {
-    eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
-    delay(5000);
-  }
-
-  otaFirmware.updateInProcess = false;
+  /* success path: onComplete fires and handles the reboot */
 }
 
 
@@ -1105,7 +1064,7 @@ void http_handleRegistration_POST(AsyncWebServerRequest *request, JsonVariant &d
   payloadDoc["device_class"]            = DEVICE_CLASS;
   payloadDoc["public_key"]              = (char*)pubKeyB64;
   payloadDoc["registering_application"] = REGISTRATION_APPLICATION_NAME;
-  payloadDoc["registering_version"]     = VERSION;
+  payloadDoc["registering_version"]     = esp_ota_get_app_description()->version;
 
   JsonObject mcu = payloadDoc["mcu"].to<JsonObject>();
   mcu["model"]           = ESP.getChipModel();

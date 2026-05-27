@@ -2,6 +2,7 @@
 #include "Prototype9pt7b.h"         // used on all other OLED pages
 #include <Fonts/FreeMonoBold12pt7b.h>  // visual token page only
 #include <NTPClient.h>
+#include <esp_ota_ops.h>
 #include "eventLog.h"
 #include "authorizationToken.h"
 
@@ -56,6 +57,7 @@
             char* _productId;
             char* _uuid;
             char* _name;
+            char _otaPartition[8] = {0};
 
             #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
                 WiFiClass *_wifiInfo;
@@ -291,17 +293,10 @@
                     this->hardware.setCursor(0, 0);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
 
-                    #ifdef APPLICATION_NAME
-                        this->hardware.println(APPLICATION_NAME);
-                    #endif
+                    this->hardware.println(esp_ota_get_app_description()->project_name);
 
                     this->hardware.print("Ver: ");
-
-                    #ifdef VERSION
-                        this->hardware.println(VERSION);
-                    #else
-                        this->hardware.println("UNKNOWN");
-                    #endif
+                    this->hardware.println(esp_ota_get_app_description()->version);
 
                     #ifdef COMMIT_HASH
                         this->hardware.print("(");
@@ -1060,8 +1055,10 @@
                 #if OLED_DISPLAY_MODEL == ENUM_OLED_MODEL_SSD1306_128_32
 
                     
+                    char otaLine[22];
+                    snprintf(otaLine, sizeof(otaLine), "   OTA: %-10s   ", this->_otaPartition);
                     this->hardware.setCursor(0, 0);
-                    this->hardware.println("      OTA update    ");
+                    this->hardware.println(otaLine);
                     this->hardware.println("    in progress...  ");
 
                 #endif
@@ -1074,6 +1071,10 @@
 
             void setCallback_failure(void (*userDefinedCallback)(uint8_t, failureReason)) {
                 this->ptrFailureCallback = userDefinedCallback; }
+
+            void setOTAPartition(const char* partition){
+                strlcpy(this->_otaPartition, partition, sizeof(this->_otaPartition));
+            }
 
             void setProductID(char* value){
                 this->_productId = value;

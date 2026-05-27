@@ -1,9 +1,8 @@
 #ifndef otaConfig_h
     #define otaConfig_h
 
-    #include <LittleFS.h>
-    #include <ArduinoJson.h>
-    #include <esp32FOTA.hpp>
+    #include <esp32OTA.h>
+    #include <LinkedList.h>
 
     #ifndef FIRMWARE_CHECK_SECONDS
         #define FIRMWARE_CHECK_SECONDS 86400 /* Number of seconds between OTA firmware checks */
@@ -11,32 +10,15 @@
     #ifndef CLOUD_BACKUP_INTERVAL_SECONDS
         #define CLOUD_BACKUP_INTERVAL_SECONDS 86400 /* Number of seconds between automatic cloud backup uploads */
     #endif
-    #ifndef JSON_FW_BUFF_SIZE
-        #define JSON_FW_BUFF_SIZE 3072 //Supports 5 versions with maximum recommended string lengths
-    #endif
-
 
     enum otaUpdateType{
         OTA_UPDATE_APP = 2,
         OTA_UPDATE_UI = 1
     };
-    
-    
+
     struct forcedOtaUpdateConfig{
         String url;
         otaUpdateType type;
-    };
-
-
-    class exEsp32FOTA : public esp32FOTA
-    {           
-
-        public:
-            using esp32FOTA::esp32FOTA; /* Inherit the base esp32FOTA */
-            uint64_t lastCheckedTime = 0; /* The time (millis() or equivalent) when the firmware was last checked against the remote system */
-            bool enabled = false; /* Determines if the OTA firmware automation should be run */
-            bool updateInProcess = false;
-            LinkedList<forcedOtaUpdateConfig> pending; /* List of pending updates */
     };
 
 #endif

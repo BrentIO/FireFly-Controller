@@ -298,10 +298,11 @@ paths:
         - Firmware
       summary: Force OTA app firmware update
       description: |
-        Queues a forced over-the-air application firmware update from the URL provided. The device
+        Triggers a forced over-the-air application firmware update from the URL provided. The device
         downloads and installs the binary, then reboots automatically. The URL must be an `http` or
         `https` address ending in `.bin`. Returns `202 Accepted` immediately; the update runs
-        asynchronously on the main loop.
+        asynchronously on the main loop. Returns `409 Conflict` if an update is already in progress
+        or pending.
       security:
         - visualToken: []
       requestBody:
@@ -314,7 +315,7 @@ paths:
               url: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/Controller.ino.bin"
       responses:
         '202':
-          description: Accepted — OTA update queued
+          description: Accepted — OTA update pending
         '400':
           description: Bad Request
           content:
@@ -333,16 +334,19 @@ paths:
                     message: "Bad url; http or https required"
         '401':
           description: Unauthorized
+        '409':
+          description: Conflict — an OTA update is already in progress or pending
   /api/ota/ui:
     post:
       tags:
         - Firmware
       summary: Force OTA UI firmware update
       description: |
-        Queues a forced over-the-air UI (LittleFS) firmware update from the URL provided. The device
+        Triggers a forced over-the-air UI (LittleFS) firmware update from the URL provided. The device
         downloads and installs the binary, then reboots automatically. The URL must be an `http` or
         `https` address ending in `.bin`. Returns `202 Accepted` immediately; the update runs
-        asynchronously on the main loop.
+        asynchronously on the main loop. Returns `409 Conflict` if an update is already in progress
+        or pending.
       security:
         - visualToken: []
       requestBody:
@@ -355,7 +359,7 @@ paths:
               url: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/ui.bin"
       responses:
         '202':
-          description: Accepted — OTA update queued
+          description: Accepted — OTA update pending
         '400':
           description: Bad Request
           content:
@@ -374,6 +378,8 @@ paths:
                     message: "Bad url; http or https required"
         '401':
           description: Unauthorized
+        '409':
+          description: Conflict — an OTA update is already in progress or pending
   /api/mcu:
     get:
       tags:
