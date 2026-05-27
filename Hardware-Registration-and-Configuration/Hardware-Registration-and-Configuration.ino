@@ -58,8 +58,8 @@ esp32OTA otaFirmware;
 WiFiClientSecure _otaHttpsClient;
 bool _otaUpdateInProcess = false;
 bool _otaPendingRequest = false;
-String _otaPendingPartition;
-String _otaPendingUrl;
+String _otaPendingAppUrl;
+String _otaPendingUiUrl;
 managerDeviceIdentity deviceIdentity; /* Device identity instance */
 managerOled oled; /* OLED instance */
 managerFrontPanel frontPanel; /* Front panel instance */
@@ -136,6 +136,8 @@ void setup() {
   /* Startup the OLED display */
   oled.setCallback_failure(&failureHandler_oled);
   oled.begin();
+  oled.setApplicationName(esp_ota_get_app_description()->project_name);
+  oled.setApplicationVersion(esp_ota_get_app_description()->version);
   oled.setEventLog(&eventLog);
   oled.setAuthorizationToken(&authToken);
   authToken.setCallback_visualTokenChanged(&eventHandler_visualAuthChanged);
@@ -272,12 +274,9 @@ void setup() {
   httpServer.on("^/api/network/([a-z_]+)$", http_handleNetworkInterface);
   httpServer.on("/api/network", http_handleNetworkInterfaceAll);
   httpServer.on("/api/firmware", http_handleFirmware);
-  AsyncCallbackJsonWebHandler *jsonHandler_handleOTA_app_POST = new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced_POST);
-  jsonHandler_handleOTA_app_POST->setMethod(HTTP_POST);
-  httpServer.addHandler(jsonHandler_handleOTA_app_POST);
-  AsyncCallbackJsonWebHandler *jsonHandler_handleOTA_ui_POST = new AsyncCallbackJsonWebHandler("/api/ota/ui", http_handleOTA_forced_POST);
-  jsonHandler_handleOTA_ui_POST->setMethod(HTTP_POST);
-  httpServer.addHandler(jsonHandler_handleOTA_ui_POST);
+  AsyncCallbackJsonWebHandler *jsonHandler_handleOTA_POST = new AsyncCallbackJsonWebHandler("/api/ota", http_handleOTA_POST);
+  jsonHandler_handleOTA_POST->setMethod(HTTP_POST);
+  httpServer.addHandler(jsonHandler_handleOTA_POST);
 
   httpServer.on("/auth", http_handleAuth);
 
@@ -766,10 +765,10 @@ void http_handleFirmware(AsyncWebServerRequest *request) {
 
 
 /**
- * POST /api/ota/app — queues a forced OTA app firmware update from the provided URL.
- * POST /api/ota/ui  — queues a forced OTA UI firmware update from the provided URL.
+ * POST /api/ota — triggers a full OTA update (app + ui) from the firmware version
+ * object returned by /api/firmware. Extracts app and ui URLs from the binaries array.
 */
-void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant &doc) {
+void http_handleOTA_POST(AsyncWebServerRequest *request, JsonVariant &doc) {
 
   if (!request->hasHeader("visual-token") ||
       !authToken.authenticate(request->header("visual-token").c_str())) {
@@ -787,25 +786,37 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant &doc
     return;
   }
 
-  if (doc["url"].isNull()) {
-    http_badRequest(request, "Field url is required");
+  if (!doc["binaries"].is<JsonArray>() || doc["binaries"].as<JsonArray>().size() == 0) {
+    http_badRequest(request, "Field binaries is required");
     return;
   }
 
-  String url = doc["url"].as<String>();
+  String appUrl;
+  String uiUrl;
 
-  if (!url.endsWith(".bin")) {
-    http_badRequest(request, "Bad url; File must be of type '.bin'");
+  for (JsonVariant binary : doc["binaries"].as<JsonArray>()) {
+    String partition = binary["partition"].as<String>();
+    String url = binary["url"].as<String>();
+
+    if (url.isEmpty() || !url.endsWith(".bin") ||
+        (!url.startsWith("http:") && !url.startsWith("https:"))) {
+      continue;
+    }
+
+    if (partition == "app") {
+      appUrl = url;
+    } else if (partition == "ui") {
+      uiUrl = url;
+    }
+  }
+
+  if (appUrl.isEmpty() && uiUrl.isEmpty()) {
+    http_badRequest(request, "No valid binaries found");
     return;
   }
 
-  if (!url.startsWith("http:") && !url.startsWith("https:")) {
-    http_badRequest(request, "Bad url; http or https required");
-    return;
-  }
-
-  _otaPendingPartition = request->url().endsWith("app") ? "app" : "ui";
-  _otaPendingUrl = url;
+  _otaPendingAppUrl = appUrl;
+  _otaPendingUiUrl = uiUrl;
   _otaPendingRequest = true;
 
   request->send(202);
@@ -813,7 +824,7 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant &doc
 
 
 /**
- * Executes any pending forced OTA request queued by the HTTP handler.
+ * Executes a pending OTA update. Flashes ui first (no reboot), then app (triggers reboot).
 */
 void otaFirmware_checkPending() {
 
@@ -823,44 +834,58 @@ void otaFirmware_checkPending() {
 
   _otaUpdateInProcess = true;
 
-  char msg[OLED_CHARACTERS_PER_LINE+1];
-  snprintf(msg, sizeof(msg), "OTA %s forced", _otaPendingPartition.c_str());
-  eventLog.createEvent(msg, EventLog::LOG_LEVEL_NOTIFICATION);
-  oled.setOTAPartition(_otaPendingPartition.c_str());
-  oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
-
-  if (_otaPendingUrl.startsWith("https:")) {
-    _otaHttpsClient.setCACertBundle(x509_crt_imported_bundle_bin_start);
-    otaFirmware.setClient(&_otaHttpsClient);
-  }
-
   otaFirmware.setBlockedPartitions({"config"});
-
   otaFirmware.onProgress([](const char* partition, size_t written, size_t total){
     oled.setProgressBar((float)written / (float)total);
   });
 
-  otaFirmware.onComplete([](bool success){
-    eventLog.createEvent(success ? "OTA update finished" : "OTA firmware failed",
-                         EventLog::LOG_LEVEL_NOTIFICATION);
-    _otaUpdateInProcess = false;
-    _otaPendingRequest = false;
-    if (success) {
-      eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
-      delay(5000);
-      ESP.restart();
+  if (!_otaPendingUiUrl.isEmpty()) {
+    eventLog.createEvent("OTA ui update started", EventLog::LOG_LEVEL_NOTIFICATION);
+    oled.setOTAPartition("ui");
+    oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
+
+    if (_otaPendingUiUrl.startsWith("https:")) {
+      _otaHttpsClient.setCACertBundle(x509_crt_imported_bundle_bin_start);
+      otaFirmware.setClient(&_otaHttpsClient);
     }
-  });
 
-  bool success = otaFirmware.flashPartition(_otaPendingPartition.c_str(), _otaPendingUrl.c_str());
+    bool success = otaFirmware.flashPartition("ui", _otaPendingUiUrl.c_str());
 
-  _otaPendingRequest = false;
-
-  if (!success) {
-    eventLog.createEvent("OTA update failed", EventLog::LOG_LEVEL_NOTIFICATION);
-    _otaUpdateInProcess = false;
+    if (!success) {
+      eventLog.createEvent("OTA ui failed", EventLog::LOG_LEVEL_NOTIFICATION);
+      _otaUpdateInProcess = false;
+      _otaPendingRequest = false;
+      return;
+    }
+    eventLog.createEvent("OTA ui finished", EventLog::LOG_LEVEL_NOTIFICATION);
   }
-  /* success path: onComplete fires and handles the reboot */
+
+  if (!_otaPendingAppUrl.isEmpty()) {
+    eventLog.createEvent("OTA app update started", EventLog::LOG_LEVEL_NOTIFICATION);
+    oled.setOTAPartition("app");
+    oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
+
+    if (_otaPendingAppUrl.startsWith("https:")) {
+      _otaHttpsClient.setCACertBundle(x509_crt_imported_bundle_bin_start);
+      otaFirmware.setClient(&_otaHttpsClient);
+    }
+
+    bool success = otaFirmware.flashPartition("app", _otaPendingAppUrl.c_str());
+
+    if (!success) {
+      eventLog.createEvent("OTA app failed", EventLog::LOG_LEVEL_NOTIFICATION);
+      _otaUpdateInProcess = false;
+      _otaPendingRequest = false;
+      return;
+    }
+
+    eventLog.createEvent("OTA app finished, rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
+    delay(5000);
+    ESP.restart();
+  }
+
+  _otaUpdateInProcess = false;
+  _otaPendingRequest = false;
 }
 
 

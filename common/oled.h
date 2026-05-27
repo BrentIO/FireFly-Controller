@@ -2,7 +2,6 @@
 #include "Prototype9pt7b.h"         // used on all other OLED pages
 #include <Fonts/FreeMonoBold12pt7b.h>  // visual token page only
 #include <NTPClient.h>
-#include <esp_ota_ops.h>
 #include "eventLog.h"
 #include "authorizationToken.h"
 
@@ -58,6 +57,8 @@
             char* _uuid;
             char* _name;
             char _otaPartition[8] = {0};
+            char _applicationName[32] = {0};
+            char _applicationVersion[16] = {0};
 
             #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
                 WiFiClass *_wifiInfo;
@@ -293,10 +294,10 @@
                     this->hardware.setCursor(0, 0);
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
 
-                    this->hardware.println(esp_ota_get_app_description()->project_name);
+                    this->hardware.println(this->_applicationName[0] ? this->_applicationName : "Unknown");
 
                     this->hardware.print("Ver: ");
-                    this->hardware.println(esp_ota_get_app_description()->version);
+                    this->hardware.println(this->_applicationVersion[0] ? this->_applicationVersion : "Unknown");
 
                     #ifdef COMMIT_HASH
                         this->hardware.print("(");
@@ -1074,6 +1075,14 @@
 
             void setOTAPartition(const char* partition){
                 strlcpy(this->_otaPartition, partition, sizeof(this->_otaPartition));
+            }
+
+            void setApplicationName(const char* name){
+                strlcpy(this->_applicationName, name, sizeof(this->_applicationName));
+            }
+
+            void setApplicationVersion(const char* version){
+                strlcpy(this->_applicationVersion, version, sizeof(this->_applicationVersion));
             }
 
             void setProductID(char* value){

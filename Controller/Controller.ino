@@ -212,6 +212,8 @@ void setup() {
   //Configure the peripherals
   oled.setCallback_failure(&failureHandler_oled);
   oled.begin();
+  oled.setApplicationName(esp_ota_get_app_description()->project_name);
+  oled.setApplicationVersion(esp_ota_get_app_description()->version);
   oled.setEventLog(&eventLog);
   oled.setAuthorizationToken(&authToken);
   authToken.setCallback_visualTokenChanged(&eventHandler_visualAuthChanged);
