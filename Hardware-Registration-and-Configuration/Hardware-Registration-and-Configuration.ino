@@ -53,6 +53,7 @@
 #include <esp_http_client.h>
 #include <esp_crt_bundle.h>
 extern const uint8_t x509_crt_imported_bundle_bin_start[];
+extern const uint8_t x509_crt_imported_bundle_bin_end[];
 
 unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
 AsyncWebServer httpServer(80);
@@ -847,7 +848,7 @@ void otaFirmware_checkPending() {
     oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
 
     if (_otaPendingUiUrl.startsWith("https:")) {
-      _otaHttpsClient.setCACertBundle(x509_crt_imported_bundle_bin_start);
+      _otaHttpsClient.setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
       otaFirmware.setClient(&_otaHttpsClient);
     }
 
@@ -868,7 +869,7 @@ void otaFirmware_checkPending() {
     oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
 
     if (_otaPendingAppUrl.startsWith("https:")) {
-      _otaHttpsClient.setCACertBundle(x509_crt_imported_bundle_bin_start);
+      _otaHttpsClient.setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
       otaFirmware.setClient(&_otaHttpsClient);
     }
 
