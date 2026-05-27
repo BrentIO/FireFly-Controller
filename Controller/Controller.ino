@@ -54,8 +54,6 @@
 #include <esp_http_client.h>
 #include <WiFiClientSecure.h>
 #include <esp_crt_bundle.h>
-extern const uint8_t x509_crt_imported_bundle_bin_start[];
-extern const uint8_t x509_crt_imported_bundle_bin_end[];
 
 uint64_t bootTime = 0; /* Approximate Epoch time the device booted */
 uint64_t lastTimeMemoryBroadcast = 0; /* The last time memory usage was broadcast */
@@ -3480,7 +3478,7 @@ void setup_OtaFirmware(){
     if(_certBundle != nullptr){
       _otaHttpsClient.setCACert(_certBundle);
     } else {
-      _otaHttpsClient.setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
+      _otaHttpsClient.setInsecure();
     }
     otaFirmware.setClient(&_otaHttpsClient);
   }
@@ -3586,7 +3584,7 @@ void otaFirmware_checkPending(){
     if(_otaPendingUiUrl.startsWith("https:") && _certBundle != nullptr){
       _otaHttpsClient.setCACert(_certBundle);
     } else if(_otaPendingUiUrl.startsWith("https:")){
-      _otaHttpsClient.setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
+      _otaHttpsClient.setInsecure();
     }
 
     bool success = otaFirmware.flashPartition("ui", _otaPendingUiUrl.c_str());
@@ -3610,7 +3608,7 @@ void otaFirmware_checkPending(){
     if(_otaPendingAppUrl.startsWith("https:") && _certBundle != nullptr){
       _otaHttpsClient.setCACert(_certBundle);
     } else if(_otaPendingAppUrl.startsWith("https:")){
-      _otaHttpsClient.setCACertBundle(x509_crt_imported_bundle_bin_start, x509_crt_imported_bundle_bin_end - x509_crt_imported_bundle_bin_start);
+      _otaHttpsClient.setInsecure();
     }
 
     bool success = otaFirmware.flashPartition("app", _otaPendingAppUrl.c_str());
