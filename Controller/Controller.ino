@@ -3464,6 +3464,8 @@ void setup_OtaFirmware(){
     return;
   }
 
+  otaFirmware.setCurrentVersion(PROJECT_VER);
+  otaFirmware.setApplicationName(APPLICATION);
   otaFirmware.setManifestURL(url.c_str());
   otaFirmware.setBlockedPartitions({"config"});
   otaFirmware.addHeader("uuid", deviceIdentity.data.uuid);
