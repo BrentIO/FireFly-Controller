@@ -10,7 +10,7 @@
     #endif
 
     #include <esp_mac.h>
-    #include <esp_app_format.h>
+    #include <esp_ota_ops.h>
 
 
     /* Define hardware enumeration constants */
