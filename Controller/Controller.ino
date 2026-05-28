@@ -16,7 +16,7 @@
   #endif
 #else
   #ifndef COMMIT_HASH
-    #define COMMIT_HASH "DEBUG"
+    #error "COMMIT_HASH must be specified for a build."
   #endif
   #ifndef PROJECT_VER
     #define PROJECT_VER "9999.99.99"
