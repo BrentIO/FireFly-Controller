@@ -8,25 +8,19 @@
 */
 
 #if CORE_DEBUG_LEVEL == 0
-  #ifndef VERSION
-    #error "VERSION must be specified for a production build."
+  #ifndef PROJECT_VER
+    #error "PROJECT_VER must be specified for a production build."
   #endif
   #ifndef COMMIT_HASH
     #error "COMMIT_HASH must be specified for a production build."
   #endif
 #else
-  #ifdef VERSION
-    #error "VERSION may not be specified for a debug build."
-  #else
-    #define VERSION "9999.99.99"
-  #endif
   #ifndef COMMIT_HASH
     #define COMMIT_HASH "DEBUG"
   #endif
 #endif
 
-#define APPLICATION_NAME "FireFly Controller"
-#define APPLICATION      "Controller"
+#define APPLICATION "Controller"
 
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
@@ -58,6 +52,7 @@
 #include <mbedtls/ecdsa.h>
 #include <mbedtls/base64.h>
 #include <esp_http_client.h>
+#include <WiFiClientSecure.h>
 #include <esp_crt_bundle.h>
 
 uint64_t bootTime = 0; /* Approximate Epoch time the device booted */
@@ -103,7 +98,15 @@ void http_handleCloudBackup_POST(AsyncWebServerRequest *request);
 void http_handleCloudBackup_GET(AsyncWebServerRequest *request);
 void http_handleCloudBackup_DELETE(AsyncWebServerRequest *request);
 
-exEsp32FOTA otaFirmware(APPLICATION_NAME, VERSION, false); /* OTA firmware update class */
+esp32OTA otaFirmware;
+WiFiClientSecure _otaHttpsClient;       /* TLS client used when the manifest URL is https:// */
+String _otaManifestUrl;                 /* Set when setup_OtaFirmware() succeeds; empty otherwise */
+bool _otaUpdateInProcess = false;
+bool _otaPendingRequest = false;
+bool _otaForcedFlash = false;
+String _otaPendingAppUrl;
+String _otaPendingUiUrl;
+uint64_t _otaLastCheckedTime = 0;
 
 fs::LittleFSFS uiFS;
 fs::LittleFSFS configFS;
@@ -115,7 +118,6 @@ char _uiCommit[16] = {0};
 
 char* _certBundle = nullptr;            /* PSRAM-backed concatenated PEM bundle for OTA TLS */
 size_t _certBundleSize = 0;             /* Byte length of _certBundle, excluding null terminator */
-CryptoMemAsset* _certBundleAsset = nullptr; /* Asset pointer into _certBundle for esp32FOTA */
 
 #define CONFIGFS_PATH_CERTS "/certs"
 #define CONFIGFS_PATH_CONTROLLERS "/controllers"
@@ -215,6 +217,8 @@ void setup() {
   //Configure the peripherals
   oled.setCallback_failure(&failureHandler_oled);
   oled.begin();
+  oled.setApplicationName(esp_app_get_description()->project_name);
+  oled.setApplicationVersion(esp_app_get_description()->version);
   oled.setEventLog(&eventLog);
   oled.setAuthorizationToken(&authToken);
   authToken.setCallback_visualTokenChanged(&eventHandler_visualAuthChanged);
@@ -249,7 +253,12 @@ void setup() {
     if(deviceIdentity.data.product_hex != 0 && deviceIdentity.data.product_hex != PRODUCT_HEX){
       oled.setMismatchHex(deviceIdentity.data.product_hex, (uint32_t)PRODUCT_HEX);
       oled.setPage(managerOled::PAGE_HW_FW_MISMATCH);
-      log_e("HW/FW product_hex mismatch (HW: 0x%08lX, FW: 0x%08lX). Sleeping.", deviceIdentity.data.product_hex, (uint32_t)PRODUCT_HEX);
+      log_e("HW/FW product_hex mismatch (HW: 0x%08lX, FW: 0x%08lX).", deviceIdentity.data.product_hex, (uint32_t)PRODUCT_HEX);
+      esp_ota_img_states_t ota_state;
+      if(esp_ota_get_state_partition(esp_ota_get_running_partition(), &ota_state) == ESP_OK
+         && ota_state == ESP_OTA_IMG_PENDING_VERIFY){
+        otaFirmware.markAppInvalid(); /* reboots into previous OTA slot; never returns */
+      }
       esp_deep_sleep_start();
     }
   }
@@ -369,9 +378,9 @@ void setup() {
     if(vf) vf.close();
 
     if(_uiApplication[0] != '\0' && (
-        strcmp(_uiApplication, APPLICATION) != 0 ||
-        strcmp(_uiVersion,     VERSION)      != 0 ||
-        strcmp(_uiCommit,      COMMIT_HASH)  != 0)){
+        strcmp(_uiApplication, APPLICATION)                        != 0 ||
+        strcmp(_uiVersion,     esp_app_get_description()->version) != 0 ||
+        strcmp(_uiCommit,      COMMIT_HASH)                        != 0)){
       eventLog.createEvent("App/UI ver mismatch", EventLog::LOG_LEVEL_ERROR);
     }
   }
@@ -628,10 +637,8 @@ void setup() {
     httpServer.on("/api/provisioning/controller", http_handleProvisioningController);
     httpServer.on("^/certs/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
-    httpServer.on("/api/ota/app", HTTP_OPTIONS, http_options);
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/app", http_handleOTA_forced_POST));
-    httpServer.on("/api/ota/ui", HTTP_OPTIONS, http_options);
-    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota/ui", http_handleOTA_forced_POST));
+    httpServer.on("/api/ota", HTTP_OPTIONS, http_options);
+    httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota", http_handleOTA_POST));
     httpServer.on("/api/cloud-backup", http_handleCloudBackup);
     setup_OtaFirmware();
   }else{
@@ -673,6 +680,8 @@ void setup() {
 
   oled.setPage(managerOled::PAGE_EVENT_LOG);
 
+  otaFirmware.markAppValid();
+
   #if CORE_DEBUG_LEVEL >= 4
     reportMemoryUsage("Setup complete.");
   #endif /* CORE_DEBUG_LEVEL >= 4 */
@@ -696,19 +705,40 @@ void loop() {
     }
   }
 
-  if(otaFirmware.enabled && esp_timer_get_time() > 60ULL * 1000000ULL){ //Wait 60 seconds after booting before checking the firmware
-    if((esp_timer_get_time() - otaFirmware.lastCheckedTime >= (uint64_t)FIRMWARE_CHECK_SECONDS * 1000000ULL) || (otaFirmware.lastCheckedTime == 0)){
-      if(!otaFirmware.updateInProcess){
+  if(!_otaManifestUrl.isEmpty() && esp_timer_get_time() > 60ULL * 1000000ULL){ //Wait 60 seconds after booting before checking the firmware
+    if((_otaLastCheckedTime == 0) || (esp_timer_get_time() - _otaLastCheckedTime >= (uint64_t)FIRMWARE_CHECK_SECONDS * 1000000ULL)){
+      if(!_otaUpdateInProcess){
         #if CORE_DEBUG_LEVEL >= 4
           reportMemoryUsage("Starting firmware check.");
         #endif /* CORE_DEBUG_LEVEL >= 4 */
 
-        if(otaFirmware.execHTTPcheck() == 0){
+        bool updateAvailable = otaFirmware.checkForUpdate();
+
+        if(updateAvailable){
+          otaFirmware.execOTA(); /* onAvailable already published MQTT update-available state */
+        } else {
+          /* Service reachable, no update — publish online + current version */
+          if(deviceIdentity.enabled && mqttClient.connected()){
+            char availability_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
+            snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid);
+            mqttClient.publish(availability_topic, "online");
+
+            JsonDocument mqttDoc;
+            mqttDoc["installed_version"] = esp_app_get_description()->version;
+            mqttDoc["latest_version"] = esp_app_get_description()->version;
+            char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+            snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
+            mqttClient.beginPublish(topic, measureJson(mqttDoc), false);
+            BufferingPrint bufferedClient(mqttClient, 32);
+            serializeJson(mqttDoc, bufferedClient);
+            bufferedClient.flush();
+            mqttClient.endPublish();
+          }
           eventLog.createEvent("OTA firmware checked");
         }
       }
 
-      otaFirmware.lastCheckedTime = esp_timer_get_time();
+      _otaLastCheckedTime = esp_timer_get_time();
       #if CORE_DEBUG_LEVEL >= 4
         reportMemoryUsage("Firmware check complete.");
       #endif /* CORE_DEBUG_LEVEL >= 4 */
@@ -1352,7 +1382,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
   doc["product_id"] = deviceIdentity.data.product_id;
   doc["product_hex"] = product_hex;
   doc["application"]["name"]    = APPLICATION;
-  doc["application"]["version"] = VERSION;
+  doc["application"]["version"] = esp_app_get_description()->version;
   doc["application"]["commit"]  = COMMIT_HASH;
   if(_uiApplication[0] != '\0'){
     doc["ui"]["name"]    = _uiApplication;
@@ -1367,7 +1397,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
 }
 
 
-/** 
+/**
  * Handle http requests for the event log
 */
 void http_handleEventLog(AsyncWebServerRequest *request){
@@ -3209,9 +3239,10 @@ void http_handleCert_DELETE(AsyncWebServerRequest *request){
 
 
 /**
- * Handles force OTA force update requests using the payload provided
+ * POST /api/ota — triggers an OTA update from the firmware version object provided.
+ * Accepts the binaries array from a firmwareVersion payload; flashes all listed partitions.
 */
-void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc){
+void http_handleOTA_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
   if(!request->hasHeader("visual-token")){
       http_unauthorized(request);
@@ -3230,32 +3261,43 @@ void http_handleOTA_forced_POST(AsyncWebServerRequest *request, JsonVariant doc)
 
   resetHTPServerUsage();
 
-  if(doc["url"].isNull()){
-    http_badRequest(request, "Field url is required");
+  if(_otaUpdateInProcess || _otaPendingRequest){
+    http_conflict(request, "Update already in progress");
     return;
   }
 
-  forcedOtaUpdateConfig newFirmwareRequest;
-  newFirmwareRequest.url = doc["url"].as<String>();
-
-  if(!newFirmwareRequest.url.endsWith(".bin")){
-    http_badRequest(request, "Bad url; File must be of type '.bin'");
+  if(!doc["binaries"].is<JsonArray>() || doc["binaries"].as<JsonArray>().size() == 0){
+    http_badRequest(request, "Field binaries is required");
     return;
   }
 
-  if(!newFirmwareRequest.url.startsWith("http:") && !newFirmwareRequest.url.startsWith("https:")){
-    http_badRequest(request, "Bad url; http or https required");
+  String appUrl;
+  String uiUrl;
+
+  for(JsonVariant binary : doc["binaries"].as<JsonArray>()){
+    String partition = binary["partition"].as<String>();
+    String url = binary["url"].as<String>();
+
+    if(url.isEmpty() || !url.endsWith(".bin") ||
+       (!url.startsWith("http:") && !url.startsWith("https:"))){
+      continue;
+    }
+
+    if(partition == "app"){
+      appUrl = url;
+    } else if(partition == "ui"){
+      uiUrl = url;
+    }
+  }
+
+  if(appUrl.isEmpty() && uiUrl.isEmpty()){
+    http_badRequest(request, "No valid binaries found");
     return;
   }
 
-  if(request->url().endsWith("app")){
-      newFirmwareRequest.type = OTA_UPDATE_APP;
-
-  }else{
-    newFirmwareRequest.type = OTA_UPDATE_UI;
-  }
-
-  otaFirmware.pending.add(newFirmwareRequest);
+  _otaPendingAppUrl = appUrl;
+  _otaPendingUiUrl = uiUrl;
+  _otaPendingRequest = true;
 
   request->send(202);
 }
@@ -3271,11 +3313,6 @@ void refreshCertBundle(){
   if(_certBundle != nullptr){
     free(_certBundle);
     _certBundle = nullptr;
-  }
-
-  if(_certBundleAsset != nullptr){
-    delete _certBundleAsset;
-    _certBundleAsset = nullptr;
   }
 
   _certBundleSize = 0;
@@ -3320,9 +3357,17 @@ void refreshCertBundle(){
   }
 
   memcpy(_certBundle, bundle.c_str(), _certBundleSize + 1);
-  _certBundleAsset = new CryptoMemAsset("bundle", _certBundle, _certBundleSize);
 
   log_i("Cert bundle built: %u bytes", (unsigned int)_certBundleSize);
+
+  if(!_otaManifestUrl.isEmpty() && _otaManifestUrl.startsWith("https:")){
+    if(_certBundle != nullptr){
+      _otaHttpsClient.setCACert(_certBundle);
+      otaFirmware.setClient(&_otaHttpsClient);
+    } else {
+      otaFirmware.useBundledCerts();
+    }
+  }
 }
 
 
@@ -3344,12 +3389,6 @@ void setup_OtaFirmware(){
   if(!configFS.exists(filename)){
     return;
   }
-
-  otaFirmware.setSPIFFsPartitionLabel("ui");
-  otaFirmware.setBlockedPartitions({"config"});
-  otaFirmware.setCertFileSystem(nullptr);
-
-  otaFirmware.setExtraHTTPHeader("uuid", deviceIdentity.data.uuid);
 
   JsonDocument filter;
   filter["ota"] = true;
@@ -3400,9 +3439,8 @@ void setup_OtaFirmware(){
   url.replace("$$mac$$", otaMacOnly);
   url.replace("$$mac_dashes$$", otaMacDashes);
   url.replace("$$mac_colons$$", otaMacColons);
-  if(deviceIdentity.enabled == true){
-    url.replace("$$uuid$$", deviceIdentity.data.uuid);
-  }
+  url.replace("$$uuid$$", deviceIdentity.data.uuid);
+
   String otaApplication = APPLICATION;
   otaApplication.toLowerCase();
   otaApplication.replace(" ", "-");
@@ -3410,7 +3448,7 @@ void setup_OtaFirmware(){
   url.replace("$$class$$", HARDWARE_CLASS);
   url.replace("$$application$$", otaApplication.c_str());
   url.replace("$$product_hex$$", otaProductHex);
-  url.replace("$$current_version$$", VERSION);
+  url.replace("$$current_version$$", esp_app_get_description()->version);
 
   if(!url.startsWith("http:") && !url.startsWith("https:")){
     eventLog.createEvent("OTA cfg inv proto");
@@ -3418,164 +3456,171 @@ void setup_OtaFirmware(){
   }
 
   otaFirmware.setManifestURL(url.c_str());
+  otaFirmware.setBlockedPartitions({"config"});
+  otaFirmware.addHeader("uuid", deviceIdentity.data.uuid);
 
-  if(url.startsWith("https")){
-    if(_certBundleAsset != nullptr){
-      otaFirmware.setRootCA(_certBundleAsset);
+  if(url.startsWith("https:")){
+    if(_certBundle != nullptr){
+      _otaHttpsClient.setCACert(_certBundle);
+      otaFirmware.setClient(&_otaHttpsClient);
     } else {
       otaFirmware.useBundledCerts();
     }
   }
 
-  otaFirmware.setProgressCb(eventHandler_otaFirmwareProgress);
-  otaFirmware.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
-  otaFirmware.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
-  otaFirmware.setUpdateAvailableCb(mqtt_publishUpdateAvailable);
-  otaFirmware.setUpdateServiceAvailabilityCb(mqtt_publishUpdateServiceAvailability);
+  otaFirmware.onProgress([](const char* partition, size_t written, size_t total){
+    _otaUpdateInProcess = true;
+    if(written == 0){
+      char msg[OLED_CHARACTERS_PER_LINE+1];
+      snprintf(msg, sizeof(msg), "OTA %s started", partition);
+      eventLog.createEvent(msg, EventLog::LOG_LEVEL_NOTIFICATION);
+      oled.setOTAPartition(partition);
+      oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
+    }
+    oled.setProgressBar((float)written / (float)total);
 
-  otaFirmware.enabled = true;
+    char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+    snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
+    JsonDocument mqttDoc;
+    mqttDoc["in_progress"] = true;
+    mqttDoc["update_percentage"] = (int)(((float)written / (float)total) * 100);
+    char buffer[256];
+    serializeJson(mqttDoc, buffer);
+    mqttClient.publish(topic, buffer);
+  });
+
+  otaFirmware.onComplete([](bool success){
+    char msg[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(msg, sizeof(msg), "OTA %s", success ? "finished" : "failed");
+    eventLog.createEvent(msg, EventLog::LOG_LEVEL_NOTIFICATION);
+    _otaUpdateInProcess = false;
+    _otaPendingRequest = false;
+
+    char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+    snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
+    JsonDocument mqttDoc;
+    mqttDoc["in_progress"] = false;
+    char buffer[256];
+    serializeJson(mqttDoc, buffer);
+    mqttClient.publish(topic, buffer);
+
+    if(success && !_otaForcedFlash){
+      eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
+      delay(5000);
+      ESP.restart();
+    }
+  });
+
+  otaFirmware.onAvailable([](const char* version, const char* app, const char* releaseUrl){
+    if(deviceIdentity.enabled == false){ return; }
+    if(!mqttClient.connected()){ return; }
+    eventLog.createEvent("OTA update available");
+
+    JsonDocument mqttDoc;
+    mqttDoc["installed_version"] = esp_app_get_description()->version;
+    mqttDoc["latest_version"] = version;
+    if(releaseUrl && strlen(releaseUrl) > 0){
+      mqttDoc["release_url"] = releaseUrl;
+    }
+    mqttDoc["in_progress"] = false;
+
+    char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+    snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
+    mqttClient.beginPublish(topic, measureJson(mqttDoc), false);
+    BufferingPrint bufferedClient(mqttClient, 32);
+    serializeJson(mqttDoc, bufferedClient);
+    bufferedClient.flush();
+    mqttClient.endPublish();
+  });
+
+  otaFirmware.onError([](const char* partition, int err){
+    log_e("OTA error on %s: %d", partition, err);
+    if(deviceIdentity.enabled == false){ return; }
+    if(!mqttClient.connected()){ return; }
+    char availability_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
+    snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid);
+    mqttClient.publish(availability_topic, "offline");
+  });
+
+  _otaManifestUrl = url;
   eventLog.createEvent("OTA update enabled");
 }
 
 
 /**
- * Checks if there are any pending OTA firmware updates in the queue.  This is necessary to allow the async web server to raise requests to the main loop.
+ * Executes a pending forced OTA update. Flashes ui first (no reboot), then app (triggers
+ * reboot). _otaForcedFlash suppresses the auto-reboot in the shared onComplete so that
+ * ui can complete before app is flashed.
 */
 void otaFirmware_checkPending(){
 
-  if(otaFirmware.pending.size() == 0){
+  if(!_otaPendingRequest || _otaUpdateInProcess){
     return;
   }
 
-  if(otaFirmware.updateInProcess == true){
-    return;
-  }
+  _otaUpdateInProcess = true;
+  _otaForcedFlash = true;
 
-  while(otaFirmware.pending.size() > 0){
+  if(!_otaPendingUiUrl.isEmpty()){
+    eventLog.createEvent("OTA ui update started", EventLog::LOG_LEVEL_NOTIFICATION);
+    oled.setOTAPartition("ui");
+    oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
 
-    exEsp32FOTA::esp32FOTA forceFirmwareUpdate;
-    forceFirmwareUpdate.setProgressCb(eventHandler_otaFirmwareProgress);
-    forceFirmwareUpdate.setUpdateBeginFailCb(eventHandler_otaFirmwareFailed);
-    forceFirmwareUpdate.setUpdateFinishedCb(eventHandler_otaFirmwareFinished);
-    forceFirmwareUpdate.setSPIFFsPartitionLabel("ui");
-    forceFirmwareUpdate.setBlockedPartitions({"config"});
-    forceFirmwareUpdate.setCertFileSystem(nullptr);
-
-    bool updateSuccess = false;
-
-    if(otaFirmware.pending.get(0).url.startsWith("https:")){
-      if(_certBundleAsset != nullptr){
-        forceFirmwareUpdate.setRootCA(_certBundleAsset);
+    if(_otaPendingUiUrl.startsWith("https:")){
+      if(_certBundle != nullptr){
+        _otaHttpsClient.setCACert(_certBundle);
+        otaFirmware.setClient(&_otaHttpsClient);
       } else {
-        forceFirmwareUpdate.useBundledCerts();
+        otaFirmware.useBundledCerts();
       }
     }
 
-    switch(otaFirmware.pending.get(0).type){
+    bool success = otaFirmware.flashPartition("ui", _otaPendingUiUrl.c_str());
 
-      case OTA_UPDATE_APP:
-        eventLog.createEvent("OTA app forced");
-        updateSuccess = forceFirmwareUpdate.forceUpdate(otaFirmware.pending.get(0).url.c_str(), false);
-        break;
-
-
-      case OTA_UPDATE_UI:
-        eventLog.createEvent("OTA UI forced");
-        updateSuccess = forceFirmwareUpdate.forceUpdateSPIFFS(otaFirmware.pending.get(0).url.c_str(), false);
-        break;
-    }
-
-    otaFirmware.pending.remove(0);
-
-    if(!updateSuccess){
-      eventLog.createEvent("OTA update failed", EventLog::LOG_LEVEL_NOTIFICATION);
-      while(otaFirmware.pending.size() > 0){
-        otaFirmware.pending.remove(0);
-      }
+    if(!success){
+      eventLog.createEvent("OTA ui failed", EventLog::LOG_LEVEL_NOTIFICATION);
+      _otaForcedFlash = false;
+      _otaUpdateInProcess = false;
+      _otaPendingRequest = false;
       return;
     }
+    eventLog.createEvent("OTA ui finished", EventLog::LOG_LEVEL_NOTIFICATION);
+    _otaUpdateInProcess = true; /* onComplete cleared it; re-set for app flash */
   }
 
-}
-
-
-/**
- * A callback function to report firmware upgrade progress, which draws a status on the OLED
- * @param progress The number of bytes that have been processed so far
- * @param size The total size of the update in bytes 
-*/
-void eventHandler_otaFirmwareProgress(size_t progress, size_t size){
-
-  if(deviceIdentity.enabled == false){
-    return;
-  }
-
-  otaFirmware.updateInProcess = true;
-
-  float percentage = ((float)progress/(float)size);
-
-  if(progress == 0){
-    eventLog.createEvent("OTA firmware started", EventLog::LOG_LEVEL_NOTIFICATION);
+  if(!_otaPendingAppUrl.isEmpty()){
+    eventLog.createEvent("OTA app update started", EventLog::LOG_LEVEL_NOTIFICATION);
+    oled.setOTAPartition("app");
     oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
+
+    if(_otaPendingAppUrl.startsWith("https:")){
+      if(_certBundle != nullptr){
+        _otaHttpsClient.setCACert(_certBundle);
+        otaFirmware.setClient(&_otaHttpsClient);
+      } else {
+        otaFirmware.useBundledCerts();
+      }
+    }
+
+    bool success = otaFirmware.flashPartition("app", _otaPendingAppUrl.c_str());
+
+    if(!success){
+      eventLog.createEvent("OTA app failed", EventLog::LOG_LEVEL_NOTIFICATION);
+      _otaForcedFlash = false;
+      _otaUpdateInProcess = false;
+      _otaPendingRequest = false;
+      return;
+    }
+
+    _otaForcedFlash = false;
+    eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
+    delay(5000);
+    ESP.restart();
   }
 
-  oled.setProgressBar(percentage);
-
-  char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
-
-  JsonDocument doc;
-  doc["in_progress"] = true;
-  doc["update_percentage"] = int(percentage*100);
-
-  char buffer[256];
-  serializeJson(doc, buffer);
-
-  mqttClient.publish(topic, buffer);
-}
-
-
-/**
- * Callback function to report that the update has failed
- * @param partition inherited from esp32FOTA library
-*/
-void eventHandler_otaFirmwareFailed(int partition){
-
-  if(deviceIdentity.enabled == false){
-    return;
-  }
-
-  log_e("Failed partition: [%i]", partition);
-  eventLog.createEvent("OTA firmware failed", EventLog::LOG_LEVEL_NOTIFICATION);
-
-  char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
-
-  JsonDocument doc;
-  doc["in_progress"] = false;
-
-  char buffer[256];
-  serializeJson(doc, buffer);
-
-  mqttClient.publish(topic, buffer);
-}
-
-
-/**
- * A callback function for when the firmware update has finished
-*/
-void eventHandler_otaFirmwareFinished(int partition, bool needs_restart){
-
-  log_i("Finished Partition: [%i] needs restart: [%s]", partition, needs_restart ? "true":"false");
-
-  eventLog.createEvent("OTA update finished", EventLog::LOG_LEVEL_NOTIFICATION);
-
-  if(needs_restart){
-      eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
-      delay(5000);
-  }
-
-  otaFirmware.updateInProcess = false;
+  _otaForcedFlash = false;
+  _otaUpdateInProcess = false;
+  _otaPendingRequest = false;
 }
 
 
@@ -3907,7 +3952,6 @@ void mqtt_reconnect(){
         mqttClient.resubscribe();
         if(!mqttClient.autoDiscovery.sent){
           mqtt_autoDiscovery_update();
-          mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus::NEVER_ATTEMPTED);
           mqtt_autoDiscovery_temperature();
           mqtt_autoDiscovery_outputs();
           mqtt_autoDiscovery_inputs();
@@ -4053,7 +4097,7 @@ void setupMQTT(){
   host.replace("$$class$$", HARDWARE_CLASS);
   host.replace("$$application$$", mqttApplication.c_str());
   host.replace("$$product_hex$$", mqttProductHex);
-  host.replace("$$current_version$$", VERSION);
+  host.replace("$$current_version$$", esp_app_get_description()->version);
   mqttClient.setServer(host.c_str(), port);
 
   String username = mqtt["username"].as<String>();
@@ -4066,7 +4110,7 @@ void setupMQTT(){
   username.replace("$$class$$", HARDWARE_CLASS);
   username.replace("$$application$$", mqttApplication.c_str());
   username.replace("$$product_hex$$", mqttProductHex);
-  username.replace("$$current_version$$", VERSION);
+  username.replace("$$current_version$$", esp_app_get_description()->version);
   mqttClient.setUsername(username.c_str());
 
   String password = mqtt["password"].as<String>();
@@ -4077,7 +4121,7 @@ void setupMQTT(){
   password.replace("$$class$$", HARDWARE_CLASS);
   password.replace("$$application$$", mqttApplication.c_str());
   password.replace("$$product_hex$$", mqttProductHex);
-  password.replace("$$current_version$$", VERSION);
+  password.replace("$$current_version$$", esp_app_get_description()->version);
   mqttClient.setPassword(password.c_str());
 
   mqttClient.enabled = true;
@@ -4130,7 +4174,9 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
   
     mqttClient.publish(topic, buffer);
 
-    otaFirmware.execOTA();
+    if(!_otaManifestUrl.isEmpty()){
+      otaFirmware.execOTA();
+    }
     return;
   }
 
@@ -4200,10 +4246,10 @@ void mqtt_autoDiscovery_temperature(){
     }
 
     device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-    device["model"] = APPLICATION_NAME;
+    device["model"] = esp_app_get_description()->project_name;
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
-    device["sw_version"] = VERSION;
+    device["sw_version"] = esp_app_get_description()->version;
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
       device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -4741,10 +4787,10 @@ void mqtt_autoDiscovery_inputControllers(){
     }
 
     device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-    device["model"] = APPLICATION_NAME;
+    device["model"] = esp_app_get_description()->project_name;
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
-    device["sw_version"] = VERSION;
+    device["sw_version"] = esp_app_get_description()->version;
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
       device["suggested_area"] = mqttClient.autoDiscovery.suggestedArea;
@@ -4813,10 +4859,10 @@ void mqtt_autoDiscovery_outputControllers(){
     }
 
     device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-    device["model"] = APPLICATION_NAME;
+    device["model"] = esp_app_get_description()->project_name;
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
-    device["sw_version"] = VERSION;
+    device["sw_version"] = esp_app_get_description()->version;
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
       device["suggested_area"] = mqttClient.autoDiscovery.suggestedArea;
@@ -4871,10 +4917,10 @@ void mqtt_autoDiscovery_start_time(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = APPLICATION_NAME;
+  device["model"] = esp_app_get_description()->project_name;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = VERSION;
+  device["sw_version"] = esp_app_get_description()->version;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -4954,10 +5000,10 @@ void mqtt_autoDiscovery_mac_address(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = APPLICATION_NAME;
+  device["model"] = esp_app_get_description()->project_name;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = VERSION;
+  device["sw_version"] = esp_app_get_description()->version;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5033,10 +5079,10 @@ void mqtt_autoDiscovery_ip_address(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = APPLICATION_NAME;
+  device["model"] = esp_app_get_description()->project_name;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = VERSION;
+  device["sw_version"] = esp_app_get_description()->version;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5115,10 +5161,10 @@ void mqtt_autoDiscovery_count_errors(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = APPLICATION_NAME;
+  device["model"] = esp_app_get_description()->project_name;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = VERSION;
+  device["sw_version"] = esp_app_get_description()->version;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5201,10 +5247,10 @@ void mqtt_autoDiscovery_update(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = APPLICATION_NAME;
+  device["model"] = esp_app_get_description()->project_name;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = VERSION;
+  device["sw_version"] = esp_app_get_description()->version;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5228,48 +5274,6 @@ void mqtt_autoDiscovery_update(){
   mqttClient.endPublish();
 
   mqttClient.addSubscription(command_topic);
-}
-
-
-/**
- * Handles broadcasting the update available to MQTT
- */
-void mqtt_publishUpdateAvailable(JsonVariant &updateDoc){
-
-  if(deviceIdentity.enabled == false){
-    return;
-  }
-
-  if(!mqttClient.connected()){
-    return;
-  }
-
-  eventLog.createEvent("OTA update available");
-
-  JsonDocument mqttDoc;
-
-  mqttDoc["installed_version"] = VERSION;
-  mqttDoc["latest_version"] = updateDoc["version"].as<const char*>();
-
-  if(!updateDoc["title"].isNull()){
-    mqttDoc["title"] = updateDoc["title"].as<const char*>();
-  }
-
-  if(!updateDoc["release_url"].isNull()){
-    mqttDoc["release_url"] = updateDoc["release_url"].as<const char*>();
-  }
-
-  mqttDoc["in_progress"] = false;
-  mqttDoc["update_percentage"] = NULL;
-
-  char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-  snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
-
-  mqttClient.beginPublish(topic, measureJson(mqttDoc), false); //Don't retain
-  BufferingPrint bufferedClient(mqttClient, 32);
-  serializeJson(mqttDoc, bufferedClient);
-  bufferedClient.flush();
-  mqttClient.endPublish();
 }
 
 
@@ -5309,10 +5313,10 @@ void mqtt_autoDiscovery_http_server(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = APPLICATION_NAME;
+  device["model"] = esp_app_get_description()->project_name;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = VERSION;
+  device["sw_version"] = esp_app_get_description()->version;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5402,10 +5406,10 @@ void mqtt_autoDiscovery_heapFree(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = APPLICATION_NAME;
+  device["model"] = esp_app_get_description()->project_name;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = VERSION;
+  device["sw_version"] = esp_app_get_description()->version;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5484,10 +5488,10 @@ void mqtt_autoDiscovery_heapLargestFreeBlock(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = APPLICATION_NAME;
+  device["model"] = esp_app_get_description()->project_name;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = VERSION;
+  device["sw_version"] = esp_app_get_description()->version;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5535,46 +5539,6 @@ void mqtt_publishMemoryUsage(){
 
     mqtt_publish_heapFree();
     mqtt_publish_heapLargestFreeBlock();
-}
-
-
-/**
- * Updates the update service availability.  If the service is available but no update is found, an MQTT event is published with the current version
- */
-void mqtt_publishUpdateServiceAvailability(exEsp32FOTA::lastHTTPCheckStatus status){
-
-  if(deviceIdentity.enabled == false){
-    return;
-  }
-
-  if(!mqttClient.connected()){
-    return;
-  }
-
-  char availability_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
-  snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid);
-
-  if(status == esp32FOTA::lastHTTPCheckStatus::SUCCESS || status == esp32FOTA::lastHTTPCheckStatus::SUCCESS_NO_UPDATE_AVAILABLE){
-    mqttClient.publish(availability_topic, "online");
-  }else{
-    mqttClient.publish(availability_topic, "offline");
-  }
-
-  if(status == esp32FOTA::lastHTTPCheckStatus::SUCCESS_NO_UPDATE_AVAILABLE){
-    JsonDocument mqttDoc;
-
-    mqttDoc["installed_version"] = VERSION;
-    mqttDoc["latest_version"] = VERSION;
-
-    char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-    snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
-
-    mqttClient.beginPublish(topic, measureJson(mqttDoc), false); //Don't retain
-    BufferingPrint bufferedClient(mqttClient, 32);
-    serializeJson(mqttDoc, bufferedClient);
-    bufferedClient.flush();
-    mqttClient.endPublish();
-  }
 }
 
 

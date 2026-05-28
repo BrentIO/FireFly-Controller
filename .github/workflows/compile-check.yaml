@@ -78,7 +78,7 @@ jobs:
           arduino-cli compile \
             -b esp32:esp32:firefly_controller ./Controller \
             --warnings more --clean \
-            --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ env.PRODUCT_HEX }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -DFIREFLY_CLOUD_API_ROOT=\"https://api.fireflylx.com\" -I${{ github.workspace }} ${PSRAM_FLAGS}"
+            --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ env.PRODUCT_HEX }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -DPROJECT_VER=\"9999.99.99\" -DPROJECT_NAME=\"FireFly\x20Controller\" -DFIREFLY_CLOUD_API_ROOT=\"https://api.fireflylx.com\" -I${{ github.workspace }} ${PSRAM_FLAGS}"
 
       - name: Compile Hardware-Registration-and-Configuration
         run: |
@@ -90,4 +90,4 @@ jobs:
           arduino-cli compile \
             -b esp32:esp32:firefly_controller ./Hardware-Registration-and-Configuration \
             --warnings more --clean \
-            --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ env.PRODUCT_HEX }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4${EFUSE_FLAG} -DFIREFLY_CLOUD_API_ROOT=\"https://api.fireflylx.com\" -I${{ github.workspace }} ${PSRAM_FLAGS}"
+            --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ env.PRODUCT_HEX }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -DPROJECT_VER=\"9999.99.99\" -DPROJECT_NAME=\"HW\x20Reg\x20and\x20Config\"${EFUSE_FLAG} -DFIREFLY_CLOUD_API_ROOT=\"https://api.fireflylx.com\" -I${{ github.workspace }} ${PSRAM_FLAGS}"
