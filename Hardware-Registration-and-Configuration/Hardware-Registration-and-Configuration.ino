@@ -56,7 +56,6 @@
 unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
 AsyncWebServer httpServer(80);
 esp32OTA otaFirmware;
-WiFiClientSecure _otaHttpsClient;
 bool _otaUpdateInProcess = false;
 bool _otaPendingRequest = false;
 String _otaPendingAppUrl;
@@ -846,8 +845,7 @@ void otaFirmware_checkPending() {
     oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
 
     if (_otaPendingUiUrl.startsWith("https:")) {
-      _otaHttpsClient.setInsecure();
-      otaFirmware.setClient(&_otaHttpsClient);
+      otaFirmware.useBundledCerts();
     }
 
     bool success = otaFirmware.flashPartition("ui", _otaPendingUiUrl.c_str());
@@ -867,8 +865,7 @@ void otaFirmware_checkPending() {
     oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
 
     if (_otaPendingAppUrl.startsWith("https:")) {
-      _otaHttpsClient.setInsecure();
-      otaFirmware.setClient(&_otaHttpsClient);
+      otaFirmware.useBundledCerts();
     }
 
     bool success = otaFirmware.flashPartition("app", _otaPendingAppUrl.c_str());

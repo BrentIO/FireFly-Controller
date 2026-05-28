@@ -3381,7 +3381,12 @@ void refreshCertBundle(){
   log_i("Cert bundle built: %u bytes", (unsigned int)_certBundleSize);
 
   if(!_otaManifestUrl.isEmpty() && _otaManifestUrl.startsWith("https:")){
-    _otaHttpsClient.setCACert(_certBundle);
+    if(_certBundle != nullptr){
+      _otaHttpsClient.setCACert(_certBundle);
+      otaFirmware.setClient(&_otaHttpsClient);
+    } else {
+      otaFirmware.useBundledCerts();
+    }
   }
 }
 
@@ -3477,10 +3482,10 @@ void setup_OtaFirmware(){
   if(url.startsWith("https:")){
     if(_certBundle != nullptr){
       _otaHttpsClient.setCACert(_certBundle);
+      otaFirmware.setClient(&_otaHttpsClient);
     } else {
-      _otaHttpsClient.setInsecure();
+      otaFirmware.useBundledCerts();
     }
-    otaFirmware.setClient(&_otaHttpsClient);
   }
 
   otaFirmware.onProgress([](const char* partition, size_t written, size_t total){
@@ -3581,10 +3586,13 @@ void otaFirmware_checkPending(){
     oled.setOTAPartition("ui");
     oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
 
-    if(_otaPendingUiUrl.startsWith("https:") && _certBundle != nullptr){
-      _otaHttpsClient.setCACert(_certBundle);
-    } else if(_otaPendingUiUrl.startsWith("https:")){
-      _otaHttpsClient.setInsecure();
+    if(_otaPendingUiUrl.startsWith("https:")){
+      if(_certBundle != nullptr){
+        _otaHttpsClient.setCACert(_certBundle);
+        otaFirmware.setClient(&_otaHttpsClient);
+      } else {
+        otaFirmware.useBundledCerts();
+      }
     }
 
     bool success = otaFirmware.flashPartition("ui", _otaPendingUiUrl.c_str());
@@ -3605,10 +3613,13 @@ void otaFirmware_checkPending(){
     oled.setOTAPartition("app");
     oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
 
-    if(_otaPendingAppUrl.startsWith("https:") && _certBundle != nullptr){
-      _otaHttpsClient.setCACert(_certBundle);
-    } else if(_otaPendingAppUrl.startsWith("https:")){
-      _otaHttpsClient.setInsecure();
+    if(_otaPendingAppUrl.startsWith("https:")){
+      if(_certBundle != nullptr){
+        _otaHttpsClient.setCACert(_certBundle);
+        otaFirmware.setClient(&_otaHttpsClient);
+      } else {
+        otaFirmware.useBundledCerts();
+      }
     }
 
     bool success = otaFirmware.flashPartition("app", _otaPendingAppUrl.c_str());
