@@ -10,7 +10,6 @@
     #endif
 
     #include <esp_mac.h>
-    #include <esp_ota_ops.h>
 
 
     /* Define hardware enumeration constants */
@@ -306,17 +305,5 @@
         bool enabled; /* Indicates if the controller is enabled.*/
     };
 
-    #ifdef ESP32
-    extern "C" {
-    const esp_app_desc_t esp_app_desc __attribute__((section(".rodata_desc"))) = {
-        .magic_word   = ESP_APP_DESC_MAGIC_WORD,
-        .version      = PROJECT_VER,
-        .project_name = PROJECT_NAME,
-        .time         = __TIME__,
-        .date         = __DATE__,
-        .idf_ver      = IDF_VER,
-    };
-    }
-    #endif
-    
+
 #endif
