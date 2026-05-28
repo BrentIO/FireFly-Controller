@@ -18,6 +18,9 @@
   #ifndef COMMIT_HASH
     #define COMMIT_HASH "DEBUG"
   #endif
+  #ifndef PROJECT_VER
+    #define PROJECT_VER "9999.99.99"
+  #endif
 #endif
 
 #define APPLICATION "Controller"
@@ -378,10 +381,13 @@ void setup() {
     if(vf) vf.close();
 
     if(_uiApplication[0] != '\0' && (
-        strcmp(_uiApplication, APPLICATION)                        != 0 ||
-        strcmp(_uiVersion,     esp_app_get_description()->version) != 0 ||
-        strcmp(_uiCommit,      COMMIT_HASH)                        != 0)){
+        strcmp(_uiApplication, APPLICATION)  != 0 ||
+        strcmp(_uiVersion,     PROJECT_VER)  != 0 ||
+        strcmp(_uiCommit,      COMMIT_HASH)  != 0)){
       eventLog.createEvent("App/UI ver mismatch", EventLog::LOG_LEVEL_ERROR);
+      log_i("App/UI mismatch — app: %s/%s/%s  ui: %s/%s/%s",
+            APPLICATION, PROJECT_VER, COMMIT_HASH,
+            _uiApplication, _uiVersion, _uiCommit);
     }
   }
   else{
@@ -1382,7 +1388,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
   doc["product_id"] = deviceIdentity.data.product_id;
   doc["product_hex"] = product_hex;
   doc["application"]["name"]    = APPLICATION;
-  doc["application"]["version"] = esp_app_get_description()->version;
+  doc["application"]["version"] = PROJECT_VER;
   doc["application"]["commit"]  = COMMIT_HASH;
   if(_uiApplication[0] != '\0'){
     doc["ui"]["name"]    = _uiApplication;

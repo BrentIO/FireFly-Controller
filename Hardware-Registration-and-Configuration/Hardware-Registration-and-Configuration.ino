@@ -20,6 +20,9 @@
   #ifndef COMMIT_HASH
     #define COMMIT_HASH "DEBUG"
   #endif
+  #ifndef PROJECT_VER
+    #define PROJECT_VER "9999.99.99"
+  #endif
 #endif
 #define APPLICATION "Hardware-Registration-and-Configuration"
 
@@ -262,10 +265,13 @@ void setup() {
     if(vf) vf.close();
 
     if(_uiApplication[0] != '\0' && (
-        strcmp(_uiApplication, APPLICATION)                        != 0 ||
-        strcmp(_uiVersion,     esp_app_get_description()->version) != 0 ||
-        strcmp(_uiCommit,      COMMIT_HASH)                        != 0)){
+        strcmp(_uiApplication, APPLICATION)  != 0 ||
+        strcmp(_uiVersion,     PROJECT_VER)  != 0 ||
+        strcmp(_uiCommit,      COMMIT_HASH)  != 0)){
       eventLog.createEvent("App/UI ver mismatch", EventLog::LOG_LEVEL_ERROR);
+      log_i("App/UI mismatch — app: %s/%s/%s  ui: %s/%s/%s",
+            APPLICATION, PROJECT_VER, COMMIT_HASH,
+            _uiApplication, _uiVersion, _uiCommit);
     }
   }
   else{
@@ -552,11 +558,18 @@ void http_handleVersion(AsyncWebServerRequest *request){
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   JsonDocument doc;
   doc["application"]["name"]    = APPLICATION;
-  doc["application"]["version"] = esp_app_get_description()->version;
+  doc["application"]["version"] = PROJECT_VER;
   doc["application"]["commit"]  = COMMIT_HASH;
   char product_hex[16] = {0};
   sprintf(product_hex, "0x%08X", PRODUCT_HEX);
   doc["product_hex"] = product_hex;
+  if(uiFS_isMounted && _uiApplication[0] != '\0'){
+    doc["ui"]["name"]    = _uiApplication;
+    doc["ui"]["version"] = _uiVersion;
+    doc["ui"]["commit"]  = _uiCommit;
+  } else {
+    doc["ui"] = (const char*)nullptr;
+  }
 
   serializeJson(doc, *response);
   request->send(response);
