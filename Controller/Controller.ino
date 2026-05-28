@@ -6033,6 +6033,7 @@ void http_handleCloudBackup_GET(AsyncWebServerRequest *request) {
   if (!secretEncryption.decryptBackup(blobBuf, (size_t)contentLength, plaintext)) {
     memset(blobBuf, 0, (size_t)contentLength);
     free(blobBuf);
+    eventLog.createEvent("Backup decrypt fail", EventLog::LOG_LEVEL_ERROR);
     http_error(request, "Decryption failed");
     return;
   }
