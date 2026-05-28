@@ -59,17 +59,6 @@
 #include <esp_http_client.h>
 #include <esp_crt_bundle.h>
 
-extern "C" {
-const esp_app_desc_t esp_app_desc __attribute__((section(".rodata_desc"))) = {
-    .magic_word   = ESP_APP_DESC_MAGIC_WORD,
-    .version      = PROJECT_VER,
-    .project_name = PROJECT_NAME,
-    .time         = __TIME__,
-    .date         = __DATE__,
-    .idf_ver      = IDF_VER,
-};
-}
-
 unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
 AsyncWebServer httpServer(80);
 esp32OTA otaFirmware;

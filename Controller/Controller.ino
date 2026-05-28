@@ -61,17 +61,6 @@
 #include <WiFiClientSecure.h>
 #include <esp_crt_bundle.h>
 
-extern "C" {
-const esp_app_desc_t esp_app_desc __attribute__((section(".rodata_desc"))) = {
-    .magic_word   = ESP_APP_DESC_MAGIC_WORD,
-    .version      = PROJECT_VER,
-    .project_name = PROJECT_NAME,
-    .time         = __TIME__,
-    .date         = __DATE__,
-    .idf_ver      = IDF_VER,
-};
-}
-
 uint64_t bootTime = 0; /* Approximate Epoch time the device booted */
 uint64_t lastTimeMemoryBroadcast = 0; /* The last time memory usage was broadcast */
 uint64_t lastTimeCloudBackup = 0; /* The last time an automatic cloud backup upload was attempted */
