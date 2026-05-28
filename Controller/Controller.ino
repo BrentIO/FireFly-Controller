@@ -21,6 +21,9 @@
   #ifndef PROJECT_VER
     #define PROJECT_VER "9999.99.99"
   #endif
+  #ifndef PROJECT_NAME
+    #define PROJECT_NAME "FireFly Controller"
+  #endif
 #endif
 
 #define APPLICATION "Controller"
@@ -57,6 +60,17 @@
 #include <esp_http_client.h>
 #include <WiFiClientSecure.h>
 #include <esp_crt_bundle.h>
+
+extern "C" {
+const esp_app_desc_t esp_app_desc __attribute__((section(".rodata_desc"))) = {
+    .magic_word   = ESP_APP_DESC_MAGIC_WORD,
+    .version      = PROJECT_VER,
+    .project_name = PROJECT_NAME,
+    .time         = __TIME__,
+    .date         = __DATE__,
+    .idf_ver      = IDF_VER,
+};
+}
 
 uint64_t bootTime = 0; /* Approximate Epoch time the device booted */
 uint64_t lastTimeMemoryBroadcast = 0; /* The last time memory usage was broadcast */
@@ -381,12 +395,12 @@ void setup() {
     if(vf) vf.close();
 
     if(_uiApplication[0] != '\0' && (
-        strcmp(_uiApplication, APPLICATION)  != 0 ||
-        strcmp(_uiVersion,     PROJECT_VER)  != 0 ||
-        strcmp(_uiCommit,      COMMIT_HASH)  != 0)){
+        strcmp(_uiApplication, APPLICATION)                        != 0 ||
+        strcmp(_uiVersion,     esp_app_get_description()->version) != 0 ||
+        strcmp(_uiCommit,      COMMIT_HASH)                        != 0)){
       eventLog.createEvent("App/UI ver mismatch", EventLog::LOG_LEVEL_ERROR);
       log_i("App/UI mismatch — app: %s/%s/%s  ui: %s/%s/%s",
-            APPLICATION, PROJECT_VER, COMMIT_HASH,
+            APPLICATION, esp_app_get_description()->version, COMMIT_HASH,
             _uiApplication, _uiVersion, _uiCommit);
     }
   }
@@ -1388,7 +1402,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
   doc["product_id"] = deviceIdentity.data.product_id;
   doc["product_hex"] = product_hex;
   doc["application"]["name"]    = APPLICATION;
-  doc["application"]["version"] = PROJECT_VER;
+  doc["application"]["version"] = esp_app_get_description()->version;
   doc["application"]["commit"]  = COMMIT_HASH;
   if(_uiApplication[0] != '\0'){
     doc["ui"]["name"]    = _uiApplication;

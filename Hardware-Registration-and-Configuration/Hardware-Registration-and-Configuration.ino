@@ -23,6 +23,9 @@
   #ifndef PROJECT_VER
     #define PROJECT_VER "9999.99.99"
   #endif
+  #ifndef PROJECT_NAME
+    #define PROJECT_NAME "HW Reg and Config"
+  #endif
 #endif
 #define APPLICATION "Hardware-Registration-and-Configuration"
 
@@ -55,6 +58,17 @@
 #include <mbedtls/base64.h>
 #include <esp_http_client.h>
 #include <esp_crt_bundle.h>
+
+extern "C" {
+const esp_app_desc_t esp_app_desc __attribute__((section(".rodata_desc"))) = {
+    .magic_word   = ESP_APP_DESC_MAGIC_WORD,
+    .version      = PROJECT_VER,
+    .project_name = PROJECT_NAME,
+    .time         = __TIME__,
+    .date         = __DATE__,
+    .idf_ver      = IDF_VER,
+};
+}
 
 unsigned long bootTime = 0; /* Approximate Epoch time the device booted */
 AsyncWebServer httpServer(80);
@@ -265,12 +279,12 @@ void setup() {
     if(vf) vf.close();
 
     if(_uiApplication[0] != '\0' && (
-        strcmp(_uiApplication, APPLICATION)  != 0 ||
-        strcmp(_uiVersion,     PROJECT_VER)  != 0 ||
-        strcmp(_uiCommit,      COMMIT_HASH)  != 0)){
+        strcmp(_uiApplication, APPLICATION)                        != 0 ||
+        strcmp(_uiVersion,     esp_app_get_description()->version) != 0 ||
+        strcmp(_uiCommit,      COMMIT_HASH)                        != 0)){
       eventLog.createEvent("App/UI ver mismatch", EventLog::LOG_LEVEL_ERROR);
       log_i("App/UI mismatch — app: %s/%s/%s  ui: %s/%s/%s",
-            APPLICATION, PROJECT_VER, COMMIT_HASH,
+            APPLICATION, esp_app_get_description()->version, COMMIT_HASH,
             _uiApplication, _uiVersion, _uiCommit);
     }
   }
@@ -558,7 +572,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   JsonDocument doc;
   doc["application"]["name"]    = APPLICATION;
-  doc["application"]["version"] = PROJECT_VER;
+  doc["application"]["version"] = esp_app_get_description()->version;
   doc["application"]["commit"]  = COMMIT_HASH;
   char product_hex[16] = {0};
   sprintf(product_hex, "0x%08X", PRODUCT_HEX);
