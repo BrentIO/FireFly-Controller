@@ -378,9 +378,9 @@ void setup() {
     if(vf) vf.close();
 
     if(_uiApplication[0] != '\0' && (
-        strcmp(_uiApplication, APPLICATION) != 0 ||
-        strcmp(_uiVersion,     VERSION)      != 0 ||
-        strcmp(_uiCommit,      COMMIT_HASH)  != 0)){
+        strcmp(_uiApplication, APPLICATION)                        != 0 ||
+        strcmp(_uiVersion,     esp_app_get_description()->version) != 0 ||
+        strcmp(_uiCommit,      COMMIT_HASH)                        != 0)){
       eventLog.createEvent("App/UI ver mismatch", EventLog::LOG_LEVEL_ERROR);
     }
   }
