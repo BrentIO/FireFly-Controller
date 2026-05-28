@@ -18,7 +18,13 @@
   #endif
 #else
   #ifndef COMMIT_HASH
-    #define COMMIT_HASH "DEBUG"
+    #error "COMMIT_HASH must be specified for a build."
+  #endif
+  #ifndef PROJECT_VER
+    #error "PROJECT_VER must be specified for a build."
+  #endif
+  #ifndef PROJECT_NAME
+    #error "PROJECT_NAME must be specified for a build."
   #endif
 #endif
 #define APPLICATION "Hardware-Registration-and-Configuration"
@@ -266,6 +272,9 @@ void setup() {
         strcmp(_uiVersion,     esp_app_get_description()->version) != 0 ||
         strcmp(_uiCommit,      COMMIT_HASH)                        != 0)){
       eventLog.createEvent("App/UI ver mismatch", EventLog::LOG_LEVEL_ERROR);
+      log_i("App/UI mismatch — app: %s/%s/%s  ui: %s/%s/%s",
+            APPLICATION, esp_app_get_description()->version, COMMIT_HASH,
+            _uiApplication, _uiVersion, _uiCommit);
     }
   }
   else{
@@ -557,6 +566,13 @@ void http_handleVersion(AsyncWebServerRequest *request){
   char product_hex[16] = {0};
   sprintf(product_hex, "0x%08X", PRODUCT_HEX);
   doc["product_hex"] = product_hex;
+  if(uiFS_isMounted && _uiApplication[0] != '\0'){
+    doc["ui"]["name"]    = _uiApplication;
+    doc["ui"]["version"] = _uiVersion;
+    doc["ui"]["commit"]  = _uiCommit;
+  } else {
+    doc["ui"] = (const char*)nullptr;
+  }
 
   serializeJson(doc, *response);
   request->send(response);

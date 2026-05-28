@@ -16,7 +16,13 @@
   #endif
 #else
   #ifndef COMMIT_HASH
-    #define COMMIT_HASH "DEBUG"
+    #error "COMMIT_HASH must be specified for a build."
+  #endif
+  #ifndef PROJECT_VER
+    #error "PROJECT_VER must be specified for a build."
+  #endif
+  #ifndef PROJECT_NAME
+    #error "PROJECT_NAME must be specified for a build."
   #endif
 #endif
 
@@ -382,6 +388,9 @@ void setup() {
         strcmp(_uiVersion,     esp_app_get_description()->version) != 0 ||
         strcmp(_uiCommit,      COMMIT_HASH)                        != 0)){
       eventLog.createEvent("App/UI ver mismatch", EventLog::LOG_LEVEL_ERROR);
+      log_i("App/UI mismatch — app: %s/%s/%s  ui: %s/%s/%s",
+            APPLICATION, esp_app_get_description()->version, COMMIT_HASH,
+            _uiApplication, _uiVersion, _uiCommit);
     }
   }
   else{
