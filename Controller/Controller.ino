@@ -365,7 +365,7 @@ void setup() {
     if(vf) vf.close();
 
     if(_uiVersion[0] != '\0' && strcmp(_uiVersion, VERSION " (" COMMIT_HASH ")") != 0){
-      eventLog.createEvent("App/UI version mismatch", EventLog::LOG_LEVEL_ERROR);
+      eventLog.createEvent("App/UI ver mismatch", EventLog::LOG_LEVEL_ERROR);
     }
   }
   else{
