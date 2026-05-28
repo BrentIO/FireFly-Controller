@@ -1319,10 +1319,24 @@ components:
     ##########################################################
 
     applicationVersion:
-      type: string
-      description: Software version and commit hash
-      examples:
-        - '2026.05.12 (1234c67)'
+      type: object
+      description: Application name, version, and commit hash
+      properties:
+        name:
+          type: string
+          description: Application name
+          examples:
+            - 'Controller'
+        version:
+          type: string
+          description: Software version
+          examples:
+            - '2026.05.12'
+        commit:
+          type: string
+          description: Git commit hash
+          examples:
+            - '1234c67'
 
     productHex:
       type: string
@@ -1345,7 +1359,7 @@ components:
           oneOf:
             - $ref: '#/components/schemas/applicationVersion'
             - type: 'null'
-          description: User interface version installed on the ui partition; null if the partition is not mounted or the VERSION file is absent
+          description: User interface version installed on the ui partition; null if the partition is not mounted or the version.json file is absent
 
     productId:
       type: string
