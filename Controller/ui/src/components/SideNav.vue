@@ -111,7 +111,8 @@
 
     <!-- Footer -->
     <div class="px-4 py-3 text-xs text-gray-600 border-t border-gray-700 dark:border-gray-800 space-y-0.5">
-      <div>{{ state.uiVersion }}</div>
+      <div>API: {{ state.apiVersion || '—' }}</div>
+      <div>UI: {{ state.uiVersion || '—' }}</div>
     </div>
   </nav>
 </template>
