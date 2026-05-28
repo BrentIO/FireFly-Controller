@@ -28,12 +28,15 @@ import { RouterView } from 'vue-router'
 import ToastContainer from './components/ToastContainer.vue'
 import { useTheme } from './composables/useTheme'
 import { isCloudMode } from './composables/useCloudMode'
+import { useAppState } from './composables/useAppState'
 
 const { applyTheme } = useTheme()
+const { loadAppState } = useAppState()
 const showCloudNotice = ref(false)
 
 onMounted(() => {
   applyTheme()
+  loadAppState()
   if (isCloudMode && !sessionStorage.getItem('cloud_notice_seen')) {
     showCloudNotice.value = true
   }

@@ -59,7 +59,7 @@
 
     <div class="px-4 py-3 text-xs text-gray-600 border-t border-gray-700 dark:border-gray-800 space-y-0.5">
       <div>API: {{ state.apiVersion || '—' }}</div>
-      <div>UI: {{ uiVersion }}</div>
+      <div>UI: {{ state.uiVersion || '—' }}</div>
     </div>
   </nav>
 </template>
@@ -75,8 +75,6 @@ defineEmits(['close'])
 const { state } = useAppState()
 const { isDark, toggleTheme } = useTheme()
 const route = useRoute()
-
-const uiVersion = import.meta.env.VITE_UI_VERSION ?? 'dev'
 
 const navItems = computed(() => [
   { path: '/mcu',          label: 'MCU',                key: 'mcu' },
