@@ -256,7 +256,7 @@ jobs:
             echo "ERROR: ui-dist/ exceeds 2MB (${TOTAL} bytes)"
             exit 1
           fi
-          echo "${{ env.VERSION }} (${{ env.COMMIT_HASH }})" > $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/ui-dist/VERSION
+          echo '{"application":"Hardware-Registration-and-Configuration","version":"${{ env.VERSION }}","commit":"${{ env.COMMIT_HASH }}"}' > $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/ui-dist/version.json
 
       - name: Build Vue UI (Controller)
         if: ${{ matrix.application == 'Controller' }}
@@ -272,7 +272,7 @@ jobs:
             echo "ERROR: ui-dist/ exceeds partition size of 0x2e0000 (${TOTAL} bytes)"
             exit 1
           fi
-          echo "${{ env.VERSION }} (${{ env.COMMIT_HASH }})" > $GITHUB_WORKSPACE/Controller/ui-dist/VERSION
+          echo '{"application":"Controller","version":"${{ env.VERSION }}","commit":"${{ env.COMMIT_HASH }}"}' > $GITHUB_WORKSPACE/Controller/ui-dist/version.json
 
       - name: Create Empty Directory for Use by LittleFS
         run: mkdir -p "${{ env.ARTIFACT_ROOT }}/LittleFS"
