@@ -11,8 +11,3 @@ class TestVersion:
         body = r.json()
         assert "application" in body
         assert "product_hex" in body
-
-    def test_get_ui_version_returns_200_or_404(self, base_url):
-        # 404 is acceptable if no www filesystem is mounted
-        r = requests.get(f"{base_url}/ui/version")
-        assert r.status_code in (200, 404)

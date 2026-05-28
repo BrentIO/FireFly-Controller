@@ -730,9 +730,21 @@ components:
           description: Descriptive text about the event
           example: No I/O ConfigFS offline
     applicationVersion:
-      type: string
-      description: Software version
-      example: '2024.2.1'
+      type: object
+      description: Application name, version, and commit hash
+      properties:
+        name:
+          type: string
+          description: Application name
+          example: 'Hardware-Registration-and-Configuration'
+        version:
+          type: string
+          description: Software version
+          example: '2026.05.12'
+        commit:
+          type: string
+          description: Git commit hash
+          example: '1234c67'
     productHex:
       type: string
       description: Hardware product hexadecimal, indicating the version of the firmware

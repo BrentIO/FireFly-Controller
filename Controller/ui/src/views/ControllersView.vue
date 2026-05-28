@@ -315,6 +315,7 @@ import { useAreas } from '../composables/useAreas'
 import { useControllerSession } from '../composables/useControllerSession'
 import { buildControllerPayload, buildClientPayload, getExtendedClientIds } from '../composables/usePayloads'
 import { useToast } from '../composables/useToast'
+import { useAppState } from '../composables/useAppState'
 import { randomUUID } from '../composables/useValidators'
 
 const MAC_RE = /^[0-9A-Fa-f]{2}[:-]([0-9A-Fa-f]{2}[:-]){4}[0-9A-Fa-f]{2}$/
@@ -329,6 +330,7 @@ const versionCache = reactive({})
 const { items, products, load, create, update, remove } = useControllers()
 const { items: areas, load: loadAreas } = useAreas()
 const { addToast } = useToast()
+const { state } = useAppState()
 
 const showModal = ref(false)
 const showEventLog = ref(false)
@@ -550,13 +552,12 @@ async function fetchVersions(ctrl) {
   const sessionCtrl = getSessionCtrl(ctrl.id)
   const { controllerFetch } = await import('../composables/useApi')
   try {
-    const [appRes, uiRes] = await Promise.all([
-      controllerFetch(sessionCtrl.session.ip, '/version', {}, sessionCtrl.session.visualToken),
-      controllerFetch(sessionCtrl.session.ip, '/ui/version', {}, sessionCtrl.session.visualToken)
-    ])
-    const appVersion = appRes.ok ? ((await appRes.json()).application ?? '—') : '—'
-    const uiVersion = uiRes.ok ? ((await uiRes.json()).version ?? '—') : '—'
+    const res = await controllerFetch(sessionCtrl.session.ip, '/version', {}, sessionCtrl.session.visualToken)
+    const body = res.ok ? await res.json() : {}
+    const appVersion = body.application ?? '—'
+    const uiVersion = body.ui ?? '—'
     versionCache[ctrl.id] = { app: appVersion, ui: uiVersion }
+    if (state.uiVersion === '') state.uiVersion = body.ui ?? ''
   } catch {
     versionCache[ctrl.id] = { app: '—', ui: '—' }
   }

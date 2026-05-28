@@ -112,6 +112,9 @@ fs::LittleFSFS uiFS;
 fs::LittleFSFS configFS;
 bool uiFS_isMounted = false;
 bool configFS_isMounted = false;
+char _uiApplication[64] = {0};
+char _uiVersion[16] = {0};
+char _uiCommit[16] = {0};
 
 char* _certBundle = nullptr;            /* PSRAM-backed concatenated PEM bundle for OTA TLS */
 size_t _certBundleSize = 0;             /* Byte length of _certBundle, excluding null terminator */
@@ -362,6 +365,24 @@ void setup() {
   if(uiFS.begin(false, "/uiFS", (uint8_t)10U, "ui"))
   {
     uiFS_isMounted = true;
+
+    File vf = uiFS.open("/version.json", "r");
+    if(vf && vf.size() > 0){
+      JsonDocument uiDoc;
+      if(!deserializeJson(uiDoc, vf)){
+        strncpy(_uiApplication, uiDoc["application"] | "", sizeof(_uiApplication)-1);
+        strncpy(_uiVersion,     uiDoc["version"]     | "", sizeof(_uiVersion)-1);
+        strncpy(_uiCommit,      uiDoc["commit"]      | "", sizeof(_uiCommit)-1);
+      }
+    }
+    if(vf) vf.close();
+
+    if(_uiApplication[0] != '\0' && (
+        strcmp(_uiApplication, APPLICATION) != 0 ||
+        strcmp(_uiVersion,     VERSION)      != 0 ||
+        strcmp(_uiCommit,      COMMIT_HASH)  != 0)){
+      eventLog.createEvent("App/UI ver mismatch", EventLog::LOG_LEVEL_ERROR);
+    }
   }
   else{
     eventLog.createEvent("uiFS mount fail", EventLog::LOG_LEVEL_ERROR);
@@ -619,7 +640,6 @@ void setup() {
     httpServer.on("/api/ota", HTTP_OPTIONS, http_options);
     httpServer.addHandler(new AsyncCallbackJsonWebHandler("/api/ota", http_handleOTA_POST));
     httpServer.on("/api/cloud-backup", http_handleCloudBackup);
-    httpServer.on("/ui/version", http_handleUIVersion);
     setup_OtaFirmware();
   }else{
     log_e("configFS is not mounted");
@@ -628,7 +648,6 @@ void setup() {
     httpServer.on("/api/controllers", http_configFSNotMunted);
     httpServer.on("/api/clients", http_configFSNotMunted);
     httpServer.on("/backup", http_configFSNotMunted);
-    httpServer.on("/ui/version", http_configFSNotMunted);
   }
 
   if(uiFS_isMounted){
@@ -1362,7 +1381,16 @@ void http_handleVersion(AsyncWebServerRequest *request){
   doc["uuid"] = deviceIdentity.data.uuid;
   doc["product_id"] = deviceIdentity.data.product_id;
   doc["product_hex"] = product_hex;
-  doc["application"] = esp_app_get_description()->version;
+  doc["application"]["name"]    = APPLICATION;
+  doc["application"]["version"] = esp_app_get_description()->version;
+  doc["application"]["commit"]  = COMMIT_HASH;
+  if(_uiApplication[0] != '\0'){
+    doc["ui"]["name"]    = _uiApplication;
+    doc["ui"]["version"] = _uiVersion;
+    doc["ui"]["commit"]  = _uiCommit;
+  } else {
+    doc["ui"] = (const char*)nullptr;
+  }
 
   serializeJson(doc, *response);
   request->send(response);
@@ -2663,54 +2691,6 @@ void http_handleBackup_DELETE(AsyncWebServerRequest *request){
   }else{
     http_error(request, "Failed when trying to delete file");
   }
-}
-
-
-/**
- * Generic handler for /ui/version
- */
-void http_handleUIVersion(AsyncWebServerRequest *request){
-  switch(request->method()){
-
-    case HTTP_OPTIONS:
-      http_options(request);
-      break;
-
-    case HTTP_GET:
-      http_handleUIVersion_GET(request);
-      break;
-
-    default:
-      http_methodNotAllowed(request);
-      break;
-  }
-}
-
-
-/**
- * Handles UI Version GETs
-*/
-void http_handleUIVersion_GET(AsyncWebServerRequest *request){
-
-  if(!request->hasHeader("visual-token")){
-        http_unauthorized(request);
-        return;
-  }
-
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
-    http_unauthorized(request);
-    return;
-  }
-
-  resetHTPServerUsage();
-
-  if(!uiFS.exists("/version.json")){
-    http_notFound(request);
-    return;
-  }
-
-  AsyncWebServerResponse *response = request->beginResponse(uiFS, "/version.json", "application/json");
-  request->send(response);
 }
 
 

@@ -78,6 +78,7 @@ uint64_t ntpSleepUntil = 0;
 
 #define DEVICE_CLASS "CONTROLLER"
 #define REGISTRATION_APPLICATION_NAME "Hardware-Registration-and-Configuration"
+#define APPLICATION REGISTRATION_APPLICATION_NAME
 
 struct {
   bool   registered    = false;
@@ -105,6 +106,9 @@ void otaFirmware_checkPending();
 
 fs::LittleFSFS uiFS;
 bool uiFS_isMounted = false;
+char _uiApplication[64] = {0};
+char _uiVersion[16] = {0};
+char _uiCommit[16] = {0};
 
 
 /**
@@ -245,6 +249,24 @@ void setup() {
   if (uiFS.begin(false, "/uiFS", (uint8_t)10U, "ui"))
   {
     uiFS_isMounted = true;
+
+    File vf = uiFS.open("/version.json", "r");
+    if(vf && vf.size() > 0){
+      JsonDocument uiDoc;
+      if(!deserializeJson(uiDoc, vf)){
+        strncpy(_uiApplication, uiDoc["application"] | "", sizeof(_uiApplication)-1);
+        strncpy(_uiVersion,     uiDoc["version"]     | "", sizeof(_uiVersion)-1);
+        strncpy(_uiCommit,      uiDoc["commit"]      | "", sizeof(_uiCommit)-1);
+      }
+    }
+    if(vf) vf.close();
+
+    if(_uiApplication[0] != '\0' && (
+        strcmp(_uiApplication, APPLICATION) != 0 ||
+        strcmp(_uiVersion,     VERSION)      != 0 ||
+        strcmp(_uiCommit,      COMMIT_HASH)  != 0)){
+      eventLog.createEvent("App/UI ver mismatch", EventLog::LOG_LEVEL_ERROR);
+    }
   }
   else{
     eventLog.createEvent("uiFS mount fail", EventLog::LOG_LEVEL_ERROR);
@@ -529,7 +551,9 @@ void http_handleVersion(AsyncWebServerRequest *request){
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   JsonDocument doc;
-  doc["application"] = esp_app_get_description()->version;
+  doc["application"]["name"]    = APPLICATION;
+  doc["application"]["version"] = esp_app_get_description()->version;
+  doc["application"]["commit"]  = COMMIT_HASH;
   char product_hex[16] = {0};
   sprintf(product_hex, "0x%08X", PRODUCT_HEX);
   doc["product_hex"] = product_hex;

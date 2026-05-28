@@ -1,7 +1,7 @@
 import { reactive } from 'vue'
 
 const state = reactive({
-  uiVersion: import.meta.env.VITE_UI_VERSION ?? 'dev'
+  uiVersion: ''
 })
 
 export function useAppState() {
