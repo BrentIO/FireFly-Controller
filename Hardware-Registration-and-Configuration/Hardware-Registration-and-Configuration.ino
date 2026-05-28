@@ -21,10 +21,10 @@
     #error "COMMIT_HASH must be specified for a build."
   #endif
   #ifndef PROJECT_VER
-    #define PROJECT_VER "9999.99.99"
+    #error "PROJECT_VER must be specified for a build."
   #endif
   #ifndef PROJECT_NAME
-    #define PROJECT_NAME "HW Reg and Config"
+    #error "PROJECT_NAME must be specified for a build."
   #endif
 #endif
 #define APPLICATION "Hardware-Registration-and-Configuration"
