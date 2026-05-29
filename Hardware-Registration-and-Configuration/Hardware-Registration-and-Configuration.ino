@@ -695,10 +695,13 @@ void fetchFirmwareList() {
   cfg.crt_bundle_attach  = esp_crt_bundle_attach;
   cfg.timeout_ms         = 10000;
 
+  log_i("fetchFirmwareList: %s", url);
+
   esp_http_client_handle_t client = esp_http_client_init(&cfg);
   esp_err_t err = esp_http_client_open(client, 0);
 
   if (err != ESP_OK) {
+    log_e("fetchFirmwareList: open failed (%d)", (int)err);
     esp_http_client_cleanup(client);
     eventLog.createEvent("Firmware list failed", EventLog::LOG_LEVEL_NOTIFICATION);
     return;
@@ -706,6 +709,7 @@ void fetchFirmwareList() {
 
   esp_http_client_fetch_headers(client);
   int status = esp_http_client_get_status_code(client);
+  log_i("fetchFirmwareList: status=%d", status);
 
   if (status == 200) {
     const int BUF_SIZE = 4096;
@@ -743,6 +747,11 @@ void fetchFirmwareList() {
     }
   } else if (status == 404) {
     /* No released firmware for this product — return an empty list */
+    _firmwareState.json = "{\"versions\":[]}";
+    _firmwareState.ready = true;
+  } else {
+    log_e("fetchFirmwareList: unexpected status=%d", status);
+    eventLog.createEvent("Firmware list failed", EventLog::LOG_LEVEL_NOTIFICATION);
     _firmwareState.json = "{\"versions\":[]}";
     _firmwareState.ready = true;
   }
