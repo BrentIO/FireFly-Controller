@@ -726,15 +726,26 @@ void fetchFirmwareList() {
       DeserializationError parseErr = deserializeJson(parsed, buf);
       delete[] buf;
 
-      if (!parseErr && parsed["versions"].is<JsonArray>()) {
-        JsonArray versions = parsed["versions"].as<JsonArray>();
-        int count = versions.size();
+      if (!parseErr && parsed.is<JsonArray>()) {
+        JsonArray releases = parsed.as<JsonArray>();
+        int count = releases.size();
         int start = (count > 5) ? count - 5 : 0;
 
         JsonDocument out;
         JsonArray arr = out["versions"].to<JsonArray>();
         for (int i = count - 1; i >= start; i--) {
-          arr.add(versions[i]);
+          JsonObject src   = releases[i].as<JsonObject>();
+          JsonObject entry = arr.add<JsonObject>();
+          entry["version"] = src["version"];
+          entry["type"]    = src["application_name"];
+          if (!src["release_url"].isNull()) {
+            entry["release_url"] = src["release_url"];
+          }
+          for (JsonVariant bin : src["binaries"].as<JsonArray>()) {
+            const char* part = bin["partition"];
+            if (strcmp(part, "app") == 0)      entry["url"] = bin["url"];
+            else if (strcmp(part, "ui") == 0)  entry["ui"]  = bin["url"];
+          }
         }
 
         _firmwareState.json = "";
@@ -763,8 +774,9 @@ void fetchFirmwareList() {
 
 /**
  * GET /api/firmware — returns the list of released Controller firmware for this device.
- * Always triggers a fresh cloud fetch unless one is already in flight (rate-limited to
- * once per 5 seconds). Returns 202 while the fetch is pending, 200 with data when ready.
+ * Cached for 30 seconds; triggers a background refresh when the cache expires while
+ * continuing to serve stale data. Returns 202 only on the first call before any data
+ * has been fetched.
 */
 void http_handleFirmware(AsyncWebServerRequest *request) {
 
@@ -784,8 +796,7 @@ void http_handleFirmware(AsyncWebServerRequest *request) {
     return;
   }
 
-  if (esp_timer_get_time() - _firmwareState.lastFetch >= 5000000LL) {
-    _firmwareState.ready     = false;
+  if (esp_timer_get_time() - _firmwareState.lastFetch >= 30000000LL && !_firmwareState.pending) {
     _firmwareState.pending   = true;
     _firmwareState.lastFetch = esp_timer_get_time();
   }
