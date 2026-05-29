@@ -879,6 +879,7 @@ void otaFirmware_checkPending() {
       eventLog.createEvent(msg, EventLog::LOG_LEVEL_NOTIFICATION);
     }
     oled.setProgressBar((float)written / (float)total);
+    oled.loop();
   });
 
   otaFirmware.onPartitionComplete([](const char* partition, bool success) {
