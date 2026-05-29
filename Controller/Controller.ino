@@ -61,6 +61,9 @@
 #include <WiFiClientSecure.h>
 #include <esp_crt_bundle.h>
 
+// The _LENGTH macros in extendedPubSubClient.h correctly bound every snprintf destination buffer; these warnings are false positives.
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+
 uint64_t bootTime = 0; /* Approximate Epoch time the device booted */
 uint64_t lastTimeMemoryBroadcast = 0; /* The last time memory usage was broadcast */
 uint64_t lastTimeCloudBackup = 0; /* The last time an automatic cloud backup upload was attempted */
@@ -514,7 +517,7 @@ void setup() {
               log_i("Got nonce %u; fetching provisioning bundle", nonce);
 
               char nonceStr[12];
-              snprintf(nonceStr, sizeof(nonceStr), "%u", nonce);
+              snprintf(nonceStr, sizeof(nonceStr), "%" PRIu32, nonce);
 
               httpProvisioning.begin(wifiClientForProvisioning, "http://192.168.4.1/api/provisioning/controller");
               httpProvisioning.addHeader("mac-address", ownMac);
@@ -3283,7 +3286,8 @@ void http_handleOTA_POST(AsyncWebServerRequest *request, JsonVariant doc){
   String appUrl;
   String uiUrl;
 
-  for(JsonVariant binary : doc["binaries"].as<JsonArray>()){
+  JsonArray binaries = doc["binaries"].as<JsonArray>();
+  for(JsonVariant binary : binaries){
     String partition = binary["partition"].as<String>();
     String url = binary["url"].as<String>();
 
