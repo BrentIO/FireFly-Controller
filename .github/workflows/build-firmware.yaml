@@ -226,7 +226,7 @@ jobs:
           else
             PROJECT_NAME="HW Reg and Config"
           fi
-          PROJECT_NAME_ESCAPED="${PROJECT_NAME// /\\x20}"
+          PROJECT_NAME_ESCAPED="${PROJECT_NAME// /\\40}"
 
           if [ "$VERSION" = "DEBUG" ]; then
             echo "Building DEBUG firmware ($BRANCH)"
