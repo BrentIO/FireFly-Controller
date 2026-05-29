@@ -146,8 +146,8 @@ void setup() {
   /* Startup the OLED display */
   oled.setCallback_failure(&failureHandler_oled);
   oled.begin();
-  oled.setApplicationName(esp_app_get_description()->project_name);
-  oled.setApplicationVersion(esp_app_get_description()->version);
+  oled.setApplicationName(PROJECT_NAME);
+  oled.setApplicationVersion(PROJECT_VER);
   oled.setEventLog(&eventLog);
   oled.setAuthorizationToken(&authToken);
   authToken.setCallback_visualTokenChanged(&eventHandler_visualAuthChanged);
@@ -269,11 +269,11 @@ void setup() {
 
     if(_uiApplication[0] != '\0' && (
         strcmp(_uiApplication, APPLICATION)                        != 0 ||
-        strcmp(_uiVersion,     esp_app_get_description()->version) != 0 ||
+        strcmp(_uiVersion,     PROJECT_VER) != 0 ||
         strcmp(_uiCommit,      COMMIT_HASH)                        != 0)){
       eventLog.createEvent("App/UI ver mismatch", EventLog::LOG_LEVEL_ERROR);
       log_i("App/UI mismatch — app: %s/%s/%s  ui: %s/%s/%s",
-            APPLICATION, esp_app_get_description()->version, COMMIT_HASH,
+            APPLICATION, PROJECT_VER, COMMIT_HASH,
             _uiApplication, _uiVersion, _uiCommit);
     }
   }
@@ -322,9 +322,9 @@ void setup() {
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "visual-token, Content-Type, X-Registration-Key"); //Ignore CORS
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE"); //Ignore CORS
 
-  String serverHeader = String(esp_app_get_description()->project_name);
+  String serverHeader = String(PROJECT_NAME);
   serverHeader.replace(" ", "-");
-  serverHeader += "/" + String(esp_app_get_description()->version);
+  serverHeader += "/" + String(PROJECT_VER);
   DefaultHeaders::Instance().addHeader("Server", serverHeader);
 
   #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
@@ -561,7 +561,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   JsonDocument doc;
   doc["application"]["name"]    = APPLICATION;
-  doc["application"]["version"] = esp_app_get_description()->version;
+  doc["application"]["version"] = PROJECT_VER;
   doc["application"]["commit"]  = COMMIT_HASH;
   char product_hex[16] = {0};
   sprintf(product_hex, "0x%08X", PRODUCT_HEX);
@@ -1127,7 +1127,7 @@ void http_handleRegistration_POST(AsyncWebServerRequest *request, JsonVariant &d
   payloadDoc["device_class"]            = DEVICE_CLASS;
   payloadDoc["public_key"]              = (char*)pubKeyB64;
   payloadDoc["registering_application"] = REGISTRATION_APPLICATION_NAME;
-  payloadDoc["registering_version"]     = esp_app_get_description()->version;
+  payloadDoc["registering_version"]     = PROJECT_VER;
 
   JsonObject mcu = payloadDoc["mcu"].to<JsonObject>();
   mcu["model"]           = ESP.getChipModel();
