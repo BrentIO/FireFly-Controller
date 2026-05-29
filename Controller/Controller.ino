@@ -514,7 +514,7 @@ void setup() {
               log_i("Got nonce %u; fetching provisioning bundle", nonce);
 
               char nonceStr[12];
-              snprintf(nonceStr, sizeof(nonceStr), "%u", nonce);
+              snprintf(nonceStr, sizeof(nonceStr), "%" PRIu32, nonce);
 
               httpProvisioning.begin(wifiClientForProvisioning, "http://192.168.4.1/api/provisioning/controller");
               httpProvisioning.addHeader("mac-address", ownMac);
