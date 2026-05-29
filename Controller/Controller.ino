@@ -7,26 +7,15 @@
 *
 */
 
-#if CORE_DEBUG_LEVEL == 0
-  #ifndef PROJECT_VER
-    #error "PROJECT_VER must be specified for a production build."
-  #endif
-  #ifndef COMMIT_HASH
-    #error "COMMIT_HASH must be specified for a production build."
-  #endif
-#else
-  #ifndef COMMIT_HASH
-    #error "COMMIT_HASH must be specified for a build."
-  #endif
-  #ifndef PROJECT_VER
-    #error "PROJECT_VER must be specified for a build."
-  #endif
-  #ifndef PROJECT_NAME
-    #error "PROJECT_NAME must be specified for a build."
-  #endif
+#ifndef VERSION
+  #error "VERSION must be specified for a build."
+#endif
+#ifndef COMMIT_HASH
+  #error "COMMIT_HASH must be specified for a build."
 #endif
 
-#define APPLICATION "Controller"
+#define APPLICATION      "Controller"
+#define APPLICATION_NAME "FireFly Controller"
 
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
@@ -223,8 +212,8 @@ void setup() {
   //Configure the peripherals
   oled.setCallback_failure(&failureHandler_oled);
   oled.begin();
-  oled.setApplicationName(PROJECT_NAME);
-  oled.setApplicationVersion(PROJECT_VER);
+  oled.setApplicationName(APPLICATION_NAME);
+  oled.setApplicationVersion(VERSION);
   oled.setEventLog(&eventLog);
   oled.setAuthorizationToken(&authToken);
   authToken.setCallback_visualTokenChanged(&eventHandler_visualAuthChanged);
@@ -385,11 +374,11 @@ void setup() {
 
     if(_uiApplication[0] != '\0' && (
         strcmp(_uiApplication, APPLICATION)                        != 0 ||
-        strcmp(_uiVersion,     PROJECT_VER) != 0 ||
+        strcmp(_uiVersion,     VERSION) != 0 ||
         strcmp(_uiCommit,      COMMIT_HASH)                        != 0)){
       eventLog.createEvent("App/UI ver mismatch", EventLog::LOG_LEVEL_ERROR);
       log_i("App/UI mismatch — app: %s/%s/%s  ui: %s/%s/%s",
-            APPLICATION, PROJECT_VER, COMMIT_HASH,
+            APPLICATION, VERSION, COMMIT_HASH,
             _uiApplication, _uiVersion, _uiCommit);
     }
   }
@@ -733,8 +722,8 @@ void loop() {
             mqttClient.publish(availability_topic, "online");
 
             JsonDocument mqttDoc;
-            mqttDoc["installed_version"] = PROJECT_VER;
-            mqttDoc["latest_version"] = PROJECT_VER;
+            mqttDoc["installed_version"] = VERSION;
+            mqttDoc["latest_version"] = VERSION;
             char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
             snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
             mqttClient.beginPublish(topic, measureJson(mqttDoc), false);
@@ -1391,7 +1380,7 @@ void http_handleVersion(AsyncWebServerRequest *request){
   doc["product_id"] = deviceIdentity.data.product_id;
   doc["product_hex"] = product_hex;
   doc["application"]["name"]    = APPLICATION;
-  doc["application"]["version"] = PROJECT_VER;
+  doc["application"]["version"] = VERSION;
   doc["application"]["commit"]  = COMMIT_HASH;
   if(_uiApplication[0] != '\0'){
     doc["ui"]["name"]    = _uiApplication;
@@ -3457,14 +3446,14 @@ void setup_OtaFirmware(){
   url.replace("$$class$$", HARDWARE_CLASS);
   url.replace("$$application$$", otaApplication.c_str());
   url.replace("$$product_hex$$", otaProductHex);
-  url.replace("$$current_version$$", PROJECT_VER);
+  url.replace("$$current_version$$", VERSION);
 
   if(!url.startsWith("http:") && !url.startsWith("https:")){
     eventLog.createEvent("OTA cfg inv proto");
     return;
   }
 
-  otaFirmware.setCurrentVersion(PROJECT_VER);
+  otaFirmware.setCurrentVersion(VERSION);
   otaFirmware.setApplicationName(APPLICATION);
   otaFirmware.setManifestURL(url.c_str());
   otaFirmware.setBlockedPartitions({"config"});
@@ -3528,7 +3517,7 @@ void setup_OtaFirmware(){
     eventLog.createEvent("OTA update available");
 
     JsonDocument mqttDoc;
-    mqttDoc["installed_version"] = PROJECT_VER;
+    mqttDoc["installed_version"] = VERSION;
     mqttDoc["latest_version"] = version;
     if(releaseUrl && strlen(releaseUrl) > 0){
       mqttDoc["release_url"] = releaseUrl;
@@ -4108,7 +4097,7 @@ void setupMQTT(){
   host.replace("$$class$$", HARDWARE_CLASS);
   host.replace("$$application$$", mqttApplication.c_str());
   host.replace("$$product_hex$$", mqttProductHex);
-  host.replace("$$current_version$$", PROJECT_VER);
+  host.replace("$$current_version$$", VERSION);
   mqttClient.setServer(host.c_str(), port);
 
   String username = mqtt["username"].as<String>();
@@ -4121,7 +4110,7 @@ void setupMQTT(){
   username.replace("$$class$$", HARDWARE_CLASS);
   username.replace("$$application$$", mqttApplication.c_str());
   username.replace("$$product_hex$$", mqttProductHex);
-  username.replace("$$current_version$$", PROJECT_VER);
+  username.replace("$$current_version$$", VERSION);
   mqttClient.setUsername(username.c_str());
 
   String password = mqtt["password"].as<String>();
@@ -4132,7 +4121,7 @@ void setupMQTT(){
   password.replace("$$class$$", HARDWARE_CLASS);
   password.replace("$$application$$", mqttApplication.c_str());
   password.replace("$$product_hex$$", mqttProductHex);
-  password.replace("$$current_version$$", PROJECT_VER);
+  password.replace("$$current_version$$", VERSION);
   mqttClient.setPassword(password.c_str());
 
   mqttClient.enabled = true;
@@ -4257,10 +4246,10 @@ void mqtt_autoDiscovery_temperature(){
     }
 
     device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-    device["model"] = PROJECT_NAME;
+    device["model"] = APPLICATION_NAME;
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
-    device["sw_version"] = PROJECT_VER;
+    device["sw_version"] = VERSION;
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
       device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -4798,10 +4787,10 @@ void mqtt_autoDiscovery_inputControllers(){
     }
 
     device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-    device["model"] = PROJECT_NAME;
+    device["model"] = APPLICATION_NAME;
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
-    device["sw_version"] = PROJECT_VER;
+    device["sw_version"] = VERSION;
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
       device["suggested_area"] = mqttClient.autoDiscovery.suggestedArea;
@@ -4870,10 +4859,10 @@ void mqtt_autoDiscovery_outputControllers(){
     }
 
     device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-    device["model"] = PROJECT_NAME;
+    device["model"] = APPLICATION_NAME;
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
-    device["sw_version"] = PROJECT_VER;
+    device["sw_version"] = VERSION;
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
       device["suggested_area"] = mqttClient.autoDiscovery.suggestedArea;
@@ -4928,10 +4917,10 @@ void mqtt_autoDiscovery_start_time(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = PROJECT_NAME;
+  device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = PROJECT_VER;
+  device["sw_version"] = VERSION;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5011,10 +5000,10 @@ void mqtt_autoDiscovery_mac_address(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = PROJECT_NAME;
+  device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = PROJECT_VER;
+  device["sw_version"] = VERSION;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5090,10 +5079,10 @@ void mqtt_autoDiscovery_ip_address(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = PROJECT_NAME;
+  device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = PROJECT_VER;
+  device["sw_version"] = VERSION;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5172,10 +5161,10 @@ void mqtt_autoDiscovery_count_errors(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = PROJECT_NAME;
+  device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = PROJECT_VER;
+  device["sw_version"] = VERSION;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5258,10 +5247,10 @@ void mqtt_autoDiscovery_update(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = PROJECT_NAME;
+  device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = PROJECT_VER;
+  device["sw_version"] = VERSION;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5324,10 +5313,10 @@ void mqtt_autoDiscovery_http_server(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = PROJECT_NAME;
+  device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = PROJECT_VER;
+  device["sw_version"] = VERSION;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5417,10 +5406,10 @@ void mqtt_autoDiscovery_heapFree(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = PROJECT_NAME;
+  device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = PROJECT_VER;
+  device["sw_version"] = VERSION;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5499,10 +5488,10 @@ void mqtt_autoDiscovery_heapLargestFreeBlock(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = PROJECT_NAME;
+  device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = PROJECT_VER;
+  device["sw_version"] = VERSION;
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
