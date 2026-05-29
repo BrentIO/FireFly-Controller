@@ -32,7 +32,7 @@
         >
           <div class="min-w-0">
             <p class="text-sm font-semibold text-gray-900 dark:text-gray-100 font-mono">{{ item.version }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ item.type }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ item.application_name }}</p>
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
             <a
@@ -154,24 +154,10 @@ async function doFlash() {
   flashing.value = true
 
   try {
-    if (item.ui) {
-      const uiRes = await apiFetch('/ota/ui', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: item.ui })
-      })
-      if (uiRes.status !== 202) {
-        const body = await uiRes.json().catch(() => ({}))
-        addToast('error', body.message ?? `UI flash failed (${uiRes.status})`)
-        flashing.value = false
-        return
-      }
-    }
-
-    const res = await apiFetch('/ota/app', {
+    const res = await apiFetch('/ota', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: item.url })
+      body: JSON.stringify(item)
     })
     if (res.status !== 202) {
       const body = await res.json().catch(() => ({}))

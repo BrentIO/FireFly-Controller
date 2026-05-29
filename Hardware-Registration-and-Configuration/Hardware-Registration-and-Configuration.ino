@@ -291,7 +291,7 @@ void setup() {
   httpServer.on("^/api/network/([a-z_]+)$", http_handleNetworkInterface);
   httpServer.on("/api/network", http_handleNetworkInterfaceAll);
   httpServer.on("/api/firmware", http_handleFirmware);
-  AsyncCallbackJsonWebHandler *jsonHandler_handleOTA_POST = new AsyncCallbackJsonWebHandler("/api/ota", http_handleOTA_POST);
+  AsyncCallbackJsonWebHandler *jsonHandler_handleOTA_POST = new AsyncCallbackJsonWebHandler("^/api/ota$", http_handleOTA_POST);
   jsonHandler_handleOTA_POST->setMethod(HTTP_POST);
   httpServer.addHandler(jsonHandler_handleOTA_POST);
 
@@ -734,18 +734,7 @@ void fetchFirmwareList() {
         JsonDocument out;
         JsonArray arr = out["versions"].to<JsonArray>();
         for (int i = count - 1; i >= start; i--) {
-          JsonObject src   = releases[i].as<JsonObject>();
-          JsonObject entry = arr.add<JsonObject>();
-          entry["version"] = src["version"];
-          entry["type"]    = src["application_name"];
-          if (!src["release_url"].isNull()) {
-            entry["release_url"] = src["release_url"];
-          }
-          for (JsonVariant bin : src["binaries"].as<JsonArray>()) {
-            const char* part = bin["partition"];
-            if (strcmp(part, "app") == 0)      entry["url"] = bin["url"];
-            else if (strcmp(part, "ui") == 0)  entry["ui"]  = bin["url"];
-          }
+          arr.add(releases[i]);
         }
 
         _firmwareState.json = "";
