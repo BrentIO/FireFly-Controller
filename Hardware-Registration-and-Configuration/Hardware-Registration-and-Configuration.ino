@@ -16,7 +16,8 @@
   #error "COMMIT_HASH must be specified for a build."
 #endif
 
-#define APPLICATION "Hardware-Registration-and-Configuration"
+#define APPLICATION      "HW-Reg"
+#define APPLICATION_NAME "Hardware Registration and Configuration"
 
 #if BURN_VDD_SDIO_EFUSE
   #include "esp_efuse.h"
@@ -134,7 +135,7 @@ void setup() {
   /* Startup the OLED display */
   oled.setCallback_failure(&failureHandler_oled);
   oled.begin();
-  oled.setApplicationName(PROJECT_NAME);
+  oled.setApplicationName(APPLICATION_NAME);
   oled.setApplicationVersion(VERSION);
   oled.setEventLog(&eventLog);
   oled.setAuthorizationToken(&authToken);
@@ -310,7 +311,7 @@ void setup() {
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "visual-token, Content-Type, X-Registration-Key"); //Ignore CORS
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE"); //Ignore CORS
 
-  String serverHeader = String(PROJECT_NAME);
+  String serverHeader = String(APPLICATION_NAME);
   serverHeader.replace(" ", "-");
   serverHeader += "/" + String(VERSION);
   DefaultHeaders::Instance().addHeader("Server", serverHeader);
