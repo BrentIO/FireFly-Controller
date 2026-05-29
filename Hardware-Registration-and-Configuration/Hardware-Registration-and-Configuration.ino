@@ -72,9 +72,6 @@ authorizationToken authToken;
 EventLog eventLog(&timeClient); /* Event Log instance */
 uint64_t ntpSleepUntil = 0;
 
-#define DEVICE_CLASS "CONTROLLER"
-#define REGISTRATION_APPLICATION_NAME APPLICATION
-
 struct {
   bool   registered    = false;
   bool   error         = false;
@@ -1114,9 +1111,11 @@ void http_handleRegistration_POST(AsyncWebServerRequest *request, JsonVariant &d
   payloadDoc["uuid"]                    = deviceIdentity.data.uuid;
   payloadDoc["product_id"]              = deviceIdentity.data.product_id;
   payloadDoc["product_hex"]             = product_hex_str;
-  payloadDoc["device_class"]            = DEVICE_CLASS;
+  String deviceClass = String(HARDWARE_CLASS);
+  deviceClass.toUpperCase();
+  payloadDoc["device_class"]            = deviceClass;
   payloadDoc["public_key"]              = (char*)pubKeyB64;
-  payloadDoc["registering_application"] = REGISTRATION_APPLICATION_NAME;
+  payloadDoc["registering_application"] = APPLICATION_NAME;
   payloadDoc["registering_version"]     = VERSION;
 
   JsonObject mcu = payloadDoc["mcu"].to<JsonObject>();
