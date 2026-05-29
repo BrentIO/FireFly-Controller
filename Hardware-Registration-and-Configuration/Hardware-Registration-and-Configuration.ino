@@ -863,7 +863,7 @@ void otaFirmware_checkPending() {
 
   _otaUpdateInProcess = true;
 
-  otaFirmware.setApplicationName(APPLICATION_NAME);
+  otaFirmware.setApplicationName(_otaPendingDoc["application_name"]);
 
   otaFirmware.onError([](const char* partition, int err) {
     log_e("OTA %s error: %d", partition, err);
