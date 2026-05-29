@@ -53,8 +53,9 @@ class TestFirmware:
         assert body is not None, "Never received a 200 response"
         for item in body["versions"]:
             assert "version" in item
-            assert "type" in item
-            assert "url" in item
+            assert "application_name" in item
+            assert "binaries" in item
+            assert isinstance(item["binaries"], list)
 
     def test_get_firmware_cached_result_returns_200(self, base_url, auth_headers):
         """A second call immediately after the first 200 must also return 200."""
