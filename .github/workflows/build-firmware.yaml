@@ -13,6 +13,17 @@ on:
         options:
           - dev
           - production
+      core_debug_level:
+        type: choice
+        description: "Core debug level (debug builds only; release always uses None)"
+        default: Debug
+        options:
+          - None
+          - Error
+          - Warn
+          - Info
+          - Debug
+          - Verbose
 
 env:
   ARTIFACT_ROOT: /home/runner/artifacts
@@ -221,8 +232,16 @@ jobs:
             CORE_DEBUG_LEVEL=0
           else
             echo "Building DEBUG firmware ($BRANCH)"
-            CORE_DEBUG_LEVEL=4
+            case "${{ inputs.core_debug_level }}" in
+              None)    CORE_DEBUG_LEVEL=0 ;;
+              Error)   CORE_DEBUG_LEVEL=1 ;;
+              Warn)    CORE_DEBUG_LEVEL=2 ;;
+              Info)    CORE_DEBUG_LEVEL=3 ;;
+              Verbose) CORE_DEBUG_LEVEL=5 ;;
+              *)       CORE_DEBUG_LEVEL=4 ;;
+            esac
           fi
+          echo "CORE_DEBUG_LEVEL=${CORE_DEBUG_LEVEL}"
 
           arduino-cli compile \
             -b esp32:esp32:firefly_controller ./${APPLICATION} \
