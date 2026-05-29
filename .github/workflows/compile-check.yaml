@@ -79,7 +79,7 @@ jobs:
           arduino-cli compile \
             -b esp32:esp32:firefly_controller ./Controller \
             --warnings more --clean \
-            --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ env.PRODUCT_HEX }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -DVERSION=\"9999.99.99\" -DPROJECT_NAME=\"FireFly\40Controller\" -DCOMMIT_HASH=\"${COMMIT_HASH}\" -DFIREFLY_CLOUD_API_ROOT=\"https://api.fireflylx.com\" -I${{ github.workspace }} ${PSRAM_FLAGS}"
+            --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ env.PRODUCT_HEX }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -DVERSION=\"9999.99.99\" -DCOMMIT_HASH=\"${COMMIT_HASH}\" -DFIREFLY_CLOUD_API_ROOT=\"https://api.fireflylx.com\" -I${{ github.workspace }} ${PSRAM_FLAGS}"
 
       - name: Compile Hardware-Registration-and-Configuration
         run: |
@@ -92,4 +92,4 @@ jobs:
           arduino-cli compile \
             -b esp32:esp32:firefly_controller ./Hardware-Registration-and-Configuration \
             --warnings more --clean \
-            --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ env.PRODUCT_HEX }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -DVERSION=\"9999.99.99\" -DPROJECT_NAME=\"HW\40Reg\40and\40Config\" -DCOMMIT_HASH=\"${COMMIT_HASH}\"${EFUSE_FLAG} -DFIREFLY_CLOUD_API_ROOT=\"https://api.fireflylx.com\" -I${{ github.workspace }} ${PSRAM_FLAGS}"
+            --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ env.PRODUCT_HEX }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=4 -DVERSION=\"9999.99.99\" -DCOMMIT_HASH=\"${COMMIT_HASH}\"${EFUSE_FLAG} -DFIREFLY_CLOUD_API_ROOT=\"https://api.fireflylx.com\" -I${{ github.workspace }} ${PSRAM_FLAGS}"

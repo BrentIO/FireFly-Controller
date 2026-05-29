@@ -14,7 +14,8 @@
   #error "COMMIT_HASH must be specified for a build."
 #endif
 
-#define APPLICATION "Controller"
+#define APPLICATION      "Controller"
+#define APPLICATION_NAME "FireFly Controller"
 
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
@@ -214,7 +215,7 @@ void setup() {
   //Configure the peripherals
   oled.setCallback_failure(&failureHandler_oled);
   oled.begin();
-  oled.setApplicationName(PROJECT_NAME);
+  oled.setApplicationName(APPLICATION_NAME);
   oled.setApplicationVersion(VERSION);
   oled.setEventLog(&eventLog);
   oled.setAuthorizationToken(&authToken);
@@ -4249,7 +4250,7 @@ void mqtt_autoDiscovery_temperature(){
     }
 
     device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-    device["model"] = PROJECT_NAME;
+    device["model"] = APPLICATION_NAME;
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
     device["sw_version"] = VERSION;
@@ -4790,7 +4791,7 @@ void mqtt_autoDiscovery_inputControllers(){
     }
 
     device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-    device["model"] = PROJECT_NAME;
+    device["model"] = APPLICATION_NAME;
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
     device["sw_version"] = VERSION;
@@ -4862,7 +4863,7 @@ void mqtt_autoDiscovery_outputControllers(){
     }
 
     device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-    device["model"] = PROJECT_NAME;
+    device["model"] = APPLICATION_NAME;
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
     device["sw_version"] = VERSION;
@@ -4920,7 +4921,7 @@ void mqtt_autoDiscovery_start_time(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = PROJECT_NAME;
+  device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
@@ -5003,7 +5004,7 @@ void mqtt_autoDiscovery_mac_address(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = PROJECT_NAME;
+  device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
@@ -5082,7 +5083,7 @@ void mqtt_autoDiscovery_ip_address(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = PROJECT_NAME;
+  device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
@@ -5164,7 +5165,7 @@ void mqtt_autoDiscovery_count_errors(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = PROJECT_NAME;
+  device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
@@ -5250,7 +5251,7 @@ void mqtt_autoDiscovery_update(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = PROJECT_NAME;
+  device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
@@ -5316,7 +5317,7 @@ void mqtt_autoDiscovery_http_server(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = PROJECT_NAME;
+  device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
@@ -5409,7 +5410,7 @@ void mqtt_autoDiscovery_heapFree(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = PROJECT_NAME;
+  device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
@@ -5491,7 +5492,7 @@ void mqtt_autoDiscovery_heapLargestFreeBlock(){
   }
 
   device["manufacturer"] = HARDWARE_MANUFACTURER_NAME;
-  device["model"] = PROJECT_NAME;
+  device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
