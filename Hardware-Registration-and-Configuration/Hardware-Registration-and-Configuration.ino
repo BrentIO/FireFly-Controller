@@ -834,7 +834,8 @@ void http_handleOTA_POST(AsyncWebServerRequest *request, JsonVariant &doc) {
   String appUrl;
   String uiUrl;
 
-  for (JsonVariant binary : doc["binaries"].as<JsonArray>()) {
+  JsonArray binaries = doc["binaries"].as<JsonArray>();
+  for (JsonVariant binary : binaries) {
     String partition = binary["partition"].as<String>();
     String url = binary["url"].as<String>();
 
