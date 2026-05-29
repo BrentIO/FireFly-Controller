@@ -57,8 +57,6 @@ jobs:
         run: |
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then
             TAG="${GITHUB_REF#refs/tags/}"
-            echo "VERSION=$TAG" >> $GITHUB_ENV
-            echo "FIRMWARE_VERSION=$TAG" >> $GITHUB_ENV
             echo "Release tag: $TAG"
 
             if [[ ! "$TAG" =~ ^[0-9]{4}\.(0[1-9]|1[0-2])\.(0[1-9]|[1-9][0-9])$ ]]; then
@@ -66,9 +64,9 @@ jobs:
               exit 1
             fi
 
+            echo "VERSION=$TAG" >> $GITHUB_ENV
           else
-            echo "VERSION=DEBUG" >> $GITHUB_ENV
-            echo "FIRMWARE_VERSION=9999.99.99" >> $GITHUB_ENV
+            echo "VERSION=9999.99.99" >> $GITHUB_ENV
           fi
 
       - name: Check out repository
@@ -76,11 +74,8 @@ jobs:
 
       - name: Update Swagger version
         run: |
-          BRANCH="${{ env.BRANCH }}"
-          COMMIT_HASH="${{ env.COMMIT_HASH }}"
-          VERSION="${{ env.VERSION }}"
-          if [ "${VERSION}" != "DEBUG" ]; then
-            sed -i "s/^  version: .*/  version: \"${VERSION}\"/" ./${{ matrix.application }}/openapi.yaml
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            sed -i "s/^  version: .*/  version: \"${{ env.VERSION }}\"/" ./${{ matrix.application }}/openapi.yaml
           fi
 
 
@@ -221,18 +216,18 @@ jobs:
 
           PSRAM_FLAGS="-DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue -mfix-esp32-psram-cache-strategy=memw"
 
-          if [ "$VERSION" = "DEBUG" ]; then
-            echo "Building DEBUG firmware ($BRANCH)"
-            CORE_DEBUG_LEVEL=4
-          else
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
             echo "Building RELEASE firmware"
             CORE_DEBUG_LEVEL=0
+          else
+            echo "Building DEBUG firmware ($BRANCH)"
+            CORE_DEBUG_LEVEL=4
           fi
 
           arduino-cli compile \
             -b esp32:esp32:firefly_controller ./${APPLICATION} \
             --warnings more --clean \
-            --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=${CORE_DEBUG_LEVEL} -DVERSION=\"$FIRMWARE_VERSION\" -DCOMMIT_HASH=\"${COMMIT_HASH}\" -DFIREFLY_CLOUD_API_ROOT=\"${{ vars.FIREFLY_CLOUD_API_ROOT }}\" -I${{ github.workspace }}${EFUSE_FLAG} ${PSRAM_FLAGS}" \
+            --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=${CORE_DEBUG_LEVEL} -DVERSION=\"$VERSION\" -DCOMMIT_HASH=\"${COMMIT_HASH}\" -DFIREFLY_CLOUD_API_ROOT=\"${{ vars.FIREFLY_CLOUD_API_ROOT }}\" -I${{ github.workspace }}${EFUSE_FLAG} ${PSRAM_FLAGS}" \
             --output-dir "$OUTDIR" 2>&1 | tee /tmp/compile_output.txt
 
           FLASH_USED=$(grep "Sketch uses"        /tmp/compile_output.txt | sed 's/Sketch uses \([0-9]*\) bytes.*/\1/')
@@ -278,7 +273,7 @@ jobs:
             echo "ERROR: ui-dist/ exceeds 2MB (${TOTAL} bytes)"
             exit 1
           fi
-          echo '{"application":"HW-Reg","version":"${{ env.FIRMWARE_VERSION }}","commit":"${{ env.COMMIT_HASH }}"}' > $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/ui-dist/version.json
+          echo '{"application":"HW-Reg","version":"${{ env.VERSION }}","commit":"${{ env.COMMIT_HASH }}"}' > $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/ui-dist/version.json
 
       - name: Build Vue UI (Controller)
         if: ${{ matrix.application == 'Controller' }}
@@ -294,7 +289,7 @@ jobs:
             echo "ERROR: ui-dist/ exceeds partition size of 0x2e0000 (${TOTAL} bytes)"
             exit 1
           fi
-          echo '{"application":"Controller","version":"${{ env.FIRMWARE_VERSION }}","commit":"${{ env.COMMIT_HASH }}"}' > $GITHUB_WORKSPACE/Controller/ui-dist/version.json
+          echo '{"application":"Controller","version":"${{ env.VERSION }}","commit":"${{ env.COMMIT_HASH }}"}' > $GITHUB_WORKSPACE/Controller/ui-dist/version.json
 
       - name: Create Empty Directory for Use by LittleFS
         run: mkdir -p "${{ env.ARTIFACT_ROOT }}/LittleFS"
@@ -367,7 +362,7 @@ jobs:
             --arg firmware_type "$FIRMWARE_TYPE" \
             --arg application "${{ matrix.application }}" \
             --arg branch "${{ env.BRANCH }}" \
-            --arg version "${{ env.FIRMWARE_VERSION }}" \
+            --arg version "${{ env.VERSION }}" \
             --arg commit "${{ env.COMMIT_HASH }}" \
             --arg created "$CREATED_ISO" \
             --arg bootloader_addr "${{ matrix.bootloader_addr }}" \
