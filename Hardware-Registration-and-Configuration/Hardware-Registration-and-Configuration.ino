@@ -83,8 +83,7 @@ EventLog eventLog(&timeClient); /* Event Log instance */
 uint64_t ntpSleepUntil = 0;
 
 #define DEVICE_CLASS "CONTROLLER"
-#define REGISTRATION_APPLICATION_NAME "Hardware-Registration-and-Configuration"
-#define APPLICATION REGISTRATION_APPLICATION_NAME
+#define REGISTRATION_APPLICATION_NAME APPLICATION
 
 struct {
   bool   registered    = false;
