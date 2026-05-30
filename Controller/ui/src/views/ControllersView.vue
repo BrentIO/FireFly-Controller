@@ -52,7 +52,7 @@
             <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ ctrl.mac || '—' }}</p>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ ctrl.product }}</p>
             <template v-if="sessions[ctrl.id]?.isAuthenticated && versionCache[ctrl.id]">
-              <p class="text-xs text-gray-500 dark:text-gray-400">App: {{ versionCache[ctrl.id].app }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">API: {{ versionCache[ctrl.id].app }}</p>
               <p class="text-xs text-gray-500 dark:text-gray-400">UI: {{ versionCache[ctrl.id].ui }}</p>
             </template>
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ areaName(ctrl.area) }}</p>
@@ -559,10 +559,11 @@ async function fetchVersions(ctrl) {
   try {
     const res = await controllerFetch(sessionCtrl.session.ip, '/version', {}, sessionCtrl.session.visualToken)
     const body = res.ok ? await res.json() : {}
-    const appVersion = body.application ?? '—'
-    const uiVersion = body.ui ?? '—'
+    const app = body.application
+    const ui = body.ui
+    const appVersion = app ? `${app.version} (${app.commit})` : '—'
+    const uiVersion = ui ? `${ui.version} (${ui.commit})` : '—'
     versionCache[ctrl.id] = { app: appVersion, ui: uiVersion }
-    if (state.uiVersion === '') state.uiVersion = body.ui ?? ''
   } catch {
     versionCache[ctrl.id] = { app: '—', ui: '—' }
   }
