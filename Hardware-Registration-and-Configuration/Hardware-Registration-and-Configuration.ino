@@ -1698,6 +1698,9 @@ void eventHandler_eventLogInfoEvent(){
  * Handles events where the event log type was notification
 */
 void eventHandler_eventLogNotificationEvent(){
+  if (oled.getPage() == managerOled::PAGE_OTA_IN_PROGRESS) {
+    return;
+  }
   oled.setPage(managerOled::PAGE_EVENT_LOG);
 }
 
