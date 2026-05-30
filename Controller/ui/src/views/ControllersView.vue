@@ -1098,6 +1098,14 @@ async function doOta(payloadText) {
     return
   }
 
+  if (Array.isArray(payload)) {
+    if (payload.length === 0) {
+      addToast('error', 'OTA failed: payload array is empty')
+      return
+    }
+    payload = payload[0]
+  }
+
   const sessionCtrl = getSessionCtrl(ctrl.id)
   const { controllerFetch } = await import('../composables/useApi')
 
