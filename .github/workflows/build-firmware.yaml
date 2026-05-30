@@ -246,6 +246,7 @@ jobs:
           arduino-cli compile \
             -b esp32:esp32:firefly_controller ./${APPLICATION} \
             --warnings more --clean \
+            --build-cache-path /tmp/arduino-build-cache \
             --build-property "build.extra_flags=-DASYNCWEBSERVER_REGEX -DPRODUCT_HEX=${{ matrix.product_hex }} -DESP32 -DDISABLE_ALL_LIBRARY_WARNINGS -DCORE_DEBUG_LEVEL=${CORE_DEBUG_LEVEL} -DVERSION=\"$VERSION\" -DCOMMIT_HASH=\"${COMMIT_HASH}\" -DFIREFLY_CLOUD_API_ROOT=\"${{ vars.FIREFLY_CLOUD_API_ROOT }}\" -I${{ github.workspace }}${EFUSE_FLAG} ${PSRAM_FLAGS}" \
             --output-dir "$OUTDIR" 2>&1 | tee /tmp/compile_output.txt
 
