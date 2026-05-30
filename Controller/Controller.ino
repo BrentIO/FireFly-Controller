@@ -35,7 +35,10 @@
 #include <ArduinoJson.h>
 #include "common/psramAllocator.h"
 #include "AsyncJson.h"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #include <StreamUtils.h>
+#pragma GCC diagnostic pop
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include "common/extendedPubSubClient.h"
