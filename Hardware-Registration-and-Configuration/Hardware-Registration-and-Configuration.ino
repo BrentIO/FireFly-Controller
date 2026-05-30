@@ -876,7 +876,7 @@ void otaFirmware_checkPending() {
       oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
       char msg[OLED_CHARACTERS_PER_LINE + 1];
       snprintf(msg, sizeof(msg), "OTA %s update start", partition);
-      eventLog.createEvent(msg, EventLog::LOG_LEVEL_NOTIFICATION);
+      eventLog.createEvent(msg, EventLog::LOG_LEVEL_INFO);
     }
     oled.setProgressBar((float)written / (float)total);
   });
