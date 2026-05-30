@@ -230,13 +230,17 @@
             </div>
             <div class="overflow-y-auto flex-1">
               <table class="w-full text-xs">
+                <thead class="border-b border-gray-200 dark:border-gray-700">
+                  <tr>
+                    <th class="py-1.5 text-left font-medium text-gray-500 dark:text-gray-400">Message</th>
+                  </tr>
+                </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                   <tr v-if="!errorLog.length">
                     <td class="py-4 text-center text-gray-400 dark:text-gray-500">No errors.</td>
                   </tr>
                   <tr v-for="(e, i) in errorLog" :key="i" class="even:bg-gray-50 dark:even:bg-gray-800/50">
-                    <td class="py-1.5 pr-4 text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ e.time || e.timestamp || '' }}</td>
-                    <td class="py-1.5 text-gray-900 dark:text-gray-100">{{ e.message || e }}</td>
+                    <td class="py-1.5 text-gray-900 dark:text-gray-100">{{ e.text }}</td>
                   </tr>
                 </tbody>
               </table>
