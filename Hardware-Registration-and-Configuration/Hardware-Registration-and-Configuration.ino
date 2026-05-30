@@ -829,7 +829,8 @@ void http_handleOTA_POST(AsyncWebServerRequest *request, JsonVariant &doc) {
   }
 
   bool hasValidBinary = false;
-  for (JsonVariant binary : doc["binaries"].as<JsonArray>()) {
+  JsonArray binaries = doc["binaries"].as<JsonArray>();
+  for (JsonVariant binary : binaries) {
     String url = binary["url"].as<String>();
     if (!url.isEmpty() && url.endsWith(".bin") &&
         (url.startsWith("http:") || url.startsWith("https:"))) {
