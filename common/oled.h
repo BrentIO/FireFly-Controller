@@ -295,7 +295,7 @@
                     this->hardware.setTextColor(SSD1306_WHITE); // Draw white text
 
                     char _nameDisplay[OLED_CHARACTERS_PER_LINE + 1];
-                    snprintf(_nameDisplay, sizeof(_nameDisplay), "%s", this->_applicationName[0] ? this->_applicationName : "Unknown");
+                    snprintf(_nameDisplay, sizeof(_nameDisplay), "%.21s", this->_applicationName[0] ? this->_applicationName : "Unknown");
                     this->hardware.println(_nameDisplay);
 
                     this->hardware.print("Ver: ");
