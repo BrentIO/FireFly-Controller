@@ -878,7 +878,9 @@ void otaFirmware_checkPending() {
       snprintf(msg, sizeof(msg), "OTA %s update start", partition);
       eventLog.createEvent(msg, EventLog::LOG_LEVEL_NOTIFICATION);
     }
-    oled.setProgressBar((float)written / (float)total);
+    float pct = (float)written / (float)total;
+    log_i("OTA %s progress: %d%%", partition, (int)(pct * 100));
+    oled.setProgressBar(pct);
   });
 
   otaFirmware.onPartitionComplete([](const char* partition, bool success) {
