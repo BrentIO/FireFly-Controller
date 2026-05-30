@@ -876,7 +876,7 @@ void otaFirmware_checkPending() {
       oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
       char msg[OLED_CHARACTERS_PER_LINE + 1];
       snprintf(msg, sizeof(msg), "OTA %s update start", partition);
-      eventLog.createEvent(msg, EventLog::LOG_LEVEL_NOTIFICATION);
+      eventLog.createEvent(msg, EventLog::LOG_LEVEL_INFO);
     }
     float pct = (float)written / (float)total;
     log_i("OTA %s progress: %d%%", partition, (int)(pct * 100));
@@ -1698,9 +1698,6 @@ void eventHandler_eventLogInfoEvent(){
  * Handles events where the event log type was notification
 */
 void eventHandler_eventLogNotificationEvent(){
-  if (oled.getPage() == managerOled::PAGE_OTA_IN_PROGRESS) {
-    return;
-  }
   oled.setPage(managerOled::PAGE_EVENT_LOG);
 }
 
