@@ -3518,6 +3518,7 @@ void setup_OtaFirmware(){
 
     if(success && !_otaForcedFlash){
       eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
+      oled.setPage(managerOled::PAGE_EVENT_LOG);
       delay(5000);
       ESP.restart();
     }
@@ -3626,6 +3627,7 @@ void otaFirmware_checkPending(){
 
     _otaForcedFlash = false;
     eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
+    oled.setPage(managerOled::PAGE_EVENT_LOG);
     delay(5000);
     ESP.restart();
   }
