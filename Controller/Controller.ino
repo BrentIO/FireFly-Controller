@@ -682,6 +682,8 @@ void setup() {
   oled.setPage(managerOled::PAGE_EVENT_LOG);
 
   otaFirmware.markAppValid();
+  otaFirmware.setCurrentVersion(VERSION);
+  otaFirmware.setBlockedPartitions({"config"});
 
   #if CORE_DEBUG_LEVEL >= 4
     reportMemoryUsage("Setup complete.");
