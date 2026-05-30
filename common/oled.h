@@ -1059,7 +1059,7 @@
 
                     
                     char otaLine[22];
-                    snprintf(otaLine, sizeof(otaLine), "   OTA: %-10s   ", this->_otaPartition);
+                    snprintf(otaLine, sizeof(otaLine), "   OTA update %-7s", this->_otaPartition);
                     this->hardware.setCursor(0, 0);
                     this->hardware.println(otaLine);
                     this->hardware.println("    in progress...  ");
