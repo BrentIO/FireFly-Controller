@@ -272,8 +272,10 @@ paths:
                     binaries:
                       - partition: app
                         url: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/Controller.ino.bin"
+                        sha256: "a3f1c2d4e5b6a7f8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
                       - partition: ui
                         url: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/ui.bin"
+                        sha256: "b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5"
                     release_url: "https://github.com/BrentIO/FireFly-Controller/releases/tag/2026.03.01"
         '202':
           description: Accepted — firmware list is being fetched; retry after a short delay
@@ -318,8 +320,10 @@ paths:
               binaries:
                 - partition: app
                   url: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/Controller.ino.bin"
+                  sha256: "a3f1c2d4e5b6a7f8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
                 - partition: ui
                   url: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/ui.bin"
+                  sha256: "b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5"
       responses:
         '202':
           description: Accepted — OTA update pending
@@ -780,6 +784,10 @@ components:
                 type: string
                 description: URL to the partition binary (.bin)
                 example: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/Controller.ino.bin"
+              sha256:
+                type: string
+                description: SHA-256 hex digest of the binary; if present, the digest is verified before the partition is activated. Absent means verification is skipped.
+                example: "a3f1c2d4e5b6a7f8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
         release_url:
           type: string
           description: URL to the release announcement. Omitted if not provided.

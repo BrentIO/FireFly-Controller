@@ -104,6 +104,8 @@ bool _otaPendingRequest = false;
 bool _otaForcedFlash = false;
 String _otaPendingAppUrl;
 String _otaPendingUiUrl;
+String _otaPendingAppSha256;
+String _otaPendingUiSha256;
 uint64_t _otaLastCheckedTime = 0;
 
 fs::LittleFSFS uiFS;
@@ -3274,6 +3276,8 @@ void http_handleOTA_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
   String appUrl;
   String uiUrl;
+  String appSha256;
+  String uiSha256;
 
   JsonArray binaries = doc["binaries"].as<JsonArray>();
   for(JsonVariant binary : binaries){
@@ -3287,8 +3291,10 @@ void http_handleOTA_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
     if(partition == "app"){
       appUrl = url;
+      appSha256 = binary["sha256"] | "";
     } else if(partition == "ui"){
       uiUrl = url;
+      uiSha256 = binary["sha256"] | "";
     }
   }
 
@@ -3299,6 +3305,8 @@ void http_handleOTA_POST(AsyncWebServerRequest *request, JsonVariant doc){
 
   _otaPendingAppUrl = appUrl;
   _otaPendingUiUrl = uiUrl;
+  _otaPendingAppSha256 = appSha256;
+  _otaPendingUiSha256 = uiSha256;
   _otaPendingRequest = true;
 
   request->send(202);
@@ -3579,7 +3587,7 @@ void otaFirmware_checkPending(){
       }
     }
 
-    bool success = otaFirmware.flashPartition("ui", _otaPendingUiUrl.c_str());
+    bool success = otaFirmware.flashPartition("ui", _otaPendingUiUrl.c_str(), _otaPendingUiSha256.isEmpty() ? nullptr : _otaPendingUiSha256.c_str());
 
     if(!success){
       eventLog.createEvent("OTA ui failed", EventLog::LOG_LEVEL_NOTIFICATION);
@@ -3606,7 +3614,7 @@ void otaFirmware_checkPending(){
       }
     }
 
-    bool success = otaFirmware.flashPartition("app", _otaPendingAppUrl.c_str());
+    bool success = otaFirmware.flashPartition("app", _otaPendingAppUrl.c_str(), _otaPendingAppSha256.isEmpty() ? nullptr : _otaPendingAppSha256.c_str());
 
     if(!success){
       eventLog.createEvent("OTA app failed", EventLog::LOG_LEVEL_NOTIFICATION);
