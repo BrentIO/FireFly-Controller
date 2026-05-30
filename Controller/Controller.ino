@@ -101,11 +101,8 @@ WiFiClientSecure _otaHttpsClient;       /* TLS client used when the manifest URL
 String _otaManifestUrl;                 /* Set when setup_OtaFirmware() succeeds; empty otherwise */
 bool _otaUpdateInProcess = false;
 bool _otaPendingRequest = false;
-bool _otaForcedFlash = false;
-String _otaPendingAppUrl;
-String _otaPendingUiUrl;
-String _otaPendingAppSha256;
-String _otaPendingUiSha256;
+JsonDocument _otaPendingDoc;
+static char _otaCurrentPartition[8] = "";
 uint64_t _otaLastCheckedTime = 0;
 
 fs::LittleFSFS uiFS;
@@ -3301,39 +3298,7 @@ void http_handleOTA_POST(AsyncWebServerRequest *request, JsonVariant doc){
     return;
   }
 
-  String appUrl;
-  String uiUrl;
-  String appSha256;
-  String uiSha256;
-
-  JsonArray binaries = doc["binaries"].as<JsonArray>();
-  for(JsonVariant binary : binaries){
-    String partition = binary["partition"].as<String>();
-    String url = binary["url"].as<String>();
-
-    if(url.isEmpty() || !url.endsWith(".bin") ||
-       (!url.startsWith("http:") && !url.startsWith("https:"))){
-      continue;
-    }
-
-    if(partition == "app"){
-      appUrl = url;
-      appSha256 = binary["sha256"] | "";
-    } else if(partition == "ui"){
-      uiUrl = url;
-      uiSha256 = binary["sha256"] | "";
-    }
-  }
-
-  if(appUrl.isEmpty() && uiUrl.isEmpty()){
-    http_badRequest(request, "No valid binaries found");
-    return;
-  }
-
-  _otaPendingAppUrl = appUrl;
-  _otaPendingUiUrl = uiUrl;
-  _otaPendingAppSha256 = appSha256;
-  _otaPendingUiSha256 = uiSha256;
+  _otaPendingDoc.set(doc);
   _otaPendingRequest = true;
 
   request->send(202);
@@ -3509,29 +3474,24 @@ void setup_OtaFirmware(){
 
   otaFirmware.onProgress([](const char* partition, size_t written, size_t total){
     _otaUpdateInProcess = true;
-    if(written == 0){
-      char msg[OLED_CHARACTERS_PER_LINE+1];
-      snprintf(msg, sizeof(msg), "OTA %s started", partition);
-      eventLog.createEvent(msg, EventLog::LOG_LEVEL_NOTIFICATION);
+    if(strcmp(partition, _otaCurrentPartition) != 0){
+      strlcpy(_otaCurrentPartition, partition, sizeof(_otaCurrentPartition));
       oled.setOTAPartition(partition);
       oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
+      char msg[OLED_CHARACTERS_PER_LINE+1];
+      snprintf(msg, sizeof(msg), "OTA %s update start", partition);
+      eventLog.createEvent(msg, EventLog::LOG_LEVEL_INFO);
     }
     oled.setProgressBar((float)written / (float)total);
+  });
 
-    char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-    snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
-    JsonDocument mqttDoc;
-    mqttDoc["in_progress"] = true;
-    mqttDoc["update_percentage"] = (int)(((float)written / (float)total) * 100);
-    char buffer[256];
-    serializeJson(mqttDoc, buffer);
-    mqttClient.publish(topic, buffer);
+  otaFirmware.onPartitionComplete([](const char* partition, bool success){
+    char msg[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(msg, sizeof(msg), "OTA %s %s", partition, success ? "finished" : "failed");
+    eventLog.createEvent(msg, success ? EventLog::LOG_LEVEL_INFO : EventLog::LOG_LEVEL_NOTIFICATION);
   });
 
   otaFirmware.onComplete([](bool success){
-    char msg[OLED_CHARACTERS_PER_LINE+1];
-    snprintf(msg, sizeof(msg), "OTA %s", success ? "finished" : "failed");
-    eventLog.createEvent(msg, EventLog::LOG_LEVEL_NOTIFICATION);
     _otaUpdateInProcess = false;
     _otaPendingRequest = false;
 
@@ -3543,7 +3503,7 @@ void setup_OtaFirmware(){
     serializeJson(mqttDoc, buffer);
     mqttClient.publish(topic, buffer);
 
-    if(success && !_otaForcedFlash){
+    if(success){
       eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
       delay(5000);
       ESP.restart();
@@ -3587,9 +3547,8 @@ void setup_OtaFirmware(){
 
 
 /**
- * Executes a pending forced OTA update. Flashes ui first (no reboot), then app (triggers
- * reboot). _otaForcedFlash suppresses the auto-reboot in the shared onComplete so that
- * ui can complete before app is flashed.
+ * Executes a pending forced OTA update using execOTA(JsonDocument&), matching
+ * the HW-Reg implementation exactly. onComplete handles the reboot on success.
 */
 void otaFirmware_checkPending(){
 
@@ -3598,66 +3557,27 @@ void otaFirmware_checkPending(){
   }
 
   _otaUpdateInProcess = true;
-  _otaForcedFlash = true;
 
-  if(!_otaPendingUiUrl.isEmpty()){
-    eventLog.createEvent("OTA ui update started", EventLog::LOG_LEVEL_NOTIFICATION);
-    oled.setOTAPartition("ui");
-    oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
+  otaFirmware.setApplicationName(_otaPendingDoc["application_name"]);
 
-    if(_otaPendingUiUrl.startsWith("https:")){
+  for(JsonVariant bin : _otaPendingDoc["binaries"].as<JsonArray>()){
+    if(String(bin["url"] | "").startsWith("https:")){
       if(_certBundle != nullptr){
         _otaHttpsClient.setCACert(_certBundle);
         otaFirmware.setClient(&_otaHttpsClient);
       } else {
         otaFirmware.useBundledCerts();
       }
+      break;
     }
-
-    bool success = otaFirmware.flashPartition("ui", _otaPendingUiUrl.c_str(), _otaPendingUiSha256.isEmpty() ? nullptr : _otaPendingUiSha256.c_str());
-
-    if(!success){
-      eventLog.createEvent("OTA ui failed", EventLog::LOG_LEVEL_NOTIFICATION);
-      _otaForcedFlash = false;
-      _otaUpdateInProcess = false;
-      _otaPendingRequest = false;
-      return;
-    }
-    eventLog.createEvent("OTA ui finished", EventLog::LOG_LEVEL_NOTIFICATION);
-    _otaUpdateInProcess = true; /* onComplete cleared it; re-set for app flash */
   }
 
-  if(!_otaPendingAppUrl.isEmpty()){
-    eventLog.createEvent("OTA app update started", EventLog::LOG_LEVEL_NOTIFICATION);
-    oled.setOTAPartition("app");
-    oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
+  _otaCurrentPartition[0] = '\0';
 
-    if(_otaPendingAppUrl.startsWith("https:")){
-      if(_certBundle != nullptr){
-        _otaHttpsClient.setCACert(_certBundle);
-        otaFirmware.setClient(&_otaHttpsClient);
-      } else {
-        otaFirmware.useBundledCerts();
-      }
-    }
+  otaFirmware.execOTA(_otaPendingDoc);
 
-    bool success = otaFirmware.flashPartition("app", _otaPendingAppUrl.c_str(), _otaPendingAppSha256.isEmpty() ? nullptr : _otaPendingAppSha256.c_str());
-
-    if(!success){
-      eventLog.createEvent("OTA app failed", EventLog::LOG_LEVEL_NOTIFICATION);
-      _otaForcedFlash = false;
-      _otaUpdateInProcess = false;
-      _otaPendingRequest = false;
-      return;
-    }
-
-    _otaForcedFlash = false;
-    eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
-    delay(5000);
-    ESP.restart();
-  }
-
-  _otaForcedFlash = false;
+  /* Only reached on failure — onComplete handles restart on success */
+  _otaPendingDoc.clear();
   _otaUpdateInProcess = false;
   _otaPendingRequest = false;
 }
