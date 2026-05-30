@@ -615,6 +615,7 @@ void setup() {
   */
 
   httpServer.on("/api/version", http_handleVersion);
+  httpServer.on("/api/reboot", http_handleReboot_POST);
   httpServer.on("/api/events", http_handleEventLog);
   httpServer.on("/api/errors", http_handleErrorLog);
   httpServer.on("/auth", http_handleAuth);
@@ -1387,6 +1388,42 @@ void http_handleVersion(AsyncWebServerRequest *request){
 
   serializeJson(doc, *response);
   request->send(response);
+}
+
+
+/**
+ * POST /api/reboot — reboots the device after a short delay.
+*/
+void http_handleReboot_POST(AsyncWebServerRequest *request){
+
+  if(request->method() == HTTP_OPTIONS){
+    http_options(request);
+    return;
+  }
+
+  if(!request->hasHeader("visual-token")){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(!authToken.authenticate(request->header("visual-token").c_str())){
+    http_unauthorized(request);
+    return;
+  }
+
+  if(request->method() != HTTP_POST){
+    http_methodNotAllowed(request);
+    return;
+  }
+
+  resetHTPServerUsage();
+  eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
+
+  request->onDisconnect([]() {
+    ESP.restart();
+  });
+
+  request->send(204);
 }
 
 

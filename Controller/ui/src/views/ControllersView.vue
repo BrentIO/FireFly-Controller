@@ -108,6 +108,7 @@
               <button class="w-full px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="pushCloudBackup(ctrl)">Push Cloud Backup</button>
               <button class="w-full px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmCloudRestore(ctrl)">Restore Cloud Backup</button>
               <button class="w-full px-2 py-1.5 text-sm font-medium text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-red-50 dark:hover:bg-red-900/20'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmCloudDelete(ctrl)">Delete Cloud Backup</button>
+              <button class="w-full px-2 py-1.5 text-sm font-medium text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-red-50 dark:hover:bg-red-900/20'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmReboot(ctrl)">Reboot</button>
             </div>
           </div>
         </div>
@@ -299,6 +300,9 @@
     <ConfirmModal :show="!!cloudDeleteTarget" title="Delete Cloud Backup" :message="`Delete the cloud backup for '${cloudDeleteTarget?.name}'? This is permanent and cannot be undone.`"
       variant="danger" confirm-label="Delete" @confirm="doCloudDelete" @cancel="cloudDeleteTarget = null" />
 
+    <ConfirmModal :show="!!rebootTarget" title="Reboot Controller" :message="`Reboot '${rebootTarget?.name}'? The device will be unreachable for several seconds while it restarts.`"
+      variant="danger" confirm-label="Reboot" @confirm="doReboot" @cancel="rebootTarget = null" />
+
     <ConfirmModal :show="!!otaTarget" title="Force OTA Update" :message="`Paste the firmware version payload for '${otaTarget?.name}'. Any combination of app and ui binaries is accepted. The controller reboots after the app partition is written.`"
       variant="warning" confirm-label="Force Update" textarea-placeholder='{"binaries":[{"partition":"app","url":"https://..."},{"partition":"ui","url":"https://..."}]}' @confirm="(payload) => doOta(payload)" @cancel="otaTarget = null" />
   </AppLayout>
@@ -343,6 +347,7 @@ const cloudRestoreTarget = ref(null)
 const cloudRestorePayload = ref(null)
 const showLoadBackupPrompt = ref(false)
 const cloudDeleteTarget = ref(null)
+const rebootTarget = ref(null)
 const eventLog = ref([])
 const errorLog = ref([])
 const activeEventLogId = ref(null)
@@ -1220,6 +1225,32 @@ async function doCloudDelete() {
     }
   } catch (e) {
     addToast('error', `Delete cloud backup error: ${e.message}`)
+  }
+}
+
+function confirmReboot(ctrl) {
+  rebootTarget.value = ctrl
+}
+
+async function doReboot() {
+  const ctrl = rebootTarget.value
+  rebootTarget.value = null
+  if (!ctrl) return
+  const sessionCtrl = getSessionCtrl(ctrl.id)
+  const { controllerFetch } = await import('../composables/useApi')
+  try {
+    const res = await controllerFetch(sessionCtrl.session.ip, '/reboot', {
+      method: 'POST'
+    }, sessionCtrl.session.visualToken)
+    if (res.status === 204) {
+      addToast('success', `${ctrl.name} is rebooting.`)
+    } else {
+      let msg = `HTTP ${res.status}`
+      try { const body = await res.json(); msg = body.message ?? msg } catch { /* ignore */ }
+      addToast('error', `Reboot failed: ${msg}`)
+    }
+  } catch (e) {
+    addToast('error', `Reboot error: ${e.message}`)
   }
 }
 
