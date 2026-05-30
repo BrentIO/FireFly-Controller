@@ -1,13 +1,15 @@
 import { reactive } from 'vue'
 import { apiFetch } from './useApi'
+import { isCloudMode } from './useCloudMode'
 
 const state = reactive({
   apiVersion: '',
-  uiVersion: '',
+  uiVersion: isCloudMode ? (import.meta.env.VITE_UI_VERSION || '') : '',
 })
 
 export function useAppState() {
   async function loadAppState() {
+    if (isCloudMode) return
     try {
       const res = await apiFetch('/version')
       if (res.ok) {

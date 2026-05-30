@@ -111,7 +111,7 @@
 
     <!-- Footer -->
     <div class="px-4 py-3 text-xs text-gray-600 border-t border-gray-700 dark:border-gray-800 space-y-0.5">
-      <div>API: {{ state.apiVersion || '—' }}</div>
+      <div v-if="!isCloudMode">API: {{ state.apiVersion || '—' }}</div>
       <div>UI: {{ state.uiVersion || '—' }}</div>
     </div>
   </nav>
@@ -122,6 +122,7 @@ import { ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAppState } from '../composables/useAppState'
 import { useTheme } from '../composables/useTheme'
+import { isCloudMode } from '../composables/useCloudMode'
 
 defineEmits(['close'])
 
