@@ -897,9 +897,17 @@ void otaFirmware_checkPending() {
 
   _otaCurrentPartition[0] = '\0';
 
+  otaFirmware.onComplete([](bool success) {
+    log_i("OTA complete: %s", success ? "success" : "failure");
+    if (success) {
+      eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
+      delay(5000);
+      ESP.restart();
+    }
+  });
+
   otaFirmware.execOTA(_otaPendingDoc);
 
-  /* Only reached on failure — success triggers esp_restart() inside execOTA */
   _otaPendingDoc.clear();
   _otaUpdateInProcess = false;
   _otaPendingRequest = false;
