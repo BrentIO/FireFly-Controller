@@ -1349,16 +1349,6 @@ void http_handleVersion(AsyncWebServerRequest *request){
     return;
   }
 
-  if(!request->hasHeader("visual-token")){
-        http_unauthorized(request);
-        return;
-  }
-
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
-    http_unauthorized(request);
-    return;
-  }
-
   if(request->method() != HTTP_GET){
     http_methodNotAllowed(request);
     return;

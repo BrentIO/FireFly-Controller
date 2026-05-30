@@ -45,8 +45,6 @@ paths:
         - Version
       summary: Hardware and firmware version information
       description: Retrieves the hardware and firmware version information
-      security:
-        - visualToken: []
       responses:
         '200':
           description: OK
@@ -54,8 +52,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/applicationVersionInfo'
-        '401':
-          description: Unauthorized
 
 ##########################################################
 ## Events and Errors                                    ##
