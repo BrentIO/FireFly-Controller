@@ -7,6 +7,7 @@
         #include <WiFiClient.h>
         #include <esp_log.h>
         #include <freertos/portmacro.h>
+        #include <HardwareSerial.h>
 
         class TelnetLog {
 
@@ -59,8 +60,8 @@
                 portEXIT_CRITICAL(&_mux);
             }
 
-            // Send pending ring buffer data to client i.
-            // Returns false if the write failed (client disconnected).
+            // Drain pending ring buffer data to client i.
+            // Returns false only if WiFiClient's own state indicates disconnection.
             bool _drain(uint8_t i) {
                 uint32_t avail = _bytesWritten;
                 if (avail - _clientPos[i] > RING_SIZE) {
@@ -74,7 +75,13 @@
                     size_t sent   = _clients[i].write((const uint8_t*)(_ringBuf + idx), chunk);
                     _clientPos[i] += (uint32_t)sent;
                     if (sent < chunk) {
-                        return sent > 0;
+                        // Partial or zero: could be TCP backpressure (EAGAIN) or a real error.
+                        // Trust WiFiClient's internal bool state to distinguish — it sets
+                        // _connected=false internally on real socket errors.
+                        bool still_up = (bool)_clients[i];
+                        Serial.printf("[TelnetLog] client %u write %u/%u  still_up=%d\n",
+                                      i, (unsigned)sent, (unsigned)chunk, still_up ? 1 : 0);
+                        return still_up;
                     }
                 }
                 return true;
@@ -86,6 +93,7 @@
                 _instance = this;
                 _savedVprintf = esp_log_set_vprintf(_vprintf_cb);
                 _server.begin();
+                Serial.printf("[TelnetLog] begin  bytesWritten=%u\n", (unsigned)_bytesWritten);
             }
 
             void loop() {
@@ -101,18 +109,22 @@
                             _clients[i].print("\r\nFireFly Controller debug log\r\n");
                             uint32_t avail = _bytesWritten;
                             _clientPos[i] = avail > (uint32_t)RING_SIZE ? avail - (uint32_t)RING_SIZE : 0;
+                            Serial.printf("[TelnetLog] client %u accepted  bytesWritten=%u  startPos=%u\n",
+                                         i, (unsigned)avail, (unsigned)_clientPos[i]);
                             placed = true;
                             break;
                         }
                     }
                     if (!placed) {
                         newClient.stop();
+                        Serial.printf("[TelnetLog] rejected client (no free slot)\n");
                     }
                 }
 
                 for (uint8_t i = 0; i < MAX_CLIENTS; i++) {
                     if (_clients[i]) {
                         if (!_drain(i)) {
+                            Serial.printf("[TelnetLog] stopping client %u\n", i);
                             _clients[i].stop();
                         }
                     }
