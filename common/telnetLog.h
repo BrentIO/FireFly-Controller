@@ -21,6 +21,7 @@
 
             char                _ringBuf[RING_SIZE];
             volatile uint32_t   _bytesWritten = 0;
+            uint32_t            _clientPos[MAX_CLIENTS] = {};
             portMUX_TYPE        _mux = portMUX_INITIALIZER_UNLOCKED;
 
             static TelnetLog* _instance;
@@ -42,14 +43,7 @@
                     va_end(args_copy);
 
                     if (len > 0) {
-                        size_t n = (size_t)len < BUF_SIZE ? (size_t)len : BUF_SIZE - 1;
-                        _instance->_writeToRing(buf, n);
-
-                        for (uint8_t i = 0; i < MAX_CLIENTS; i++) {
-                            if (_instance->_clients[i] && _instance->_clients[i].connected()) {
-                                _instance->_clients[i].write((const uint8_t*)buf, n);
-                            }
-                        }
+                        _instance->_writeToRing(buf, (size_t)len < BUF_SIZE ? (size_t)len : BUF_SIZE - 1);
                     }
                 }
 
@@ -65,22 +59,25 @@
                 portEXIT_CRITICAL(&_mux);
             }
 
-            // Replays buffered history to client i on initial connection.
-            void _replayHistory(uint8_t i) {
+            // Send pending ring buffer data to client i.
+            // Returns false if the write failed (client disconnected).
+            bool _drain(uint8_t i) {
                 uint32_t avail = _bytesWritten;
-                uint32_t pos   = avail > (uint32_t)RING_SIZE ? avail - (uint32_t)RING_SIZE : 0;
-
-                while (pos < avail) {
-                    size_t idx    = pos % RING_SIZE;
+                if (avail - _clientPos[i] > RING_SIZE) {
+                    _clientPos[i] = avail - (uint32_t)RING_SIZE;
+                }
+                while (_clientPos[i] < avail) {
+                    size_t idx    = _clientPos[i] % RING_SIZE;
                     size_t toEnd  = RING_SIZE - idx;
-                    size_t remain = (size_t)(avail - pos);
+                    size_t remain = (size_t)(avail - _clientPos[i]);
                     size_t chunk  = remain < toEnd ? remain : toEnd;
                     size_t sent   = _clients[i].write((const uint8_t*)(_ringBuf + idx), chunk);
-                    pos += (uint32_t)sent;
+                    _clientPos[i] += (uint32_t)sent;
                     if (sent < chunk) {
-                        break;
+                        return sent > 0;
                     }
                 }
+                return true;
             }
 
         public:
@@ -98,11 +95,12 @@
                 if (newClient) {
                     bool placed = false;
                     for (uint8_t i = 0; i < MAX_CLIENTS; i++) {
-                        if (!_clients[i] || !_clients[i].connected()) {
+                        if (!_clients[i]) {
                             _clients[i] = newClient;
                             _clients[i].setNoDelay(true);
                             _clients[i].print("\r\nFireFly Controller debug log\r\n");
-                            _replayHistory(i);
+                            uint32_t avail = _bytesWritten;
+                            _clientPos[i] = avail > (uint32_t)RING_SIZE ? avail - (uint32_t)RING_SIZE : 0;
                             placed = true;
                             break;
                         }
@@ -113,8 +111,10 @@
                 }
 
                 for (uint8_t i = 0; i < MAX_CLIENTS; i++) {
-                    if (_clients[i] && !_clients[i].connected()) {
-                        _clients[i].stop();
+                    if (_clients[i]) {
+                        if (!_drain(i)) {
+                            _clients[i].stop();
+                        }
                     }
                 }
             }
