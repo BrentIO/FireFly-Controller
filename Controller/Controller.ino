@@ -98,6 +98,11 @@ void http_handleCloudBackup_DELETE(AsyncWebServerRequest *request);
 
 esp32OTA otaFirmware;
 WiFiClientSecure _otaHttpsClient;       /* TLS client used when the manifest URL is https:// */
+
+#if CORE_DEBUG_LEVEL > 0
+  #include "common/telnetLog.h"
+  TelnetLog telnetLog;
+#endif
 String _otaManifestUrl;                 /* Set when setup_OtaFirmware() succeeds; empty otherwise */
 bool _otaUpdateInProcess = false;
 bool _otaPendingRequest = false;
@@ -316,6 +321,10 @@ void setup() {
 
       timeClient.begin();
       updateNTPTime(true);
+
+      #if CORE_DEBUG_LEVEL > 0
+        telnetLog.begin();
+      #endif
     }
 
     log_d("Ethernet IP: %s", ETH.localIP().toString().c_str());
@@ -777,6 +786,10 @@ void loop() {
   outputs.loop();
   temperatureSensors.loop();
   provisioningMode.loop();
+
+  #if CORE_DEBUG_LEVEL > 0
+    telnetLog.loop();
+  #endif
 
   #if ETHERNET_MODEL == ENUM_ETHERNET_MODEL_W5500
     if(ESP32_W5500_isConnected()){
