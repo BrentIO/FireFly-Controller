@@ -3510,13 +3510,15 @@ void setup_OtaFirmware(){
     _otaUpdateInProcess = false;
     _otaPendingRequest = false;
 
-    char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-    snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
-    JsonDocument mqttDoc;
-    mqttDoc["in_progress"] = false;
-    char buffer[256];
-    serializeJson(mqttDoc, buffer);
-    mqttClient.publish(topic, buffer);
+    if(mqttClient.connected()){
+      char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+      snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
+      JsonDocument mqttDoc;
+      mqttDoc["in_progress"] = false;
+      char buffer[256];
+      serializeJson(mqttDoc, buffer);
+      mqttClient.publish(topic, buffer);
+    }
 
     if(success){
       eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
@@ -3588,6 +3590,27 @@ void otaFirmware_checkPending(){
   }
 
   _otaCurrentPartition[0] = '\0';
+
+  otaFirmware.onComplete([](bool success){
+    _otaUpdateInProcess = false;
+    _otaPendingRequest = false;
+
+    if(mqttClient.connected()){
+      char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+      snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
+      JsonDocument mqttDoc;
+      mqttDoc["in_progress"] = false;
+      char buffer[256];
+      serializeJson(mqttDoc, buffer);
+      mqttClient.publish(topic, buffer);
+    }
+
+    if(success){
+      eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
+      delay(5000);
+      ESP.restart();
+    }
+  });
 
   otaFirmware.execOTA(_otaPendingDoc);
 
