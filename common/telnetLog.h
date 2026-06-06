@@ -68,7 +68,11 @@
                 va_end(args);
                 if (len <= 0) return;
                 size_t n = (size_t)len < BUF_SIZE ? (size_t)len : BUF_SIZE - 1;
-                Serial.write((const uint8_t*)buf, n);
+                // HardwareSerial::operator bool() returns false until Serial.begin() has been
+                // called. Calling write() before begin() on ESP32 corrupts the UART driver
+                // state, so guard here — the ring buffer still captures pre-begin messages.
+                if (Serial)
+                    Serial.write((const uint8_t*)buf, n);
                 if (_instance) {
                     _instance->_writeToRing(buf, n);
                     for (uint8_t i = 0; i < MAX_CLIENTS; i++) {
