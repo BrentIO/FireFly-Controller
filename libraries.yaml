@@ -16,7 +16,7 @@ libraries:
     version: "1.12.6"
     url: "https://github.com/adafruit/Adafruit-GFX-Library"
   - name: "Adafruit_SSD1306"
-    version: "2.5.16"
+    version: "2.5.17"
     url: "https://github.com/adafruit/Adafruit_SSD1306"
   - name: "ArduinoJson"
     version: "v7.4.3"
