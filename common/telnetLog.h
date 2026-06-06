@@ -5,9 +5,8 @@
 
         #include <WiFiServer.h>
         #include <WiFiClient.h>
-        #include <esp_log.h>
-        #include <freertos/portmacro.h>
         #include <HardwareSerial.h>
+        #include <freertos/portmacro.h>
 
         class TelnetLog {
 
@@ -18,52 +17,15 @@
 
             WiFiServer      _server{PORT};
             WiFiClient      _clients[MAX_CLIENTS];
-            vprintf_like_t  _savedVprintf = nullptr;
+            bool            _replaying[MAX_CLIENTS] = {};
 
             char                _ringBuf[RING_SIZE];
             volatile uint32_t   _bytesWritten = 0;
-            volatile uint32_t   _cbCount      = 0;   // incremented at very top of _vprintf_cb
+            volatile uint32_t   _cbCount      = 0;
             portMUX_TYPE        _mux = portMUX_INITIALIZER_UNLOCKED;
             uint32_t            _lastHeartbeat = 0;
 
             static TelnetLog* _instance;
-
-            static int _vprintf_cb(const char* fmt, va_list args) {
-
-                // Increment unconditionally — before any null checks — so we can
-                // tell whether ESP-IDF is calling this hook at all.
-                if (_instance) {
-                    _instance->_cbCount++;
-                }
-
-                int ret = 0;
-
-                if (_instance) {
-                    va_list args_copy;
-                    va_copy(args_copy, args);
-
-                    if (_instance->_savedVprintf) {
-                        ret = _instance->_savedVprintf(fmt, args);
-                    }
-
-                    char buf[BUF_SIZE];
-                    int len = vsnprintf(buf, sizeof(buf), fmt, args_copy);
-                    va_end(args_copy);
-
-                    if (len > 0) {
-                        size_t n = (size_t)len < BUF_SIZE ? (size_t)len : BUF_SIZE - 1;
-                        _instance->_writeToRing(buf, n);
-
-                        for (uint8_t i = 0; i < MAX_CLIENTS; i++) {
-                            if (_instance->_clients[i]) {
-                                _instance->_clients[i].write((const uint8_t*)buf, n);
-                            }
-                        }
-                    }
-                }
-
-                return ret;
-            }
 
             void _writeToRing(const char* buf, size_t len) {
                 portENTER_CRITICAL(&_mux);
@@ -75,6 +37,7 @@
             }
 
             void _replayHistory(uint8_t i) {
+                _replaying[i] = true;
                 uint32_t avail = _bytesWritten;
                 uint32_t pos   = avail > (uint32_t)RING_SIZE ? avail - (uint32_t)RING_SIZE : 0;
                 while (pos < avail) {
@@ -84,21 +47,42 @@
                     size_t chunk  = remain < toEnd ? remain : toEnd;
                     size_t sent   = _clients[i].write((const uint8_t*)(_ringBuf + idx), chunk);
                     pos += (uint32_t)sent;
-                    if (sent < chunk) {
-                        break;
-                    }
+                    if (sent < chunk) break;
                 }
+                _replaying[i] = false;
             }
 
         public:
 
+            // Replaces log_printf (see macro at bottom of file). Formats once, writes to
+            // Serial to preserve UART output, then fills the ring buffer and streams to any
+            // connected clients that are not currently receiving replay data.
+            static void interceptPrintf(const char* fmt, ...) {
+                char buf[BUF_SIZE];
+                va_list args;
+                va_start(args, fmt);
+                int len = vsnprintf(buf, sizeof(buf), fmt, args);
+                va_end(args);
+                if (len <= 0) return;
+                size_t n = (size_t)len < BUF_SIZE ? (size_t)len : BUF_SIZE - 1;
+
+                Serial.write((const uint8_t*)buf, n);
+
+                if (_instance) {
+                    _instance->_cbCount++;
+                    _instance->_writeToRing(buf, n);
+                    for (uint8_t i = 0; i < MAX_CLIENTS; i++) {
+                        if (_instance->_clients[i] && !_instance->_replaying[i]) {
+                            _instance->_clients[i].write((const uint8_t*)buf, n);
+                        }
+                    }
+                }
+            }
+
             void begin() {
                 _instance = this;
-                _savedVprintf = esp_log_set_vprintf(_vprintf_cb);
                 _server.begin();
-                // savedVprintf=0 means no previous handler was registered (or the call failed).
-                // If cbCount stays 0 in heartbeats, ESP-IDF is not calling _vprintf_cb at all.
-                Serial.printf("[TelnetLog] begin savedVprintf=%p\r\n", (void*)_savedVprintf);
+                Serial.printf("[TelnetLog] begin\r\n");
             }
 
             void loop() {
@@ -150,14 +134,8 @@
             }
 
             void end() {
-                if (_savedVprintf) {
-                    esp_log_set_vprintf(_savedVprintf);
-                    _savedVprintf = nullptr;
-                }
                 for (uint8_t i = 0; i < MAX_CLIENTS; i++) {
-                    if (_clients[i]) {
-                        _clients[i].stop();
-                    }
+                    if (_clients[i]) _clients[i].stop();
                 }
                 _server.end();
                 _instance = nullptr;
@@ -165,6 +143,13 @@
         };
 
         inline TelnetLog* TelnetLog::_instance = nullptr;
+
+        // In Arduino ESP32, log_v/log_d/log_i/log_w/log_e all funnel through log_printf,
+        // which calls Serial.printf directly and bypasses esp_log_set_vprintf entirely.
+        // Redefining log_printf here intercepts all Arduino log macros for any translation
+        // unit that includes this header.
+        #undef log_printf
+        #define log_printf(fmt, ...) TelnetLog::interceptPrintf(fmt, ##__VA_ARGS__)
 
     #endif /* CORE_DEBUG_LEVEL > 0 */
 
