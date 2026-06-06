@@ -25,6 +25,10 @@
 
             static TelnetLog* _instance;
 
+        public:
+            TelnetLog() { _instance = this; }
+        private:
+
             void _writeToRing(const char* buf, size_t len) {
                 portENTER_CRITICAL(&_mux);
                 for (size_t i = 0; i < len; i++) {
@@ -76,7 +80,6 @@
             }
 
             void begin() {
-                _instance = this;
                 _server.begin();
                 Serial.printf("[TelnetLog] begin\r\n");
             }
