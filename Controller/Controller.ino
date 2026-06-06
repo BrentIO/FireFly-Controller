@@ -196,6 +196,10 @@ void reportMemoryUsage(const char* tag) {
 */
 void setup() {
 
+  #if CORE_DEBUG_LEVEL > 0
+    Serial.begin(115200);
+  #endif
+
   #if CORE_DEBUG_LEVEL >= 4
     reportMemoryUsage("Setup begin.");
   #endif /* CORE_DEBUG_LEVEL >= 4 */
