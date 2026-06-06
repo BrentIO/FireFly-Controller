@@ -4,7 +4,11 @@
     #include <LinkedList.h>
 
     #ifndef PROVISIONING_MODE_TTL
-        #define PROVISIONING_MODE_TTL 60000*1000*30 //Number of microseconds the provisioning mode will be active after starting, default 30 minutes
+        #if CORE_DEBUG_LEVEL >= 4
+            #define PROVISIONING_MODE_TTL 60000*1000*30 //Number of microseconds the provisioning mode will be active after starting, 30 minutes for debug builds
+        #else
+            #define PROVISIONING_MODE_TTL 60000*1000*5 //Number of microseconds the provisioning mode will be active after starting, 5 minutes for production builds
+        #endif
     #endif
 
 

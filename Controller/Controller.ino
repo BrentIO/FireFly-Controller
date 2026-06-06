@@ -648,11 +648,11 @@ void setup() {
     httpServer.on("^/api/clients/([0-9a-f-]+)$", http_handleClients);
     httpServer.on("/backup", HTTP_PUT, http_handleBackup_PUT, nullptr, http_handleBackup_PUT_body);
     httpServer.on("/backup", http_handleBackup);
-    httpServer.on("/api/provisioning", http_handleProvisioning);
     httpServer.on("/api/provisioning/nonce", http_handleProvisioningNonce);
     httpServer.on("/api/provisioning/client", http_handleProvisioningClient);
     httpServer.on("/api/provisioning/certs", http_handleProvisioningCerts);
     httpServer.on("/api/provisioning/controller", http_handleProvisioningController);
+    httpServer.on("/api/provisioning", http_handleProvisioning);
     httpServer.on("^/certs/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
     httpServer.on("/api/ota", HTTP_OPTIONS, http_options);
@@ -2217,17 +2217,22 @@ void http_handleProvisioningNonce(AsyncWebServerRequest *request){
   }
 
   if(!isRequestViaSoftAP(request)){
+    log_w("Provisioning nonce request rejected: not via SoftAP (localIP=%s)", request->client()->localIP().toString().c_str());
     http_forbiddenRequest(request, "Only accessible via provisioning network");
     return;
   }
 
   if(provisioningMode.getStatus() != true){
+    log_w("Provisioning nonce request rejected: provisioning mode inactive");
     http_conflict(request, "Provisioning mode inactive");
     return;
   }
 
+  uint32_t nonce = provisioningMode.generateNonce();
+  log_i("Provisioning nonce issued: %u to %s", nonce, request->client()->remoteIP().toString().c_str());
+
   JsonDocument doc;
-  doc["nonce"] = provisioningMode.generateNonce();
+  doc["nonce"] = nonce;
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   serializeJson(doc, *response);
   request->send(response);
@@ -2257,11 +2262,13 @@ void http_handleProvisioningClient(AsyncWebServerRequest *request){
   }
 
   if(!request->hasHeader("mac-address")){
+    log_w("Provisioning client request rejected: missing mac-address header from %s", request->client()->remoteIP().toString().c_str());
     http_unauthorized(request);
     return;
   }
 
   if(!request->hasHeader("x-nonce")){
+    log_w("Provisioning client request rejected: missing x-nonce header from %s", request->client()->remoteIP().toString().c_str());
     http_unauthorized(request);
     return;
   }
@@ -2269,6 +2276,8 @@ void http_handleProvisioningClient(AsyncWebServerRequest *request){
   uint32_t nonce = (uint32_t)strtoul(request->header("x-nonce").c_str(), nullptr, 10);
 
   if(!provisioningMode.isNonceValid(nonce)){
+    log_w("Provisioning client request rejected: bad nonce %u from %s", nonce, request->client()->remoteIP().toString().c_str());
+    eventLog.createEvent("Prov mode bad nonce", EventLog::LOG_LEVEL_NOTIFICATION);
     http_unauthorized(request);
     return;
   }
@@ -2281,14 +2290,20 @@ void http_handleProvisioningClient(AsyncWebServerRequest *request){
   String mac = request->header("mac-address");
   mac.toLowerCase();
 
+  log_d("Provisioning client lookup for MAC %s", mac.c_str());
+
   String uuid = findClientUuidByMac(mac.c_str());
 
   if(uuid.isEmpty()){
+    log_w("Provisioning client request rejected: unknown MAC %s", mac.c_str());
+    eventLog.createEvent("Prov mode unknwn MAC", EventLog::LOG_LEVEL_NOTIFICATION);
     http_notFound(request);
     return;
   }
 
   provisioningMode.invalidateNonce();
+
+  log_i("Provisioning client found: uuid=%s for MAC %s", uuid.c_str(), mac.c_str());
 
   String filename = CONFIGFS_PATH_CLIENTS + (String)"/" + uuid;
 
@@ -2372,21 +2387,25 @@ void http_handleProvisioningController(AsyncWebServerRequest *request){
   }
 
   if(!isRequestViaSoftAP(request)){
+    log_w("Provisioning controller request rejected: not via SoftAP (localIP=%s)", request->client()->localIP().toString().c_str());
     http_forbiddenRequest(request, "Only accessible via provisioning network");
     return;
   }
 
   if(provisioningMode.getStatus() != true){
+    log_w("Provisioning controller request rejected: provisioning mode inactive");
     http_conflict(request, "Provisioning mode inactive");
     return;
   }
 
   if(!request->hasHeader("mac-address")){
+    log_w("Provisioning controller request rejected: missing mac-address header from %s", request->client()->remoteIP().toString().c_str());
     http_unauthorized(request);
     return;
   }
 
   if(!request->hasHeader("x-nonce")){
+    log_w("Provisioning controller request rejected: missing x-nonce header from %s", request->client()->remoteIP().toString().c_str());
     http_unauthorized(request);
     return;
   }
@@ -2394,6 +2413,8 @@ void http_handleProvisioningController(AsyncWebServerRequest *request){
   uint32_t nonce = (uint32_t)strtoul(request->header("x-nonce").c_str(), nullptr, 10);
 
   if(!provisioningMode.isNonceValid(nonce)){
+    log_w("Provisioning controller request rejected: bad nonce %u from %s", nonce, request->client()->remoteIP().toString().c_str());
+    eventLog.createEvent("Prov mode bad nonce", EventLog::LOG_LEVEL_NOTIFICATION);
     http_unauthorized(request);
     return;
   }
@@ -2406,9 +2427,13 @@ void http_handleProvisioningController(AsyncWebServerRequest *request){
   String mac = request->header("mac-address");
   mac.toLowerCase();
 
+  log_d("Provisioning controller lookup for MAC %s", mac.c_str());
+
   String controllerUuid = findControllerUuidByMac(mac.c_str());
 
   if(controllerUuid.isEmpty()){
+    log_w("Provisioning controller request rejected: unknown MAC %s", mac.c_str());
+    eventLog.createEvent("Prov mode unknwn MAC", EventLog::LOG_LEVEL_NOTIFICATION);
     http_notFound(request);
     return;
   }
