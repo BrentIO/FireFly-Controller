@@ -81,14 +81,17 @@
                 va_end(args);
                 if (len <= 0) return;
                 size_t n = (size_t)len < BUF_SIZE ? (size_t)len : BUF_SIZE - 1;
-                _hw().write((const uint8_t*)buf, n);
+                // Serial here is the real HardwareSerial — this class body is compiled
+                // before #define Serial _telnetSerial takes effect at the bottom of
+                // this file, so this write goes directly to the hardware UART.
+                Serial.write((const uint8_t*)buf, n);
                 pipe((const uint8_t*)buf, n);
             }
 
             void begin() {
                 _instance = this;
                 _server.begin();
-                _hw().printf("[TelnetLog] begin\r\n");
+                Serial.printf("[TelnetLog] begin\r\n");
             }
 
             void loop() {
@@ -100,7 +103,7 @@
                             _clients[i] = newClient;
                             _clients[i].setNoDelay(true);
                             _clients[i].print("\r\nFireFly Controller debug log\r\n");
-                            _hw().printf("[TelnetLog] client %u accepted bw=%u\r\n",
+                            Serial.printf("[TelnetLog] client %u accepted bw=%u\r\n",
                                          i, (unsigned)_bytesWritten);
                             _replayHistory(i);
                             placed = true;
@@ -109,12 +112,12 @@
                     }
                     if (!placed) {
                         newClient.stop();
-                        _hw().printf("[TelnetLog] rejected (no slot)\r\n");
+                        Serial.printf("[TelnetLog] rejected (no slot)\r\n");
                     }
                 }
                 for (uint8_t i = 0; i < MAX_CLIENTS; i++) {
                     if (_clients[i] && !_clients[i].connected()) {
-                        _hw().printf("[TelnetLog] stopping client %u\r\n", i);
+                        Serial.printf("[TelnetLog] stopping client %u\r\n", i);
                         _clients[i].stop();
                     }
                 }
