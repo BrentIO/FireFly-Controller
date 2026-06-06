@@ -23,7 +23,6 @@
             volatile uint32_t   _bytesWritten = 0;
             volatile uint32_t   _cbCount      = 0;
             portMUX_TYPE        _mux = portMUX_INITIALIZER_UNLOCKED;
-            uint32_t            _lastHeartbeat = 0;
 
             static TelnetLog* _instance;
 
@@ -114,22 +113,6 @@
                         Serial.printf("[TelnetLog] stopping client %u\r\n", i);
                         _clients[i].stop();
                     }
-                }
-
-                uint32_t now = millis();
-                if (now - _lastHeartbeat >= 5000) {
-                    _lastHeartbeat = now;
-                    char hb[80];
-                    int hlen = snprintf(hb, sizeof(hb),
-                                        "\r\n[TelnetLog] hb bw=%u cb=%u\r\n",
-                                        (unsigned)_bytesWritten, (unsigned)_cbCount);
-                    for (uint8_t i = 0; i < MAX_CLIENTS; i++) {
-                        if (_clients[i]) {
-                            _clients[i].write((const uint8_t*)hb, (size_t)hlen);
-                        }
-                    }
-                    Serial.printf("[TelnetLog] hb bw=%u cb=%u\r\n",
-                                  (unsigned)_bytesWritten, (unsigned)_cbCount);
                 }
             }
 
