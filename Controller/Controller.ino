@@ -17,6 +17,11 @@
 #define APPLICATION      "Controller"
 #define APPLICATION_NAME "FireFly Controller"
 
+#if CORE_DEBUG_LEVEL > 0
+  #include "common/telnetLog.h"
+  TelnetLog telnetLog;
+#endif
+
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "common/hardware.h"
@@ -99,10 +104,6 @@ void http_handleCloudBackup_DELETE(AsyncWebServerRequest *request);
 esp32OTA otaFirmware;
 WiFiClientSecure _otaHttpsClient;       /* TLS client used when the manifest URL is https:// */
 
-#if CORE_DEBUG_LEVEL > 0
-  #include "common/telnetLog.h"
-  TelnetLog telnetLog;
-#endif
 String _otaManifestUrl;                 /* Set when setup_OtaFirmware() succeeds; empty otherwise */
 bool _otaUpdateInProcess = false;
 bool _otaPendingRequest = false;

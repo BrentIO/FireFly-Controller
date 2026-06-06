@@ -12,7 +12,6 @@
 
             static constexpr uint16_t PORT        = 23;
             static constexpr uint8_t  MAX_CLIENTS = 3;
-            static constexpr size_t   BUF_SIZE    = 512;
             static constexpr size_t   RING_SIZE   = 16384;
 
             WiFiServer      _server{PORT};
@@ -21,7 +20,6 @@
 
             char                _ringBuf[RING_SIZE];
             volatile uint32_t   _bytesWritten = 0;
-            volatile uint32_t   _cbCount      = 0;
             portMUX_TYPE        _mux = portMUX_INITIALIZER_UNLOCKED;
 
             static TelnetLog* _instance;
@@ -53,27 +51,14 @@
 
         public:
 
-            // Replaces log_printf (see macro at bottom of file). Formats once, writes to
-            // Serial to preserve UART output, then fills the ring buffer and streams to any
-            // connected clients that are not currently receiving replay data.
-            static void interceptPrintf(const char* fmt, ...) {
-                char buf[BUF_SIZE];
-                va_list args;
-                va_start(args, fmt);
-                int len = vsnprintf(buf, sizeof(buf), fmt, args);
-                va_end(args);
-                if (len <= 0) return;
-                size_t n = (size_t)len < BUF_SIZE ? (size_t)len : BUF_SIZE - 1;
-
-                Serial.write((const uint8_t*)buf, n);
-
-                if (_instance) {
-                    _instance->_cbCount++;
-                    _instance->_writeToRing(buf, n);
-                    for (uint8_t i = 0; i < MAX_CLIENTS; i++) {
-                        if (_instance->_clients[i] && !_instance->_replaying[i]) {
-                            _instance->_clients[i].write((const uint8_t*)buf, n);
-                        }
+            // Called from TelnetSerial::write() on every Serial write after begin().
+            // Fills the ring buffer and live-streams to connected clients.
+            static void pipe(const uint8_t* buf, size_t n) {
+                if (!_instance) return;
+                _instance->_writeToRing((const char*)buf, n);
+                for (uint8_t i = 0; i < MAX_CLIENTS; i++) {
+                    if (_instance->_clients[i] && !_instance->_replaying[i]) {
+                        _instance->_clients[i].write(buf, n);
                     }
                 }
             }
@@ -81,13 +66,13 @@
             void begin() {
                 _instance = this;
                 _server.begin();
+                // Serial here is the real HardwareSerial — class body is compiled before
+                // #define Serial _telnetSerial takes effect below, so this is UART-only.
                 Serial.printf("[TelnetLog] begin\r\n");
             }
 
             void loop() {
-
                 WiFiClient newClient = _server.available();
-
                 if (newClient) {
                     bool placed = false;
                     for (uint8_t i = 0; i < MAX_CLIENTS; i++) {
@@ -95,8 +80,8 @@
                             _clients[i] = newClient;
                             _clients[i].setNoDelay(true);
                             _clients[i].print("\r\nFireFly Controller debug log\r\n");
-                            Serial.printf("[TelnetLog] client %u accepted bw=%u cb=%u\r\n",
-                                         i, (unsigned)_bytesWritten, (unsigned)_cbCount);
+                            Serial.printf("[TelnetLog] client %u accepted bw=%u\r\n",
+                                         i, (unsigned)_bytesWritten);
                             _replayHistory(i);
                             placed = true;
                             break;
@@ -107,7 +92,6 @@
                         Serial.printf("[TelnetLog] rejected (no slot)\r\n");
                     }
                 }
-
                 for (uint8_t i = 0; i < MAX_CLIENTS; i++) {
                     if (_clients[i] && !_clients[i].connected()) {
                         Serial.printf("[TelnetLog] stopping client %u\r\n", i);
@@ -127,12 +111,36 @@
 
         inline TelnetLog* TelnetLog::_instance = nullptr;
 
-        // In Arduino ESP32, log_v/log_d/log_i/log_w/log_e all funnel through log_printf,
-        // which calls Serial.printf directly and bypasses esp_log_set_vprintf entirely.
-        // Redefining log_printf here intercepts all Arduino log macros for any translation
-        // unit that includes this header.
-        #undef log_printf
-        #define log_printf(fmt, ...) TelnetLog::interceptPrintf(fmt, ##__VA_ARGS__)
+        // Capture the real HardwareSerial before #define Serial takes effect below.
+        inline HardwareSerial& _hw() { return Serial; }
+
+        // Thin Serial wrapper: all write() calls go to both the hardware UART and, when
+        // TelnetLog is active, the ring buffer and live telnet clients. printf/print/println
+        // are inherited from Print and route through write() automatically.
+        struct TelnetSerial : public Print {
+            void begin(unsigned long baud, uint32_t config = SERIAL_8N1) { _hw().begin(baud, config); }
+            void end()       { _hw().end(); }
+            int  available() { return _hw().available(); }
+            int  peek()      { return _hw().peek(); }
+            int  read()      { return _hw().read(); }
+            void flush()     { _hw().flush(); }
+            operator bool()  { return (bool)_hw(); }
+
+            size_t write(uint8_t c) override           { return write(&c, 1); }
+            size_t write(const uint8_t* buf, size_t n) override {
+                _hw().write(buf, n);
+                TelnetLog::pipe(buf, n);
+                return n;
+            }
+        };
+
+        inline TelnetSerial _telnetSerial;
+
+        // Replace Serial with TelnetSerial. _hw() above captures the real HardwareSerial
+        // first. All code compiled after this point — including log_d/log_i/log_w/log_e
+        // (which expand through Serial.printf) and all explicit Serial calls — flow through
+        // TelnetSerial::write(), reaching both UART and telnet.
+        #define Serial _telnetSerial
 
     #endif /* CORE_DEBUG_LEVEL > 0 */
 
