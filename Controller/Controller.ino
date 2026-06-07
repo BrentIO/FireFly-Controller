@@ -485,7 +485,14 @@ void setup() {
 
         uint8_t ethMac[6];
         esp_read_mac(ethMac, ESP_MAC_ETH);
-        esp_wifi_set_mac(WIFI_IF_STA, ethMac);
+        log_i("Ethernet MAC: %02x:%02x:%02x:%02x:%02x:%02x", ethMac[0], ethMac[1], ethMac[2], ethMac[3], ethMac[4], ethMac[5]);
+
+        esp_err_t macSetResult = esp_wifi_set_mac(WIFI_IF_STA, ethMac);
+        if(macSetResult != ESP_OK){
+          log_e("Failed to set WiFi STA MAC to Ethernet MAC: %s", esp_err_to_name(macSetResult));
+        } else {
+          log_i("WiFi STA MAC overridden to Ethernet MAC");
+        }
 
         log_i("Found FireFly-Provisioning AP, connecting...");
         WiFi.begin("FireFly-Provisioning", apPassword);
@@ -523,7 +530,7 @@ void setup() {
               String ownMac = WiFi.macAddress();
               ownMac.toLowerCase();
 
-              log_i("Got nonce %u; fetching provisioning bundle", nonce);
+              log_i("Got nonce %u; sending mac-address %s for bundle request", nonce, ownMac.c_str());
 
               char nonceStr[12];
               snprintf(nonceStr, sizeof(nonceStr), "%" PRIu32, nonce);
@@ -598,10 +605,10 @@ void setup() {
                 }
 
               } else if(bundleHttpCode == HTTP_CODE_NOT_FOUND){
-                log_i("Source controller does not know this MAC; continuing unprovisioned");
+                log_w("Source controller does not know MAC %s; continuing unprovisioned", ownMac.c_str());
                 httpProvisioning.end();
               } else {
-                log_w("Provisioning bundle request returned %d; continuing unprovisioned", bundleHttpCode);
+                log_w("Provisioning bundle request returned %d for MAC %s; continuing unprovisioned", bundleHttpCode, ownMac.c_str());
                 httpProvisioning.end();
               }
 
