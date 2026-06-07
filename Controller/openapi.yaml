@@ -441,25 +441,53 @@ paths:
                 $ref: '#/components/schemas/error_message'
 
 
-  /api/provisioning/nonce:
-    get:
+  /api/provisioning/token:
+    post:
       tags:
         - Controllers
-      summary: Retrieve a single-use session nonce for client provisioning
-      description: Returns a cryptographically random single-use nonce. No authentication required. Returns 409 if provisioning mode is not active. The nonce is regenerated on each call.
+      summary: Exchange credentials for a per-device provisioning token
+      description: >
+        Authenticates an unprovisioned controller by UUID and MAC address, and returns a short-lived
+        bearer token for use in subsequent provisioning requests. The token is bound to the requesting
+        device's MAC address and has a sliding expiry window (5 minutes in production, 30 minutes in
+        debug builds). A second POST for the same MAC invalidates the previous token. Only accessible
+        via the provisioning SoftAP — Ethernet requests are rejected.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - uuid
+                - mac_address
+              properties:
+                uuid:
+                  $ref: '#/components/schemas/uuid'
+                mac_address:
+                  $ref: '#/components/schemas/macAddress'
+                  description: MAC address of the requesting controller. Must match the mac field stored in the controller record.
       responses:
         '200':
-          description: OK
+          description: OK — token issued
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  nonce:
+                  token:
                     type: integer
                     format: int64
-                    description: Single-use session nonce; must be passed as the x-nonce header in the subsequent GET /api/provisioning/client call
+                    description: Per-device provisioning token. Pass as the provisioning-token header in subsequent GET requests.
                     example: 3819273645
+        '400':
+          description: Bad Request — uuid must be 36 characters, or mac_address is missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+        '401':
+          description: Unauthorized — MAC address does not match the stored controller record
         '403':
           description: Forbidden — request did not arrive via the provisioning SoftAP network
           content:
@@ -468,56 +496,12 @@ paths:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: Only accessible via provisioning network
-        '405':
-          description: Method Not Allowed
-        '409':
-          description: Conflict
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: Provisioning mode inactive
-
-  /api/provisioning/client:
-    get:
-      tags:
-        - Controllers
-      summary: Retrieve a client configuration during active provisioning
-      description: Returns the full client configuration JSON for the device identified by the mac-address header. Requires provisioning mode to be active, a valid unused nonce, and a MAC address that matches a registered client record. The nonce is invalidated after a successful response.
-      security:
-        - macAddress: []
-      parameters:
-        - in: header
-          name: x-nonce
-          required: true
-          schema:
-            type: integer
-            format: int64
-          description: Single-use nonce obtained from GET /api/provisioning/nonce
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/client'
-        '401':
-          description: Unauthorized — missing or invalid mac-address or x-nonce header
-        '403':
-          description: Forbidden — request did not arrive via the provisioning SoftAP network, or MAC address not in the provisioning allowlist
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: Request will not be fulfilled
         '404':
-          description: Not Found — no client record matches the provided MAC address
+          description: Not Found — no controller record found for the provided UUID, or the record has no mac field
         '405':
           description: Method Not Allowed
         '409':
-          description: Conflict
+          description: Conflict — provisioning mode is not active
           content:
             application/json:
               schema:
@@ -530,80 +514,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
-
-  /api/provisioning/controller:
-    get:
-      tags:
-        - Controllers
-      summary: Retrieve all controller and client records during active provisioning
-      description: Returns a JSON bundle containing all controller records and all client records stored on the source controller. Intended for controller-to-controller provisioning — an unprovisioned controller connecting via the provisioning SoftAP uses this endpoint to pull the full configuration. Requires provisioning mode to be active, a valid unused nonce, and a MAC address that matches a registered controller record. The nonce is invalidated after a successful response.
-      security:
-        - macAddress: []
-      parameters:
-        - in: header
-          name: x-nonce
-          required: true
-          schema:
-            type: integer
-            format: int64
-          description: Single-use nonce obtained from GET /api/provisioning/nonce
-        - in: header
-          name: x-device-uuid
-          required: false
-          schema:
-            type: string
-            format: uuid
-          description: UUID of the requesting controller. When provided, the host attempts a direct file lookup by UUID and verifies the MAC matches before falling back to full enumeration.
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  controllers:
-                    type: array
-                    description: All controller records stored on the source controller, each augmented with a uuid field set to the record's filename
-                    items:
-                      $ref: '#/components/schemas/controller'
-                  clients:
-                    type: array
-                    description: All client records stored on the source controller, each augmented with a uuid field set to the record's filename
-                    items:
-                      $ref: '#/components/schemas/client'
-        '401':
-          description: Unauthorized — missing or invalid mac-address or x-nonce header
-        '403':
-          description: Forbidden — request did not arrive via the provisioning SoftAP network
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: Only accessible via provisioning network
-        '404':
-          description: Not Found — no controller record matches the provided MAC address
-        '405':
-          description: Method Not Allowed
-        '409':
-          description: Conflict
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: Provisioning mode inactive
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
 
 
   /api/provisioning/certs:
@@ -682,6 +592,7 @@ paths:
       description: Retrieve the list of defined controller UUIDs
       security:
         - visualToken: []
+        - provisioningToken: []
       responses:
         '200':
           description: OK
@@ -710,6 +621,7 @@ paths:
       description: Retrieve a controller
       security:
         - visualToken: []
+        - provisioningToken: []
       parameters:
         - in: path
           name: uuid
@@ -817,6 +729,7 @@ paths:
       description: Retrieve the list of defined client UUIDs
       security:
         - visualToken: []
+        - provisioningToken: []
       responses:
         '200':
           description: OK
@@ -845,7 +758,7 @@ paths:
       description: Retrieve a client
       security:
         - visualToken: []
-        - macAddress: []
+        - provisioningToken: []
       parameters:
         - in: path
           name: uuid
@@ -860,26 +773,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/client'
-        '400':
-          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — provisioning-token request did not arrive via the provisioning SoftAP network
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Only accessible via provisioning network
+        '404':
+          description: Not Found
+        '409':
+          description: Conflict — provisioning-token used but provisioning mode is not active
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: Provisioning mode inactive
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: Request will not be fulfilled
-        '404':
-          description: Not Found
         '500':
           description: Internal Server Error
           content:
@@ -995,6 +908,7 @@ paths:
       description: Retrieves the backup of the database in Dexie format.
       security:
         - visualToken: []
+        - provisioningToken: []
       responses:
         '200':
           description: OK
@@ -1009,8 +923,24 @@ paths:
                 $ref: '#/components/schemas/dexieFormat'
         '401':
           description: Unauthorized
+        '403':
+          description: Forbidden — provisioning-token request did not arrive via the provisioning SoftAP network
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Only accessible via provisioning network
         '404':
           description: Not Found
+        '409':
+          description: Conflict — provisioning-token used but provisioning mode is not active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Provisioning mode inactive
         '500':
           description: Internal Server Error
           content:
@@ -1236,7 +1166,13 @@ components:
       type: apiKey
       in: header
       name: mac-address
-      description: A client MAC address that matches the resource being requested, valid only while in provisoining mode
+      description: A client MAC address that matches the resource being requested, valid only while in provisioning mode
+
+    provisioningToken:
+      type: apiKey
+      in: header
+      name: provisioning-token
+      description: A per-device token issued by POST /api/provisioning/token, valid while provisioning mode is active. Must be used via the provisioning SoftAP; tokens are refused on the Ethernet interface.
 
  
   schemas:

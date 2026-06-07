@@ -35,8 +35,13 @@
             int64_t _disableAtTime = 0;
             LinkedList<std::string> _whitelistMACs;
 
-            uint32_t _nonce = 0;
-            bool _nonceUsed = true;
+            struct ProvisioningTokenEntry {
+                uint32_t value;
+                char mac[18];
+                int64_t expires_at;
+            };
+            LinkedList<ProvisioningTokenEntry*> _tokens;
+
             char _softAPPassword[13] = {0};
 
             static void computeSoftAPPassword(uint8_t bssid[6], char out[13]) {
@@ -78,11 +83,18 @@
                 this->setInactive();
             }
 
+            void _clearTokens(){
+                for(int i = 0; i < _tokens.size(); i++){
+                    delete _tokens.get(i);
+                }
+                _tokens.clear();
+            }
+
         public:
 
             #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
                 /// @brief Sets the WiFi instance to be manipulated
-                /// @param value 
+                /// @param value
                 void setWiFI(WiFiClass *value){
                     this->_wifi = value;
                 }
@@ -120,8 +132,6 @@
                     this->_disableAtTime = esp_timer_get_time() + PROVISIONING_MODE_TTL;
                 #endif
 
-                generateNonce();
-
                 this->_isActive = true;
 
                 if(this->ptrActiveCallback){
@@ -134,8 +144,7 @@
             void setInactive(){
 
                 _whitelistMACs.clear();
-                _nonce = 0;
-                _nonceUsed = true;
+                _clearTokens();
                 memset(_softAPPassword, 0, sizeof(_softAPPassword));
 
                 #if WIFI_MODEL == ENUM_WIFI_MODEL_ESP32
@@ -158,39 +167,67 @@
             }
 
 
-            /// @brief Call from the main loop() to automatically expire the mode
+            /// @brief Call from the main loop() to automatically expire the mode and purge expired tokens
             void loop(){
 
                 #ifdef ESP32
                     if(this->_isActive){
                         if(esp_timer_get_time() > this->_disableAtTime){
                             setInactive();
+                            return;
+                        }
+
+                        int64_t now = esp_timer_get_time();
+                        for(int i = _tokens.size() - 1; i >= 0; i--){
+                            if(_tokens.get(i)->expires_at < now){
+                                delete _tokens.get(i);
+                                _tokens.remove(i);
+                            }
                         }
                     }
                 #endif
             }
 
 
-            /// @brief Generates a new single-use session nonce using the hardware RNG
-            /// @return The generated nonce value
-            uint32_t generateNonce(){
-                this->_nonce = esp_random();
-                this->_nonceUsed = false;
-                return this->_nonce;
+            /// @brief Issues a provisioning token bound to the given MAC address, replacing any existing token for that MAC
+            /// @param mac MAC address to bind the token to (xx:xx:xx:xx:xx:xx, lowercase)
+            /// @return The generated token value
+            uint32_t issueToken(const char* mac){
+                int64_t now = esp_timer_get_time();
+
+                for(int i = _tokens.size() - 1; i >= 0; i--){
+                    if(strcmp(_tokens.get(i)->mac, mac) == 0){
+                        delete _tokens.get(i);
+                        _tokens.remove(i);
+                    }
+                }
+
+                ProvisioningTokenEntry* entry = new ProvisioningTokenEntry();
+                entry->value = esp_random();
+                strncpy(entry->mac, mac, sizeof(entry->mac) - 1);
+                entry->mac[sizeof(entry->mac) - 1] = '\0';
+                entry->expires_at = now + PROVISIONING_MODE_TTL;
+                _tokens.add(entry);
+                return entry->value;
             }
 
 
-            /// @brief Checks whether the provided nonce matches the active session nonce and has not yet been used
-            /// @param nonce The nonce value to validate
-            /// @return True if the nonce is valid and unused
-            bool isNonceValid(uint32_t nonce){
-                return !this->_nonceUsed && (this->_nonce == nonce);
-            }
-
-
-            /// @brief Marks the session nonce as used; subsequent calls to isNonceValid will return false
-            void invalidateNonce(){
-                this->_nonceUsed = true;
+            /// @brief Validates a provisioning token and extends its expiry on success
+            /// @param token The token value to validate
+            /// @return True if the token exists and has not expired
+            bool validateToken(uint32_t token){
+                int64_t now = esp_timer_get_time();
+                for(int i = 0; i < _tokens.size(); i++){
+                    ProvisioningTokenEntry* entry = _tokens.get(i);
+                    if(entry->value == token){
+                        if(entry->expires_at < now){
+                            return false;
+                        }
+                        entry->expires_at = now + PROVISIONING_MODE_TTL;
+                        return true;
+                    }
+                }
+                return false;
             }
 
 
@@ -205,7 +242,7 @@
         void setCallback_active(void (*userDefinedCallback)()) {
             ptrActiveCallback = userDefinedCallback; }
 
-        
+
         /** Callback function that is called when a provisioning mode is deactivated */
         void setCallback_inactive(void (*userDefinedCallback)()) {
             ptrInactiveCallback = userDefinedCallback; }
