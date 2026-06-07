@@ -2338,13 +2338,23 @@ String findControllerUuidByMac(const char* mac){
   filter["mac"] = true;
 
   File root = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/");
+  if(!root){
+    log_e("findControllerUuidByMac: failed to open controllers directory");
+    return String();
+  }
+
   File file = root.openNextFile();
+
+  if(!file){
+    log_w("findControllerUuidByMac: no files found in controllers directory");
+  }
 
   while(file){
 
     if(!file.isDirectory()){
       String controllerName = file.name();
       String controllerPath = CONFIGFS_PATH_CONTROLLERS + (String)"/" + controllerName;
+      log_d("findControllerUuidByMac: checking file name=%s path=%s", controllerName.c_str(), controllerPath.c_str());
       file.close();
 
       String plaintext;
@@ -2354,6 +2364,7 @@ String findControllerUuidByMac(const char* mac){
 
         if(!error){
           String storedMac = doc["mac"].as<String>();
+          log_d("findControllerUuidByMac: stored mac='%s' incoming mac='%s'", storedMac.c_str(), mac);
           storedMac.toLowerCase();
           String incomingMac = String(mac);
           incomingMac.toLowerCase();
@@ -2362,6 +2373,8 @@ String findControllerUuidByMac(const char* mac){
             root.close();
             return controllerName;
           }
+        } else {
+          log_e("findControllerUuidByMac: failed to parse JSON in %s: %s", controllerPath.c_str(), error.c_str());
         }
       } else {
         eventLog.createEvent("Ctlr decrypt fail", EventLog::LOG_LEVEL_ERROR);
