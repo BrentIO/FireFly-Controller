@@ -208,6 +208,7 @@
                 entry->mac[sizeof(entry->mac) - 1] = '\0';
                 entry->expires_at = now + PROVISIONING_MODE_TTL;
                 _tokens.add(entry);
+                log_d("Provisioning token issued: %u for mac=%s", entry->value, mac);
                 return entry->value;
             }
 
@@ -221,12 +222,15 @@
                     ProvisioningTokenEntry* entry = _tokens.get(i);
                     if(entry->value == token){
                         if(entry->expires_at < now){
+                            log_d("Provisioning token expired: %u for mac=%s", token, entry->mac);
                             return false;
                         }
                         entry->expires_at = now + PROVISIONING_MODE_TTL;
+                        log_d("Provisioning token validated: %u for mac=%s", token, entry->mac);
                         return true;
                     }
                 }
+                log_d("Provisioning token not found: %u", token);
                 return false;
             }
 

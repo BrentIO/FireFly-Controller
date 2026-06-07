@@ -540,6 +540,7 @@ void setup() {
               char provTokenStr[12];
               snprintf(provTokenStr, sizeof(provTokenStr), "%" PRIu32, provToken);
               log_i("Got provisioning token; cleaning up local config");
+              log_d("Prov: token=%u", provToken);
 
               {
                 File ctlrRoot = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/");
@@ -593,6 +594,7 @@ void setup() {
                     String uuid = uuidVar.as<String>();
                     httpProvisioning.begin(wifiClientForProvisioning, "http://192.168.4.1/api/controllers/" + uuid);
                     httpProvisioning.addHeader("provisioning-token", provTokenStr);
+                    log_d("Prov: GET /api/controllers/%s token=%u", uuid.c_str(), provToken);
                     int ctlrCode = httpProvisioning.GET();
                     if(ctlrCode == HTTP_CODE_OK){
                       String ctlrPayload = httpProvisioning.getString();
@@ -634,6 +636,7 @@ void setup() {
                     String clientUuid = clientUuidVar.as<String>();
                     httpProvisioning.begin(wifiClientForProvisioning, "http://192.168.4.1/api/clients/" + clientUuid);
                     httpProvisioning.addHeader("provisioning-token", provTokenStr);
+                    log_d("Prov: GET /api/clients/%s token=%u", clientUuid.c_str(), provToken);
                     int clientCode = httpProvisioning.GET();
                     if(clientCode == HTTP_CODE_OK){
                       String clientPayload = httpProvisioning.getString();
@@ -2351,12 +2354,14 @@ bool authenticateWithProvisioningToken(AsyncWebServerRequest *request){
     return false;
   }
   if(!request->hasHeader("provisioning-token")){
+    log_w("Provisioning token auth rejected: no header from %s", request->client()->remoteIP().toString().c_str());
     http_unauthorized(request);
     return false;
   }
   uint32_t token = (uint32_t)strtoul(request->header("provisioning-token").c_str(), nullptr, 10);
+  log_d("Provisioning token auth: received \"%s\" (parsed=%u) from %s", request->header("provisioning-token").c_str(), token, request->client()->remoteIP().toString().c_str());
   if(!provisioningMode.validateToken(token)){
-    log_w("Provisioning token rejected from %s", request->client()->remoteIP().toString().c_str());
+    log_w("Provisioning token rejected: \"%s\" from %s", request->header("provisioning-token").c_str(), request->client()->remoteIP().toString().c_str());
     http_unauthorized(request);
     return false;
   }
