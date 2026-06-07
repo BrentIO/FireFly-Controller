@@ -483,6 +483,10 @@ void setup() {
         }
         apPassword[12] = '\0';
 
+        uint8_t ethMac[6];
+        esp_read_mac(ethMac, ESP_MAC_ETH);
+        esp_wifi_set_mac(WIFI_IF_STA, ethMac);
+
         log_i("Found FireFly-Provisioning AP, connecting...");
         WiFi.begin("FireFly-Provisioning", apPassword);
 
