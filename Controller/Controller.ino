@@ -537,6 +537,7 @@ void setup() {
 
               httpProvisioning.begin(wifiClientForProvisioning, "http://192.168.4.1/api/provisioning/controller");
               httpProvisioning.addHeader("mac-address", ownMac);
+              httpProvisioning.addHeader("x-device-uuid", deviceIdentity.data.uuid);
               httpProvisioning.addHeader("x-nonce", nonceStr);
               int bundleHttpCode = httpProvisioning.GET();
 
@@ -2363,15 +2364,19 @@ String findControllerUuidByMac(const char* mac){
         DeserializationError error = deserializeJson(doc, plaintext, DeserializationOption::Filter(filter));
 
         if(!error){
-          String storedMac = doc["mac"].as<String>();
-          log_d("findControllerUuidByMac: stored mac='%s' incoming mac='%s'", storedMac.c_str(), mac);
-          storedMac.toLowerCase();
-          String incomingMac = String(mac);
-          incomingMac.toLowerCase();
+          if(doc["mac"].isNull()){
+            log_d("findControllerUuidByMac: %s has no mac field", controllerName.c_str());
+          } else {
+            String storedMac = doc["mac"].as<String>();
+            log_d("findControllerUuidByMac: stored mac='%s' incoming mac='%s'", storedMac.c_str(), mac);
+            storedMac.toLowerCase();
+            String incomingMac = String(mac);
+            incomingMac.toLowerCase();
 
-          if(storedMac == incomingMac){
-            root.close();
-            return controllerName;
+            if(storedMac == incomingMac){
+              root.close();
+              return controllerName;
+            }
           }
         } else {
           log_e("findControllerUuidByMac: failed to parse JSON in %s: %s", controllerPath.c_str(), error.c_str());
@@ -2453,7 +2458,42 @@ void http_handleProvisioningController(AsyncWebServerRequest *request){
 
   log_d("Provisioning controller lookup for MAC %s", mac.c_str());
 
-  String controllerUuid = findControllerUuidByMac(mac.c_str());
+  String controllerUuid;
+
+  if(request->hasHeader("x-device-uuid") && request->header("x-device-uuid").length() == 36){
+    String candidateUuid = request->header("x-device-uuid");
+    String candidatePath = CONFIGFS_PATH_CONTROLLERS + (String)"/" + candidateUuid;
+    log_d("Provisioning controller direct lookup for UUID %s", candidateUuid.c_str());
+
+    JsonDocument uuidFilter;
+    uuidFilter["mac"] = true;
+
+    String plaintext;
+    if(secretEncryption.decryptFromFile(configFS, candidatePath, plaintext)){
+      JsonDocument uuidDoc;
+      DeserializationError uuidErr = deserializeJson(uuidDoc, plaintext, DeserializationOption::Filter(uuidFilter));
+      if(!uuidErr){
+        if(uuidDoc["mac"].isNull()){
+          log_w("Provisioning controller direct lookup: %s has no mac field", candidateUuid.c_str());
+        } else {
+          String storedMac = uuidDoc["mac"].as<String>();
+          storedMac.toLowerCase();
+          if(storedMac == mac){
+            controllerUuid = candidateUuid;
+            log_d("Provisioning controller direct lookup matched UUID %s", candidateUuid.c_str());
+          } else {
+            log_w("Provisioning controller direct lookup: MAC mismatch for UUID %s: stored='%s' incoming='%s'", candidateUuid.c_str(), storedMac.c_str(), mac.c_str());
+          }
+        }
+      }
+    } else {
+      log_d("Provisioning controller direct lookup: no file for UUID %s, falling back to enumeration", candidateUuid.c_str());
+    }
+  }
+
+  if(controllerUuid.isEmpty()){
+    controllerUuid = findControllerUuidByMac(mac.c_str());
+  }
 
   if(controllerUuid.isEmpty()){
     log_w("Provisioning controller request rejected: unknown MAC %s", mac.c_str());

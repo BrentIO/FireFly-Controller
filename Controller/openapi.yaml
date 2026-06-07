@@ -549,6 +549,13 @@ paths:
             type: integer
             format: int64
           description: Single-use nonce obtained from GET /api/provisioning/nonce
+        - in: header
+          name: x-device-uuid
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the requesting controller. When provided, the host attempts a direct file lookup by UUID and verifies the MAC matches before falling back to full enumeration.
       responses:
         '200':
           description: OK
