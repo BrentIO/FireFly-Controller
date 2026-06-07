@@ -483,6 +483,17 @@ void setup() {
         }
         apPassword[12] = '\0';
 
+        uint8_t ethMac[6];
+        esp_read_mac(ethMac, ESP_MAC_ETH);
+        log_i("Ethernet MAC: %02x:%02x:%02x:%02x:%02x:%02x", ethMac[0], ethMac[1], ethMac[2], ethMac[3], ethMac[4], ethMac[5]);
+
+        esp_err_t macSetResult = esp_wifi_set_mac(WIFI_IF_STA, ethMac);
+        if(macSetResult != ESP_OK){
+          log_e("Failed to set WiFi STA MAC to Ethernet MAC: %s", esp_err_to_name(macSetResult));
+        } else {
+          log_i("WiFi STA MAC overridden to Ethernet MAC");
+        }
+
         log_i("Found FireFly-Provisioning AP, connecting...");
         WiFi.begin("FireFly-Provisioning", apPassword);
 
@@ -519,13 +530,14 @@ void setup() {
               String ownMac = WiFi.macAddress();
               ownMac.toLowerCase();
 
-              log_i("Got nonce %u; fetching provisioning bundle", nonce);
+              log_i("Got nonce %u; sending mac-address %s for bundle request", nonce, ownMac.c_str());
 
               char nonceStr[12];
               snprintf(nonceStr, sizeof(nonceStr), "%" PRIu32, nonce);
 
               httpProvisioning.begin(wifiClientForProvisioning, "http://192.168.4.1/api/provisioning/controller");
               httpProvisioning.addHeader("mac-address", ownMac);
+              httpProvisioning.addHeader("x-device-uuid", deviceIdentity.data.uuid);
               httpProvisioning.addHeader("x-nonce", nonceStr);
               int bundleHttpCode = httpProvisioning.GET();
 
@@ -594,10 +606,10 @@ void setup() {
                 }
 
               } else if(bundleHttpCode == HTTP_CODE_NOT_FOUND){
-                log_i("Source controller does not know this MAC; continuing unprovisioned");
+                log_w("Source controller does not know MAC %s; continuing unprovisioned", ownMac.c_str());
                 httpProvisioning.end();
               } else {
-                log_w("Provisioning bundle request returned %d; continuing unprovisioned", bundleHttpCode);
+                log_w("Provisioning bundle request returned %d for MAC %s; continuing unprovisioned", bundleHttpCode, ownMac.c_str());
                 httpProvisioning.end();
               }
 
@@ -648,11 +660,11 @@ void setup() {
     httpServer.on("^/api/clients/([0-9a-f-]+)$", http_handleClients);
     httpServer.on("/backup", HTTP_PUT, http_handleBackup_PUT, nullptr, http_handleBackup_PUT_body);
     httpServer.on("/backup", http_handleBackup);
-    httpServer.on("/api/provisioning", http_handleProvisioning);
     httpServer.on("/api/provisioning/nonce", http_handleProvisioningNonce);
     httpServer.on("/api/provisioning/client", http_handleProvisioningClient);
     httpServer.on("/api/provisioning/certs", http_handleProvisioningCerts);
     httpServer.on("/api/provisioning/controller", http_handleProvisioningController);
+    httpServer.on("/api/provisioning", http_handleProvisioning);
     httpServer.on("^/certs/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
     httpServer.on("/api/ota", HTTP_OPTIONS, http_options);
@@ -2217,17 +2229,22 @@ void http_handleProvisioningNonce(AsyncWebServerRequest *request){
   }
 
   if(!isRequestViaSoftAP(request)){
+    log_w("Provisioning nonce request rejected: not via SoftAP (localIP=%s)", request->client()->localIP().toString().c_str());
     http_forbiddenRequest(request, "Only accessible via provisioning network");
     return;
   }
 
   if(provisioningMode.getStatus() != true){
+    log_w("Provisioning nonce request rejected: provisioning mode inactive");
     http_conflict(request, "Provisioning mode inactive");
     return;
   }
 
+  uint32_t nonce = provisioningMode.generateNonce();
+  log_i("Provisioning nonce issued: %u to %s", nonce, request->client()->remoteIP().toString().c_str());
+
   JsonDocument doc;
-  doc["nonce"] = provisioningMode.generateNonce();
+  doc["nonce"] = nonce;
   AsyncResponseStream *response = request->beginResponseStream("application/json");
   serializeJson(doc, *response);
   request->send(response);
@@ -2257,11 +2274,13 @@ void http_handleProvisioningClient(AsyncWebServerRequest *request){
   }
 
   if(!request->hasHeader("mac-address")){
+    log_w("Provisioning client request rejected: missing mac-address header from %s", request->client()->remoteIP().toString().c_str());
     http_unauthorized(request);
     return;
   }
 
   if(!request->hasHeader("x-nonce")){
+    log_w("Provisioning client request rejected: missing x-nonce header from %s", request->client()->remoteIP().toString().c_str());
     http_unauthorized(request);
     return;
   }
@@ -2269,6 +2288,8 @@ void http_handleProvisioningClient(AsyncWebServerRequest *request){
   uint32_t nonce = (uint32_t)strtoul(request->header("x-nonce").c_str(), nullptr, 10);
 
   if(!provisioningMode.isNonceValid(nonce)){
+    log_w("Provisioning client request rejected: bad nonce %u from %s", nonce, request->client()->remoteIP().toString().c_str());
+    eventLog.createEvent("Prov mode bad nonce", EventLog::LOG_LEVEL_NOTIFICATION);
     http_unauthorized(request);
     return;
   }
@@ -2281,14 +2302,20 @@ void http_handleProvisioningClient(AsyncWebServerRequest *request){
   String mac = request->header("mac-address");
   mac.toLowerCase();
 
+  log_d("Provisioning client lookup for MAC %s", mac.c_str());
+
   String uuid = findClientUuidByMac(mac.c_str());
 
   if(uuid.isEmpty()){
+    log_w("Provisioning client request rejected: unknown MAC %s", mac.c_str());
+    eventLog.createEvent("Prov mode unknwn MAC", EventLog::LOG_LEVEL_NOTIFICATION);
     http_notFound(request);
     return;
   }
 
   provisioningMode.invalidateNonce();
+
+  log_i("Provisioning client found: uuid=%s for MAC %s", uuid.c_str(), mac.c_str());
 
   String filename = CONFIGFS_PATH_CLIENTS + (String)"/" + uuid;
 
@@ -2312,13 +2339,23 @@ String findControllerUuidByMac(const char* mac){
   filter["mac"] = true;
 
   File root = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/");
+  if(!root){
+    log_e("findControllerUuidByMac: failed to open controllers directory");
+    return String();
+  }
+
   File file = root.openNextFile();
+
+  if(!file){
+    log_w("findControllerUuidByMac: no files found in controllers directory");
+  }
 
   while(file){
 
     if(!file.isDirectory()){
       String controllerName = file.name();
       String controllerPath = CONFIGFS_PATH_CONTROLLERS + (String)"/" + controllerName;
+      log_d("findControllerUuidByMac: checking file name=%s path=%s", controllerName.c_str(), controllerPath.c_str());
       file.close();
 
       String plaintext;
@@ -2327,15 +2364,22 @@ String findControllerUuidByMac(const char* mac){
         DeserializationError error = deserializeJson(doc, plaintext, DeserializationOption::Filter(filter));
 
         if(!error){
-          String storedMac = doc["mac"].as<String>();
-          storedMac.toLowerCase();
-          String incomingMac = String(mac);
-          incomingMac.toLowerCase();
+          if(doc["mac"].isNull()){
+            log_d("findControllerUuidByMac: %s has no mac field", controllerName.c_str());
+          } else {
+            String storedMac = doc["mac"].as<String>();
+            log_d("findControllerUuidByMac: stored mac='%s' incoming mac='%s'", storedMac.c_str(), mac);
+            storedMac.toLowerCase();
+            String incomingMac = String(mac);
+            incomingMac.toLowerCase();
 
-          if(storedMac == incomingMac){
-            root.close();
-            return controllerName;
+            if(storedMac == incomingMac){
+              root.close();
+              return controllerName;
+            }
           }
+        } else {
+          log_e("findControllerUuidByMac: failed to parse JSON in %s: %s", controllerPath.c_str(), error.c_str());
         }
       } else {
         eventLog.createEvent("Ctlr decrypt fail", EventLog::LOG_LEVEL_ERROR);
@@ -2372,21 +2416,25 @@ void http_handleProvisioningController(AsyncWebServerRequest *request){
   }
 
   if(!isRequestViaSoftAP(request)){
+    log_w("Provisioning controller request rejected: not via SoftAP (localIP=%s)", request->client()->localIP().toString().c_str());
     http_forbiddenRequest(request, "Only accessible via provisioning network");
     return;
   }
 
   if(provisioningMode.getStatus() != true){
+    log_w("Provisioning controller request rejected: provisioning mode inactive");
     http_conflict(request, "Provisioning mode inactive");
     return;
   }
 
   if(!request->hasHeader("mac-address")){
+    log_w("Provisioning controller request rejected: missing mac-address header from %s", request->client()->remoteIP().toString().c_str());
     http_unauthorized(request);
     return;
   }
 
   if(!request->hasHeader("x-nonce")){
+    log_w("Provisioning controller request rejected: missing x-nonce header from %s", request->client()->remoteIP().toString().c_str());
     http_unauthorized(request);
     return;
   }
@@ -2394,6 +2442,8 @@ void http_handleProvisioningController(AsyncWebServerRequest *request){
   uint32_t nonce = (uint32_t)strtoul(request->header("x-nonce").c_str(), nullptr, 10);
 
   if(!provisioningMode.isNonceValid(nonce)){
+    log_w("Provisioning controller request rejected: bad nonce %u from %s", nonce, request->client()->remoteIP().toString().c_str());
+    eventLog.createEvent("Prov mode bad nonce", EventLog::LOG_LEVEL_NOTIFICATION);
     http_unauthorized(request);
     return;
   }
@@ -2406,9 +2456,48 @@ void http_handleProvisioningController(AsyncWebServerRequest *request){
   String mac = request->header("mac-address");
   mac.toLowerCase();
 
-  String controllerUuid = findControllerUuidByMac(mac.c_str());
+  log_d("Provisioning controller lookup for MAC %s", mac.c_str());
+
+  String controllerUuid;
+
+  if(request->hasHeader("x-device-uuid") && request->header("x-device-uuid").length() == 36){
+    String candidateUuid = request->header("x-device-uuid");
+    String candidatePath = CONFIGFS_PATH_CONTROLLERS + (String)"/" + candidateUuid;
+    log_d("Provisioning controller direct lookup for UUID %s", candidateUuid.c_str());
+
+    JsonDocument uuidFilter;
+    uuidFilter["mac"] = true;
+
+    String plaintext;
+    if(secretEncryption.decryptFromFile(configFS, candidatePath, plaintext)){
+      JsonDocument uuidDoc;
+      DeserializationError uuidErr = deserializeJson(uuidDoc, plaintext, DeserializationOption::Filter(uuidFilter));
+      if(!uuidErr){
+        if(uuidDoc["mac"].isNull()){
+          log_w("Provisioning controller direct lookup: %s has no mac field", candidateUuid.c_str());
+        } else {
+          String storedMac = uuidDoc["mac"].as<String>();
+          storedMac.toLowerCase();
+          if(storedMac == mac){
+            controllerUuid = candidateUuid;
+            log_d("Provisioning controller direct lookup matched UUID %s", candidateUuid.c_str());
+          } else {
+            log_w("Provisioning controller direct lookup: MAC mismatch for UUID %s: stored='%s' incoming='%s'", candidateUuid.c_str(), storedMac.c_str(), mac.c_str());
+          }
+        }
+      }
+    } else {
+      log_d("Provisioning controller direct lookup: no file for UUID %s, falling back to enumeration", candidateUuid.c_str());
+    }
+  }
 
   if(controllerUuid.isEmpty()){
+    controllerUuid = findControllerUuidByMac(mac.c_str());
+  }
+
+  if(controllerUuid.isEmpty()){
+    log_w("Provisioning controller request rejected: unknown MAC %s", mac.c_str());
+    eventLog.createEvent("Prov mode unknwn MAC", EventLog::LOG_LEVEL_NOTIFICATION);
     http_notFound(request);
     return;
   }
