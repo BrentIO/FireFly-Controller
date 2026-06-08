@@ -1728,6 +1728,7 @@ void http_handleAuth(AsyncWebServerRequest *request){
  * Generic handler for /api/controllers
  */
 void http_handleControllers(AsyncWebServerRequest *request){
+  log_d("http_handleControllers: method=%d url=%s", request->method(), request->url().c_str());
   switch(request->method()){
 
     case HTTP_OPTIONS:
@@ -1874,6 +1875,8 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
  * Handles List Controllers
 */
 void http_handleListControllers(AsyncWebServerRequest *request){
+
+  log_d("http_handleListControllers: method=%d url=%s", request->method(), request->url().c_str());
 
   if(request->method() == HTTP_OPTIONS){
     http_options(request);
