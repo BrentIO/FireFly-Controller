@@ -784,11 +784,13 @@ void setup() {
   if(configFS_isMounted){
     AsyncCallbackJsonWebHandler* controllersHandler = new AsyncCallbackJsonWebHandler("^/api/controllers/([0-9a-f-]+)$", http_handleControllers_PUT);
     controllersHandler->setMaxContentLength(65535);
+    controllersHandler->setMethod(HTTP_PUT);
     httpServer.addHandler(controllersHandler);
     httpServer.on("^/api/controllers$", HTTP_ANY, http_handleListControllers);
     httpServer.on("^/api/controllers/([0-9a-f-]+)$", http_handleControllers);
     AsyncCallbackJsonWebHandler* clientsHandler = new AsyncCallbackJsonWebHandler("^/api/clients/([0-9a-f-]+)$", http_handleClients_PUT);
     clientsHandler->setMaxContentLength(65535);
+    clientsHandler->setMethod(HTTP_PUT);
     httpServer.addHandler(clientsHandler);
     httpServer.on("^/api/clients$", HTTP_ANY, http_handleListClients);
     httpServer.on("^/api/clients/([0-9a-f-]+)$", http_handleClients);
