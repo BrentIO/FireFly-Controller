@@ -762,7 +762,7 @@ void setup() {
 
   class RequestLogger : public AsyncWebHandler {
   public:
-    bool canHandle(AsyncWebServerRequest *request) override {
+    bool canHandle(AsyncWebServerRequest *request) const override {
       if(request->hasHeader("provisioning-token")){
         log_d("REQUEST: method=%d url=%s provisioning-token=%s", request->method(), request->url().c_str(), request->header("provisioning-token").c_str());
       } else {
