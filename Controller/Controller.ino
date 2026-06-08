@@ -1754,6 +1754,8 @@ void http_handleControllers(AsyncWebServerRequest *request){
 */
 void http_handleControllers_GET(AsyncWebServerRequest *request){
 
+  log_d("http_handleControllers_GET: pathArg(0)=%s visual-token=%d provisioning-token=%d", request->pathArg(0).c_str(), request->hasHeader("visual-token"), request->hasHeader("provisioning-token"));
+
   if(request->hasHeader("visual-token")){
     if(!authToken.authenticate(request->header("visual-token").c_str())){
       http_unauthorized(request);
@@ -1764,6 +1766,7 @@ void http_handleControllers_GET(AsyncWebServerRequest *request){
       return;
     }
   } else {
+    log_w("http_handleControllers_GET: no auth header from %s", request->client()->remoteIP().toString().c_str());
     http_unauthorized(request);
     return;
   }
@@ -1949,6 +1952,8 @@ void http_handleClients(AsyncWebServerRequest *request){
 */
 void http_handleClients_GET(AsyncWebServerRequest *request){
 
+  log_d("http_handleClients_GET: pathArg(0)=%s visual-token=%d provisioning-token=%d", request->pathArg(0).c_str(), request->hasHeader("visual-token"), request->hasHeader("provisioning-token"));
+
   if(request->hasHeader("visual-token")){
     if(!authToken.authenticate(request->header("visual-token").c_str())){
       http_unauthorized(request);
@@ -1959,6 +1964,7 @@ void http_handleClients_GET(AsyncWebServerRequest *request){
       return;
     }
   } else {
+    log_w("http_handleClients_GET: no auth header from %s", request->client()->remoteIP().toString().c_str());
     http_unauthorized(request);
     return;
   }
