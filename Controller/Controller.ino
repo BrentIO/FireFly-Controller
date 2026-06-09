@@ -5659,6 +5659,10 @@ void stopHttpServer(){
       configFS.remove("/backup.json.upload_in_progress");
     }
 
+    if(provisioningMode.getStatus()){
+      provisioningMode.setInactive();
+    }
+
     httpServer.end();
     httpServerIsActive = false;
 
