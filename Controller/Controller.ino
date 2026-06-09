@@ -760,20 +760,6 @@ void setup() {
     IMPORTANT: *** Sequence below matters, they are sorted specific to generic ***
   */
 
-  class RequestLogger : public AsyncWebHandler {
-  public:
-    bool canHandle(AsyncWebServerRequest *request) const override {
-      if(request->hasHeader("provisioning-token")){
-        log_d("REQUEST: method=%d url=%s provisioning-token=%s", request->method(), request->url().c_str(), request->header("provisioning-token").c_str());
-      } else {
-        log_d("REQUEST: method=%d url=%s (no provisioning-token, headers=%d)", request->method(), request->url().c_str(), request->headers());
-      }
-      return false;
-    }
-    void handleRequest(AsyncWebServerRequest *request) override {}
-  };
-  httpServer.addHandler(new RequestLogger());
-
   httpServer.on("/api/version", http_handleVersion);
   httpServer.on("/api/reboot", http_handleReboot_POST);
   httpServer.on("/api/events", http_handleEventLog);
@@ -1385,7 +1371,7 @@ void setControllerNameOnOLED(){
  * Sends a 404 response indicating the resource is not found
 */
 void http_notFound(AsyncWebServerRequest *request) {
-    log_w("http_notFound: method=%d url=%s", request->method(), request->url().c_str());
+    log_d("http_notFound: method=%d url=%s", request->method(), request->url().c_str());
     request->send(404);
 }
 
