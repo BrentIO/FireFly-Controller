@@ -32,7 +32,7 @@
             uint16_t _head = 0; /* Index of the oldest entry in the circular buffer */
             uint16_t _count = 0; /* Number of valid entries currently stored */
 
-            LinkedList<const char*> _errors;
+            LinkedList<String> _errors;
             NTPClient* _timeClient;
 
             void (*_ptrInfoCallback)(); //Function to call when there is an info logged
@@ -47,7 +47,7 @@
             void _logError(const char* text){
 
                 for(int i=0; i < this->_errors.size(); i++){
-                    if(strcmp(this->_errors.get(i), text) == 0){
+                    if(this->_errors.get(i) == text){
                         return;
                     }
                 }
@@ -56,7 +56,7 @@
                     this->_errors.shift();
                 }
 
-                this->_errors.add(text);
+                this->_errors.add(String(text));
             }
 
         public:
@@ -190,7 +190,7 @@
             /**
              * Retrieves the list of errors from the error log
             */
-            LinkedList<const char*>* getErrors(){
+            LinkedList<String>* getErrors(){
                 return &_errors;
             }
 
@@ -204,7 +204,7 @@
 
                 for(int i=0; i < this->_errors.size(); i++){
 
-                    if(strcmp(this->_errors.get(i), text) == 0){
+                    if(this->_errors.get(i) == text){
                         this->_errors.remove(i);
 
                         if(this->_ptrResolvedErrorCallback){

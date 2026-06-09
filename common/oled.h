@@ -981,7 +981,7 @@
                         }
 
                         for(int8_t i = iteratorOledStart; i < this->_eventLog->getErrors()->size(); i++){
-                            this->_printAsciiLine(this->_eventLog->getErrors()->get(i));
+                            this->_printAsciiLine(this->_eventLog->getErrors()->get(i).c_str());
                         }
                     }
                 #endif
