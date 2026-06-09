@@ -147,7 +147,7 @@ export async function buildControllerPayload(controllerId, returnOnlyErrors = fa
   const payload = {
     name: controller.name.trim().substring(0, MAX_NAME),
     area: area.name.trim().substring(0, MAX_AREA),
-    mac: controller.mac,
+    mac_address: controller.mac,
     ports,
     outputs,
     mqtt: mqttPayload
@@ -204,7 +204,7 @@ export async function buildClientPayload(clientId) {
     id: client.name.trim().substring(0, MAX_ID),
     name: client.description?.trim().substring(0, MAX_NAME) ?? '',
     area: area.name.trim().substring(0, MAX_AREA),
-    mac: client.mac,
+    mac_address: client.mac,
     hids,
     wifi: { ssid: wifi.value.ssid, password: wifi.value.password },
     mqtt: Object.fromEntries(
