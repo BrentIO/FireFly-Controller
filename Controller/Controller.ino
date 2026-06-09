@@ -2007,7 +2007,7 @@ boolean authClientWithMacAddress(const char* uuid, const char* macAddress){
     }
 
     JsonDocument filter;
-    filter["mac"] = true;
+    filter["mac_address"] = true;
 
     String plaintext;
     if(!secretEncryption.decryptFromFile(configFS, filename, plaintext)){
@@ -2023,8 +2023,8 @@ boolean authClientWithMacAddress(const char* uuid, const char* macAddress){
       return false;
     }
 
-    if(strcmp(doc["mac"].as<std::string>().c_str(), macAddress) != 0){
-      log_i("Rogue client detected Header: %s != document: %s", macAddress, doc["mac"].as<std::string>().c_str());
+    if(strcmp(doc["mac_address"].as<std::string>().c_str(), macAddress) != 0){
+      log_i("Rogue client detected Header: %s != document: %s", macAddress, doc["mac_address"].as<std::string>().c_str());
       eventHandler_rogueClient(macAddress);
       provisioningMode.setInactive();
       return false;
@@ -2240,7 +2240,7 @@ void http_handleProvisioning_PUT(AsyncWebServerRequest *request){
   request->send(202);
 
   JsonDocument filter;
-  filter["mac"] = true;
+  filter["mac_address"] = true;
 
   File root = configFS.open(CONFIGFS_PATH_CLIENTS + (String)"/");
   File file = root.openNextFile();
@@ -2256,7 +2256,7 @@ void http_handleProvisioning_PUT(AsyncWebServerRequest *request){
         JsonDocument doc;
         DeserializationError error = deserializeJson(doc, plaintext, DeserializationOption::Filter(filter));
         if(!error){
-          provisioningMode.addAllowedMac(doc["mac"].as<std::string>());
+          provisioningMode.addAllowedMac(doc["mac_address"].as<std::string>());
         }
       } else {
         eventLog.createEvent("Client decrypt fail", EventLog::LOG_LEVEL_ERROR);
@@ -2302,7 +2302,7 @@ void eventHandler_rogueClient(const char* macAddress){
 String findClientUuidByMac(const char* mac){
 
   JsonDocument filter;
-  filter["mac"] = true;
+  filter["mac_address"] = true;
 
   File root = configFS.open(CONFIGFS_PATH_CLIENTS + (String)"/");
   File file = root.openNextFile();
@@ -2320,7 +2320,7 @@ String findClientUuidByMac(const char* mac){
         DeserializationError error = deserializeJson(doc, plaintext, DeserializationOption::Filter(filter));
 
         if(!error){
-          String storedMac = doc["mac"].as<String>();
+          String storedMac = doc["mac_address"].as<String>();
           storedMac.toLowerCase();
           String incomingMac = String(mac);
           incomingMac.toLowerCase();
@@ -2427,7 +2427,7 @@ void http_handleProvisioningToken(AsyncWebServerRequest *request, JsonVariant do
   }
 
   JsonDocument filter;
-  filter["mac"] = true;
+  filter["mac_address"] = true;
 
   String plaintext;
   if(!secretEncryption.decryptFromFile(configFS, controllerPath, plaintext)){
@@ -2437,13 +2437,13 @@ void http_handleProvisioningToken(AsyncWebServerRequest *request, JsonVariant do
 
   JsonDocument storedDoc;
   DeserializationError storedErr = deserializeJson(storedDoc, plaintext, DeserializationOption::Filter(filter));
-  if(storedErr || storedDoc["mac"].isNull()){
-    log_w("Provisioning token request: controller %s has no mac field", uuid.c_str());
+  if(storedErr || storedDoc["mac_address"].isNull()){
+    log_w("Provisioning token request: controller %s has no mac_address field", uuid.c_str());
     http_notFound(request);
     return;
   }
 
-  String storedMac = storedDoc["mac"].as<String>();
+  String storedMac = storedDoc["mac_address"].as<String>();
   storedMac.toLowerCase();
   String incomingMac = doc["mac_address"].as<String>();
   incomingMac.toLowerCase();
@@ -2474,7 +2474,7 @@ void http_handleProvisioningToken(AsyncWebServerRequest *request, JsonVariant do
 String findControllerUuidByMac(const char* mac){
 
   JsonDocument filter;
-  filter["mac"] = true;
+  filter["mac_address"] = true;
 
   File root = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/");
   if(!root){
@@ -2502,10 +2502,10 @@ String findControllerUuidByMac(const char* mac){
         DeserializationError error = deserializeJson(doc, plaintext, DeserializationOption::Filter(filter));
 
         if(!error){
-          if(doc["mac"].isNull()){
-            log_d("findControllerUuidByMac: %s has no mac field", controllerName.c_str());
+          if(doc["mac_address"].isNull()){
+            log_d("findControllerUuidByMac: %s has no mac_address field", controllerName.c_str());
           } else {
-            String storedMac = doc["mac"].as<String>();
+            String storedMac = doc["mac_address"].as<String>();
             log_d("findControllerUuidByMac: stored mac='%s' incoming mac='%s'", storedMac.c_str(), mac);
             storedMac.toLowerCase();
             String incomingMac = String(mac);
