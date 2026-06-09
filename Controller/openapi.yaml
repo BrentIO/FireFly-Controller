@@ -1410,7 +1410,7 @@ components:
           examples:
             - Tech Room
           maxLength: 20 #Maximum length relates to hardware.h -> CONTROLLER_AREA_MAX_LENGTH
-        mac:
+        mac_address:
           $ref: '#/components/schemas/macAddress'
         ports:
           $ref: '#/components/schemas/inputPort'
@@ -1422,7 +1422,7 @@ components:
           $ref: '#/components/schemas/mqtt'
       required:
         - name
-        - mac
+        - mac_address
 
     inputPort:
       type: object
@@ -1638,7 +1638,7 @@ components:
           examples:
             - First floor
           maxLength: 20 #Maximum length relates to hardware.h -> CLIENT_NAME_MAX_LENGTH
-        mac:
+        mac_address:
           $ref: '#/components/schemas/macAddress'
         area:
           type: string
