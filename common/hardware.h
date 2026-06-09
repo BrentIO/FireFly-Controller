@@ -253,11 +253,9 @@
     #endif
 
 
-    #if CORE_DEBUG_LEVEL >= 4
     #ifndef MEMORY_USAGE_REPORT_SECONDS
         #define MEMORY_USAGE_REPORT_SECONDS 60 /* Number of seconds between each memory usage report in the main loop */
     #endif
-    #endif /* CORE_DEBUG_LEVEL >= 4 */
 
 
     #ifndef TEMPERATURE_SENSOR_LOCATION_MAX_LENGTH
