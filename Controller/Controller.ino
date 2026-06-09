@@ -508,117 +508,237 @@ void setup() {
 
         if(WiFi.status() == WL_CONNECTED){
 
-          log_i("Connected to provisioning AP; fetching nonce");
+          log_i("Connected to provisioning AP; requesting provisioning token");
 
           WiFiClient wifiClientForProvisioning;
           HTTPClient httpProvisioning;
 
-          httpProvisioning.begin(wifiClientForProvisioning, "http://192.168.4.1/api/provisioning/nonce");
-          int nonceHttpCode = httpProvisioning.GET();
+          String ownMac = WiFi.macAddress();
+          ownMac.toLowerCase();
 
-          if(nonceHttpCode == HTTP_CODE_OK){
+          JsonDocument tokenRequestDoc;
+          tokenRequestDoc["uuid"] = deviceIdentity.data.uuid;
+          tokenRequestDoc["mac_address"] = ownMac;
+          String tokenRequestBody;
+          serializeJson(tokenRequestDoc, tokenRequestBody);
 
-            String noncePayload = httpProvisioning.getString();
+          httpProvisioning.begin(wifiClientForProvisioning, "http://192.168.4.1/api/provisioning/token");
+          httpProvisioning.addHeader("Content-Type", "application/json");
+          int tokenHttpCode = httpProvisioning.POST(tokenRequestBody);
+
+          if(tokenHttpCode == HTTP_CODE_OK){
+
+            String tokenPayload = httpProvisioning.getString();
             httpProvisioning.end();
 
-            JsonDocument nonceDoc;
-            DeserializationError nonceErr = deserializeJson(nonceDoc, noncePayload);
+            JsonDocument tokenDoc;
+            DeserializationError tokenErr = deserializeJson(tokenDoc, tokenPayload);
 
-            if(!nonceErr && !nonceDoc["nonce"].isNull()){
+            if(!tokenErr && !tokenDoc["token"].isNull()){
 
-              uint32_t nonce = nonceDoc["nonce"].as<uint32_t>();
-              String ownMac = WiFi.macAddress();
-              ownMac.toLowerCase();
+              uint32_t provToken = tokenDoc["token"].as<uint32_t>();
+              char provTokenStr[12];
+              snprintf(provTokenStr, sizeof(provTokenStr), "%" PRIu32, provToken);
+              log_i("Got provisioning token; cleaning up local config");
+              log_d("Prov: token=%u", provToken);
 
-              log_i("Got nonce %u; sending mac-address %s for bundle request", nonce, ownMac.c_str());
-
-              char nonceStr[12];
-              snprintf(nonceStr, sizeof(nonceStr), "%" PRIu32, nonce);
-
-              httpProvisioning.begin(wifiClientForProvisioning, "http://192.168.4.1/api/provisioning/controller");
-              httpProvisioning.addHeader("mac-address", ownMac);
-              httpProvisioning.addHeader("x-device-uuid", deviceIdentity.data.uuid);
-              httpProvisioning.addHeader("x-nonce", nonceStr);
-              int bundleHttpCode = httpProvisioning.GET();
-
-              if(bundleHttpCode == HTTP_CODE_OK){
-
-                String bundlePayload = httpProvisioning.getString();
-                httpProvisioning.end();
-
-                JsonDocument bundleDoc;
-                DeserializationError bundleErr = deserializeJson(bundleDoc, bundlePayload);
-
-                if(!bundleErr){
-
-                  bool writeOK = true;
-
-                  JsonArray controllers = bundleDoc["controllers"].as<JsonArray>();
-                  for(JsonObject controller : controllers){
-
-                    if(controller["uuid"].isNull()){
-                      log_w("Controller record missing uuid, skipping");
-                      continue;
-                    }
-
-                    String controllerUuid = controller["uuid"].as<String>();
-                    String controllerPath = CONFIGFS_PATH_CONTROLLERS + (String)"/" + controllerUuid;
-                    String controllerJson;
-                    serializeJson(controller, controllerJson);
-
-                    if(!secretEncryption.encryptToFile(configFS, controllerPath, controllerJson)){
-                      eventLog.createEvent("Prov ctlr write fail", EventLog::LOG_LEVEL_ERROR);
-                      log_e("Failed to write controller %s", controllerUuid.c_str());
-                      writeOK = false;
-                    }
+              {
+                File ctlrRoot = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/");
+                if(ctlrRoot){
+                  File f = ctlrRoot.openNextFile();
+                  while(f){
+                    String fname = f.name();
+                    f.close();
+                    configFS.remove(CONFIGFS_PATH_CONTROLLERS + (String)"/" + fname);
+                    f = ctlrRoot.openNextFile();
                   }
-
-                  JsonArray clients = bundleDoc["clients"].as<JsonArray>();
-                  for(JsonObject client : clients){
-
-                    if(client["uuid"].isNull()){
-                      log_w("Client record missing uuid, skipping");
-                      continue;
-                    }
-
-                    String clientUuid = client["uuid"].as<String>();
-                    String clientPath = CONFIGFS_PATH_CLIENTS + (String)"/" + clientUuid;
-                    String clientJson;
-                    serializeJson(client, clientJson);
-
-                    if(!secretEncryption.encryptToFile(configFS, clientPath, clientJson)){
-                      eventLog.createEvent("Prov client write fail", EventLog::LOG_LEVEL_ERROR);
-                      log_e("Failed to write client %s", clientUuid.c_str());
-                      writeOK = false;
-                    }
-                  }
-
-                  if(writeOK){
-                    eventLog.createEvent("Prov cfg written");
-                    log_i("Provisioning config written successfully; rebooting");
-                    WiFi.disconnect(true);
-                    delay(200);
-                    ESP.restart();
-                  }
-
-                } else {
-                  log_e("Failed to parse provisioning bundle: %s", bundleErr.c_str());
+                  ctlrRoot.close();
                 }
+              }
+              {
+                File clientRoot = configFS.open(CONFIGFS_PATH_CLIENTS + (String)"/");
+                if(clientRoot){
+                  File f = clientRoot.openNextFile();
+                  while(f){
+                    String fname = f.name();
+                    f.close();
+                    configFS.remove(CONFIGFS_PATH_CLIENTS + (String)"/" + fname);
+                    f = clientRoot.openNextFile();
+                  }
+                  clientRoot.close();
+                }
+              }
+              if(configFS.exists("/backup.json")){
+                configFS.remove("/backup.json");
+              }
+              if(configFS.exists("/backup.etag")){
+                configFS.remove("/backup.etag");
+              }
 
-              } else if(bundleHttpCode == HTTP_CODE_NOT_FOUND){
-                log_w("Source controller does not know MAC %s; continuing unprovisioned", ownMac.c_str());
+              int expected_controllers = 0;
+              int actual_controllers = 0;
+
+              httpProvisioning.begin(wifiClientForProvisioning, "http://192.168.4.1/api/controllers");
+              httpProvisioning.addHeader("provisioning-token", provTokenStr);
+              int controllersListCode = httpProvisioning.GET();
+
+              if(controllersListCode == HTTP_CODE_OK){
+                String ctlrListPayload = httpProvisioning.getString();
                 httpProvisioning.end();
+                JsonDocument ctlrListDoc;
+                DeserializationError ctlrListErr = deserializeJson(ctlrListDoc, ctlrListPayload);
+                if(!ctlrListErr){
+                  JsonArray ctlrUuids = ctlrListDoc.as<JsonArray>();
+                  expected_controllers = ctlrUuids.size();
+                  for(JsonVariant uuidVar : ctlrUuids){
+                    String uuid = uuidVar.as<String>();
+                    httpProvisioning.begin(wifiClientForProvisioning, "http://192.168.4.1/api/controllers/" + uuid);
+                    httpProvisioning.addHeader("provisioning-token", provTokenStr);
+                    log_d("Prov: GET /api/controllers/%s token=%u", uuid.c_str(), provToken);
+                    int ctlrCode = httpProvisioning.GET();
+                    if(ctlrCode == HTTP_CODE_OK){
+                      String ctlrPayload = httpProvisioning.getString();
+                      httpProvisioning.end();
+                      if(secretEncryption.encryptToFile(configFS, CONFIGFS_PATH_CONTROLLERS + (String)"/" + uuid, ctlrPayload)){
+                        actual_controllers++;
+                      } else {
+                        log_e("Prov: failed to write controller %s", uuid.c_str());
+                      }
+                    } else {
+                      log_e("Prov: GET /api/controllers/%s returned %d", uuid.c_str(), ctlrCode);
+                      httpProvisioning.end();
+                    }
+                  }
+                } else {
+                  log_e("Prov: failed to parse controller list: %s", ctlrListErr.c_str());
+                }
               } else {
-                log_w("Provisioning bundle request returned %d for MAC %s; continuing unprovisioned", bundleHttpCode, ownMac.c_str());
+                log_e("Prov: GET /api/controllers returned %d", controllersListCode);
                 httpProvisioning.end();
               }
 
+              int expected_clients = 0;
+              int actual_clients = 0;
+
+              httpProvisioning.begin(wifiClientForProvisioning, "http://192.168.4.1/api/clients");
+              httpProvisioning.addHeader("provisioning-token", provTokenStr);
+              int clientsListCode = httpProvisioning.GET();
+
+              if(clientsListCode == HTTP_CODE_OK){
+                String clientListPayload = httpProvisioning.getString();
+                httpProvisioning.end();
+                JsonDocument clientListDoc;
+                DeserializationError clientListErr = deserializeJson(clientListDoc, clientListPayload);
+                if(!clientListErr){
+                  JsonArray clientUuids = clientListDoc.as<JsonArray>();
+                  expected_clients = clientUuids.size();
+                  for(JsonVariant clientUuidVar : clientUuids){
+                    String clientUuid = clientUuidVar.as<String>();
+                    httpProvisioning.begin(wifiClientForProvisioning, "http://192.168.4.1/api/clients/" + clientUuid);
+                    httpProvisioning.addHeader("provisioning-token", provTokenStr);
+                    log_d("Prov: GET /api/clients/%s token=%u", clientUuid.c_str(), provToken);
+                    int clientCode = httpProvisioning.GET();
+                    if(clientCode == HTTP_CODE_OK){
+                      String clientPayload = httpProvisioning.getString();
+                      httpProvisioning.end();
+                      if(secretEncryption.encryptToFile(configFS, CONFIGFS_PATH_CLIENTS + (String)"/" + clientUuid, clientPayload)){
+                        actual_clients++;
+                      } else {
+                        log_e("Prov: failed to write client %s", clientUuid.c_str());
+                      }
+                    } else {
+                      log_e("Prov: GET /api/clients/%s returned %d", clientUuid.c_str(), clientCode);
+                      httpProvisioning.end();
+                    }
+                  }
+                } else {
+                  log_e("Prov: failed to parse client list: %s", clientListErr.c_str());
+                }
+              } else {
+                log_e("Prov: GET /api/clients returned %d", clientsListCode);
+                httpProvisioning.end();
+              }
+
+              int backupResult = 0; // 0=fail, 1=ok, 2=not_found
+
+              httpProvisioning.begin(wifiClientForProvisioning, "http://192.168.4.1/backup");
+              httpProvisioning.addHeader("provisioning-token", provTokenStr);
+              int backupCode = httpProvisioning.GET();
+
+              if(backupCode == HTTP_CODE_OK){
+                String backupPayload = httpProvisioning.getString();
+                httpProvisioning.end();
+                JsonDocument backupValidate;
+                DeserializationError backupErr = deserializeJson(backupValidate, backupPayload);
+                if(!backupErr){
+                  File backupFile = configFS.open("/backup.json", "w");
+                  if(backupFile){
+                    backupFile.print(backupPayload);
+                    backupFile.close();
+                    backupResult = 1;
+                  } else {
+                    log_e("Prov: failed to open backup.json for writing");
+                  }
+                } else {
+                  log_e("Prov: backup JSON parse failed: %s", backupErr.c_str());
+                }
+              } else if(backupCode == HTTP_CODE_NOT_FOUND){
+                log_i("Prov: donor has no backup");
+                backupResult = 2;
+                httpProvisioning.end();
+              } else {
+                log_e("Prov: GET /backup returned %d", backupCode);
+                httpProvisioning.end();
+              }
+
+              WiFi.disconnect(true);
+
+              oled.setPage(managerOled::PAGE_EVENT_LOG);
+
+              bool countsOK = (actual_controllers == expected_controllers) && (actual_clients == expected_clients);
+
+              char oledLine[OLED_CHARACTERS_PER_LINE+1];
+
+              if(actual_controllers == expected_controllers && actual_clients == expected_clients){
+                snprintf(oledLine, sizeof(oledLine), "Prov OK %dC %dL", actual_controllers, actual_clients);
+                eventLog.createEvent(oledLine);
+                log_i("Prov: %d/%d controllers, %d/%d clients OK", actual_controllers, expected_controllers, actual_clients, expected_clients);
+              } else if(actual_controllers != expected_controllers){
+                snprintf(oledLine, sizeof(oledLine), "Prov fail C %d/%d", actual_controllers, expected_controllers);
+                eventLog.createEvent(oledLine, EventLog::LOG_LEVEL_ERROR);
+                log_e("Prov: controller mismatch: got %d expected %d", actual_controllers, expected_controllers);
+              } else {
+                snprintf(oledLine, sizeof(oledLine), "Prov fail L %d/%d", actual_clients, expected_clients);
+                eventLog.createEvent(oledLine, EventLog::LOG_LEVEL_ERROR);
+                log_e("Prov: client mismatch: got %d expected %d", actual_clients, expected_clients);
+              }
+
+              char oledLine2[OLED_CHARACTERS_PER_LINE+1];
+
+              if(backupResult == 1){
+                snprintf(oledLine2, sizeof(oledLine2), "Prov OK got backup");
+                eventLog.createEvent(oledLine2);
+              } else if(backupResult == 2){
+                snprintf(oledLine2, sizeof(oledLine2), "Prov OK no backup");
+                eventLog.createEvent(oledLine2);
+              } else {
+                snprintf(oledLine2, sizeof(oledLine2), "Prov bad backup");
+                eventLog.createEvent(oledLine2, EventLog::LOG_LEVEL_ERROR);
+              }
+
+              if(countsOK && backupResult != 0){
+                log_i("Prov: complete; rebooting in 5 seconds");
+                oled.loop();
+                delay(5000);
+                ESP.restart();
+              }
+
             } else {
-              log_w("Failed to parse nonce response; continuing unprovisioned");
+              log_w("Prov: failed to parse token response; continuing unprovisioned");
             }
 
           } else {
-            log_w("Nonce request returned %d; continuing unprovisioned", nonceHttpCode);
+            log_w("Prov: token request returned %d; continuing unprovisioned", tokenHttpCode);
             httpProvisioning.end();
           }
 
@@ -650,20 +770,22 @@ void setup() {
   if(configFS_isMounted){
     AsyncCallbackJsonWebHandler* controllersHandler = new AsyncCallbackJsonWebHandler("^/api/controllers/([0-9a-f-]+)$", http_handleControllers_PUT);
     controllersHandler->setMaxContentLength(65535);
+    controllersHandler->setMethod(HTTP_PUT);
     httpServer.addHandler(controllersHandler);
     httpServer.on("^/api/controllers$", HTTP_ANY, http_handleListControllers);
     httpServer.on("^/api/controllers/([0-9a-f-]+)$", http_handleControllers);
     AsyncCallbackJsonWebHandler* clientsHandler = new AsyncCallbackJsonWebHandler("^/api/clients/([0-9a-f-]+)$", http_handleClients_PUT);
     clientsHandler->setMaxContentLength(65535);
+    clientsHandler->setMethod(HTTP_PUT);
     httpServer.addHandler(clientsHandler);
     httpServer.on("^/api/clients$", HTTP_ANY, http_handleListClients);
     httpServer.on("^/api/clients/([0-9a-f-]+)$", http_handleClients);
     httpServer.on("/backup", HTTP_PUT, http_handleBackup_PUT, nullptr, http_handleBackup_PUT_body);
     httpServer.on("/backup", http_handleBackup);
-    httpServer.on("/api/provisioning/nonce", http_handleProvisioningNonce);
-    httpServer.on("/api/provisioning/client", http_handleProvisioningClient);
+    httpServer.on("/api/provisioning/token", HTTP_OPTIONS, http_options);
+    AsyncCallbackJsonWebHandler* provisioningTokenHandler = new AsyncCallbackJsonWebHandler("/api/provisioning/token", http_handleProvisioningToken);
+    httpServer.addHandler(provisioningTokenHandler);
     httpServer.on("/api/provisioning/certs", http_handleProvisioningCerts);
-    httpServer.on("/api/provisioning/controller", http_handleProvisioningController);
     httpServer.on("/api/provisioning", http_handleProvisioning);
     httpServer.on("^/certs/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
@@ -688,7 +810,7 @@ void setup() {
   httpServer.onNotFound(http_notFound);
 
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*"); //Ignore CORS
-  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "visual-token, Content-Type"); //Ignore CORS
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "visual-token, provisioning-token, Content-Type"); //Ignore CORS
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE"); //Ignore CORS
 
 
@@ -1249,6 +1371,7 @@ void setControllerNameOnOLED(){
  * Sends a 404 response indicating the resource is not found
 */
 void http_notFound(AsyncWebServerRequest *request) {
+    log_d("http_notFound: method=%d url=%s", request->method(), request->url().c_str());
     request->send(404);
 }
 
@@ -1608,6 +1731,7 @@ void http_handleAuth(AsyncWebServerRequest *request){
  * Generic handler for /api/controllers
  */
 void http_handleControllers(AsyncWebServerRequest *request){
+  log_d("http_handleControllers: method=%d url=%s", request->method(), request->url().c_str());
   switch(request->method()){
 
     case HTTP_OPTIONS:
@@ -1634,16 +1758,23 @@ void http_handleControllers(AsyncWebServerRequest *request){
 */
 void http_handleControllers_GET(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader("visual-token")){
-        http_unauthorized(request);
-        return;
-  }
+  log_d("http_handleControllers_GET: pathArg(0)=%s visual-token=%d provisioning-token=%d", request->pathArg(0).c_str(), request->hasHeader("visual-token"), request->hasHeader("provisioning-token"));
 
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
+  if(request->hasHeader("visual-token")){
+    if(!authToken.authenticate(request->header("visual-token").c_str())){
+      http_unauthorized(request);
+      return;
+    }
+  } else if(request->hasHeader("provisioning-token")){
+    if(!authenticateWithProvisioningToken(request)){
+      return;
+    }
+  } else {
+    log_w("http_handleControllers_GET: no auth header from %s", request->client()->remoteIP().toString().c_str());
     http_unauthorized(request);
     return;
   }
-  
+
   resetHTPServerUsage();
 
   String filename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + request->pathArg(0);
@@ -1699,6 +1830,7 @@ void http_handleControllers_DELETE(AsyncWebServerRequest *request){
  * Handles Controller PUTs
 */
 void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc){
+  log_d("http_handleControllers_PUT: method=%d url=%s", request->method(), request->url().c_str());
 
   if(request->method() == HTTP_OPTIONS){
     http_options(request);
@@ -1748,17 +1880,23 @@ void http_handleControllers_PUT(AsyncWebServerRequest *request, JsonVariant doc)
 */
 void http_handleListControllers(AsyncWebServerRequest *request){
 
+  log_d("http_handleListControllers: method=%d url=%s", request->method(), request->url().c_str());
+
   if(request->method() == HTTP_OPTIONS){
     http_options(request);
     return;
   }
 
-  if(!request->hasHeader("visual-token")){
-        http_unauthorized(request);
-        return;
-  }
-
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
+  if(request->hasHeader("visual-token")){
+    if(!authToken.authenticate(request->header("visual-token").c_str())){
+      http_unauthorized(request);
+      return;
+    }
+  } else if(request->hasHeader("provisioning-token")){
+    if(!authenticateWithProvisioningToken(request)){
+      return;
+    }
+  } else {
     http_unauthorized(request);
     return;
   }
@@ -1821,33 +1959,25 @@ void http_handleClients(AsyncWebServerRequest *request){
 */
 void http_handleClients_GET(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader("visual-token") && !request->hasHeader("mac-address")){
-      http_unauthorized(request);
-      return;
-  }
+  log_d("http_handleClients_GET: pathArg(0)=%s visual-token=%d provisioning-token=%d", request->pathArg(0).c_str(), request->hasHeader("visual-token"), request->hasHeader("provisioning-token"));
 
   if(request->hasHeader("visual-token")){
     if(!authToken.authenticate(request->header("visual-token").c_str())){
       http_unauthorized(request);
       return;
     }
+  } else if(request->hasHeader("provisioning-token")){
+    if(!authenticateWithProvisioningToken(request)){
+      return;
+    }
+  } else {
+    log_w("http_handleClients_GET: no auth header from %s", request->client()->remoteIP().toString().c_str());
+    http_unauthorized(request);
+    return;
   }
 
   resetHTPServerUsage();
 
-  if(request->hasHeader("mac-address")){
-
-    if(provisioningMode.getStatus() != true){
-      http_badRequest(request, "Provisioning mode inactive");
-      return;
-    }
-
-    if(!authClientWithMacAddress(request->pathArg(0).c_str(), request->header("mac-address").c_str())){
-      http_forbiddenRequest(request, "Request will not be fulfilled");
-      return;
-    }
-  }
-  
   String filename = CONFIGFS_PATH_CLIENTS + (String)"/" + request->pathArg(0);
 
   if(!configFS.exists(filename)){
@@ -1940,6 +2070,7 @@ void http_handleClients_DELETE(AsyncWebServerRequest *request){
  * Handles Clients PUTs
 */
 void http_handleClients_PUT(AsyncWebServerRequest *request, JsonVariant doc){
+  log_d("http_handleClients_PUT: method=%d url=%s", request->method(), request->url().c_str());
 
   if(request->method() == HTTP_OPTIONS){
     http_options(request);
@@ -1994,12 +2125,16 @@ void http_handleListClients(AsyncWebServerRequest *request){
     return;
   }
 
-  if(!request->hasHeader("visual-token")){
-        http_unauthorized(request);
-        return;
-  }
-
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
+  if(request->hasHeader("visual-token")){
+    if(!authToken.authenticate(request->header("visual-token").c_str())){
+      http_unauthorized(request);
+      return;
+    }
+  } else if(request->hasHeader("provisioning-token")){
+    if(!authenticateWithProvisioningToken(request)){
+      return;
+    }
+  } else {
     http_unauthorized(request);
     return;
   }
@@ -2216,115 +2351,118 @@ bool isRequestViaSoftAP(AsyncWebServerRequest *request){
 }
 
 
-void http_handleProvisioningNonce(AsyncWebServerRequest *request){
-
-  if(request->method() == HTTP_OPTIONS){
-    http_options(request);
-    return;
-  }
-
-  if(request->method() != HTTP_GET){
-    http_methodNotAllowed(request);
-    return;
-  }
-
+/**
+ * Validates the provisioning-token header against the active provisioning mode.
+ * Sends an appropriate error response and returns false if authentication fails.
+ * Always enforces SoftAP-only access to prevent Ethernet token replay.
+ */
+bool authenticateWithProvisioningToken(AsyncWebServerRequest *request){
   if(!isRequestViaSoftAP(request)){
-    log_w("Provisioning nonce request rejected: not via SoftAP (localIP=%s)", request->client()->localIP().toString().c_str());
+    log_w("Provisioning token auth rejected: not via SoftAP (localIP=%s)", request->client()->localIP().toString().c_str());
     http_forbiddenRequest(request, "Only accessible via provisioning network");
-    return;
+    return false;
   }
-
   if(provisioningMode.getStatus() != true){
-    log_w("Provisioning nonce request rejected: provisioning mode inactive");
+    log_w("Provisioning token auth rejected: provisioning mode inactive");
     http_conflict(request, "Provisioning mode inactive");
-    return;
+    return false;
   }
-
-  uint32_t nonce = provisioningMode.generateNonce();
-  log_i("Provisioning nonce issued: %u to %s", nonce, request->client()->remoteIP().toString().c_str());
-
-  JsonDocument doc;
-  doc["nonce"] = nonce;
-  AsyncResponseStream *response = request->beginResponseStream("application/json");
-  serializeJson(doc, *response);
-  request->send(response);
+  if(!request->hasHeader("provisioning-token")){
+    log_w("Provisioning token auth rejected: no header from %s", request->client()->remoteIP().toString().c_str());
+    http_unauthorized(request);
+    return false;
+  }
+  uint32_t token = (uint32_t)strtoul(request->header("provisioning-token").c_str(), nullptr, 10);
+  log_d("Provisioning token auth: received \"%s\" (parsed=%u) from %s", request->header("provisioning-token").c_str(), token, request->client()->remoteIP().toString().c_str());
+  if(!provisioningMode.validateToken(token)){
+    log_w("Provisioning token rejected: \"%s\" from %s", request->header("provisioning-token").c_str(), request->client()->remoteIP().toString().c_str());
+    http_unauthorized(request);
+    return false;
+  }
+  return true;
 }
 
 
-void http_handleProvisioningClient(AsyncWebServerRequest *request){
+void http_handleProvisioningToken(AsyncWebServerRequest *request, JsonVariant doc){
 
   if(request->method() == HTTP_OPTIONS){
     http_options(request);
     return;
   }
 
-  if(request->method() != HTTP_GET){
+  if(request->method() != HTTP_POST){
     http_methodNotAllowed(request);
     return;
   }
 
   if(!isRequestViaSoftAP(request)){
+    log_w("Provisioning token request rejected: not via SoftAP (localIP=%s)", request->client()->localIP().toString().c_str());
     http_forbiddenRequest(request, "Only accessible via provisioning network");
     return;
   }
 
   if(provisioningMode.getStatus() != true){
+    log_w("Provisioning token request rejected: provisioning mode inactive");
     http_conflict(request, "Provisioning mode inactive");
     return;
   }
 
-  if(!request->hasHeader("mac-address")){
-    log_w("Provisioning client request rejected: missing mac-address header from %s", request->client()->remoteIP().toString().c_str());
-    http_unauthorized(request);
+  if(doc["uuid"].isNull() || doc["uuid"].as<String>().length() != 36){
+    http_badRequest(request, "uuid must be 36 characters");
     return;
   }
 
-  if(!request->hasHeader("x-nonce")){
-    log_w("Provisioning client request rejected: missing x-nonce header from %s", request->client()->remoteIP().toString().c_str());
-    http_unauthorized(request);
+  if(doc["mac_address"].isNull() || doc["mac_address"].as<String>().isEmpty()){
+    http_badRequest(request, "mac_address is required");
     return;
   }
 
-  uint32_t nonce = (uint32_t)strtoul(request->header("x-nonce").c_str(), nullptr, 10);
+  String uuid = doc["uuid"].as<String>();
+  String controllerPath = CONFIGFS_PATH_CONTROLLERS + (String)"/" + uuid;
 
-  if(!provisioningMode.isNonceValid(nonce)){
-    log_w("Provisioning client request rejected: bad nonce %u from %s", nonce, request->client()->remoteIP().toString().c_str());
-    eventLog.createEvent("Prov mode bad nonce", EventLog::LOG_LEVEL_NOTIFICATION);
-    http_unauthorized(request);
-    return;
-  }
-
-  if(!configFS_isMounted){
-    http_error(request, "File system not mounted");
-    return;
-  }
-
-  String mac = request->header("mac-address");
-  mac.toLowerCase();
-
-  log_d("Provisioning client lookup for MAC %s", mac.c_str());
-
-  String uuid = findClientUuidByMac(mac.c_str());
-
-  if(uuid.isEmpty()){
-    log_w("Provisioning client request rejected: unknown MAC %s", mac.c_str());
-    eventLog.createEvent("Prov mode unknwn MAC", EventLog::LOG_LEVEL_NOTIFICATION);
+  if(!configFS.exists(controllerPath)){
+    log_w("Provisioning token request: no controller file for uuid=%s from %s", uuid.c_str(), request->client()->remoteIP().toString().c_str());
     http_notFound(request);
     return;
   }
 
-  provisioningMode.invalidateNonce();
-
-  log_i("Provisioning client found: uuid=%s for MAC %s", uuid.c_str(), mac.c_str());
-
-  String filename = CONFIGFS_PATH_CLIENTS + (String)"/" + uuid;
+  JsonDocument filter;
+  filter["mac"] = true;
 
   String plaintext;
-  if(!secretEncryption.decryptFromFile(configFS, filename, plaintext)){
-    http_error(request, "Unable to decrypt file");
+  if(!secretEncryption.decryptFromFile(configFS, controllerPath, plaintext)){
+    http_error(request, "Unable to decrypt controller file");
     return;
   }
-  request->send(200, "application/json", plaintext);
+
+  JsonDocument storedDoc;
+  DeserializationError storedErr = deserializeJson(storedDoc, plaintext, DeserializationOption::Filter(filter));
+  if(storedErr || storedDoc["mac"].isNull()){
+    log_w("Provisioning token request: controller %s has no mac field", uuid.c_str());
+    http_notFound(request);
+    return;
+  }
+
+  String storedMac = storedDoc["mac"].as<String>();
+  storedMac.toLowerCase();
+  String incomingMac = doc["mac_address"].as<String>();
+  incomingMac.toLowerCase();
+
+  if(storedMac != incomingMac){
+    log_w("Provisioning token request: MAC mismatch for %s: stored='%s' incoming='%s'", uuid.c_str(), storedMac.c_str(), incomingMac.c_str());
+    eventLog.createEvent("Prov mode MAC mismatch", EventLog::LOG_LEVEL_NOTIFICATION);
+    http_unauthorized(request);
+    return;
+  }
+
+  uint32_t token = provisioningMode.issueToken(storedMac.c_str());
+  log_i("Provisioning token issued: %u for uuid=%s mac=%s", token, uuid.c_str(), storedMac.c_str());
+
+  JsonDocument responseDoc;
+  responseDoc["token"] = token;
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
+  serializeJson(responseDoc, *response);
+  request->send(response);
 }
 
 
@@ -2397,193 +2535,6 @@ String findControllerUuidByMac(const char* mac){
 }
 
 
-/**
- * Handles GET /api/provisioning/controller — returns all controller and client records
- * as a JSON bundle to an unprovisioned controller connecting via the provisioning SoftAP.
- * Requires: SoftAP request, active provisioning mode, mac-address header matching a known
- * controller record, and a valid unused x-nonce.
- */
-void http_handleProvisioningController(AsyncWebServerRequest *request){
-
-  if(request->method() == HTTP_OPTIONS){
-    http_options(request);
-    return;
-  }
-
-  if(request->method() != HTTP_GET){
-    http_methodNotAllowed(request);
-    return;
-  }
-
-  if(!isRequestViaSoftAP(request)){
-    log_w("Provisioning controller request rejected: not via SoftAP (localIP=%s)", request->client()->localIP().toString().c_str());
-    http_forbiddenRequest(request, "Only accessible via provisioning network");
-    return;
-  }
-
-  if(provisioningMode.getStatus() != true){
-    log_w("Provisioning controller request rejected: provisioning mode inactive");
-    http_conflict(request, "Provisioning mode inactive");
-    return;
-  }
-
-  if(!request->hasHeader("mac-address")){
-    log_w("Provisioning controller request rejected: missing mac-address header from %s", request->client()->remoteIP().toString().c_str());
-    http_unauthorized(request);
-    return;
-  }
-
-  if(!request->hasHeader("x-nonce")){
-    log_w("Provisioning controller request rejected: missing x-nonce header from %s", request->client()->remoteIP().toString().c_str());
-    http_unauthorized(request);
-    return;
-  }
-
-  uint32_t nonce = (uint32_t)strtoul(request->header("x-nonce").c_str(), nullptr, 10);
-
-  if(!provisioningMode.isNonceValid(nonce)){
-    log_w("Provisioning controller request rejected: bad nonce %u from %s", nonce, request->client()->remoteIP().toString().c_str());
-    eventLog.createEvent("Prov mode bad nonce", EventLog::LOG_LEVEL_NOTIFICATION);
-    http_unauthorized(request);
-    return;
-  }
-
-  if(!configFS_isMounted){
-    http_error(request, "File system not mounted");
-    return;
-  }
-
-  String mac = request->header("mac-address");
-  mac.toLowerCase();
-
-  log_d("Provisioning controller lookup for MAC %s", mac.c_str());
-
-  String controllerUuid;
-
-  if(request->hasHeader("x-device-uuid") && request->header("x-device-uuid").length() == 36){
-    String candidateUuid = request->header("x-device-uuid");
-    String candidatePath = CONFIGFS_PATH_CONTROLLERS + (String)"/" + candidateUuid;
-    log_d("Provisioning controller direct lookup for UUID %s", candidateUuid.c_str());
-
-    JsonDocument uuidFilter;
-    uuidFilter["mac"] = true;
-
-    String plaintext;
-    if(secretEncryption.decryptFromFile(configFS, candidatePath, plaintext)){
-      JsonDocument uuidDoc;
-      DeserializationError uuidErr = deserializeJson(uuidDoc, plaintext, DeserializationOption::Filter(uuidFilter));
-      if(!uuidErr){
-        if(uuidDoc["mac"].isNull()){
-          log_w("Provisioning controller direct lookup: %s has no mac field", candidateUuid.c_str());
-        } else {
-          String storedMac = uuidDoc["mac"].as<String>();
-          storedMac.toLowerCase();
-          if(storedMac == mac){
-            controllerUuid = candidateUuid;
-            log_d("Provisioning controller direct lookup matched UUID %s", candidateUuid.c_str());
-          } else {
-            log_w("Provisioning controller direct lookup: MAC mismatch for UUID %s: stored='%s' incoming='%s'", candidateUuid.c_str(), storedMac.c_str(), mac.c_str());
-          }
-        }
-      }
-    } else {
-      log_d("Provisioning controller direct lookup: no file for UUID %s, falling back to enumeration", candidateUuid.c_str());
-    }
-  }
-
-  if(controllerUuid.isEmpty()){
-    controllerUuid = findControllerUuidByMac(mac.c_str());
-  }
-
-  if(controllerUuid.isEmpty()){
-    log_w("Provisioning controller request rejected: unknown MAC %s", mac.c_str());
-    eventLog.createEvent("Prov mode unknwn MAC", EventLog::LOG_LEVEL_NOTIFICATION);
-    http_notFound(request);
-    return;
-  }
-
-  provisioningMode.invalidateNonce();
-
-  AsyncResponseStream *response = request->beginResponseStream("application/json");
-  response->print("{\"controllers\":[");
-
-  File controllerRoot = configFS.open(CONFIGFS_PATH_CONTROLLERS + (String)"/");
-  File controllerFile = controllerRoot.openNextFile();
-  bool firstController = true;
-
-  while(controllerFile){
-    if(!controllerFile.isDirectory()){
-      String ctlrName = controllerFile.name();
-      String ctlrPath = CONFIGFS_PATH_CONTROLLERS + (String)"/" + ctlrName;
-      controllerFile.close();
-
-      String plaintext;
-      if(secretEncryption.decryptFromFile(configFS, ctlrPath, plaintext)){
-        JsonDocument doc;
-        DeserializationError error = deserializeJson(doc, plaintext);
-        if(!error){
-          doc["uuid"] = ctlrName;
-          if(!firstController){
-            response->print(",");
-          }
-          serializeJson(doc, *response);
-          firstController = false;
-        } else {
-          log_e("Failed to parse controller %s: %s", ctlrName.c_str(), error.c_str());
-        }
-      } else {
-        eventLog.createEvent("Ctlr decrypt fail", EventLog::LOG_LEVEL_ERROR);
-        log_e("Failed to decrypt controller %s", ctlrPath.c_str());
-      }
-    } else {
-      controllerFile.close();
-    }
-    controllerFile = controllerRoot.openNextFile();
-  }
-
-  controllerRoot.close();
-
-  response->print("],\"clients\":[");
-
-  File clientRoot = configFS.open(CONFIGFS_PATH_CLIENTS + (String)"/");
-  File clientFile = clientRoot.openNextFile();
-  bool firstClient = true;
-
-  while(clientFile){
-    if(!clientFile.isDirectory()){
-      String clientName = clientFile.name();
-      String clientPath = CONFIGFS_PATH_CLIENTS + (String)"/" + clientName;
-      clientFile.close();
-
-      String plaintext;
-      if(secretEncryption.decryptFromFile(configFS, clientPath, plaintext)){
-        JsonDocument doc;
-        DeserializationError error = deserializeJson(doc, plaintext);
-        if(!error){
-          doc["uuid"] = clientName;
-          if(!firstClient){
-            response->print(",");
-          }
-          serializeJson(doc, *response);
-          firstClient = false;
-        } else {
-          log_e("Failed to parse client %s: %s", clientName.c_str(), error.c_str());
-        }
-      } else {
-        eventLog.createEvent("Client decrypt fail", EventLog::LOG_LEVEL_ERROR);
-        log_e("Failed to decrypt client %s", clientPath.c_str());
-      }
-    } else {
-      clientFile.close();
-    }
-    clientFile = clientRoot.openNextFile();
-  }
-
-  clientRoot.close();
-
-  response->print("]}");
-  request->send(response);
-}
 
 
 /**
@@ -2657,12 +2608,16 @@ void http_handleBackup_HEAD(AsyncWebServerRequest *request){
 */
 void http_handleBackup_GET(AsyncWebServerRequest *request){
 
-  if(!request->hasHeader("visual-token")){
-    http_unauthorized(request);
-    return;
-  }
-
-  if(!authToken.authenticate(request->header("visual-token").c_str())){
+  if(request->hasHeader("visual-token")){
+    if(!authToken.authenticate(request->header("visual-token").c_str())){
+      http_unauthorized(request);
+      return;
+    }
+  } else if(request->hasHeader("provisioning-token")){
+    if(!authenticateWithProvisioningToken(request)){
+      return;
+    }
+  } else {
     http_unauthorized(request);
     return;
   }

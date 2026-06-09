@@ -147,6 +147,7 @@ export async function buildControllerPayload(controllerId, returnOnlyErrors = fa
   const payload = {
     name: controller.name.trim().substring(0, MAX_NAME),
     area: area.name.trim().substring(0, MAX_AREA),
+    mac: controller.mac,
     ports,
     outputs,
     mqtt: mqttPayload
