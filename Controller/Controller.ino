@@ -675,6 +675,28 @@ void setup() {
                   if(backupFile){
                     backupFile.print(backupPayload);
                     backupFile.close();
+
+                    mbedtls_sha256_context provBackupSha;
+                    mbedtls_sha256_init(&provBackupSha);
+                    mbedtls_sha256_starts(&provBackupSha, 0);
+                    mbedtls_sha256_update(&provBackupSha, (const unsigned char*)backupPayload.c_str(), backupPayload.length());
+                    uint8_t provBackupHash[32];
+                    mbedtls_sha256_finish(&provBackupSha, provBackupHash);
+                    mbedtls_sha256_free(&provBackupSha);
+                    char provEtagHex[65];
+                    for(int i = 0; i < 32; i++){
+                      sprintf(provEtagHex + i*2, "%02x", provBackupHash[i]);
+                    }
+                    provEtagHex[64] = '\0';
+                    if(configFS.exists("/backup.etag")){
+                      configFS.remove("/backup.etag");
+                    }
+                    File etagFile = configFS.open("/backup.etag", "w");
+                    if(etagFile){
+                      etagFile.print(provEtagHex);
+                      etagFile.close();
+                    }
+
                     backupResult = 1;
                   } else {
                     log_e("Prov: failed to open backup.json for writing");
