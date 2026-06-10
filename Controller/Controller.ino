@@ -5699,8 +5699,7 @@ static bool _cloudAuth_setHeaders(esp_http_client_handle_t client) {
 /**
  * Reads /backup.json from configFS, encrypts with key_backup, and uploads to the
  * cloud.  Called automatically by the OTA check loop if /backup.json exists.
- * On success the local /backup.json file is removed.
- * Silently returns on any error — the file remains for the next attempt.
+ * Silently returns on any error.
  */
 void cloudBackup_uploadToCloud() {
 
@@ -5800,7 +5799,6 @@ void cloudBackup_uploadToCloud() {
   log_i("cloudBackup_uploadToCloud: err=%d status=%d", (int)err, code);
 
   if (err == ESP_OK && (code == 200 || code == 204 || code == 304)) {
-    configFS.remove("/backup.json");
     eventLog.createEvent("Backup uploaded");
   } else {
     char text[OLED_CHARACTERS_PER_LINE+1];
