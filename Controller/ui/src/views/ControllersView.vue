@@ -92,7 +92,7 @@
                     ? 'bg-green-600 hover:bg-green-700 text-white border-transparent'
                     : 'border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20'
                 ]"
-                :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="toggleProvisioning(ctrl.id)">{{ sessions[ctrl.id]?.provisioningModeEnabled ? 'Disable Provisioning' : 'Enable Provisioning' }}</button>
+                :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="toggleProvisioning(ctrl.id)">{{ sessions[ctrl.id]?.provisioningModeEnabled ? 'Disable Provisioning Mode' : 'Enable Provisioning Mode' }}</button>
               <button class="w-full px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors" :class="isCloudMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-800'" :disabled="isCloudMode" :title="isCloudMode ? 'Not available in hosted mode' : undefined" @click="confirmOta(ctrl)">Force OTA Update</button>
               <button
                 class="w-full px-2 py-1.5 text-sm font-medium rounded-lg transition-colors"
