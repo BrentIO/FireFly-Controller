@@ -728,6 +728,7 @@ void setup() {
 
               if(countsOK && backupResult != 0){
                 log_i("Prov: complete; rebooting in 5 seconds");
+                eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
                 oled.loop();
                 delay(5000);
                 ESP.restart();
