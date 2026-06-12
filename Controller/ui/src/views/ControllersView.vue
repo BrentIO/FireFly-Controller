@@ -75,7 +75,7 @@
               <button class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex-shrink-0" @click="authenticate(ctrl.id)">Connect</button>
             </div>
           </div>
-          <div v-else class="space-y-2">
+          <div v-else-if="sessions[ctrl.id]?.isAuthenticated" class="space-y-2">
             <div class="flex items-center justify-between">
               <span class="text-xs text-green-600 dark:text-green-400 font-medium">Connected · {{ sessions[ctrl.id].ip }}</span>
               <button class="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 underline" @click="logout(ctrl.id)">Disconnect</button>
