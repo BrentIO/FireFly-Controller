@@ -736,10 +736,10 @@ async function _doDeployController(ctrl, ctrlIndex, ctrlTotal) {
     setItem('', 0, existingCtrls.length)
     for (let i = 0; i < existingCtrls.length; i++) {
       const c = existingCtrls[i]
-      setItem(c.uuid ?? '', i, existingCtrls.length)
-      const r = await fetchOrHandle(`/controllers/${c.uuid}`, { method: 'DELETE' })
+      setItem(c ?? '', i, existingCtrls.length)
+      const r = await fetchOrHandle(`/controllers/${c}`, { method: 'DELETE' })
       if (!r) { deployProgress.ctrlCurrent = ctrlIndex + 1; return false }
-      setItem(c.uuid ?? '', i + 1, existingCtrls.length)
+      setItem(c ?? '', i + 1, existingCtrls.length)
     }
 
     // Step 4: Deploy all controllers
@@ -775,10 +775,10 @@ async function _doDeployController(ctrl, ctrlIndex, ctrlTotal) {
     setItem('', 0, existingClients.length)
     for (let i = 0; i < existingClients.length; i++) {
       const c = existingClients[i]
-      setItem(c.uuid ?? '', i, existingClients.length)
-      const r = await fetchOrHandle(`/clients/${c.uuid}`, { method: 'DELETE' })
+      setItem(c ?? '', i, existingClients.length)
+      const r = await fetchOrHandle(`/clients/${c}`, { method: 'DELETE' })
       if (!r) { deployProgress.ctrlCurrent = ctrlIndex + 1; return false }
-      setItem(c.uuid ?? '', i + 1, existingClients.length)
+      setItem(c ?? '', i + 1, existingClients.length)
     }
 
     // Step 7: Deploy clients
