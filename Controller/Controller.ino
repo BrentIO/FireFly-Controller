@@ -918,8 +918,11 @@ void loop() {
   }
 
   if(httpServerIsActive){
-    if((uint32_t)esp_timer_get_time() - lastTimeHttpServerUsed >= (uint32_t)HTTP_SERVER_MAX_IDLE_SECONDS * 1000000UL) {
-      stopHttpServer();
+    uint32_t _httpIdleElapsed = (uint32_t)esp_timer_get_time() - lastTimeHttpServerUsed;
+    if(_httpIdleElapsed >= (uint32_t)HTTP_SERVER_MAX_IDLE_SECONDS * 1000000UL) {
+      log_i("HTTP idle timeout: elapsed=%lu s threshold=%d s lastUsed=%lu; stopHttpServer() suppressed for diagnostics.",
+            _httpIdleElapsed / 1000000UL, HTTP_SERVER_MAX_IDLE_SECONDS, lastTimeHttpServerUsed);
+      //stopHttpServer();
     }
   }
 
@@ -4021,6 +4024,7 @@ void mqtt_reconnect(){
     if(mqttClient.connect(deviceIdentity.data.uuid, mqttClient.username, mqttClient.password, mqttClient.topic_availability, 2, true, "offline")) {
         mqttClient.lastReconnectAttemptTime = 0;
         _mqttWasConnected = true;
+        log_i("MQTT connected at uptime=%llu s; httpServerIsActive=%d lastTimeHttpServerUsed=%lu", esp_timer_get_time() / 1000000ULL, httpServerIsActive, lastTimeHttpServerUsed);
         eventLog.createEvent("MQTT connected");
         eventLog.resolveError("MQTT disconnected");
         mqttClient.publish(mqttClient.topic_availability, "online", true);
@@ -4258,12 +4262,13 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
   if(ms.Match(MQTT_TOPIC_HTTP_SERVER_SET_REGEX)){ //User wants to enable or disable the HTTP server
 
     payload.toUpperCase();
+    log_i("MQTT: http-server/set received '%s' (httpServerIsActive=%d, uptime=%llu s)", payload.c_str(), httpServerIsActive, esp_timer_get_time() / 1000000ULL);
 
     if(payload == "ON"){
       startHttpServer();
       return;
     }
-    
+
     if(payload == "OFF"){
       stopHttpServer();
       return;
