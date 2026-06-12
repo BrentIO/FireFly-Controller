@@ -95,6 +95,7 @@ void refreshCertBundle();
 void mqtt_publishClientCertState();
 void mqtt_publishControllerCertState();
 void cloudBackup_uploadToCloud();
+void writeBackupEtag(const uint8_t sha256[32]);
 void http_handleCloudBackup(AsyncWebServerRequest *request);
 void http_handleCloudBackup_POST(AsyncWebServerRequest *request);
 void http_handleCloudBackup_GET(AsyncWebServerRequest *request);
@@ -683,19 +684,7 @@ void setup() {
                     uint8_t provBackupHash[32];
                     mbedtls_sha256_finish(&provBackupSha, provBackupHash);
                     mbedtls_sha256_free(&provBackupSha);
-                    char provEtagHex[65];
-                    for(int i = 0; i < 32; i++){
-                      sprintf(provEtagHex + i*2, "%02x", provBackupHash[i]);
-                    }
-                    provEtagHex[64] = '\0';
-                    if(configFS.exists("/backup.etag")){
-                      configFS.remove("/backup.etag");
-                    }
-                    File etagFile = configFS.open("/backup.etag", "w");
-                    if(etagFile){
-                      etagFile.print(provEtagHex);
-                      etagFile.close();
-                    }
+                    writeBackupEtag(provBackupHash);
 
                     backupResult = 1;
                   } else {
@@ -2560,6 +2549,27 @@ String findControllerUuidByMac(const char* mac){
 
 
 /**
+ * Writes the SHA-256 hash of the backup to /backup.etag as a lowercase hex string.
+ * Replaces any existing etag file.
+ */
+void writeBackupEtag(const uint8_t sha256[32]){
+  char etagHex[65];
+  for(int i = 0; i < 32; i++){
+    sprintf(etagHex + i*2, "%02x", sha256[i]);
+  }
+  etagHex[64] = '\0';
+  if(configFS.exists("/backup.etag")){
+    configFS.remove("/backup.etag");
+  }
+  File etagFile = configFS.open("/backup.etag", "w");
+  if(etagFile){
+    etagFile.print(etagHex);
+    etagFile.close();
+  }
+}
+
+
+/**
  * Generic handler for /backup
  */
 void http_handleBackup(AsyncWebServerRequest *request){
@@ -2760,19 +2770,7 @@ void http_handleBackup_PUT(AsyncWebServerRequest *request){
     return;
   }
 
-  char etagHex[65];
-  for(int i = 0; i < 32; i++){
-    sprintf(etagHex + i*2, "%02x", sha256[i]);
-  }
-  etagHex[64] = '\0';
-  if(configFS.exists("/backup.etag")){
-    configFS.remove("/backup.etag");
-  }
-  File etagFile = configFS.open("/backup.etag", "w");
-  if(etagFile){
-    etagFile.print(etagHex);
-    etagFile.close();
-  }
+  writeBackupEtag(sha256);
 
   resetHTPServerUsage();
   request->send(204);
