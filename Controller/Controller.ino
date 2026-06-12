@@ -95,7 +95,7 @@ void refreshCertBundle();
 void mqtt_publishClientCertState();
 void mqtt_publishControllerCertState();
 void cloudBackup_uploadToCloud();
-void writeBackupEtag(const uint8_t sha256[32]);
+void writeBackupEtag();
 void http_handleCloudBackup(AsyncWebServerRequest *request);
 void http_handleCloudBackup_POST(AsyncWebServerRequest *request);
 void http_handleCloudBackup_GET(AsyncWebServerRequest *request);
@@ -677,15 +677,7 @@ void setup() {
                     backupFile.print(backupPayload);
                     backupFile.close();
 
-                    mbedtls_sha256_context provBackupSha;
-                    mbedtls_sha256_init(&provBackupSha);
-                    mbedtls_sha256_starts(&provBackupSha, 0);
-                    mbedtls_sha256_update(&provBackupSha, (const unsigned char*)backupPayload.c_str(), backupPayload.length());
-                    uint8_t provBackupHash[32];
-                    mbedtls_sha256_finish(&provBackupSha, provBackupHash);
-                    mbedtls_sha256_free(&provBackupSha);
-                    writeBackupEtag(provBackupHash);
-
+                    writeBackupEtag();
                     backupResult = 1;
                   } else {
                     log_e("Prov: failed to open backup.json for writing");
@@ -2549,13 +2541,30 @@ String findControllerUuidByMac(const char* mac){
 
 
 /**
- * Writes the SHA-256 hash of the backup to /backup.etag as a lowercase hex string.
- * Replaces any existing etag file.
+ * Computes the SHA-256 of /backup.json and writes it to /backup.etag as a
+ * lowercase hex string.  Replaces any existing etag file.
  */
-void writeBackupEtag(const uint8_t sha256[32]){
+void writeBackupEtag(){
+  File f = configFS.open("/backup.json", "r");
+  if(!f) return;
+
+  mbedtls_sha256_context sha;
+  mbedtls_sha256_init(&sha);
+  mbedtls_sha256_starts(&sha, 0);
+  uint8_t buf[256];
+  while(f.available()){
+    size_t n = f.read(buf, sizeof(buf));
+    if(n > 0) mbedtls_sha256_update(&sha, buf, n);
+  }
+  f.close();
+
+  uint8_t hash[32];
+  mbedtls_sha256_finish(&sha, hash);
+  mbedtls_sha256_free(&sha);
+
   char etagHex[65];
   for(int i = 0; i < 32; i++){
-    sprintf(etagHex + i*2, "%02x", sha256[i]);
+    sprintf(etagHex + i*2, "%02x", hash[i]);
   }
   etagHex[64] = '\0';
   if(configFS.exists("/backup.etag")){
@@ -2688,7 +2697,6 @@ static File _backupUploadFile;
 static bool _backupUploadAuthorized = false;
 static size_t _backupUploadBytesExpected = 0;
 static size_t _backupUploadBytesWritten = 0;
-static mbedtls_sha256_context _backupSha256Ctx;
 
 /**
  * Body handler for streaming Backup PUTs directly to LittleFS
@@ -2717,15 +2725,11 @@ void http_handleBackup_PUT_body(AsyncWebServerRequest *request, uint8_t *data, s
       return;
     }
 
-    mbedtls_sha256_init(&_backupSha256Ctx);
-    mbedtls_sha256_starts(&_backupSha256Ctx, 0);
-
     _backupUploadAuthorized = true;
   }
 
   if(_backupUploadAuthorized && _backupUploadFile){
     _backupUploadFile.write(data, len);
-    mbedtls_sha256_update(&_backupSha256Ctx, data, len);
     _backupUploadBytesWritten += len;
   }
 }
@@ -2740,7 +2744,6 @@ void http_handleBackup_PUT(AsyncWebServerRequest *request){
       _backupUploadFile.close();
       configFS.remove("/backup.json.upload_in_progress");
     }
-    mbedtls_sha256_free(&_backupSha256Ctx);
     if(!request->hasHeader("visual-token") || !authToken.authenticate(request->header("visual-token").c_str())){
       http_unauthorized(request);
     }else{
@@ -2753,14 +2756,9 @@ void http_handleBackup_PUT(AsyncWebServerRequest *request){
 
   if(_backupUploadBytesExpected > 0 && _backupUploadBytesWritten != _backupUploadBytesExpected){
     configFS.remove("/backup.json.upload_in_progress");
-    mbedtls_sha256_free(&_backupSha256Ctx);
     http_error(request, "Incomplete transfer");
     return;
   }
-
-  uint8_t sha256[32];
-  mbedtls_sha256_finish(&_backupSha256Ctx, sha256);
-  mbedtls_sha256_free(&_backupSha256Ctx);
 
   if(configFS.exists("/backup.json")){
     configFS.remove("/backup.json");
@@ -2770,7 +2768,7 @@ void http_handleBackup_PUT(AsyncWebServerRequest *request){
     return;
   }
 
-  writeBackupEtag(sha256);
+  writeBackupEtag();
 
   resetHTPServerUsage();
   request->send(204);
