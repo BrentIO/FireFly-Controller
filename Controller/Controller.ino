@@ -2542,11 +2542,18 @@ String findControllerUuidByMac(const char* mac){
 
 /**
  * Computes the SHA-256 of /backup.json and writes it to /backup.etag as a
- * lowercase hex string.  Replaces any existing etag file.
+ * lowercase hex string.  Replaces any existing etag file.  If /backup.json
+ * cannot be opened, any existing /backup.etag is removed so the two files
+ * remain in sync.
  */
 void writeBackupEtag(){
   File f = configFS.open("/backup.json", "r");
-  if(!f) return;
+  if(!f){
+    if(configFS.exists("/backup.etag")){
+      configFS.remove("/backup.etag");
+    }
+    return;
+  }
 
   mbedtls_sha256_context sha;
   mbedtls_sha256_init(&sha);
