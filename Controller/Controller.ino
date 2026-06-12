@@ -879,14 +879,14 @@ void loop() {
           if(deviceIdentity.enabled && mqttClient.connected()){
             char availability_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
             snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid);
-            mqttClient.publish(availability_topic, "online");
+            mqttClient.publish(availability_topic, "online", true);
 
             JsonDocument mqttDoc;
             mqttDoc["installed_version"] = VERSION;
             mqttDoc["latest_version"] = VERSION;
             char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
             snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
-            mqttClient.beginPublish(topic, measureJson(mqttDoc), false);
+            mqttClient.beginPublish(topic, measureJson(mqttDoc), true);
             BufferingPrint bufferedClient(mqttClient, 32);
             serializeJson(mqttDoc, bufferedClient);
             bufferedClient.flush();
@@ -920,9 +920,9 @@ void loop() {
   if(httpServerIsActive){
     uint32_t _httpIdleElapsed = (uint32_t)esp_timer_get_time() - lastTimeHttpServerUsed;
     if(_httpIdleElapsed >= (uint32_t)HTTP_SERVER_MAX_IDLE_SECONDS * 1000000UL) {
-      log_i("HTTP idle timeout: elapsed=%lu s threshold=%d s lastUsed=%lu; stopHttpServer() suppressed for diagnostics.",
+      log_d("HTTP idle timeout: elapsed=%lu s threshold=%d s lastUsed=%lu",
             _httpIdleElapsed / 1000000UL, HTTP_SERVER_MAX_IDLE_SECONDS, lastTimeHttpServerUsed);
-      //stopHttpServer();
+      stopHttpServer();
     }
   }
 
@@ -3623,7 +3623,7 @@ void setup_OtaFirmware(){
 
     char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
     snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
-    mqttClient.beginPublish(topic, measureJson(mqttDoc), false);
+    mqttClient.beginPublish(topic, measureJson(mqttDoc), true);
     BufferingPrint bufferedClient(mqttClient, 32);
     serializeJson(mqttDoc, bufferedClient);
     bufferedClient.flush();
@@ -4024,10 +4024,13 @@ void mqtt_reconnect(){
     if(mqttClient.connect(deviceIdentity.data.uuid, mqttClient.username, mqttClient.password, mqttClient.topic_availability, 2, true, "offline")) {
         mqttClient.lastReconnectAttemptTime = 0;
         _mqttWasConnected = true;
-        log_i("MQTT connected at uptime=%llu s; httpServerIsActive=%d lastTimeHttpServerUsed=%lu", esp_timer_get_time() / 1000000ULL, httpServerIsActive, lastTimeHttpServerUsed);
+        log_d("MQTT connected at uptime=%llu s; httpServerIsActive=%d lastTimeHttpServerUsed=%lu", esp_timer_get_time() / 1000000ULL, httpServerIsActive, lastTimeHttpServerUsed);
         eventLog.createEvent("MQTT connected");
         eventLog.resolveError("MQTT disconnected");
         mqttClient.publish(mqttClient.topic_availability, "online", true);
+        char _httpServerCommandTopic[MQTT_TOPIC_HTTP_SERVER_SET_PATTERN_LENGTH+1];
+        snprintf(_httpServerCommandTopic, sizeof(_httpServerCommandTopic), MQTT_TOPIC_HTTP_SERVER_SET_PATTERN, deviceIdentity.data.uuid);
+        mqttClient.publish(_httpServerCommandTopic, httpServerIsActive ? "ON" : "OFF", true);
         mqttClient.resubscribe();
         if(!mqttClient.autoDiscovery.sent){
           mqtt_autoDiscovery_update();
@@ -4262,14 +4265,16 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
   if(ms.Match(MQTT_TOPIC_HTTP_SERVER_SET_REGEX)){ //User wants to enable or disable the HTTP server
 
     payload.toUpperCase();
-    log_i("MQTT: http-server/set received '%s' (httpServerIsActive=%d, uptime=%llu s)", payload.c_str(), httpServerIsActive, esp_timer_get_time() / 1000000ULL);
+    log_d("MQTT: http-server/set received '%s' (httpServerIsActive=%d, uptime=%llu s)", payload.c_str(), httpServerIsActive, esp_timer_get_time() / 1000000ULL);
 
     if(payload == "ON"){
+      if(httpServerIsActive){ log_d("MQTT: http-server/set ON ignored, server already active"); return; }
       startHttpServer();
       return;
     }
 
     if(payload == "OFF"){
+      if(!httpServerIsActive){ log_d("MQTT: http-server/set OFF ignored, server already inactive"); return; }
       stopHttpServer();
       return;
     }
@@ -5526,7 +5531,7 @@ void mqtt_publish_heapFree(){
   char buf[12];
   sprintf(buf, "%u", (unsigned int)ESP.getFreeHeap());
 
-  mqttClient.publish(state_topic, buf, false);
+  mqttClient.publish(state_topic, buf, true);
 }
 
 
@@ -5608,7 +5613,7 @@ void mqtt_publish_heapLargestFreeBlock(){
   char buf[12];
   sprintf(buf, "%lu", (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
 
-  mqttClient.publish(state_topic, buf, false);
+  mqttClient.publish(state_topic, buf, true);
 }
 
 
