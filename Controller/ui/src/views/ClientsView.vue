@@ -66,25 +66,7 @@
       <div v-if="sortedItems.length === 0" class="text-gray-400 dark:text-gray-500 py-8 col-span-full">No clients defined.</div>
 
       <template v-for="client in sortedItems" :key="client.id">
-        <!-- Secondary client card (simplified) -->
-        <div v-if="extendedClientIds.has(client.id)"
-          class="rounded-xl border p-4 break-inside-avoid bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
-          <p class="font-semibold text-gray-900 dark:text-gray-100 mb-2">{{ client.name }} Extended</p>
-          <div class="flex items-start gap-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 px-3 py-2 text-xs text-blue-800 dark:text-blue-200">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 flex-shrink-0 mt-px">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
-            </svg>
-            <span>
-              Extended client — managed via
-              <RouterLink :to="`/clients/${primaryBySecondaryId.get(client.id)?.id}`" class="underline font-medium hover:text-blue-600 dark:hover:text-blue-300">
-                {{ primaryBySecondaryId.get(client.id)?.name ?? '?' }}
-              </RouterLink>
-            </span>
-          </div>
-        </div>
-
-        <!-- Normal client card -->
-        <div v-else
+        <div v-if="!extendedClientIds.has(client.id)"
           class="rounded-xl border p-4 break-inside-avoid"
           :class="client.mac === 'ff:ff:ff:ff:ff:ff'
             ? 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-300 dark:border-yellow-700'
@@ -173,7 +155,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
+import { useRouter } from 'vue-router'
 import AppLayout from '../components/AppLayout.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import ClientSvg from '../components/ClientSvg.vue'
@@ -201,7 +183,6 @@ const sortedItems = computed(() =>
   [...items.value].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
 )
 
-// Set of client IDs that are the secondary (target of another client's `extends` field)
 const extendedClientIds = computed(() => {
   const ids = new Set()
   for (const c of items.value) {
@@ -210,14 +191,6 @@ const extendedClientIds = computed(() => {
   return ids
 })
 
-// Map from secondary client id → primary client object
-const primaryBySecondaryId = computed(() => {
-  const map = new Map()
-  for (const c of items.value) {
-    if (c.extends != null) map.set(c.extends, c)
-  }
-  return map
-})
 
 onMounted(() => Promise.all([load(), loadAreas(), loadColors()]))
 
