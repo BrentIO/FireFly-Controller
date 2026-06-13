@@ -19,7 +19,6 @@
             <th class="py-2 text-left font-semibold">Relay</th>
             <th class="py-2 text-left font-semibold">Breaker</th>
             <th class="py-2 text-right font-semibold">Load (Amps)</th>
-            <th class="py-2 text-center font-semibold">Enabled</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-300 [print-color-adjust:exact]">
@@ -30,7 +29,6 @@
             <td class="py-2">{{ c.relayName }}</td>
             <td class="py-2">{{ c.breakerName }}</td>
             <td class="py-2 text-right">{{ c.load_amperage }}</td>
-            <td class="py-2 text-center">{{ c.enabled === false ? 'No' : 'Yes' }}</td>
           </tr>
         </tbody>
       </table>
