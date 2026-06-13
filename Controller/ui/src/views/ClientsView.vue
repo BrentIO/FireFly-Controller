@@ -93,6 +93,7 @@
               <p class="font-mono text-xs text-gray-500 dark:text-gray-400">{{ client.name }}</p>
               <p class="font-semibold text-gray-900 dark:text-gray-100">{{ client.description }}</p>
               <p class="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">{{ client.uuid }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ client.mac || '—' }}</p>
             </div>
             <div class="flex gap-2 print:hidden flex-shrink-0">
               <button class="px-2.5 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" @click="router.push(`/clients/${client.id}`)">Edit</button>
