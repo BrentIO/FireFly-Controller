@@ -22,7 +22,17 @@
           <tr v-for="b in enrichedBreakers" :key="b.id" class="print:even:!bg-gray-100">
             <td class="py-2">{{ b.name }}</td>
             <td class="py-2 text-right">{{ b.amperage }}</td>
-            <td class="py-2 text-right">{{ b.loadA }}A / {{ b.pct }}%</td>
+            <td class="py-2 text-right">
+              <span class="inline-flex items-center justify-end gap-1">
+                <svg v-if="b.pct > 60 && b.pct <= 80" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="#eab308" class="w-3 h-3 shrink-0">
+                  <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                </svg>
+                <svg v-else-if="b.pct > 80" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="#dc2626" class="w-3 h-3 shrink-0">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                </svg>
+                {{ b.loadA }}A / {{ b.pct }}%
+              </span>
+            </td>
           </tr>
         </tbody>
       </table>
