@@ -11,10 +11,11 @@
     <!-- Print-only cards -->
     <div class="hidden print:block">
       <div class="grid grid-cols-2 gap-4">
-        <div v-for="client in sortedItems" :key="client.id" class="border border-black p-3 break-inside-avoid text-black text-xs flex gap-3">
+        <template v-for="client in sortedItems" :key="client.id">
+        <div v-if="!extendedClientIds.has(client.id)" class="border border-black p-3 break-inside-avoid text-black text-xs flex gap-3">
           <!-- SVG preview -->
           <div class="flex-shrink-0">
-            <ClientSvg :hids="client.hids || []" :colors="colors" :inverted="!!client.inverted" style="width:60px" />
+            <ClientSvg :hids="mergedPrintHids(client)" :colors="colors" :inverted="!!client.inverted" style="width:60px" />
           </div>
 
           <!-- Details -->
@@ -33,7 +34,7 @@
 
             <!-- HIDs -->
             <div class="mt-2 pt-2 border-t border-gray-300">
-              <template v-if="client.hids?.length">
+              <template v-if="mergedPrintHids(client).length">
                 <table class="w-full">
                   <thead>
                     <tr class="border-b border-gray-300">
@@ -44,7 +45,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="(entry, i) in aggregateHids(client.hids)" :key="i">
+                    <tr v-for="(entry, i) in aggregateHids(mergedPrintHids(client))" :key="i">
                       <td class="py-0.5">{{ entry.count }}</td>
                       <td class="py-0.5">{{ entry.type === 'switch' ? 'Switch' : 'Button' }}</td>
                       <td class="py-0.5">{{ entry.colorName }}</td>
@@ -57,6 +58,7 @@
             </div>
           </div>
         </div>
+        </template>
       </div>
     </div>
 
@@ -220,6 +222,11 @@ const primaryBySecondaryId = computed(() => {
 onMounted(() => Promise.all([load(), loadAreas(), loadColors()]))
 
 function areaName(id) { return areas.value.find(a => a.id === id)?.name ?? '—' }
+
+function mergedPrintHids(client) {
+  const secondary = items.value.find(c => c.id === client.extends)
+  return [...(client.hids || []), ...(secondary?.hids || [])]
+}
 
 function aggregateHids(hids) {
   const map = new Map()
