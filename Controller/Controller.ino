@@ -3072,7 +3072,33 @@ void http_handleCerts(AsyncWebServerRequest *request){
 
     case HTTP_POST:
 
-      break; //http_handleCerts_Upload handles all authorization and responses
+      if(request->_tempFile){
+        const AsyncWebParameter* p = request->getParam("file", true, true);
+        if(p){
+          String uploadedFilename = p->value();
+          String certTypeHeader = request->header("X-Cert-Type");
+          bool wantsController = (certTypeHeader == "controller" || certTypeHeader == "both");
+          bool wantsClient     = (certTypeHeader == "client"     || certTypeHeader == "both");
+
+          request->_tempFile.close();
+
+          JsonDocument certTypes = readCertTypes();
+          certTypes[uploadedFilename]["controller"] = wantsController;
+          certTypes[uploadedFilename]["client"]     = wantsClient;
+          writeCertTypes(certTypes);
+
+          refreshCertBundle();
+          if(wantsClient)     mqtt_publishClientCertState();
+          if(wantsController) mqtt_publishControllerCertState();
+
+          request->send(201);
+        } else {
+          request->_tempFile.close();
+          http_error(request, "Upload succeeded but filename could not be determined");
+        }
+      }
+      // If _tempFile is null an error response was already sent by http_handleCerts_Upload
+      break;
 
     case HTTP_GET:
       http_handleCerts_GET(request);
@@ -3200,31 +3226,13 @@ void http_handleCerts_Upload(AsyncWebServerRequest *request, const String& filen
     }
 
     request->_tempFile = configFS.open(CONFIGFS_PATH_CERTS + (String)"/" + filename, "w");
+    if(!request->_tempFile){
+      http_error(request, "Unable to open file for writing");
+      return;
+    }
   }
 
   if(request->_tempFile) request->_tempFile.write(data, len);
-
-  if(final){
-    if(request->_tempFile){
-      request->_tempFile.close();
-
-      // Update .cert_types
-      String certTypeHeader = request->header("X-Cert-Type");
-      bool wantsController = (certTypeHeader == "controller" || certTypeHeader == "both");
-      bool wantsClient     = (certTypeHeader == "client"     || certTypeHeader == "both");
-
-      JsonDocument certTypes = readCertTypes();
-      certTypes[filename]["controller"] = wantsController;
-      certTypes[filename]["client"]     = wantsClient;
-      writeCertTypes(certTypes);
-
-      refreshCertBundle();
-      if(wantsClient)     mqtt_publishClientCertState();
-      if(wantsController) mqtt_publishControllerCertState();
-
-      request->send(201);
-    }
-  }
 }
 
 
