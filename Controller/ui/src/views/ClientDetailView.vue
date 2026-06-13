@@ -33,7 +33,7 @@
         <!-- Switch plate SVG preview -->
         <div class="flex-shrink-0 flex flex-col items-center lg:items-start print:hidden">
           <p class="text-xs text-center text-gray-500 dark:text-gray-400 mb-2">Preview</p>
-          <ClientSvg :hids="mergedHids.slice(0, 5)" :colors="colors" :inverted="svgInverted" />
+          <ClientSvg :hids="mergedHids.slice(0, 6)" :colors="colors" :inverted="svgInverted" />
           <button v-if="mergedHids.length === 5"
             class="mt-2 px-3 py-1 text-xs font-medium rounded border transition-colors"
             :class="svgInverted
