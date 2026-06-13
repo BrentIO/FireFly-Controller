@@ -1,13 +1,34 @@
 <template>
   <AppLayout>
     <div class="flex items-center justify-between mb-6 print:mb-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl">Breakers</h1>
-      <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors print:hidden" @click="openAdd">
-        Add Breaker
-      </button>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 print:text-xl print:!text-black">Breakers</h1>
+      <div class="flex gap-2 print:hidden">
+        <button class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium transition-colors" @click="printLandscape">Print</button>
+        <button class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors" @click="openAdd">Add Breaker</button>
+      </div>
     </div>
 
-    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto">
+    <!-- Print-only table -->
+    <div class="hidden print:block mb-6">
+      <table class="w-full text-xs text-black">
+        <thead class="uppercase tracking-wider border-b border-black">
+          <tr>
+            <th class="py-2 text-left font-semibold">Name</th>
+            <th class="py-2 text-right font-semibold">Rating (Amps)</th>
+            <th class="py-2 text-right font-semibold">Utilization</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-300 [print-color-adjust:exact]">
+          <tr v-for="b in enrichedBreakers" :key="b.id" class="print:even:!bg-gray-100">
+            <td class="py-2">{{ b.name }}</td>
+            <td class="py-2 text-right">{{ b.amperage }}</td>
+            <td class="py-2 text-right">{{ b.loadA }}A / {{ b.pct }}%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-x-auto print:hidden">
       <table class="w-full text-sm">
         <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs uppercase tracking-wider">
           <tr>
@@ -116,6 +137,19 @@ function openEdit(b) {
   editing.value = b
   form.value = { name: b.name, amperage: b.amperage }
   showModal.value = true
+}
+
+function printLandscape() {
+  const prev = document.title
+  document.title = 'Breakers'
+  const style = document.createElement('style')
+  style.textContent = '@page { size: landscape; }'
+  document.head.appendChild(style)
+  window.addEventListener('afterprint', () => {
+    document.title = prev
+    document.head.removeChild(style)
+  }, { once: true })
+  window.print()
 }
 
 function utilizationClass(pct) {
