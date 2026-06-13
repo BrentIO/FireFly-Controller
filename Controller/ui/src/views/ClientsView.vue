@@ -52,7 +52,6 @@
                     </tr>
                   </tbody>
                 </table>
-                <p class="mt-1 pt-1 border-t border-gray-200 text-gray-600">{{ hidSummary(client.hids) }}</p>
               </template>
               <p v-else class="italic text-gray-500">No buttons or switches defined</p>
             </div>
