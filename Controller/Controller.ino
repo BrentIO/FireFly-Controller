@@ -94,6 +94,7 @@ void updateNTPTime(bool force = false);
 void refreshCertBundle();
 void mqtt_publishClientCertState();
 void mqtt_publishControllerCertState();
+bool cloudBackup_performUpload(int &httpCode, String &errorMsg);
 void cloudBackup_uploadToCloud();
 void writeBackupEtag();
 void http_handleCloudBackup(AsyncWebServerRequest *request);
@@ -5737,58 +5738,55 @@ static bool _cloudAuth_setHeaders(esp_http_client_handle_t client) {
  * cloud.  Called automatically by the OTA check loop if /backup.json exists.
  * Silently returns on any error.
  */
-void cloudBackup_uploadToCloud() {
+/**
+ * Reads /backup.json, encrypts it with key_backup, and POSTs it to the
+ * cloud backup endpoint with the local ETag header (if one exists).
+ * Returns true when the HTTP request completed; httpCode is set to the
+ * server's response code.  Returns false on any local failure and sets
+ * errorMsg to a description of the problem.
+ */
+bool cloudBackup_performUpload(int &httpCode, String &errorMsg) {
+  httpCode = 0;
 
-  if (!deviceIdentity.enabled) return;
-  if (!secretEncryption.isReady()) return;
-  if (!timeClient.isTimeSet()) return;
-
-  eventLog.createEvent("Backup upload start");
-  log_i("cloudBackup_uploadToCloud: reading /backup.json");
-
-  // Read the plaintext backup file
   File f = configFS.open("/backup.json", "r");
   if (!f) {
-    log_e("cloudBackup_uploadToCloud: failed to open /backup.json");
-    return;
+    errorMsg = "Failed to open backup.json";
+    return false;
   }
-  size_t fileSize = f.size();
 
+  size_t fileSize = f.size();
   if (fileSize > 512UL * 1024UL) {
-    log_e("cloudBackup_uploadToCloud: backup.json exceeds 512KB (%u bytes)", fileSize);
     f.close();
-    return;
+    errorMsg = "Backup file exceeds 512KB limit";
+    return false;
   }
 
   uint8_t* plainBuf = (uint8_t*)(psramFound() ? ps_malloc(fileSize) : malloc(fileSize));
   if (!plainBuf) {
     f.close();
-    log_e("cloudBackup_uploadToCloud: malloc failed");
-    return;
+    errorMsg = "Out of memory";
+    return false;
   }
 
   if (f.read(plainBuf, fileSize) != fileSize) {
     memset(plainBuf, 0, fileSize);
     free(plainBuf);
     f.close();
-    log_e("cloudBackup_uploadToCloud: read failed");
-    return;
+    errorMsg = "Failed to read backup.json";
+    return false;
   }
   f.close();
 
-  // Encrypt with key_backup
   size_t blobLen = 0;
   uint8_t* blob = secretEncryption.encryptBackup(plainBuf, fileSize, blobLen);
   memset(plainBuf, 0, fileSize);
   free(plainBuf);
 
   if (!blob) {
-    log_e("cloudBackup_uploadToCloud: encryption failed");
-    eventLog.createEvent("Backup enc fail", EventLog::LOG_LEVEL_ERROR);
-    return;
+    errorMsg = "Encryption failed";
+    return false;
   }
 
-  // Build URL
   String url = FIREFLY_CLOUD_API_ROOT;
   url += "/devices/";
   url += deviceIdentity.data.uuid;
@@ -5807,38 +5805,63 @@ void cloudBackup_uploadToCloud() {
     esp_http_client_cleanup(client);
     memset(blob, 0, blobLen);
     free(blob);
-    eventLog.createEvent("Backup auth fail", EventLog::LOG_LEVEL_ERROR);
-    return;
+    errorMsg = "Auth header build failed";
+    return false;
   }
 
   esp_http_client_set_header(client, "Content-Type", "application/octet-stream");
 
-  if(configFS.exists("/backup.etag")){
+  if (configFS.exists("/backup.etag")) {
     File etagFile = configFS.open("/backup.etag", "r");
-    if(etagFile){
+    if (etagFile) {
       String etag = etagFile.readString();
       etagFile.close();
-      String etagHeader = "\"" + etag + "\"";
-      esp_http_client_set_header(client, "ETag", etagHeader.c_str());
+      esp_http_client_set_header(client, "ETag", ("\"" + etag + "\"").c_str());
     }
   }
 
   esp_http_client_set_post_field(client, (const char*)blob, blobLen);
 
-  esp_err_t err  = esp_http_client_perform(client);
-  int       code = esp_http_client_get_status_code(client);
+  esp_err_t err = esp_http_client_perform(client);
+  httpCode      = esp_http_client_get_status_code(client);
   esp_http_client_cleanup(client);
 
   memset(blob, 0, blobLen);
   free(blob);
 
-  log_i("cloudBackup_uploadToCloud: err=%d status=%d", (int)err, code);
+  if (err != ESP_OK) {
+    errorMsg = "Cloud request failed";
+    return false;
+  }
 
-  if (err == ESP_OK && (code == 200 || code == 204 || code == 304)) {
+  return true;
+}
+
+
+void cloudBackup_uploadToCloud() {
+
+  if (!deviceIdentity.enabled) return;
+  if (!secretEncryption.isReady()) return;
+  if (!timeClient.isTimeSet()) return;
+
+  eventLog.createEvent("Backup upload start");
+
+  int    httpCode = 0;
+  String errorMsg;
+
+  if (!cloudBackup_performUpload(httpCode, errorMsg)) {
+    log_e("cloudBackup_uploadToCloud: %s", errorMsg.c_str());
+    eventLog.createEvent("Backup upload fail", EventLog::LOG_LEVEL_ERROR);
+    return;
+  }
+
+  log_i("cloudBackup_uploadToCloud: status=%d", httpCode);
+
+  if (httpCode == 200 || httpCode == 204 || httpCode == 304) {
     eventLog.createEvent("Backup uploaded");
   } else {
-    char text[OLED_CHARACTERS_PER_LINE+1];
-    snprintf(text, sizeof(text), "Backup up fail %d", code);
+    char text[OLED_CHARACTERS_PER_LINE + 1];
+    snprintf(text, sizeof(text), "Backup up fail %d", httpCode);
     eventLog.createEvent(text, EventLog::LOG_LEVEL_NOTIFICATION);
   }
 }
@@ -5908,92 +5931,21 @@ void http_handleCloudBackup_POST(AsyncWebServerRequest *request) {
 
   resetHTPServerUsage();
 
-  File f = configFS.open("/backup.json", "r");
-  if (!f) {
-    http_error(request, "Failed to open backup.json");
-    return;
-  }
-  size_t fileSize = f.size();
+  int    httpCode = 0;
+  String errorMsg;
 
-  if (fileSize > 512UL * 1024UL) {
-    f.close();
-    AsyncResponseStream *resp = request->beginResponseStream("application/json");
-    JsonDocument doc;
-    doc["message"] = "Backup file exceeds 512KB limit";
-    serializeJson(doc, *resp);
-    resp->setCode(413);
-    request->send(resp);
+  if (!cloudBackup_performUpload(httpCode, errorMsg)) {
+    http_error(request, errorMsg.c_str());
     return;
   }
 
-  uint8_t* plainBuf = (uint8_t*)(psramFound() ? ps_malloc(fileSize) : malloc(fileSize));
-  if (!plainBuf) {
-    f.close();
-    http_error(request, "Out of memory");
-    return;
-  }
-  if (f.read(plainBuf, fileSize) != fileSize) {
-    memset(plainBuf, 0, fileSize);
-    free(plainBuf);
-    f.close();
-    http_error(request, "Failed to read backup.json");
-    return;
-  }
-  f.close();
-
-  size_t blobLen = 0;
-  uint8_t* blob = secretEncryption.encryptBackup(plainBuf, fileSize, blobLen);
-  memset(plainBuf, 0, fileSize);
-  free(plainBuf);
-
-  if (!blob) {
-    http_error(request, "Encryption failed");
-    return;
-  }
-
-  String url = FIREFLY_CLOUD_API_ROOT;
-  url += "/devices/";
-  url += deviceIdentity.data.uuid;
-  url += "/backup";
-
-  esp_http_client_config_t cfg = {};
-  cfg.url               = url.c_str();
-  cfg.crt_bundle_attach = esp_crt_bundle_attach;
-  cfg.timeout_ms        = 30000;
-  cfg.method            = HTTP_METHOD_POST;
-
-  esp_http_client_handle_t client = esp_http_client_init(&cfg);
-
-  if (!_cloudAuth_setHeaders(client)) {
-    esp_http_client_cleanup(client);
-    memset(blob, 0, blobLen);
-    free(blob);
-    http_error(request, "Auth header build failed");
-    return;
-  }
-
-  esp_http_client_set_header(client, "Content-Type", "application/octet-stream");
-  esp_http_client_set_post_field(client, (const char*)blob, blobLen);
-
-  esp_err_t err  = esp_http_client_perform(client);
-  int       code = esp_http_client_get_status_code(client);
-  esp_http_client_cleanup(client);
-
-  log_i("http_handleCloudBackup_POST: url=%s err=%d status=%d", url.c_str(), (int)err, code);
-
-  memset(blob, 0, blobLen);
-  free(blob);
-
-  if (err != ESP_OK) {
-    http_error(request, "Cloud request failed");
-    return;
-  }
+  log_i("http_handleCloudBackup_POST: status=%d", httpCode);
 
   AsyncResponseStream *resp = request->beginResponseStream("application/json");
   JsonDocument doc;
-  doc["status"] = code;
+  doc["status"] = httpCode;
   serializeJson(doc, *resp);
-  resp->setCode(code == 200 || code == 204 || code == 304 ? 200 : 502);
+  resp->setCode(httpCode == 200 || httpCode == 204 || httpCode == 304 ? 200 : 502);
   request->send(resp);
 }
 
