@@ -95,7 +95,7 @@ void refreshCertBundle();
 void mqtt_publishClientCertState();
 void mqtt_publishControllerCertState();
 bool cloudBackup_performUpload(int &httpCode, String &errorMsg);
-void cloudBackup_uploadToCloud();
+void cloudBackup_scheduleHandler();
 void writeBackupEtag();
 void http_handleCloudBackup(AsyncWebServerRequest *request);
 void http_handleCloudBackup_POST(AsyncWebServerRequest *request);
@@ -858,7 +858,7 @@ void loop() {
   if(configFS_isMounted && esp_timer_get_time() > 30ULL * 1000000ULL){ //Wait 30 seconds after booting before uploading cloud backup
     if((esp_timer_get_time() - lastTimeCloudBackup >= (uint64_t)CLOUD_BACKUP_INTERVAL_SECONDS * 1000000ULL) || (lastTimeCloudBackup == 0)){
       if(configFS.exists("/backup.json")){
-        cloudBackup_uploadToCloud();
+        cloudBackup_scheduleHandler();
       }
       lastTimeCloudBackup = esp_timer_get_time();
     }
@@ -5838,7 +5838,7 @@ bool cloudBackup_performUpload(int &httpCode, String &errorMsg) {
 }
 
 
-void cloudBackup_uploadToCloud() {
+void cloudBackup_scheduleHandler() {
 
   if (!deviceIdentity.enabled) return;
   if (!secretEncryption.isReady()) return;
@@ -5850,12 +5850,12 @@ void cloudBackup_uploadToCloud() {
   String errorMsg;
 
   if (!cloudBackup_performUpload(httpCode, errorMsg)) {
-    log_e("cloudBackup_uploadToCloud: %s", errorMsg.c_str());
+    log_e("cloudBackup_scheduleHandler: %s", errorMsg.c_str());
     eventLog.createEvent("Backup upload fail", EventLog::LOG_LEVEL_ERROR);
     return;
   }
 
-  log_i("cloudBackup_uploadToCloud: status=%d", httpCode);
+  log_i("cloudBackup_scheduleHandler: status=%d", httpCode);
 
   if (httpCode == 200 || httpCode == 204 || httpCode == 304) {
     eventLog.createEvent("Backup uploaded");
