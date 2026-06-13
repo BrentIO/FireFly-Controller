@@ -11,7 +11,8 @@
     <!-- Print-only cards -->
     <div class="hidden print:block">
       <div class="grid grid-cols-2 gap-4">
-        <div v-for="client in sortedItems" v-if="!extendedClientIds.has(client.id)" :key="client.id" class="border border-black p-3 break-inside-avoid text-black text-xs flex gap-3">
+        <template v-for="client in sortedItems" :key="client.id">
+        <div v-if="!extendedClientIds.has(client.id)" class="border border-black p-3 break-inside-avoid text-black text-xs flex gap-3">
           <!-- SVG preview -->
           <div class="flex-shrink-0">
             <ClientSvg :hids="mergedPrintHids(client)" :colors="colors" :inverted="!!client.inverted" style="width:60px" />
@@ -57,6 +58,7 @@
             </div>
           </div>
         </div>
+        </template>
       </div>
     </div>
 
