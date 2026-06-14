@@ -1022,8 +1022,15 @@ void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::
     changeState == managerInputs::changeState::CHANGE_STATE_SHORT_DURATION ? "SHORT"  :
     changeState == managerInputs::changeState::CHANGE_STATE_LONG_DURATION  ? "LONG"   : "UNKNOWN");
 
-  char state_topic[MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH+1];
-  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_INPUT_STATE_PATTERN, inputPorts[portChannel.port-1].id, (portChannel.channel+portChannel.offset));
+  char fallbackId[UUID_LENGTH + 6 + 2 + 1]; // uuid(36) + "-port-"(6) + port number up to 2 digits + null
+  const char* portId = inputPorts[portChannel.port-1].id;
+  if(portId[0] == '\0'){
+    snprintf(fallbackId, sizeof(fallbackId), "%s-port-%u", deviceIdentity.data.uuid, portChannel.port);
+    portId = fallbackId;
+  }
+
+  char state_topic[MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH + sizeof(fallbackId) - PORT_ID_MAX_LENGTH + 1];
+  snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_INPUT_STATE_PATTERN, portId, (portChannel.channel+portChannel.offset));
 
   switch(changeState){
     case managerInputs::changeState::CHANGE_STATE_NORMAL:
