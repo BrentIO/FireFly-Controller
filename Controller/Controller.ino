@@ -4344,6 +4344,7 @@ void mqtt_autoDiscovery_temperature(){
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
     device["sw_version"] = VERSION;
+    device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
       device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -4711,6 +4712,7 @@ void mqtt_autoDiscovery_outputs(){
     }
 
     device["via_device"] = deviceIdentity.data.uuid;
+    device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
     if(!output.value()["area"].isNull()){
       device["suggested_area"] =  output.value()["area"].as<const char*>();
@@ -4810,6 +4812,7 @@ void mqtt_autoDiscovery_inputs(){
       identifiers.add(device_id);
       device["name"] = inputPorts[p].id;
       device["via_device"] = deviceIdentity.data.uuid;
+      device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
       JsonArray availability = mqttDoc["availability"].to<JsonArray>();
       JsonObject chip_avail = availability.add<JsonObject>();
@@ -4886,6 +4889,7 @@ void mqtt_autoDiscovery_inputControllers(){
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
     device["sw_version"] = VERSION;
+    device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
       device["suggested_area"] = mqttClient.autoDiscovery.suggestedArea;
@@ -4959,6 +4963,7 @@ void mqtt_autoDiscovery_outputControllers(){
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
     device["sw_version"] = VERSION;
+    device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
       device["suggested_area"] = mqttClient.autoDiscovery.suggestedArea;
@@ -5017,6 +5022,7 @@ void mqtt_autoDiscovery_start_time(){
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
+  device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5100,6 +5106,7 @@ void mqtt_autoDiscovery_mac_address(){
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
+  device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5179,6 +5186,7 @@ void mqtt_autoDiscovery_ip_address(){
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
+  device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5261,6 +5269,7 @@ void mqtt_autoDiscovery_count_errors(){
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
+  device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5347,6 +5356,7 @@ void mqtt_autoDiscovery_update(){
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
+  device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5413,6 +5423,7 @@ void mqtt_autoDiscovery_http_server(){
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
+  device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5506,6 +5517,7 @@ void mqtt_autoDiscovery_heapFree(){
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
+  device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
@@ -5588,6 +5600,7 @@ void mqtt_autoDiscovery_heapLargestFreeBlock(){
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
   device["sw_version"] = VERSION;
+  device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
         device["suggested_area"] =  mqttClient.autoDiscovery.suggestedArea;
