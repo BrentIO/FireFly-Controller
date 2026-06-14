@@ -13,7 +13,8 @@
 #define OUTPUT_CONTROLLER_MODEL ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685 /* Output controller model */
 #define OUTPUT_CONTROLLER_COUNT 2 /* The number of output controllers */
 #define OUTPUT_CONTROLLER_ADDRESSES {0x40,0x41} /* I2C addresses for the output controllers */
-#define OUTPUT_CONTROLLER_PORTS {2,1,3,4,6,5,7,8,10,9,11,12,14,13,15,16} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
+#define OUTPUT_CONTROLLER_PORTS {1,2,4,3,5,6,8,7,9,10,12,11,13,14,16,15} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
+
 
 /* Temperature Sensor */
 #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */

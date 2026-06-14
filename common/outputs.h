@@ -382,7 +382,7 @@ namespace nsOutputs{
                     return;
                 }
 
-                uint8_t portPinMap[OUTPUT_CONTROLLER_COUNT_PINS * OUTPUT_CONTROLLER_COUNT] = OUTPUT_CONTROLLER_PORTS;
+                uint8_t portPinMap[OUTPUT_CONTROLLER_COUNT_PINS] = OUTPUT_CONTROLLER_PORTS;
 
                 for(int i = 0; i < OUTPUT_CONTROLLER_COUNT; i++){
                     this->outputControllers[i].address = addressesOutputController[i];
@@ -399,7 +399,7 @@ namespace nsOutputs{
 
                         outputs[(OUTPUT_CONTROLLER_COUNT_PINS * i) + j].controller = &this->outputControllers[i];
                         outputs[(OUTPUT_CONTROLLER_COUNT_PINS * i) + j].pin = j;
-                        outputs[(OUTPUT_CONTROLLER_COUNT_PINS * i) + j].port = portPinMap[j];
+                        outputs[(OUTPUT_CONTROLLER_COUNT_PINS * i) + j].port = portPinMap[j] + (OUTPUT_CONTROLLER_COUNT_PINS * i);
                     }
 
                     #if OUTPUT_CONTROLLER_MODEL == ENUM_OUTPUT_CONTROLLER_MODEL_PCA9685
