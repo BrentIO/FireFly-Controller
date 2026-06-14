@@ -6,7 +6,7 @@
 #define IO_EXTENDER_MODEL ENUM_IO_EXTENDER_MODEL_PCA9995 /* IO Extender Model */
 #define IO_EXTENDER_COUNT 2 /* The number of IO extenders */
 #define IO_EXTENDER_ADDRESSES {0x20,0x21} /* I2C addresses for the IO extenders, order must match the PINS_INTERRUPT_IO_EXTENDER and should be sequential with the port numbers */
-#define IO_EXTENDER_CHANNELS {{2,1},{2,2},{2,3},{1,4},{2,4},{1,3},{1,2},{1,1},{4,1},{4,2},{4,3},{3,4},{4,4},{3,3},{3,2},{3,1}} /* Physical mapping of the {port,channel} by pin */
+#define IO_EXTENDER_CHANNELS {{1,1},{1,2},{1,3},{2,4},{1,4},{2,3},{2,2},{2,1},{3,1},{3,2},{3,3},{4,4},{3,4},{4,3},{4,2},{4,1}} /* Physical mapping of the {port,channel} by pin */
 #define IO_EXTENDER_INTERRUPT_PINS {34,35} /* Interrupt pins for the IO extenders, order must match the ADDRESSES_IO_EXTENDER */
 
 /* Output Controller */
@@ -14,7 +14,7 @@
 #define OUTPUT_CONTROLLER_COUNT 1 /* The number of output controllers */
 #define OUTPUT_CONTROLLER_COUNT_PINS 6 /* Special for this model */
 #define OUTPUT_CONTROLLER_ADDRESSES {0x40} /* I2C addresses for the output controllers */
-#define OUTPUT_CONTROLLER_PORTS {1,2,4,3,5,6} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
+#define OUTPUT_CONTROLLER_PORTS {2,1,4,3,6,5} /* Physical mapping of the output port numbers in sequence by output controller address, based on the output controllers' pin numbers */
 
 /* Temperature Sensor */
 #define TEMPERATURE_SENSOR_MODEL ENUM_TEMPERATURE_SENSOR_MODEL_PCT2075 /* Temperature sensor model */
