@@ -241,6 +241,9 @@ export async function checkConfiguration() {
     Object.values(controller.outputs || {}).forEach(id => assignedCircuitIds.push(id))
   }
 
+  const wifi = await db.settings.where({ setting: 'wifi' }).first()
+  if (!wifi) errorList.push('WiFi has not been configured.')
+
   for (const client of clients) {
     if (client.mac === 'ff:ff:ff:ff:ff:ff') {
       errorList.push(`Client ${client.name} has an invalid MAC address and will not be able to be provisioned.`)

@@ -4415,7 +4415,7 @@ void mqtt_publishOutputControllerAvailability(){
     char availability_topic[MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
     snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_OUTPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, health.outputControllers[i].address);
 
-    mqttClient.publish(availability_topic, health.outputControllers[i].enabled ? "Online" : "Offline", true);
+    mqttClient.publish(availability_topic, health.outputControllers[i].enabled ? "online" : "offline", true);
   }
 }
 
@@ -4440,7 +4440,7 @@ void mqtt_publishInputControllerAvailability(){
     char availability_topic[MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
     snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_PATTERN, deviceIdentity.data.uuid, health.inputControllers[i].address);
 
-    mqttClient.publish(availability_topic, health.inputControllers[i].enabled ? "Online" : "Offline", true);
+    mqttClient.publish(availability_topic, health.inputControllers[i].enabled ? "online" : "offline", true);
   }
 }
 
@@ -4833,7 +4833,7 @@ void mqtt_autoDiscovery_inputs(){
  * Publishes one retained discovery message per IO extender chip so that
  * Home Assistant exposes each chip as a sensor entity linked to the controller device.
  * The sensor state_topic is the chip's existing availability topic, so state values
- * are "Online" or "Offline".
+ * are "online" or "offline".
  */
 void mqtt_autoDiscovery_inputControllers(){
 
@@ -4906,7 +4906,7 @@ void mqtt_autoDiscovery_inputControllers(){
  * Publishes one retained discovery message per PWM controller chip so that
  * Home Assistant exposes each chip as a sensor entity linked to the controller device.
  * The sensor state_topic is the chip's existing availability topic, so state values
- * are "Online" or "Offline".
+ * are "online" or "offline".
  */
 void mqtt_autoDiscovery_outputControllers(){
 
