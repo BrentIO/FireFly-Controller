@@ -37,6 +37,7 @@
         >
           <span class="font-mono text-base font-bold leading-tight">{{ client.name }}</span>
           <span class="text-xs leading-tight mt-1 opacity-70">{{ client.description }}</span>
+          <span v-if="primaryBySecondaryId.has(client.id)" class="mt-1 px-1.5 py-0.5 text-[10px] font-semibold rounded bg-orange-600 text-white dark:bg-orange-600 dark:text-white leading-none">Extended</span>
         </div>
       </div>
       <p v-if="selectedClientId" class="mt-2 text-xs text-blue-600 dark:text-blue-400 font-medium">
@@ -80,6 +81,7 @@
             <template v-if="port.client">
               <span class="font-mono text-xs font-bold text-gray-900 dark:text-black cursor-grab print:!text-black">{{ port.client.name }}</span>
               <span class="text-xs text-gray-600 dark:text-black leading-tight print:!text-black">{{ port.client.description }}</span>
+              <span v-if="primaryBySecondaryId.has(port.client.id)" class="mt-1 px-1.5 py-0.5 text-[10px] font-semibold rounded bg-orange-600 text-white dark:bg-orange-600 dark:text-white leading-none print:!bg-orange-600 print:!text-white">Extended</span>
               <button class="mt-1 text-red-500 hover:text-red-700 text-xs print:hidden leading-none" title="Unassign" @click.stop="unassign(ctrl.id, port.num)">✕</button>
             </template>
             <template v-else>
