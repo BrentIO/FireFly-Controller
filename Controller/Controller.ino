@@ -1017,6 +1017,15 @@ void failureHandler_temperatureSensors(uint8_t address, managerTemperatureSensor
 */
 void eventHandler_inputs(managerInputs::portChannel portChannel, managerInputs::changeState changeState){
 
+  log_d("Port %u channel %u %s", portChannel.port, portChannel.channel + portChannel.offset,
+    changeState == managerInputs::changeState::CHANGE_STATE_NORMAL         ? "NORMAL" :
+    changeState == managerInputs::changeState::CHANGE_STATE_SHORT_DURATION ? "SHORT"  :
+    changeState == managerInputs::changeState::CHANGE_STATE_LONG_DURATION  ? "LONG"   : "UNKNOWN");
+
+  if(inputPorts[portChannel.port-1].id[0] == '\0'){
+    return;
+  }
+
   char state_topic[MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH+1];
   snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_INPUT_STATE_PATTERN, inputPorts[portChannel.port-1].id, (portChannel.channel+portChannel.offset));
 
