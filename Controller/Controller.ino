@@ -4871,6 +4871,7 @@ void mqtt_autoDiscovery_inputControllers(){
     doc["icon"] = "mdi:chip";
     doc["entity_category"] = "diagnostic";
     doc["state_topic"] = state_topic;
+    doc["value_template"] = "{% if value == 'online' %}Online{% else %}Offline{% endif %}";
 
     JsonObject device = doc["device"].to<JsonObject>();
     JsonArray identifiers = device["identifiers"].to<JsonArray>();
@@ -4943,6 +4944,7 @@ void mqtt_autoDiscovery_outputControllers(){
     doc["icon"] = "mdi:chip";
     doc["entity_category"] = "diagnostic";
     doc["state_topic"] = state_topic;
+    doc["value_template"] = "{% if value == 'online' %}Online{% else %}Offline{% endif %}";
 
     JsonObject device = doc["device"].to<JsonObject>();
     JsonArray identifiers = device["identifiers"].to<JsonArray>();
