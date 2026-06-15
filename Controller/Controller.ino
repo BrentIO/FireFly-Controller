@@ -4787,24 +4787,32 @@ void mqtt_autoDiscovery_inputs(){
 
       uint8_t logicalChannel = inputPorts[p].channels[c].channel + channelOffset;
 
+      char sanitized_id[PORT_ID_MAX_LENGTH+1];
+      strlcpy(sanitized_id, inputPorts[p].id, sizeof(sanitized_id));
+      for(uint8_t i = 0; sanitized_id[i] != '\0'; i++){
+        if(!isalnum((unsigned char)sanitized_id[i]) && sanitized_id[i] != '-'){
+          sanitized_id[i] = '_';
+        }
+      }
+
       char autodiscovery_topic[MQTT_TOPIC_INPUT_AUTO_DISCOVERY_LENGTH+1];
       snprintf(autodiscovery_topic, sizeof(autodiscovery_topic), MQTT_TOPIC_INPUT_AUTO_DISCOVERY_PATTERN,
-        mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid, inputPorts[p].id, logicalChannel);
+        mqttClient.autoDiscovery.homeAssistantRoot, deviceIdentity.data.uuid, sanitized_id, logicalChannel);
 
       char unique_id[MQTT_INPUT_AUTO_DISCOVERY_UNIQUE_ID_LENGTH+1];
       snprintf(unique_id, sizeof(unique_id), MQTT_INPUT_AUTO_DISCOVERY_UNIQUE_ID_PATTERN,
-        deviceIdentity.data.uuid, inputPorts[p].id, logicalChannel);
+        deviceIdentity.data.uuid, sanitized_id, logicalChannel);
 
       char default_entity_id[MQTT_INPUT_AUTO_DISCOVERY_DEFAULT_ENTITY_ID_LENGTH+1];
       snprintf(default_entity_id, sizeof(default_entity_id), MQTT_INPUT_AUTO_DISCOVERY_DEFAULT_ENTITY_ID_PATTERN,
-        deviceIdentity.data.uuid, inputPorts[p].id, logicalChannel);
+        deviceIdentity.data.uuid, sanitized_id, logicalChannel);
 
       char state_topic[MQTT_TOPIC_INPUT_STATE_PATTERN_LENGTH+1];
       snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_INPUT_STATE_PATTERN, inputPorts[p].id, logicalChannel);
 
       char device_id[MQTT_INPUT_AUTO_DISCOVERY_DEVICE_ID_LENGTH+1];
       snprintf(device_id, sizeof(device_id), MQTT_INPUT_AUTO_DISCOVERY_DEVICE_ID_PATTERN,
-        deviceIdentity.data.uuid, inputPorts[p].id);
+        deviceIdentity.data.uuid, sanitized_id);
 
       char chip_availability_topic[MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
       snprintf(chip_availability_topic, sizeof(chip_availability_topic), MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_PATTERN,

@@ -53,6 +53,10 @@ channels:
       Consumers (e.g. Home Assistant) use these messages to register each input channel
       as a sensor entity whose state reflects the most recently published value
       (NORMAL, SHORT, LONG, or EXCESSIVE).
+      The {portId} segment in this discovery topic is sanitized: any character outside
+      [A-Za-z0-9-] (including spaces) is replaced with an underscore so the topic
+      complies with Home Assistant's discovery topic requirements. The raw port ID is
+      used in the state_topic and device.name fields.
     parameters:
       haRoot:
         $ref: "#/components/parameters/haRoot"
@@ -983,13 +987,13 @@ components:
             description: Human-readable channel label, e.g. "Channel 1"
           unique_id:
             type: string
-            description: Globally unique entity identifier including the controller UUID and port ID
+            description: Globally unique entity identifier including the controller UUID and sanitized port ID (spaces → underscores)
           default_entity_id:
             type: string
-            description: Suggested entity ID for Home Assistant
+            description: Suggested entity ID for Home Assistant; uses sanitized port ID (spaces → underscores)
           state_topic:
             type: string
-            description: The MQTT topic the controller publishes channel state to
+            description: The MQTT topic the controller publishes channel state to; uses the raw port ID (not sanitized)
           device:
             type: object
             properties:
@@ -999,7 +1003,7 @@ components:
                   type: string
               name:
                 type: string
-                description: Port ID used as the device name
+                description: Raw port ID (unsanitized) used as the human-readable device name
               via_device:
                 type: string
                 description: Controller UUID — groups this sensor under the parent controller in the HA device registry
