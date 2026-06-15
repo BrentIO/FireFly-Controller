@@ -4610,6 +4610,8 @@ void mqtt_autoDiscovery_outputs(){
   filter_outputs__["area"] = true;
   filter_outputs__["icon"] = true;
   filter_outputs__["type"] = true;
+  filter_outputs__["relay_manufacturer"] = true;
+  filter_outputs__["relay_model"] = true;
 
   String plaintext;
   if(!secretEncryption.decryptFromFile(configFS, CONFIGFS_PATH_CONTROLLERS + (String)"/" + deviceIdentity.data.uuid, plaintext)){
@@ -4726,6 +4728,15 @@ void mqtt_autoDiscovery_outputs(){
     if(!output.value()["area"].isNull()){
       device["suggested_area"] =  output.value()["area"].as<const char*>();
     }
+
+    if(!output.value()["relay_manufacturer"].isNull()){
+      device["manufacturer"] = output.value()["relay_manufacturer"].as<const char*>();
+    }
+
+    if(!output.value()["relay_model"].isNull()){
+      device["model"] = output.value()["relay_model"].as<const char*>();
+    }
+
     mqttDoc["state_topic"] = state_topic;
     mqttDoc["command_topic"] = command_topic;
 

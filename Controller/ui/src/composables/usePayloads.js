@@ -119,7 +119,9 @@ export async function buildControllerPayload(controllerId, returnOnlyErrors = fa
       id: circuit.name.trim().substring(0, MAX_ID),
       name: circuit.description.trim().substring(0, MAX_NAME),
       area: circuit.area.name.trim().substring(0, MAX_AREA),
-      icon: circuit.icon.icon.trim().substring(0, MAX_ICON)
+      icon: circuit.icon.icon.trim().substring(0, MAX_ICON),
+      relay_manufacturer: circuit.relay_model.manufacturer.trim(),
+      relay_model: circuit.relay_model.model.trim()
     }
     if (circuit.relay_model.type !== 'BINARY') {
       out.type = circuit.relay_model.type
