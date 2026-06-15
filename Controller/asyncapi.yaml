@@ -1008,6 +1008,11 @@ components:
                 type: array
                 items:
                   type: string
+                description: >
+                  Single-element array. When the port has a paired FireFly-Client, the identifier is
+                  "FireFly-{clientUUID}" so HA groups input channel sensors with client-published
+                  sensors (RSSI, uptime, etc.) on one device card. When unpaired, falls back to
+                  "FireFly-{controllerUUID}-inputs-{sanitizedPortId}".
               name:
                 type: string
                 description: Raw port ID (unsanitized) used as the human-readable device name
@@ -1025,7 +1030,7 @@ components:
             type: string
             const: all
       examples:
-        - name: channel-1
+        - name: channel-1-unpaired
           payload:
             name: "Channel 1"
             unique_id: "FireFly-00000000-0000-4000-0000-000000000000-inputs-A1234567-channel-1"
@@ -1036,6 +1041,23 @@ components:
             device:
               identifiers:
                 - "FireFly-00000000-0000-4000-0000-000000000000-inputs-A1234567"
+              name: A1234567
+              via_device: "00000000-0000-4000-0000-000000000000"
+            availability:
+              - topic: "FireFly/00000000-0000-4000-0000-000000000000/inputs/controller/32/availability"
+              - topic: "FireFly/00000000-0000-4000-0000-000000000000/availability"
+            availability_mode: all
+        - name: channel-1-paired
+          payload:
+            name: "Channel 1"
+            unique_id: "FireFly-00000000-0000-4000-0000-000000000000-inputs-A1234567-channel-1"
+            default_entity_id: "sensor.FireFly-00000000-0000-4000-0000-000000000000-inputs-A1234567-channel-1"
+            state_topic: "FireFly/inputs/A1234567/channels/1/state"
+            value_template: "{{ value | title }}"
+            icon: "mdi:gesture-tap"
+            device:
+              identifiers:
+                - "FireFly-11111111-1111-4111-1111-111111111111"
               name: A1234567
               via_device: "00000000-0000-4000-0000-000000000000"
             availability:

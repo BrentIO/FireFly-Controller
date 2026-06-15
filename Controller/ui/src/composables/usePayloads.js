@@ -109,6 +109,7 @@ export async function buildControllerPayload(controllerId, returnOnlyErrors = fa
     ports[portNumber] = {
       id: client.name.trim().substring(0, MAX_ID),
       name: client.description.trim().substring(0, MAX_NAME),
+      clientUUID: client.uuid,
       channels
     }
   }

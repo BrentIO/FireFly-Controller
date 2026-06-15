@@ -177,6 +177,9 @@ struct inputPort{
   /// @brief The human-readable ID of the input port
   char id[PORT_ID_MAX_LENGTH + 1];
 
+  /// @brief UUID of the paired FireFly-Client; empty string when unpaired
+  char clientUUID[UUID_LENGTH + 1];
+
   /// @brief Reference to the channels on this input port
   inputChannel channels[IO_EXTENDER_COUNT_CHANNELS_PER_PORT];
 };
@@ -3858,6 +3861,7 @@ bool setup_inputs(String filename){
 
   JsonObject filter_ports = filter["ports"]["*"].to<JsonObject>();
   filter_ports["id"] = true;
+  filter_ports["clientUUID"] = true;
 
   JsonObject filter_ports_channels = filter_ports["channels"]["*"].to<JsonObject>();
   filter_ports_channels["type"] = true;
@@ -3901,6 +3905,7 @@ bool setup_inputs(String filename){
     }
 
     strlcpy(inputPorts[atoi(port.key().c_str())-1].id, port.value()["id"], sizeof(inputPorts[atoi(port.key().c_str())-1].id));
+    strlcpy(inputPorts[atoi(port.key().c_str())-1].clientUUID, port.value()["clientUUID"] | "", sizeof(inputPorts[atoi(port.key().c_str())-1].clientUUID));
 
     uint8_t i = 0;
 
@@ -4822,8 +4827,13 @@ void mqtt_autoDiscovery_inputs(){
       snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_INPUT_STATE_PATTERN, inputPorts[p].id, logicalChannel);
 
       char device_id[MQTT_INPUT_AUTO_DISCOVERY_DEVICE_ID_LENGTH+1];
-      snprintf(device_id, sizeof(device_id), MQTT_INPUT_AUTO_DISCOVERY_DEVICE_ID_PATTERN,
-        deviceIdentity.data.uuid, sanitized_id);
+      if(inputPorts[p].clientUUID[0] != '\0'){
+        snprintf(device_id, sizeof(device_id), MQTT_INPUT_AUTO_DISCOVERY_CLIENT_DEVICE_ID_PATTERN,
+          inputPorts[p].clientUUID);
+      } else {
+        snprintf(device_id, sizeof(device_id), MQTT_INPUT_AUTO_DISCOVERY_DEVICE_ID_PATTERN,
+          deviceIdentity.data.uuid, sanitized_id);
+      }
 
       char chip_availability_topic[MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
       snprintf(chip_availability_topic, sizeof(chip_availability_topic), MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_PATTERN,
@@ -4845,7 +4855,6 @@ void mqtt_autoDiscovery_inputs(){
       identifiers.add(device_id);
       device["name"] = inputPorts[p].id;
       device["via_device"] = deviceIdentity.data.uuid;
-      device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
       JsonArray availability = mqttDoc["availability"].to<JsonArray>();
       JsonObject chip_avail = availability.add<JsonObject>();
