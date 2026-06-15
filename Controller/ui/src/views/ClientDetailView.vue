@@ -220,7 +220,7 @@
               </div>
 
               <!-- Default Brightness -->
-              <div>
+              <div v-if="hidForm.type === 'button'">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Default Brightness <span class="font-normal text-gray-400">(optional, 1–100%)</span></label>
                 <input v-model="hidForm.defaultBrightness" type="number" min="1" max="100" placeholder="100"
                   class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" />
