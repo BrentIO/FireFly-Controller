@@ -27,7 +27,7 @@
           v-for="client in unassignedClients"
           :key="client.id"
           draggable="true"
-          class="w-28 h-28 rounded-xl border-2 flex flex-col items-center justify-center text-center p-2 cursor-grab active:cursor-grabbing transition-colors select-none"
+          class="w-28 h-32 rounded-xl border-2 flex flex-col items-center justify-center text-center p-2 cursor-grab active:cursor-grabbing transition-colors select-none"
           :class="selectedClientId === client.id
             ? 'bg-blue-600 border-blue-600 text-white shadow-md'
             : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 hover:border-blue-400'"
@@ -36,7 +36,8 @@
           @click="toggleSelect(client.id)"
         >
           <span class="font-mono text-base font-bold leading-tight">{{ client.name }}</span>
-          <span class="text-xs leading-tight mt-1 opacity-70">{{ client.description }}</span>
+          <span class="text-xs leading-tight mt-0.5 opacity-50">{{ areas.find(a => a.id === client.area)?.name ?? '' }}</span>
+          <span class="text-xs leading-tight mt-0.5 opacity-70">{{ client.description }}</span>
           <span v-if="primaryBySecondaryId.has(client.id)" class="mt-1 px-1.5 py-0.5 text-[10px] font-semibold rounded bg-orange-600 text-white dark:bg-orange-600 dark:text-white leading-none">Extended</span>
         </div>
       </div>
@@ -64,7 +65,7 @@
         <div
           v-for="port in ctrl.ports"
           :key="port.num"
-          class="w-36 h-28 rounded-xl border-2 flex flex-col overflow-hidden transition-all select-none break-inside-avoid"
+          class="w-36 h-32 rounded-xl border-2 flex flex-col overflow-hidden transition-all select-none break-inside-avoid"
           :class="portClass(ctrl.id, port)"
           :style="portStyle(ctrl.id, port)"
           :draggable="!!port.client"
@@ -80,6 +81,7 @@
           <div class="flex-1 flex flex-col items-center justify-center text-center px-2 pb-1">
             <template v-if="port.client">
               <span class="font-mono text-xs font-bold text-gray-900 dark:text-black cursor-grab print:!text-black">{{ port.client.name }}</span>
+              <span class="text-xs text-gray-400 dark:text-black leading-tight print:!text-black">{{ areas.find(a => a.id === port.client.area)?.name ?? '' }}</span>
               <span class="text-xs text-gray-600 dark:text-black leading-tight print:!text-black">{{ port.client.description }}</span>
               <span v-if="primaryBySecondaryId.has(port.client.id)" class="mt-1 px-1.5 py-0.5 text-[10px] font-semibold rounded bg-orange-600 text-white dark:bg-orange-600 dark:text-white leading-none print:!bg-orange-600 print:!text-white">Extended</span>
               <button class="mt-1 text-red-500 hover:text-red-700 text-xs print:hidden leading-none" title="Unassign" @click.stop="unassign(ctrl.id, port.num)">✕</button>
