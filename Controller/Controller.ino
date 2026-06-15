@@ -3007,26 +3007,7 @@ void http_handleProvisioningCerts(AsyncWebServerRequest *request){
     return;
   }
 
-  if(!isRequestViaSoftAP(request)){
-    http_forbiddenRequest(request, "Only accessible via provisioning network");
-    return;
-  }
-
-  if(provisioningMode.getStatus() != true){
-    http_conflict(request, "Provisioning mode inactive");
-    return;
-  }
-
-  if(!request->hasHeader("mac-address")){
-    http_badRequest(request, "mac-address header required");
-    return;
-  }
-
-  String mac = request->header("mac-address");
-  mac.toLowerCase();
-  String uuid = findClientUuidByMac(mac.c_str());
-  if(uuid.isEmpty()){
-    http_unauthorized(request);
+  if(!authenticateWithProvisioningToken(request)){
     return;
   }
 

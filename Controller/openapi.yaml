@@ -523,7 +523,7 @@ paths:
       summary: Retrieve the client CA certificate for mutual TLS
       description: Returns the designated client CA certificate (PEM text and SHA-256 fingerprint) to a registered client device connecting via the provisioning SoftAP. No nonce is required; the certificate is not sensitive. Returns 404 if no client CA certificate has been designated.
       security:
-        - macAddress: []
+        - provisioningToken: []
       responses:
         '200':
           description: OK
@@ -540,16 +540,8 @@ paths:
                   pem:
                     type: string
                     description: PEM-encoded certificate text
-        '400':
-          description: Bad Request — mac-address header missing
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/bad_request_message'
-              example:
-                message: mac-address header required
         '401':
-          description: Unauthorized — MAC address not registered as a client
+          description: Unauthorized — provisioning-token header missing or invalid
         '403':
           description: Forbidden — request did not arrive via the provisioning SoftAP network
           content:
