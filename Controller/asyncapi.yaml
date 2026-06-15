@@ -1464,6 +1464,31 @@ components:
         device:
           type: object
           description: Device grouping information linking this output to the FireFly controller
+          properties:
+            identifiers:
+              type: array
+              items:
+                type: string
+            name:
+              type: string
+              description: Output name for display in the HA device registry
+            via_device:
+              type: string
+              description: Controller UUID — groups this output under the parent controller
+            configuration_url:
+              type: string
+              description: URL of the controller web UI
+            suggested_area:
+              type: string
+              description: Area name for automatic HA area assignment; omitted when not configured
+            manufacturer:
+              type: string
+              description: Relay manufacturer; omitted when not configured
+              example: Crydom
+            model:
+              type: string
+              description: Relay model number; omitted when not configured
+              example: DR2260D20V
 
     haDiscoveryConfigPayload:
       type: object

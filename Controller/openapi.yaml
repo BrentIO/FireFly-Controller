@@ -1570,6 +1570,14 @@ components:
             type: boolean
             description: Indicates if the output is enabled
             default: true
+          relay_manufacturer:
+            type: string
+            description: Manufacturer of the relay controlling this output
+            example: Crydom
+          relay_model:
+            type: string
+            description: Model number of the relay controlling this output
+            example: DR2260D20V
         required:
           - id
       examples:
@@ -1579,6 +1587,8 @@ components:
             area: Foyer
             icon: mdi:chandelier
             type: VARIABLE
+            relay_manufacturer: Crydom
+            relay_model: PMP2425W
           12:
             id: C12
             name: Recessed Lights
