@@ -261,6 +261,11 @@ async function onDropPort(controllerId, port) {
   if (port.circuit) { endDrag(); return }
   const drag = { ...dragging.value }
   endDrag()
+  const required = requiredControllerId(drag.circuitId)
+  if (required !== null && required !== controllerId) {
+    addToast('error', 'Cannot assign circuit to this controller')
+    return
+  }
   try {
     if (drag.fromControllerId !== null) {
       await assignOutput(drag.fromControllerId, drag.fromPort, null)
@@ -284,6 +289,11 @@ async function onDropUnassign() {
 
 async function portClick(controllerId, port) {
   if (port.circuit || !selectedCircuitId.value) return
+  const required = requiredControllerId(selectedCircuitId.value)
+  if (required !== null && required !== controllerId) {
+    addToast('error', 'Cannot assign circuit to this controller')
+    return
+  }
   try {
     await assignOutput(controllerId, port.num, selectedCircuitId.value)
     selectedCircuitId.value = null
