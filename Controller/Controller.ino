@@ -4728,7 +4728,6 @@ void mqtt_autoDiscovery_outputs(){
     }
 
     device["via_device"] = deviceIdentity.data.uuid;
-    device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
     if(!output.value()["area"].isNull()){
       device["suggested_area"] =  output.value()["area"].as<const char*>();
