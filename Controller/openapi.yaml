@@ -1679,7 +1679,7 @@ components:
       type: object
       description: Human Interface Device
       propertyNames:
-        pattern: ^[0-5]$
+        pattern: ^[1-6]$
       additionalProperties:
         type: object
         properties:
