@@ -504,7 +504,8 @@ operations:
       The retain flag is set so that Home Assistant receives the discovery payload immediately on
       subscribe, even if the controller connected before HA did.
       Each message registers the channel as a "Channel N" sensor entity (where N is the logical
-      channel number) whose state will be NORMAL, SHORT, LONG, or EXCESSIVE as published on the channel's state topic.
+      channel number). A value_template title-cases the raw state (NORMAL → Normal, SHORT → Short,
+      LONG → Long, EXCESSIVE → Excessive) and the entity displays with the mdi:gesture-tap icon.
     messages:
       - $ref: "#/channels/inputAutoDiscovery/messages/inputAutoDiscovery"
 
@@ -994,6 +995,12 @@ components:
           state_topic:
             type: string
             description: The MQTT topic the controller publishes channel state to; uses the raw port ID (not sanitized)
+          value_template:
+            type: string
+            description: Jinja2 template that title-cases the raw state (NORMAL → Normal, SHORT → Short, etc.)
+          icon:
+            type: string
+            description: MDI icon for the entity in Home Assistant
           device:
             type: object
             properties:
@@ -1024,6 +1031,8 @@ components:
             unique_id: "FireFly-00000000-0000-4000-0000-000000000000-inputs-A1234567-channel-1"
             default_entity_id: "sensor.FireFly-00000000-0000-4000-0000-000000000000-inputs-A1234567-channel-1"
             state_topic: "FireFly/inputs/A1234567/channels/1/state"
+            value_template: "{{ value | title }}"
+            icon: "mdi:gesture-tap"
             device:
               identifiers:
                 - "FireFly-00000000-0000-4000-0000-000000000000-inputs-A1234567"

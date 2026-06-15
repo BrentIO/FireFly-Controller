@@ -4826,6 +4826,8 @@ void mqtt_autoDiscovery_inputs(){
       mqttDoc["unique_id"] = unique_id;
       mqttDoc["default_entity_id"] = default_entity_id;
       mqttDoc["state_topic"] = state_topic;
+      mqttDoc["value_template"] = "{{ value | title }}";
+      mqttDoc["icon"] = "mdi:gesture-tap";
 
       JsonObject device = mqttDoc["device"].to<JsonObject>();
       JsonArray identifiers = device["identifiers"].to<JsonArray>();
