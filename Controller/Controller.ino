@@ -4810,8 +4810,11 @@ void mqtt_autoDiscovery_inputs(){
       snprintf(chip_availability_topic, sizeof(chip_availability_topic), MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_PATTERN,
         deviceIdentity.data.uuid, chipAddress);
 
+      char channel_name[16];
+      snprintf(channel_name, sizeof(channel_name), "Channel %u", logicalChannel);
+
       JsonDocument mqttDoc;
-      mqttDoc["name"] = (char*)NULL;
+      mqttDoc["name"] = channel_name;
       mqttDoc["unique_id"] = unique_id;
       mqttDoc["default_entity_id"] = default_entity_id;
       mqttDoc["state_topic"] = state_topic;

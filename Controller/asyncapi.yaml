@@ -499,8 +499,8 @@ operations:
       Published once on MQTT connect for every configured input channel (one message per channel).
       The retain flag is set so that Home Assistant receives the discovery payload immediately on
       subscribe, even if the controller connected before HA did.
-      Each message registers the channel as a sensor entity whose state will be NORMAL, SHORT,
-      LONG, or EXCESSIVE as published on the channel's state topic.
+      Each message registers the channel as a "Channel N" sensor entity (where N is the logical
+      channel number) whose state will be NORMAL, SHORT, LONG, or EXCESSIVE as published on the channel's state topic.
     messages:
       - $ref: "#/channels/inputAutoDiscovery/messages/inputAutoDiscovery"
 
@@ -979,8 +979,8 @@ components:
           - device
         properties:
           name:
-            type: "null"
-            description: Null — lets Home Assistant derive the entity name from the device name
+            type: string
+            description: Human-readable channel label, e.g. "Channel 1"
           unique_id:
             type: string
             description: Globally unique entity identifier including the controller UUID and port ID
@@ -1016,7 +1016,7 @@ components:
       examples:
         - name: channel-1
           payload:
-            name: null
+            name: "Channel 1"
             unique_id: "FireFly-00000000-0000-4000-0000-000000000000-inputs-A1234567-channel-1"
             default_entity_id: "sensor.FireFly-00000000-0000-4000-0000-000000000000-inputs-A1234567-channel-1"
             state_topic: "FireFly/inputs/A1234567/channels/1/state"
