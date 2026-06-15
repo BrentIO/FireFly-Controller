@@ -94,6 +94,7 @@ void updateNTPTime(bool force = false);
 void refreshCertBundle();
 void mqtt_publishClientCertState();
 void mqtt_publishControllerCertState();
+void mqtt_autoDiscovery_inputs();
 bool cloudBackup_performUpload(int &httpCode, String &errorMsg);
 void cloudBackup_scheduleHandler();
 void writeBackupEtag();
@@ -176,6 +177,9 @@ struct inputChannel{
 struct inputPort{
   /// @brief The human-readable ID of the input port
   char id[PORT_ID_MAX_LENGTH + 1];
+
+  /// @brief UUID of the paired FireFly-Client; empty string when unpaired
+  char clientUUID[UUID_LENGTH + 1];
 
   /// @brief Reference to the channels on this input port
   inputChannel channels[IO_EXTENDER_COUNT_CHANNELS_PER_PORT];
@@ -2008,6 +2012,56 @@ void http_handleClients_GET(AsyncWebServerRequest *request){
     return;
   }
   request->send(200, "application/json", plaintext);
+
+  if(request->hasHeader("provisioning-token") && deviceIdentity.enabled && configFS_isMounted){
+
+    JsonDocument clientFilter;
+    clientFilter["id"] = true;
+
+    JsonDocument clientDoc;
+    if(!deserializeJson(clientDoc, plaintext, DeserializationOption::Filter(clientFilter)) && !clientDoc["id"].isNull()){
+
+      String controllerFilename = CONFIGFS_PATH_CONTROLLERS + (String)"/" + deviceIdentity.data.uuid;
+
+      if(configFS.exists(controllerFilename)){
+        String controllerPlaintext;
+        if(secretEncryption.decryptFromFile(configFS, controllerFilename, controllerPlaintext)){
+          JsonDocument controllerDoc(&spiRamAllocator);
+
+          if(!deserializeJson(controllerDoc, controllerPlaintext)){
+            const char* clientShortId = clientDoc["id"].as<const char*>();
+            const char* clientUUIDStr = request->pathArg(0).c_str();
+            uint8_t portCount = (IO_EXTENDER_COUNT_PINS / IO_EXTENDER_COUNT_CHANNELS_PER_PORT) * IO_EXTENDER_COUNT;
+            bool updated = false;
+
+            for(JsonPair port : controllerDoc["ports"].as<JsonObject>()){
+              if(strcmp(port.value()["id"].as<const char*>(), clientShortId) == 0){
+                port.value()["clientUUID"] = clientUUIDStr;
+                int portIdx = atoi(port.key().c_str()) - 1;
+                if(portIdx >= 0 && portIdx < portCount){
+                  strlcpy(inputPorts[portIdx].clientUUID, clientUUIDStr, sizeof(inputPorts[portIdx].clientUUID));
+                }
+                updated = true;
+              }
+            }
+
+            if(updated){
+              String updatedJson;
+              serializeJson(controllerDoc, updatedJson);
+              if(secretEncryption.encryptToFile(configFS, controllerFilename, updatedJson)){
+                log_d("http_handleClients_GET: Recorded client UUID %s", clientUUIDStr);
+                if(mqttClient.connected()){
+                  mqtt_autoDiscovery_inputs();
+                }
+              } else {
+                log_e("http_handleClients_GET: Failed to save controller config with client UUID");
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 
 }
 
@@ -3858,6 +3912,7 @@ bool setup_inputs(String filename){
 
   JsonObject filter_ports = filter["ports"]["*"].to<JsonObject>();
   filter_ports["id"] = true;
+  filter_ports["clientUUID"] = true;
 
   JsonObject filter_ports_channels = filter_ports["channels"]["*"].to<JsonObject>();
   filter_ports_channels["type"] = true;
@@ -3901,6 +3956,7 @@ bool setup_inputs(String filename){
     }
 
     strlcpy(inputPorts[atoi(port.key().c_str())-1].id, port.value()["id"], sizeof(inputPorts[atoi(port.key().c_str())-1].id));
+    strlcpy(inputPorts[atoi(port.key().c_str())-1].clientUUID, port.value()["clientUUID"] | "", sizeof(inputPorts[atoi(port.key().c_str())-1].clientUUID));
 
     uint8_t i = 0;
 
@@ -4822,8 +4878,13 @@ void mqtt_autoDiscovery_inputs(){
       snprintf(state_topic, sizeof(state_topic), MQTT_TOPIC_INPUT_STATE_PATTERN, inputPorts[p].id, logicalChannel);
 
       char device_id[MQTT_INPUT_AUTO_DISCOVERY_DEVICE_ID_LENGTH+1];
-      snprintf(device_id, sizeof(device_id), MQTT_INPUT_AUTO_DISCOVERY_DEVICE_ID_PATTERN,
-        deviceIdentity.data.uuid, sanitized_id);
+      if(inputPorts[p].clientUUID[0] != '\0'){
+        snprintf(device_id, sizeof(device_id), MQTT_INPUT_AUTO_DISCOVERY_CLIENT_DEVICE_ID_PATTERN,
+          inputPorts[p].clientUUID);
+      } else {
+        snprintf(device_id, sizeof(device_id), MQTT_INPUT_AUTO_DISCOVERY_DEVICE_ID_PATTERN,
+          deviceIdentity.data.uuid, sanitized_id);
+      }
 
       char chip_availability_topic[MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_LENGTH+1];
       snprintf(chip_availability_topic, sizeof(chip_availability_topic), MQTT_TOPIC_INPUT_CONTROLLER_AVAILABILITY_PATTERN,
@@ -4845,7 +4906,6 @@ void mqtt_autoDiscovery_inputs(){
       identifiers.add(device_id);
       device["name"] = inputPorts[p].id;
       device["via_device"] = deviceIdentity.data.uuid;
-      device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
       JsonArray availability = mqttDoc["availability"].to<JsonArray>();
       JsonObject chip_avail = availability.add<JsonObject>();

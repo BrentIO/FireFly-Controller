@@ -1443,6 +1443,13 @@ components:
             pattern: ^[A-Za-z0-9~!@#$%^&*()_\+-=|]{1,8}$
             examples:
               - S16
+          clientUUID:
+            type: string
+            format: uuid
+            readOnly: true
+            description: UUID of the FireFly-Client paired to this port. Written automatically when the client provisions. Used as the HA device identifier so client-published sensors appear on the same device card as the input channel sensors.
+            examples:
+              - 00000000-0000-4000-0000-000000000000
           offset:
             type: number
             description: Offset to add to the channel number, used when an input spans multiple ports (such as a switch witih 6 buttons)
