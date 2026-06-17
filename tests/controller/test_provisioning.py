@@ -50,3 +50,17 @@ class TestProvisioning:
     def test_disable_provisioning_missing_auth_returns_401(self, base_url):
         r = requests.delete(f"{base_url}/api/provisioning")
         assert r.status_code == 401
+
+
+class TestProvisioningCerts:
+    def test_get_provisioning_certs_from_ethernet_returns_403(self, base_url):
+        r = requests.get(f"{base_url}/api/provisioning/certs")
+        assert r.status_code == 403
+
+    def test_post_provisioning_certs_returns_405(self, base_url):
+        r = requests.post(f"{base_url}/api/provisioning/certs")
+        assert r.status_code == 405
+
+    def test_delete_provisioning_certs_returns_405(self, base_url):
+        r = requests.delete(f"{base_url}/api/provisioning/certs")
+        assert r.status_code == 405
