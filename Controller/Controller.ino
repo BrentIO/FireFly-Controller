@@ -113,6 +113,7 @@ String _otaManifestUrl;                 /* Set when setup_OtaFirmware() succeeds
 bool _otaUpdateInProcess = false;
 bool _otaPendingRequest = false;
 bool _otaCheckFailed = false;           /* Set by onError during checkForUpdate(); reset before each check */
+int _otaCheckErrorCode = 0;             /* Error code captured by onError during checkForUpdate() */
 JsonDocument _otaPendingDoc;
 static char _otaCurrentPartition[8] = "";
 uint64_t _otaLastCheckedTime = 0;
@@ -876,6 +877,7 @@ void loop() {
         #endif /* CORE_DEBUG_LEVEL >= 4 */
 
         _otaCheckFailed = false;
+        _otaCheckErrorCode = 0;
         bool updateAvailable = otaFirmware.checkForUpdate();
 
         if(updateAvailable){
@@ -883,6 +885,46 @@ void loop() {
         } else if(_otaCheckFailed){
           eventLog.createEvent("OTA check failed");
           /* onError already published "offline" to availability topic; do not overwrite with "online" */
+          if(deviceIdentity.enabled && mqttClient.connected()){
+            const char* notifyMessage;
+            switch(_otaCheckErrorCode){
+              case -1:
+                notifyMessage = "Could not reach the OTA server. Please verify network connectivity.";
+                break;
+              case 404:
+                notifyMessage = "No firmware was found for this device. The OTA URL may be incorrect.";
+                break;
+              case 409:
+                notifyMessage = "This device is running a revoked firmware version and cannot update automatically. Manual intervention is required.";
+                break;
+              case 500:
+                notifyMessage = "The OTA server returned an error. This is likely transient; the device will retry.";
+                break;
+              case ESP_ERR_INVALID_ARG:
+                notifyMessage = "The firmware manifest could not be parsed. The server may have returned an unexpected response.";
+                break;
+              case ESP_ERR_INVALID_STATE:
+                notifyMessage = "OTA is not properly configured on this device.";
+                break;
+              case ESP_ERR_NOT_FOUND:
+                notifyMessage = "This device was not found in the firmware manifest. The OTA URL may be incorrect.";
+                break;
+              default:
+                notifyMessage = "The firmware update check failed. Please verify network connectivity and OTA configuration.";
+                break;
+            }
+            JsonDocument notifyDoc;
+            notifyDoc["title"] = "⚠️ FireFly Controller OTA Check Failed";
+            notifyDoc["message"] = notifyMessage;
+            char notificationId[64];
+            snprintf(notificationId, sizeof(notificationId), "firefly_ota_error_%s", deviceIdentity.data.uuid);
+            notifyDoc["notification_id"] = notificationId;
+            mqttClient.beginPublish("homeassistant/persistent_notification/create", measureJson(notifyDoc), false);
+            BufferingPrint bufferedNotify(mqttClient, 32);
+            serializeJson(notifyDoc, bufferedNotify);
+            bufferedNotify.flush();
+            mqttClient.endPublish();
+          }
         } else {
           /* Service reachable, no update — publish online + current version */
           if(deviceIdentity.enabled && mqttClient.connected()){
@@ -3639,6 +3681,7 @@ void setup_OtaFirmware(){
 
   otaFirmware.onError([](const char* partition, int err){
     _otaCheckFailed = true;
+    _otaCheckErrorCode = err;
     log_e("OTA error on %s: %d", partition, err);
     if(deviceIdentity.enabled == false){ return; }
     if(!mqttClient.connected()){ return; }
