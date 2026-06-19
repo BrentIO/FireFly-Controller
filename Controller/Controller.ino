@@ -112,6 +112,7 @@ WiFiClientSecure _otaHttpsClient;       /* TLS client used when the manifest URL
 String _otaManifestUrl;                 /* Set when setup_OtaFirmware() succeeds; empty otherwise */
 bool _otaUpdateInProcess = false;
 bool _otaPendingRequest = false;
+bool _otaCheckFailed = false;           /* Set by onError during checkForUpdate(); reset before each check */
 JsonDocument _otaPendingDoc;
 static char _otaCurrentPartition[8] = "";
 uint64_t _otaLastCheckedTime = 0;
@@ -874,10 +875,14 @@ void loop() {
           reportMemoryUsage("Starting firmware check.");
         #endif /* CORE_DEBUG_LEVEL >= 4 */
 
+        _otaCheckFailed = false;
         bool updateAvailable = otaFirmware.checkForUpdate();
 
         if(updateAvailable){
           otaFirmware.execOTA(); /* onAvailable already published MQTT update-available state */
+        } else if(_otaCheckFailed){
+          eventLog.createEvent("OTA check failed");
+          /* onError already published "offline" to availability topic; do not overwrite with "online" */
         } else {
           /* Service reachable, no update — publish online + current version */
           if(deviceIdentity.enabled && mqttClient.connected()){
@@ -3633,6 +3638,7 @@ void setup_OtaFirmware(){
   });
 
   otaFirmware.onError([](const char* partition, int err){
+    _otaCheckFailed = true;
     log_e("OTA error on %s: %d", partition, err);
     if(deviceIdentity.enabled == false){ return; }
     if(!mqttClient.connected()){ return; }
