@@ -1024,10 +1024,6 @@ void eventHandler_temperature(const char* location, float value){
   char temperature[6];
   snprintf(temperature, sizeof(temperature), "%.2f", value);
 
-  char oledText[OLED_CHARACTERS_PER_LINE+4];
-  snprintf(oledText, sizeof(oledText), "Temp: %s\xC2\xB0""C", temperature);
-  eventLog.createEvent(oledText);
-
   char topic[MQTT_TOPIC_TEMPERATURE_STATE_PATTERN_LENGTH+1];
   snprintf(topic, sizeof(topic), MQTT_TOPIC_TEMPERATURE_STATE_PATTERN, deviceIdentity.data.uuid, location);
 
