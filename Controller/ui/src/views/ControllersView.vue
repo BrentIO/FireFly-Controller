@@ -68,7 +68,8 @@
         <div v-if="!isCloudMode || sessions[ctrl.id]?.isAuthenticated" class="print:hidden border-t border-gray-100 dark:border-gray-800 pt-3 mt-3 space-y-2">
           <div v-if="!isCloudMode && !sessions[ctrl.id]?.isAuthenticated" class="space-y-2">
             <input v-model="ipInputs[ctrl.id]" type="text" placeholder="192.168.1.x"
-              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+              @dblclick="ipInputs[ctrl.id] = window.location.hostname" />
             <div class="flex gap-2">
               <input v-model="tokenInputs[ctrl.id]" type="text" placeholder="Visual token" maxlength="6"
                 class="flex-1 min-w-0 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
