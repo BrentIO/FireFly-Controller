@@ -861,6 +861,7 @@ const hasConnectedControllers = computed(() => items.value.some(c => sessions[c.
 
 async function fetchEventLog(id) {
   const sessionCtrl = getSessionCtrl(id)
+  if (!sessionCtrl.session.isAuthenticated) return
   const { controllerFetch } = await import('../composables/useApi')
   try {
     const res = await controllerFetch(sessionCtrl.session.ip, '/events', {}, sessionCtrl.session.visualToken)
@@ -873,6 +874,10 @@ async function fetchEventLog(id) {
 }
 
 async function openEventLog(id) {
+  if (eventLogRefreshTimer.value) {
+    clearInterval(eventLogRefreshTimer.value)
+    eventLogRefreshTimer.value = null
+  }
   activeEventLogId.value = id
   eventLog.value = []
   showEventLog.value = true
