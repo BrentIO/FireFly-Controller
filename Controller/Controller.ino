@@ -5948,6 +5948,7 @@ void cloudBackup_scheduleHandler() {
   log_i("cloudBackup_scheduleHandler: status=%d", httpCode);
 
   if (httpCode == 200 || httpCode == 204 || httpCode == 304) {
+    eventLog.resolveError("Backup upload fail");
     eventLog.createEvent("Backup uploaded");
   } else {
     char text[OLED_CHARACTERS_PER_LINE + 1];
