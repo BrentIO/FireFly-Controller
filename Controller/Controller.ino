@@ -795,7 +795,8 @@ void setup() {
     httpServer.on("/api/provisioning/token", HTTP_OPTIONS, http_options);
     AsyncCallbackJsonWebHandler* provisioningTokenHandler = new AsyncCallbackJsonWebHandler("/api/provisioning/token", http_handleProvisioningToken);
     httpServer.addHandler(provisioningTokenHandler);
-    httpServer.on("/api/provisioning/certs", http_handleProvisioningCerts);
+    httpServer.on("/api/provisioning/certs/client", http_handleProvisioningCerts_client);
+    httpServer.on("/api/provisioning/certs/controller", http_handleProvisioningCerts_controller);
     httpServer.on("/api/provisioning", http_handleProvisioning);
     httpServer.on("^/certs/([a-z0-9_.]+)$", http_handleCert);
     httpServer.on("^/certs$", HTTP_ANY, http_handleCerts, http_handleCerts_Upload);
@@ -2058,43 +2059,6 @@ void http_handleClients_GET(AsyncWebServerRequest *request){
 }
 
 
-/// @brief Authorizes a call using just a MAC address
-/// @param macAddress 
-/// @return true if authorized, false if not authorized
-boolean authClientWithMacAddress(const char* uuid, const char* macAddress){
-
-    String filename = CONFIGFS_PATH_CLIENTS + (String)"/" + uuid;
-
-    if(!configFS.exists(filename)){
-      return false;
-    }
-
-    JsonDocument filter;
-    filter["mac_address"] = true;
-
-    String plaintext;
-    if(!secretEncryption.decryptFromFile(configFS, filename, plaintext)){
-      eventLog.createEvent("Client decrypt fail", EventLog::LOG_LEVEL_ERROR);
-      log_e("Failed to decrypt %s", filename.c_str());
-      return false;
-    }
-
-    JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, plaintext, DeserializationOption::Filter(filter));
-
-    if(error) {
-      return false;
-    }
-
-    if(strcmp(doc["mac_address"].as<std::string>().c_str(), macAddress) != 0){
-      log_i("Rogue client detected Header: %s != document: %s", macAddress, doc["mac_address"].as<std::string>().c_str());
-      eventHandler_rogueClient(macAddress);
-      provisioningMode.setInactive();
-      return false;
-    }
-
-    return true;
-}
 
 
 /**
@@ -3038,37 +3002,22 @@ String computeCertFingerprint(const String& pem){
  * (PEM + SHA-256 fingerprint) to a registered client device connecting via
  * the provisioning SoftAP.  No nonce required; the cert is not sensitive.
  */
-void http_handleProvisioningCerts(AsyncWebServerRequest *request){
+static void http_sendProvisioningCert(AsyncWebServerRequest *request, const char* certType){
 
-  if(request->method() == HTTP_OPTIONS){
-    http_options(request);
-    return;
-  }
-
-  if(request->method() != HTTP_GET){
-    http_methodNotAllowed(request);
-    return;
-  }
-
-  if(!authenticateWithProvisioningToken(request)){
-    return;
-  }
-
-  // Find the cert designated as the client cert
   JsonDocument certTypes = readCertTypes();
-  String clientFilename = "";
+  String filename = "";
   for(JsonPair kv : certTypes.as<JsonObject>()){
-    if(kv.value()["client"].as<bool>()){
-      clientFilename = kv.key().c_str();
+    if(kv.value()[certType].as<bool>()){
+      filename = kv.key().c_str();
       break;
     }
   }
-  if(clientFilename.isEmpty()){
+  if(filename.isEmpty()){
     request->send(404);
     return;
   }
 
-  String certPath = CONFIGFS_PATH_CERTS + (String)"/" + clientFilename;
+  String certPath = CONFIGFS_PATH_CERTS + (String)"/" + filename;
   if(!configFS.exists(certPath)){
     request->send(404);
     return;
@@ -3095,6 +3044,32 @@ void http_handleProvisioningCerts(AsyncWebServerRequest *request){
   doc["pem"] = pem;
   serializeJson(doc, *response);
   request->send(response);
+}
+
+
+/**
+ * GET /api/provisioning/certs/client — returns the designated client CA certificate
+ */
+void http_handleProvisioningCerts_client(AsyncWebServerRequest *request){
+
+  if(request->method() == HTTP_OPTIONS){ http_options(request); return; }
+  if(request->method() != HTTP_GET){ http_methodNotAllowed(request); return; }
+  if(!authenticateWithProvisioningToken(request)){ return; }
+
+  http_sendProvisioningCert(request, "client");
+}
+
+
+/**
+ * GET /api/provisioning/certs/controller — returns the designated controller CA certificate
+ */
+void http_handleProvisioningCerts_controller(AsyncWebServerRequest *request){
+
+  if(request->method() == HTTP_OPTIONS){ http_options(request); return; }
+  if(request->method() != HTTP_GET){ http_methodNotAllowed(request); return; }
+  if(!authenticateWithProvisioningToken(request)){ return; }
+
+  http_sendProvisioningCert(request, "controller");
 }
 
 
@@ -3325,32 +3300,17 @@ void http_handleCert(AsyncWebServerRequest *request){
 */
 void http_handleCert_GET(AsyncWebServerRequest *request){
 
-if(!request->hasHeader("visual-token") && !request->hasHeader("mac-address")){
+  if(!request->hasHeader("visual-token")){
     http_unauthorized(request);
     return;
-}
+  }
 
-if(request->hasHeader("visual-token")){
   if(!authToken.authenticate(request->header("visual-token").c_str())){
     http_unauthorized(request);
     return;
   }
-}
 
-resetHTPServerUsage();
-
-if(request->hasHeader("mac-address")){
-
-  if(provisioningMode.getStatus() != true){
-    http_badRequest(request, "Provisioning mode inactive");
-    return;
-  }
-
-  if(!authClientWithMacAddress(request->pathArg(0).c_str(), request->header("mac-address").c_str())){
-    http_forbiddenRequest(request, "Request will not be fulfilled");
-    return;
-  }
-}
+  resetHTPServerUsage();
 
   if(configFS.exists(CONFIGFS_PATH_CERTS + (String)"/" + request->pathArg(0))){
 
