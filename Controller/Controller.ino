@@ -3559,7 +3559,7 @@ void setup_OtaFirmware(){
   }
 
   otaFirmware.setCurrentVersion(VERSION);
-  otaFirmware.setApplicationName(APPLICATION);
+  otaFirmware.setApplicationName(APPLICATION_NAME);
   otaFirmware.setManifestURL(url.c_str());
   otaFirmware.setBlockedPartitions({"config"});
   otaFirmware.addHeader("uuid", deviceIdentity.data.uuid);
