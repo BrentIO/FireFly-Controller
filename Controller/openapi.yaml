@@ -60,7 +60,7 @@ paths:
       summary: Reboot the device
       description: Logs a reboot event and restarts the device after a short delay
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '204':
           description: No Content
@@ -78,7 +78,7 @@ paths:
       summary: Error log information
       description: Retrieve all of the active errors
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '200':
           description: OK
@@ -101,7 +101,7 @@ paths:
       summary: Event log information
       description: Retrieve all of the events still remaining in the event log
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '200':
           description: OK
@@ -135,7 +135,7 @@ paths:
         after the app partition is written. Returns `409 Conflict` if an update is already in
         progress or pending.
       security:
-        - visualToken: []
+        - visual-token: []
       requestBody:
         required: true
         content:
@@ -183,7 +183,7 @@ paths:
       summary: Get certificate list
       description: Retrives the list of certificates in flash storage
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '200':
           description: OK
@@ -207,7 +207,7 @@ paths:
       summary: Create a new certificate
       description: Creates a new certificate with the content in the payload
       security:
-        - visualToken: []
+        - visual-token: []
       parameters:
         - in: header
           name: X-Cert-Type
@@ -271,7 +271,7 @@ paths:
       summary: Get a certificate
       description: Retrieves the content of a certificate
       security:
-        - visualToken: []
+        - visual-token: []
       parameters:
         - in: path
           name: filename
@@ -307,7 +307,7 @@ paths:
       summary: Delete a certificate
       description: Deletes the requested certificate from flash storage
       security:
-        - visualToken: []
+        - visual-token: []
       parameters:
         - in: path
           name: filename
@@ -340,7 +340,7 @@ paths:
       summary: Authorize the visual token
       description: Creates a long-term authorization for a visual token (typically 60 minutes)
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '204':
           description: Authorized
@@ -359,7 +359,7 @@ paths:
       summary: Retrieve the status of provisioning mode on this controller
       description: Retrieve the status of provisioning mode on this controller
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '200':
           description: OK
@@ -393,7 +393,7 @@ paths:
       summary: Enable provisioning mode on this controller
       description: Enable provisioning mode on this controller
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '202':
           description: Request accepted
@@ -419,7 +419,7 @@ paths:
       summary: Disable provisioning mode on this controller
       description: Disable provisioning mode on this controller
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '202':
           description: Request accepted
@@ -523,7 +523,7 @@ paths:
       summary: Retrieve the client CA certificate for mutual TLS
       description: Returns the designated client CA certificate (PEM text and SHA-256 fingerprint) to a registered client device connecting via the provisioning SoftAP. No nonce is required; the certificate is not sensitive. Returns 404 if no client CA certificate has been designated.
       security:
-        - provisioningToken: []
+        - provisioning-token: []
       responses:
         '200':
           description: OK
@@ -583,8 +583,8 @@ paths:
       summary: Retrieve the list of defined controller UUIDs
       description: Retrieve the list of defined controller UUIDs
       security:
-        - visualToken: []
-        - provisioningToken: []
+        - visual-token: []
+        - provisioning-token: []
       responses:
         '200':
           description: OK
@@ -612,8 +612,8 @@ paths:
       summary: Retrieve a controller
       description: Retrieve a controller
       security:
-        - visualToken: []
-        - provisioningToken: []
+        - visual-token: []
+        - provisioning-token: []
       parameters:
         - in: path
           name: uuid
@@ -646,7 +646,7 @@ paths:
       summary: Create or update a controller
       description: Create or update a controller.  Note that contents are not validated and are immediately stored to the file system.
       security:
-        - visualToken: []
+        - visual-token: []
       parameters:
         - in: path
           name: uuid
@@ -685,7 +685,7 @@ paths:
       summary: Delete a controller
       description: Delete a controller
       security:
-        - visualToken: []
+        - visual-token: []
       parameters:
         - in: path
           name: uuid
@@ -720,8 +720,8 @@ paths:
       summary: Retrieve the list of defined client UUIDs
       description: Retrieve the list of defined client UUIDs
       security:
-        - visualToken: []
-        - provisioningToken: []
+        - visual-token: []
+        - provisioning-token: []
       responses:
         '200':
           description: OK
@@ -749,8 +749,8 @@ paths:
       summary: Retrieve a client
       description: Retrieve a client
       security:
-        - visualToken: []
-        - provisioningToken: []
+        - visual-token: []
+        - provisioning-token: []
       parameters:
         - in: path
           name: uuid
@@ -799,7 +799,7 @@ paths:
       summary: Create or update a client
       description: Create or update a client.  Note that contents are not validated and are immediately stored to the file system.
       security:
-        - visualToken: []
+        - visual-token: []
       parameters:
         - in: path
           name: uuid
@@ -838,7 +838,7 @@ paths:
       summary: Delete a client
       description: Delete a client
       security:
-        - visualToken: []
+        - visual-token: []
       parameters:
         - in: path
           name: uuid
@@ -879,7 +879,7 @@ paths:
         the full file. If the backup exists but was written by firmware that predates
         this feature, the `ETag` header will be absent.
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '200':
           description: OK
@@ -899,8 +899,8 @@ paths:
       summary: Retrieve the backup of the database
       description: Retrieves the backup of the database in Dexie format.
       security:
-        - visualToken: []
-        - provisioningToken: []
+        - visual-token: []
+        - provisioning-token: []
       responses:
         '200':
           description: OK
@@ -947,7 +947,7 @@ paths:
       summary: Create or replace a backup of the database
       description: Create or replace a backup of the database in Dexie format. Note that contents are not validated and are immediately stored to the file system.
       security:
-        - visualToken: []
+        - visual-token: []
       requestBody:
         required: true
         content:
@@ -973,7 +973,7 @@ paths:
       summary: Deletes the stored backup
       description: Deletes the stored backup
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '204':
           description: File Deleted Successfully
@@ -1002,7 +1002,7 @@ paths:
         label `firefly-backup-v1`), and uploads the ciphertext blob to the FireFly
         Cloud. Returns the HTTP status code returned by the cloud.
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '200':
           description: Cloud accepted the upload (cloud returned 200, 204, or 304)
@@ -1050,7 +1050,7 @@ paths:
         on-device with `key_backup`, writes the result to the config file system,
         and returns the plaintext JSON to the caller.
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '200':
           description: Backup restored successfully
@@ -1091,7 +1091,7 @@ paths:
         Sends a DELETE request to the FireFly Cloud to remove the stored backup for
         this device. If a local backup also exists, it is removed as well.
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '204':
           description: Backup deleted
@@ -1123,7 +1123,7 @@ paths:
       summary: Retrieve a list of files across all file systems
       description: Retrieve a list of files by file system
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '200':
           description: OK
@@ -1148,19 +1148,19 @@ components:
 ##########################################################
 
   securitySchemes:
-    visualToken:
+    visual-token:
       type: apiKey
       in: header
       name: visual-token
       description: A security token visually displayed on the device which changes on a regular basis
 
-    macAddress:
+    mac-address:
       type: apiKey
       in: header
       name: mac-address
       description: A client MAC address that matches the resource being requested, valid only while in provisioning mode
 
-    provisioningToken:
+    provisioning-token:
       type: apiKey
       in: header
       name: provisioning-token

@@ -73,7 +73,7 @@ paths:
       summary: Store the device identity
       description: Burns the device identity to eFuse (irreversible). The master key is generated on-device and never returned. Returns 409 if identity is already provisioned.
       security:
-        - visualToken: []
+        - visual-token: []
       requestBody:
         required: true
         content:
@@ -115,7 +115,7 @@ paths:
       summary: Retrieve the device identity
       description: Retrieve the current device identity. The master key is not included in the response.
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '200':
           description: OK
@@ -142,7 +142,7 @@ paths:
       summary: Retrieve cloud registration status
       description: Returns the in-RAM registration state from the last boot check. Returns 409 if device identity is not provisioned.
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '200':
           description: OK
@@ -185,7 +185,7 @@ paths:
       summary: Register device with FireFly-Cloud
       description: Derives the ECDSA P-256 public key from the eFuse master key and registers the device with FireFly-Cloud. Requires a one-time Registration Key obtained from FireFly-Cloud.
       security:
-        - visualToken: []
+        - visual-token: []
       parameters:
         - in: header
           name: X-Registration-Key
@@ -257,7 +257,7 @@ paths:
         `{"status":"loading"}` if the list is not yet cached; the caller should retry after a short
         delay. Returns `409 Conflict` if device identity is not provisioned.
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '200':
           description: OK
@@ -309,7 +309,7 @@ paths:
         is written. Returns `202 Accepted` immediately; the update runs asynchronously on the main
         loop. Returns `409 Conflict` if an update is already in progress or pending.
       security:
-        - visualToken: []
+        - visual-token: []
       requestBody:
         required: true
         content:
@@ -364,7 +364,7 @@ paths:
       summary: Reboot the main control unit
       description: Performs a reboot on the main control unit
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '204':
           description: Accepted
@@ -460,7 +460,7 @@ paths:
       summary: Authorize the visual token
       description: Creates a long-term authorization for a visual token (typically 60 minutes)
       security:
-        - visualToken: []
+        - visual-token: []
       responses:
         '204':
           description: Authorized
@@ -468,7 +468,7 @@ paths:
           description: Unauthorized
 components:
   securitySchemes:
-    visualToken:
+    visual-token:
       type: apiKey
       in: header
       name: visual-token
