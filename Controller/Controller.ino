@@ -3679,6 +3679,25 @@ void otaFirmware_checkPending(){
 
   _otaCurrentPartition[0] = '\0';
 
+  otaFirmware.onProgress([](const char* partition, size_t written, size_t total){
+    _otaUpdateInProcess = true;
+    if(strcmp(partition, _otaCurrentPartition) != 0){
+      strlcpy(_otaCurrentPartition, partition, sizeof(_otaCurrentPartition));
+      oled.setOTAPartition(partition);
+      oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
+      char msg[OLED_CHARACTERS_PER_LINE+1];
+      snprintf(msg, sizeof(msg), "OTA %s update start", partition);
+      eventLog.createEvent(msg, EventLog::LOG_LEVEL_INFO);
+    }
+    oled.setProgressBar((float)written / (float)total);
+  });
+
+  otaFirmware.onPartitionComplete([](const char* partition, bool success){
+    char msg[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(msg, sizeof(msg), "OTA %s %s", partition, success ? "finished" : "failed");
+    eventLog.createEvent(msg, success ? EventLog::LOG_LEVEL_INFO : EventLog::LOG_LEVEL_NOTIFICATION);
+  });
+
   otaFirmware.onComplete([](bool success){
     _otaUpdateInProcess = false;
     _otaPendingRequest = false;
@@ -3699,6 +3718,26 @@ void otaFirmware_checkPending(){
       ESP.restart();
     }
   });
+
+  eventLog.createEvent("OTA update available");
+  if(deviceIdentity.enabled && mqttClient.connected()){
+    JsonDocument mqttDoc;
+    mqttDoc["installed_version"] = VERSION;
+    const char* targetVersion = _otaPendingDoc["version"] | VERSION;
+    mqttDoc["latest_version"] = targetVersion;
+    const char* releaseUrl = _otaPendingDoc["release_url"] | "";
+    if(releaseUrl && strlen(releaseUrl) > 0){
+      mqttDoc["release_url"] = releaseUrl;
+    }
+    mqttDoc["in_progress"] = false;
+    char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+    snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
+    mqttClient.beginPublish(topic, measureJson(mqttDoc), true);
+    BufferingPrint bufferedClient(mqttClient, 32);
+    serializeJson(mqttDoc, bufferedClient);
+    bufferedClient.flush();
+    mqttClient.endPublish();
+  }
 
   otaFirmware.execOTA(_otaPendingDoc);
 
