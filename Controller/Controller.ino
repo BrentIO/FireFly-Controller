@@ -4276,6 +4276,10 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
 
   payload.trim();
 
+  if(payload.isEmpty()){
+    return;
+  }
+
   MatchState ms;
   ms.Target(topic);
 
