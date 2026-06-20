@@ -1551,6 +1551,42 @@ components:
         device:
           type: object
           description: Device grouping information
+          properties:
+            identifiers:
+              type: array
+              description: List of unique device identifiers
+              items:
+                type: string
+            name:
+              type: string
+              description: Device display name
+            manufacturer:
+              type: string
+              description: Device manufacturer name
+            model:
+              type: string
+              description: Device model name
+            model_id:
+              type: string
+              description: Device model identifier
+            serial_number:
+              type: string
+              description: Device serial number (UUID)
+            sw_version:
+              type: string
+              description: >
+                Installed firmware version concatenated with the short commit hash in the
+                format "VERSION (COMMIT_HASH)", e.g. "2026.06.05 (1a2b3c4d)".
+              examples:
+                - "2026.06.05 (1a2b3c4d)"
+            configuration_url:
+              type: string
+              description: URL of the device's local web UI
+              examples:
+                - "http://192.168.1.100"
+            suggested_area:
+              type: string
+              description: Suggested Home Assistant area; omitted when not configured
 
     clientCertStatePayload:
       type: object

@@ -934,9 +934,7 @@ void loop() {
             mqttClient.publish(availability_topic, "online", true);
 
             JsonDocument mqttDoc;
-            char installedVersion[32];
-            snprintf(installedVersion, sizeof(installedVersion), "%s (%s)", VERSION, COMMIT_HASH);
-            mqttDoc["installed_version"] = installedVersion;
+            mqttDoc["installed_version"] = VERSION;
             mqttDoc["latest_version"] = VERSION;
             char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
             snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
@@ -3621,9 +3619,7 @@ void setup_OtaFirmware(){
     eventLog.createEvent("OTA update available");
 
     JsonDocument mqttDoc;
-    char installedVersion[32];
-    snprintf(installedVersion, sizeof(installedVersion), "%s (%s)", VERSION, COMMIT_HASH);
-    mqttDoc["installed_version"] = installedVersion;
+    mqttDoc["installed_version"] = VERSION;
     mqttDoc["latest_version"] = version;
     if(releaseUrl && strlen(releaseUrl) > 0){
       mqttDoc["release_url"] = releaseUrl;
@@ -3726,9 +3722,7 @@ void otaFirmware_checkPending(){
   eventLog.createEvent("OTA update available");
   if(deviceIdentity.enabled && mqttClient.connected()){
     JsonDocument mqttDoc;
-    char installedVersion[32];
-    snprintf(installedVersion, sizeof(installedVersion), "%s (%s)", VERSION, COMMIT_HASH);
-    mqttDoc["installed_version"] = installedVersion;
+    mqttDoc["installed_version"] = VERSION;
     const char* targetVersion = _otaPendingDoc["version"] | VERSION;
     mqttDoc["latest_version"] = targetVersion;
     const char* releaseUrl = _otaPendingDoc["release_url"] | "";
@@ -4388,7 +4382,7 @@ void mqtt_autoDiscovery_temperature(){
     device["model"] = APPLICATION_NAME;
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
-    device["sw_version"] = VERSION;
+    device["sw_version"] = VERSION " (" COMMIT_HASH ")";
     device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -4960,7 +4954,7 @@ void mqtt_autoDiscovery_inputControllers(){
     device["model"] = APPLICATION_NAME;
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
-    device["sw_version"] = VERSION;
+    device["sw_version"] = VERSION " (" COMMIT_HASH ")";
     device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -5034,7 +5028,7 @@ void mqtt_autoDiscovery_outputControllers(){
     device["model"] = APPLICATION_NAME;
     device["model_id"] = deviceIdentity.data.product_id;
     device["serial_number"] = deviceIdentity.data.uuid;
-    device["sw_version"] = VERSION;
+    device["sw_version"] = VERSION " (" COMMIT_HASH ")";
     device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
     if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -5093,7 +5087,7 @@ void mqtt_autoDiscovery_start_time(){
   device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = VERSION;
+  device["sw_version"] = VERSION " (" COMMIT_HASH ")";
   device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -5177,7 +5171,7 @@ void mqtt_autoDiscovery_mac_address(){
   device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = VERSION;
+  device["sw_version"] = VERSION " (" COMMIT_HASH ")";
   device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -5257,7 +5251,7 @@ void mqtt_autoDiscovery_ip_address(){
   device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = VERSION;
+  device["sw_version"] = VERSION " (" COMMIT_HASH ")";
   device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -5340,7 +5334,7 @@ void mqtt_autoDiscovery_count_errors(){
   device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = VERSION;
+  device["sw_version"] = VERSION " (" COMMIT_HASH ")";
   device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -5427,7 +5421,7 @@ void mqtt_autoDiscovery_update(){
   device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = VERSION;
+  device["sw_version"] = VERSION " (" COMMIT_HASH ")";
   device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -5494,7 +5488,7 @@ void mqtt_autoDiscovery_http_server(){
   device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = VERSION;
+  device["sw_version"] = VERSION " (" COMMIT_HASH ")";
   device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -5588,7 +5582,7 @@ void mqtt_autoDiscovery_heapFree(){
   device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = VERSION;
+  device["sw_version"] = VERSION " (" COMMIT_HASH ")";
   device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
@@ -5671,7 +5665,7 @@ void mqtt_autoDiscovery_heapLargestFreeBlock(){
   device["model"] = APPLICATION_NAME;
   device["model_id"] = deviceIdentity.data.product_id;
   device["serial_number"] = deviceIdentity.data.uuid;
-  device["sw_version"] = VERSION;
+  device["sw_version"] = VERSION " (" COMMIT_HASH ")";
   device["configuration_url"] = ("http://" + ETH.localIP().toString()).c_str();
 
   if(strlen(mqttClient.autoDiscovery.suggestedArea) > 0){
