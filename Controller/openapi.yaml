@@ -26,6 +26,8 @@ tags:
     description: Helper operations
   - name: Cloud Backup
     description: Operations for managing encrypted configuration backups in the cloud
+  - name: Provisioning
+    description: Operations for provisioning mode and device enrollment
 
 ##########################################################
 ## NOTE: This may not render except in the next-gen     ##
@@ -355,7 +357,7 @@ paths:
   /api/provisioning:
     get:
       tags:
-        - Controllers
+        - Provisioning
       summary: Retrieve the status of provisioning mode on this controller
       description: Retrieve the status of provisioning mode on this controller
       security:
@@ -389,7 +391,7 @@ paths:
                 $ref: '#/components/schemas/error_message'
     put:
       tags:
-        - Controllers
+        - Provisioning
       summary: Enable provisioning mode on this controller
       description: Enable provisioning mode on this controller
       security:
@@ -415,7 +417,7 @@ paths:
                 $ref: '#/components/schemas/error_message'
     delete:
       tags:
-        - Controllers
+        - Provisioning
       summary: Disable provisioning mode on this controller
       description: Disable provisioning mode on this controller
       security:
@@ -444,7 +446,7 @@ paths:
   /api/provisioning/token:
     post:
       tags:
-        - Controllers
+        - Provisioning
       summary: Exchange credentials for a per-device provisioning token
       description: >
         Authenticates an unprovisioned controller by UUID and MAC address, and returns a short-lived
@@ -516,12 +518,12 @@ paths:
                 $ref: '#/components/schemas/error_message'
 
 
-  /api/provisioning/certs:
+  /api/provisioning/certs/client:
     get:
       tags:
         - Provisioning
-      summary: Retrieve the client CA certificate for mutual TLS
-      description: Returns the designated client CA certificate (PEM text and SHA-256 fingerprint) to a registered client device connecting via the provisioning SoftAP. No nonce is required; the certificate is not sensitive. Returns 404 if no client CA certificate has been designated.
+      summary: Retrieve the designated client CA certificate
+      description: Returns the client CA certificate (PEM text and SHA-256 fingerprint) designated for distribution to client devices during provisioning. Returns 404 if no client CA certificate has been designated.
       security:
         - provisioning-token: []
       responses:
@@ -552,6 +554,62 @@ paths:
                 message: Only accessible via provisioning network
         '404':
           description: Not Found — no client CA certificate has been designated
+        '405':
+          description: Method Not Allowed
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Provisioning mode inactive
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Unable to compute fingerprint
+
+
+  /api/provisioning/certs/controller:
+    get:
+      tags:
+        - Provisioning
+      summary: Retrieve the designated controller CA certificate
+      description: Returns the controller CA certificate (PEM text and SHA-256 fingerprint) designated for HTTPS OTA validation. Returns 404 if no controller CA certificate has been designated.
+      security:
+        - provisioning-token: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fingerprint:
+                    type: string
+                    description: SHA-256 fingerprint of the certificate formatted as colon-separated uppercase hex
+                    examples:
+                      - "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"
+                  pem:
+                    type: string
+                    description: PEM-encoded certificate text
+        '401':
+          description: Unauthorized — provisioning-token header missing or invalid
+        '403':
+          description: Forbidden — request did not arrive via the provisioning SoftAP network
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              example:
+                message: Only accessible via provisioning network
+        '404':
+          description: Not Found — no controller CA certificate has been designated
         '405':
           description: Method Not Allowed
         '409':
@@ -1153,12 +1211,6 @@ components:
       in: header
       name: visual-token
       description: A security token visually displayed on the device which changes on a regular basis
-
-    mac-address:
-      type: apiKey
-      in: header
-      name: mac-address
-      description: A client MAC address that matches the resource being requested, valid only while in provisioning mode
 
     provisioning-token:
       type: apiKey
