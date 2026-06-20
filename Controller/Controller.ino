@@ -3584,6 +3584,7 @@ void setup_OtaFirmware(){
       eventLog.createEvent(msg, EventLog::LOG_LEVEL_INFO);
     }
     oled.setProgressBar((float)written / (float)total);
+    mqttClient.loop();
   });
 
   otaFirmware.onPartitionComplete([](const char* partition, bool success){
@@ -3690,6 +3691,7 @@ void otaFirmware_checkPending(){
       eventLog.createEvent(msg, EventLog::LOG_LEVEL_INFO);
     }
     oled.setProgressBar((float)written / (float)total);
+    mqttClient.loop();
   });
 
   otaFirmware.onPartitionComplete([](const char* partition, bool success){
