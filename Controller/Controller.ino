@@ -934,7 +934,9 @@ void loop() {
             mqttClient.publish(availability_topic, "online", true);
 
             JsonDocument mqttDoc;
-            mqttDoc["installed_version"] = VERSION;
+            char installedVersion[32];
+            snprintf(installedVersion, sizeof(installedVersion), "%s (%s)", VERSION, COMMIT_HASH);
+            mqttDoc["installed_version"] = installedVersion;
             mqttDoc["latest_version"] = VERSION;
             char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
             snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
@@ -3619,7 +3621,9 @@ void setup_OtaFirmware(){
     eventLog.createEvent("OTA update available");
 
     JsonDocument mqttDoc;
-    mqttDoc["installed_version"] = VERSION;
+    char installedVersion[32];
+    snprintf(installedVersion, sizeof(installedVersion), "%s (%s)", VERSION, COMMIT_HASH);
+    mqttDoc["installed_version"] = installedVersion;
     mqttDoc["latest_version"] = version;
     if(releaseUrl && strlen(releaseUrl) > 0){
       mqttDoc["release_url"] = releaseUrl;
@@ -3722,7 +3726,9 @@ void otaFirmware_checkPending(){
   eventLog.createEvent("OTA update available");
   if(deviceIdentity.enabled && mqttClient.connected()){
     JsonDocument mqttDoc;
-    mqttDoc["installed_version"] = VERSION;
+    char installedVersion[32];
+    snprintf(installedVersion, sizeof(installedVersion), "%s (%s)", VERSION, COMMIT_HASH);
+    mqttDoc["installed_version"] = installedVersion;
     const char* targetVersion = _otaPendingDoc["version"] | VERSION;
     mqttDoc["latest_version"] = targetVersion;
     const char* releaseUrl = _otaPendingDoc["release_url"] | "";
