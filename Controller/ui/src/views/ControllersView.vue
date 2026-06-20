@@ -422,11 +422,11 @@ onMounted(async () => {
   await Promise.all([load(), loadAreas()])
   items.value.forEach(c => initSession(c.id))
   await computeLocalDexieHash()
-  await Promise.all(
-    items.value
-      .filter(c => sessions[c.id]?.isAuthenticated && c.uuid && !(c.uuid in etagCache))
-      .map(c => fetchBackupEtag(c))
-  )
+  const authed = items.value.filter(c => sessions[c.id]?.isAuthenticated)
+  await Promise.all([
+    ...authed.filter(c => c.uuid && !(c.uuid in etagCache)).map(c => fetchBackupEtag(c)),
+    ...authed.map(c => fetchVersions(c))
+  ])
 })
 
 onUnmounted(() => {
