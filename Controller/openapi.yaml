@@ -1320,7 +1320,7 @@ components:
       type: string
       description: Hardware product hexadecimal, indicating the version of the firmware
       examples: 
-        - '0x8062305'
+        - '0x08062305'
 
     applicationVersionInfo:
       type: object
