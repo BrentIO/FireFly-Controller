@@ -1912,11 +1912,3 @@ components:
       value:
         - text: MQTT disconnected
         - text: Ethernet disconnected
-   
-    ota_http:
-      value:
-        url: http://www.somewhere.com/firmware.json
-    
-    ota_https:
-      value:
-        url: https://www.somewhere.com/firmware.json
