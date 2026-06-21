@@ -3731,7 +3731,7 @@ void otaFirmware_checkPending(){
     if(releaseUrl && strlen(releaseUrl) > 0){
       mqttDoc["release_url"] = releaseUrl;
     }
-    mqttDoc["in_progress"] = false;
+    mqttDoc["in_progress"] = true;
     char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
     snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
     mqttClient.beginPublish(topic, measureJson(mqttDoc), true);
