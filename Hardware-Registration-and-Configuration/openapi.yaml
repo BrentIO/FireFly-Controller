@@ -689,6 +689,11 @@ components:
           type: integer
           description: Epoch time of the last registration check. 0 if not yet checked
           example: 1714000000
+        cloud_api_root:
+          type: string
+          format: uri
+          description: Root URL of the FireFly cloud API used for registration verification
+          example: 'https://api.fireflylx.com'
     registrationRequest:
       type: object
       properties:
