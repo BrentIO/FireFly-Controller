@@ -136,7 +136,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/identityConfig'
               example:
-                uuid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                uuid: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
                 product_id: "FFC3232-2211"
                 product_hex: "0x32322304"
         '401':
