@@ -44,6 +44,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/listmacAddressAndType'
+              example:
+                - mac_address: "DE:AD:BE:EF:FE:ED"
+                  interface: ethernet
+                - mac_address: "DE:AD:BE:EF:FE:EE"
+                  interface: wifi
+                - mac_address: "DE:AD:BE:EF:FE:EF"
+                  interface: wifi_ap
+                - mac_address: "DE:AD:BE:EF:FE:F0"
+                  interface: bluetooth
   /api/network/{interface}:
     get:
       tags:
@@ -64,8 +73,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/macAddressAndType'
+              example:
+                mac_address: "DE:AD:BE:EF:FE:ED"
+                interface: ethernet
         '404':
-          description: Not Found
+          description: Interface not found
   /api/identity:
     post:
       tags:
@@ -149,6 +161,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/identityConfig'
+              example:
+                uuid: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                product_id: "FFC3232-2211"
+                product_hex: "0x32322304"
         '401':
           description: Unauthorized
         '404':
@@ -390,6 +406,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/mcuInfo'
+              example:
+                chip_model: "ESP32-D0WDQ5"
+                revision: "3"
+                cpu_freq_mhz: 240
+                chip_cores: 2
+                sdk_version: "v5.3.2"
+                flash_chip_size: 16777216
+                flash_chip_speed: 80
+                flash_chip_mode: "QIO"
+                free_heap: 204800
+                boot_time: 1709398094
+                psram_size: 8388608
+                free_psram: 4194304
+                chip_features:
+                  - "Embedded-Flash"
+                  - "WiFi-bgn"
+                  - "BLE"
+                  - "BT"
   /api/mcu/reboot:
     post:
       tags:
@@ -416,6 +450,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/listPartitions'
+              example:
+                - type: 1
+                  subtype: 2
+                  address: 36864
+                  size: 20480
+                  label: nvs
+                - type: 1
+                  subtype: 131
+                  address: 57344
+                  size: 4096
+                  label: otadata
+                - type: 0
+                  subtype: 16
+                  address: 65536
+                  size: 3670016
+                  label: app
+                - type: 1
+                  subtype: 130
+                  address: 3735552
+                  size: 4194304
+                  label: ui
         '500':
           description: Internal Server Error
           content:
@@ -437,6 +492,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/listPeripherals'
+              example:
+                - address: "0x20"
+                  type: INPUT
+                  online: true
+                - address: "0x21"
+                  type: OUTPUT
+                  online: true
+                - address: "0x48"
+                  type: TEMPERATURE
+                  online: false
+                - address: "0x3C"
+                  type: OLED
+                  online: true
   /api/version:
     get:
       tags:
@@ -450,6 +518,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/applicationVersionInfo'
+              example:
+                application:
+                  name: "Hardware-Registration-and-Configuration"
+                  version: "2026.05.12"
+                  commit: "1234c67"
+                product_hex: "0x32322304"
   /api/errors:
     get:
       tags:
