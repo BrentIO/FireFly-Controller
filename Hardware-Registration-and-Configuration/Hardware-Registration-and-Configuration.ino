@@ -16,7 +16,7 @@
   #error "COMMIT_HASH must be specified for a build."
 #endif
 
-#define APPLICATION      "HW-Reg"
+#define APPLICATION      "Hardware-Registration-and-Configuration"
 #define APPLICATION_NAME "Hardware Registration and Configuration"
 
 #if BURN_VDD_SDIO_EFUSE
