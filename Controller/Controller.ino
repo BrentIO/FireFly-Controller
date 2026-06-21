@@ -112,6 +112,7 @@ WiFiClientSecure _otaHttpsClient;       /* TLS client used when the manifest URL
 String _otaManifestUrl;                 /* Set when setup_OtaFirmware() succeeds; empty otherwise */
 bool _otaUpdateInProcess = false;
 bool _otaPendingRequest = false;
+bool _otaNonForcedPendingRequest = false;
 bool _otaCheckFailed = false;           /* Set by onError during checkForUpdate(); reset before each check */
 int _otaCheckErrorCode = 0;             /* Error code captured by onError during checkForUpdate() */
 JsonDocument _otaPendingDoc;
@@ -975,6 +976,14 @@ void loop() {
   }
 
   otaFirmware_checkPending();
+
+  if(_otaNonForcedPendingRequest && !_otaUpdateInProcess){
+    _otaNonForcedPendingRequest = false;
+    _otaUpdateInProcess = true;
+    _otaCurrentPartition[0] = '\0';
+    otaFirmware.execOTA();
+    _otaUpdateInProcess = false;
+  }
 
   oled.loop();
   authToken.loop();
@@ -4375,7 +4384,7 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
     mqttClient.publish(topic, buffer);
 
     if(!_otaManifestUrl.isEmpty()){
-      otaFirmware.execOTA();
+      _otaNonForcedPendingRequest = true;
     }
     return;
   }
