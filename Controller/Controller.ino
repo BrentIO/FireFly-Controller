@@ -932,6 +932,7 @@ void loop() {
             JsonDocument mqttDoc;
             mqttDoc["installed_version"] = VERSION;
             mqttDoc["latest_version"] = VERSION;
+            mqttDoc["in_progress"] = false;
             char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
             snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
             mqttClient.beginPublish(topic, measureJson(mqttDoc), true);
@@ -3594,66 +3595,6 @@ void setup_OtaFirmware(){
     }
   }
 
-  otaFirmware.onProgress([](const char* partition, size_t written, size_t total){
-    _otaUpdateInProcess = true;
-    if(strcmp(partition, _otaCurrentPartition) != 0){
-      strlcpy(_otaCurrentPartition, partition, sizeof(_otaCurrentPartition));
-      _otaLastPublishedPercentage = -1;
-      oled.setOTAPartition(partition);
-      oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
-      char msg[OLED_CHARACTERS_PER_LINE+1];
-      snprintf(msg, sizeof(msg), "OTA %s update start", partition);
-      eventLog.createEvent(msg, EventLog::LOG_LEVEL_INFO);
-    }
-    oled.setProgressBar((float)written / (float)total);
-    int pct = (int)((float)written / (float)total * 100);
-    if(pct != _otaLastPublishedPercentage && deviceIdentity.enabled && mqttClient.connected()){
-      _otaLastPublishedPercentage = pct;
-      JsonDocument mqttDoc;
-      mqttDoc["installed_version"] = VERSION;
-      mqttDoc["latest_version"] = _otaLatestVersion;
-      if(strlen(_otaReleaseUrl) > 0){ mqttDoc["release_url"] = _otaReleaseUrl; }
-      mqttDoc["in_progress"] = true;
-      mqttDoc["update_percentage"] = pct;
-      char title[32];
-      snprintf(title, sizeof(title), "Updating %s", _otaCurrentPartition);
-      mqttDoc["title"] = title;
-      char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-      snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
-      char buffer[384];
-      serializeJson(mqttDoc, buffer, sizeof(buffer));
-      mqttClient.publish(topic, buffer);
-    }
-    mqttClient.loop();
-  });
-
-  otaFirmware.onPartitionComplete([](const char* partition, bool success){
-    char msg[OLED_CHARACTERS_PER_LINE+1];
-    snprintf(msg, sizeof(msg), "OTA %s %s", partition, success ? "finished" : "failed");
-    eventLog.createEvent(msg, success ? EventLog::LOG_LEVEL_INFO : EventLog::LOG_LEVEL_NOTIFICATION);
-  });
-
-  otaFirmware.onComplete([](bool success){
-    _otaUpdateInProcess = false;
-    _otaPendingRequest = false;
-
-    if(mqttClient.connected()){
-      char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-      snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
-      JsonDocument mqttDoc;
-      mqttDoc["in_progress"] = false;
-      char buffer[256];
-      serializeJson(mqttDoc, buffer);
-      mqttClient.publish(topic, buffer);
-    }
-
-    if(success){
-      eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
-      delay(5000);
-      ESP.restart();
-    }
-  });
-
   otaFirmware.onAvailable([](const char* version, const char* app, const char* releaseUrl){
     strlcpy(_otaLatestVersion, version, sizeof(_otaLatestVersion));
     strlcpy(_otaReleaseUrl, releaseUrl ? releaseUrl : "", sizeof(_otaReleaseUrl));
@@ -3702,7 +3643,7 @@ void setup_OtaFirmware(){
 /**
  * Executes a pending OTA update. If _otaPendingDoc is populated the update was
  * triggered via the HTTP API (forced); otherwise it was triggered from HA via MQTT.
- * Both paths share the same callbacks registered in setup_OtaFirmware().
+ * Callbacks are registered fresh here for every execution so both paths behave identically.
 */
 void otaFirmware_checkPending(){
 
@@ -3747,6 +3688,7 @@ void otaFirmware_checkPending(){
     mqttDoc["latest_version"] = _otaLatestVersion;
     if(strlen(_otaReleaseUrl) > 0){ mqttDoc["release_url"] = _otaReleaseUrl; }
     mqttDoc["in_progress"] = true;
+    mqttDoc["update_percentage"] = 0;
     char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
     snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
     mqttClient.beginPublish(topic, measureJson(mqttDoc), true);
@@ -3755,6 +3697,68 @@ void otaFirmware_checkPending(){
     bufferedClient.flush();
     mqttClient.endPublish();
   }
+
+  otaFirmware.onProgress([](const char* partition, size_t written, size_t total){
+    _otaUpdateInProcess = true;
+    if(strcmp(partition, _otaCurrentPartition) != 0){
+      strlcpy(_otaCurrentPartition, partition, sizeof(_otaCurrentPartition));
+      _otaLastPublishedPercentage = -1;
+      oled.setOTAPartition(partition);
+      oled.setPage(managerOled::PAGE_OTA_IN_PROGRESS);
+      char msg[OLED_CHARACTERS_PER_LINE+1];
+      snprintf(msg, sizeof(msg), "OTA %s update start", partition);
+      eventLog.createEvent(msg, EventLog::LOG_LEVEL_INFO);
+    }
+    oled.setProgressBar((float)written / (float)total);
+    int pct = (int)((float)written / (float)total * 100);
+    if(pct != _otaLastPublishedPercentage && deviceIdentity.enabled && mqttClient.connected()){
+      _otaLastPublishedPercentage = pct;
+      JsonDocument mqttDoc;
+      mqttDoc["installed_version"] = VERSION;
+      mqttDoc["latest_version"] = _otaLatestVersion;
+      if(strlen(_otaReleaseUrl) > 0){ mqttDoc["release_url"] = _otaReleaseUrl; }
+      mqttDoc["in_progress"] = true;
+      mqttDoc["update_percentage"] = pct;
+      char title[32];
+      snprintf(title, sizeof(title), "Updating %s", _otaCurrentPartition);
+      mqttDoc["title"] = title;
+      char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+      snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
+      char buffer[384];
+      serializeJson(mqttDoc, buffer, sizeof(buffer));
+      mqttClient.publish(topic, buffer);
+    }
+    mqttClient.loop();
+  });
+
+  otaFirmware.onPartitionComplete([](const char* partition, bool success){
+    char msg[OLED_CHARACTERS_PER_LINE+1];
+    snprintf(msg, sizeof(msg), "OTA %s %s", partition, success ? "finished" : "failed");
+    eventLog.createEvent(msg, success ? EventLog::LOG_LEVEL_INFO : EventLog::LOG_LEVEL_NOTIFICATION);
+  });
+
+  otaFirmware.onComplete([](bool success){
+    _otaUpdateInProcess = false;
+    _otaPendingRequest = false;
+
+    if(mqttClient.connected()){
+      char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+      snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
+      JsonDocument mqttDoc;
+      mqttDoc["in_progress"] = false;
+      mqttClient.beginPublish(topic, measureJson(mqttDoc), true);
+      BufferingPrint bufferedClient(mqttClient, 32);
+      serializeJson(mqttDoc, bufferedClient);
+      bufferedClient.flush();
+      mqttClient.endPublish();
+    }
+
+    if(success){
+      eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
+      delay(5000);
+      ESP.restart();
+    }
+  });
 
   if(isForced){
     otaFirmware.execOTA(_otaPendingDoc);
@@ -4119,7 +4123,18 @@ void mqtt_reconnect(){
           if(deviceIdentity.enabled && !_otaManifestUrl.isEmpty()){
             char update_avail_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
             snprintf(update_avail_topic, sizeof(update_avail_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid);
-            mqttClient.publish(update_avail_topic, "offline", true);
+            mqttClient.publish(update_avail_topic, "online", true);
+            char update_state_topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
+            snprintf(update_state_topic, sizeof(update_state_topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
+            JsonDocument mqttDoc;
+            mqttDoc["installed_version"] = VERSION;
+            mqttDoc["latest_version"] = VERSION;
+            mqttDoc["in_progress"] = false;
+            mqttClient.beginPublish(update_state_topic, measureJson(mqttDoc), true);
+            BufferingPrint bufferedClient(mqttClient, 32);
+            serializeJson(mqttDoc, bufferedClient);
+            bufferedClient.flush();
+            mqttClient.endPublish();
           }
         }
         mqtt_publishAllAvailability();
