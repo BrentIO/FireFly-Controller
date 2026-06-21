@@ -1520,24 +1520,24 @@ components:
            channels:
             1:
               actions:
-                - type: INCREASE_MAXIMUM
+                - action: INCREASE_MAXIMUM
                   change_state: LONG
                   output: 4
-                - type: INCREASE
+                - action: INCREASE
                   output: 4
             2:
               actions:
-              - type: DECREASE
+              - action: DECREASE
                 change_state: SHORT
                 output: 4
             3:
               actions:
-              - type: TOGGLE
+              - action: TOGGLE
                 change_state: SHORT
                 output: 6
             4:
               actions:
-              - type: DECREASE
+              - action: DECREASE
                 change_state: SHORT
                 output: 4
           2:
@@ -1546,15 +1546,15 @@ components:
             1:
               offset: 4
               actions:
-                - type: INCREASE_MAXIMUM
+                - action: INCREASE_MAXIMUM
                   change_state: LONG
                   output: 9
-                - type: INCREASE
+                - action: INCREASE
                   output: 9
             2:
               offset: 4
               actions:
-              - type: DECREASE
+              - action: DECREASE
                 change_state: SHORT
                 output: 11
           3:
@@ -1562,7 +1562,7 @@ components:
            channels:
             1:
               actions:
-                - type: TOGGLE
+                - action: TOGGLE
                   output: 6
 
 
