@@ -3597,7 +3597,7 @@ void setup_OtaFirmware(){
       mqttDoc["in_progress"] = true;
       mqttDoc["update_percentage"] = pct;
       char title[32];
-      snprintf(title, sizeof(title), "Flashing %c%s",
+      snprintf(title, sizeof(title), "Updating %c%s",
           toupper((unsigned char)_otaCurrentPartition[0]),
           _otaCurrentPartition + 1);
       mqttDoc["title"] = title;
@@ -3727,7 +3727,7 @@ void otaFirmware_checkPending(){
       mqttDoc["in_progress"] = true;
       mqttDoc["update_percentage"] = pct;
       char title[32];
-      snprintf(title, sizeof(title), "Flashing %c%s",
+      snprintf(title, sizeof(title), "Updating %c%s",
           toupper((unsigned char)_otaCurrentPartition[0]),
           _otaCurrentPartition + 1);
       mqttDoc["title"] = title;

@@ -1157,7 +1157,7 @@ components:
             installed_version: "2026.04.01"
             latest_version: "2026.06.21"
             release_url: "https://github.com/BrentIO/FireFly-Controller/releases/tag/2026.06.21"
-            title: "Flashing UI"
+            title: "Updating UI"
             in_progress: true
             update_percentage: 23
         - name: flashing-firmware
@@ -1166,7 +1166,7 @@ components:
             installed_version: "2026.04.01"
             latest_version: "2026.06.21"
             release_url: "https://github.com/BrentIO/FireFly-Controller/releases/tag/2026.06.21"
-            title: "Flashing Firmware"
+            title: "Updating Firmware"
             in_progress: true
             update_percentage: 67
         - name: forced-in-progress
@@ -1174,7 +1174,7 @@ components:
           payload:
             installed_version: "2026.06.21"
             latest_version: "2026.06.21 (Forced)"
-            title: "Flashing Firmware"
+            title: "Updating Firmware"
             in_progress: true
             update_percentage: 42
         - name: failed
@@ -1420,11 +1420,11 @@ components:
           type: string
           description: >
             Label indicating which partition is currently being flashed,
-            e.g. "Flashing Firmware" or "Flashing UI". Present only when
+            e.g. "Updating Firmware" or "Updating UI". Present only when
             in_progress is true.
           examples:
-            - "Flashing Firmware"
-            - "Flashing UI"
+            - "Updating Firmware"
+            - "Updating UI"
         in_progress:
           type: boolean
           description: Whether the OTA update is still in progress. False indicates failure or completion.
