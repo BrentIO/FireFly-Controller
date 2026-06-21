@@ -278,15 +278,7 @@ paths:
                         sha256: "b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5"
                     release_url: "https://github.com/BrentIO/FireFly-Controller/releases/tag/2026.03.01"
         '202':
-          description: Accepted — firmware list is being fetched; retry after a short delay
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: loading
+          description: Accepted — the firmware list is not yet cached; retry after a moment
         '401':
           description: Unauthorized
         '409':
