@@ -170,7 +170,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/error_message'
               example:
-                message: Signature verification failed
+                message: Cloud verification failed
         '503':
           description: Service Unavailable — registration check has not yet run (clock not synchronized)
           content:
@@ -237,7 +237,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/error_message'
               example:
-                message: Cloud registration request failed
+                message: Cloud registration failed
         '503':
           description: Service Unavailable — device clock not synchronized
           content:
