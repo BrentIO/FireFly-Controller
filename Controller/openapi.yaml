@@ -709,8 +709,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
+              examples:
+                fs_not_mounted:
+                  value:
+                    message: File system not mounted
+                decrypt_failed:
+                  value:
+                    message: Unable to decrypt file
     put:
       tags:
         - Controllers
@@ -870,8 +875,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
+              examples:
+                fs_not_mounted:
+                  value:
+                    message: File system not mounted
+                decrypt_failed:
+                  value:
+                    message: Unable to decrypt file
     put:
       tags:
         - Clients
