@@ -758,6 +758,20 @@ components:
           $ref: '#/components/schemas/applicationVersion'
         product_hex:
           $ref: '#/components/schemas/productHex'
+        ui:
+          type: object
+          nullable: true
+          description: Version information for the installed web UI, or null if no UI is installed
+          properties:
+            name:
+              type: string
+              example: 'FireFly UI'
+            version:
+              type: string
+              example: '1.0.0'
+            commit:
+              type: string
+              example: 'abc1234'
     firmwareVersion:
       type: object
       description: A single released firmware version entry, as returned by the FireFly-Cloud OTA endpoint.
