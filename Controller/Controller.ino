@@ -2447,6 +2447,31 @@ void http_handleProvisioningToken(AsyncWebServerRequest *request, JsonVariant do
     return;
   }
 
+  {
+    String mac = doc["mac_address"].as<String>();
+    bool macValid = (mac.length() == 17);
+    if(macValid){
+      for(int i = 0; i < 17; i++){
+        char c = mac[i];
+        if(i == 2 || i == 5 || i == 8 || i == 11 || i == 14){
+          if(c != ':'){
+            macValid = false;
+            break;
+          }
+        } else {
+          if(!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))){
+            macValid = false;
+            break;
+          }
+        }
+      }
+    }
+    if(!macValid){
+      http_badRequest(request, "Field mac_address is invalid, see docs");
+      return;
+    }
+  }
+
   String uuid = doc["uuid"].as<String>();
   String controllerPath = CONFIGFS_PATH_CONTROLLERS + (String)"/" + uuid;
 
