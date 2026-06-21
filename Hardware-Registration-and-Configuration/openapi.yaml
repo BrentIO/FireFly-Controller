@@ -255,12 +255,13 @@ paths:
         Returns up to 5 of the most recent released Controller firmware versions for this device's
         product, newest-first, sourced from FireFly-Cloud. Returns `202 Accepted` with
         `{"status":"loading"}` if the list is not yet cached; the caller should retry after a short
-        delay. Returns `409 Conflict` if device identity is not provisioned.
+        delay. After the cache TTL expires, previously cached data may be returned with a `200` while
+        a background refresh is triggered. Returns `409 Conflict` if device identity is not provisioned.
       security:
         - visual-token: []
       responses:
         '200':
-          description: OK
+          description: OK — firmware list returned from cache; may be stale if the cache TTL has expired while a background refresh is in progress
           content:
             application/json:
               schema:
