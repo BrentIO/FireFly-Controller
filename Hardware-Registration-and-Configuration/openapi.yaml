@@ -613,7 +613,7 @@ components:
         revision:
           type: string
           description: Chip revision
-          example: 3
+          example: "3"
         cpu_freq_mhz:
           type: integer
           description: CPU frequency in MHz
