@@ -6,9 +6,9 @@
         :key="toast.id"
         class="rounded-lg px-4 py-3 shadow-lg flex items-start gap-3"
         :class="{
-          'bg-green-50 border border-green-200 dark:bg-green-900/50 dark:border-green-700 text-green-800 dark:text-green-200': toast.type === 'success',
-          'bg-amber-50 border border-amber-200 dark:bg-amber-900/50 dark:border-amber-700 text-amber-800 dark:text-amber-200': toast.type === 'warning',
-          'bg-red-50 border border-red-200 dark:bg-red-900/50 dark:border-red-700 text-red-800 dark:text-red-200': toast.type === 'error'
+          'bg-green-100 border border-green-300 dark:bg-green-900 dark:border-green-700 text-green-800 dark:text-green-200': toast.type === 'success',
+          'bg-amber-100 border border-amber-300 dark:bg-amber-900 dark:border-amber-700 text-amber-800 dark:text-amber-200': toast.type === 'warning',
+          'bg-red-100 border border-red-300 dark:bg-red-900 dark:border-red-700 text-red-800 dark:text-red-200': toast.type === 'error'
         }"
       >
         <p class="flex-1 text-sm font-medium whitespace-pre-wrap">{{ toast.message }}</p>
