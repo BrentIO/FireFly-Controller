@@ -3597,9 +3597,7 @@ void setup_OtaFirmware(){
       mqttDoc["in_progress"] = true;
       mqttDoc["update_percentage"] = pct;
       char title[32];
-      snprintf(title, sizeof(title), "Updating %c%s",
-          toupper((unsigned char)_otaCurrentPartition[0]),
-          _otaCurrentPartition + 1);
+      snprintf(title, sizeof(title), "Updating %s", _otaCurrentPartition);
       mqttDoc["title"] = title;
       char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
       snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
@@ -3727,9 +3725,7 @@ void otaFirmware_checkPending(){
       mqttDoc["in_progress"] = true;
       mqttDoc["update_percentage"] = pct;
       char title[32];
-      snprintf(title, sizeof(title), "Updating %c%s",
-          toupper((unsigned char)_otaCurrentPartition[0]),
-          _otaCurrentPartition + 1);
+      snprintf(title, sizeof(title), "Updating %s", _otaCurrentPartition);
       mqttDoc["title"] = title;
       char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
       snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
