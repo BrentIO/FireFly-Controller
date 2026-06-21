@@ -2656,7 +2656,7 @@ void http_handleBackup_HEAD(AsyncWebServerRequest *request){
     return;
   }
 
-  if(!configFS.exists("/backup.etag")){
+  if(!configFS.exists("/backup.json")){
     http_notFound(request);
     return;
   }
