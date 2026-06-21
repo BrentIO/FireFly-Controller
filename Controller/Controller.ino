@@ -1552,7 +1552,7 @@ void http_configFSNotMunted(AsyncWebServerRequest *request){
     return;
   }
 
-  http_error(request, "file system not mounted");
+  http_error(request, "File system not mounted");
 
 }
 
