@@ -6071,6 +6071,16 @@ void http_handleCloudBackup_POST(AsyncWebServerRequest *request) {
     return;
   }
 
+  {
+    File sizeCheck = configFS.open("/backup.json", "r");
+    if (sizeCheck && sizeCheck.size() > 512UL * 1024UL) {
+      sizeCheck.close();
+      request->send(413, "application/json", "{\"message\":\"Backup file exceeds 512KB limit\"}");
+      return;
+    }
+    if (sizeCheck) sizeCheck.close();
+  }
+
   resetHTPServerUsage();
 
   int    httpCode = 0;
