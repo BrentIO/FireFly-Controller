@@ -344,6 +344,12 @@ paths:
           description: Unauthorized
         '409':
           description: Conflict — an OTA update is already in progress or pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+              example:
+                message: Update already in progress
   /api/mcu:
     get:
       tags:
