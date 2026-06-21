@@ -317,6 +317,9 @@ paths:
             schema:
               $ref: '#/components/schemas/firmwareVersion'
             example:
+              application_name: "FireFly Controller"
+              version: "1.2.3"
+              release_url: "https://github.com/BrentIO/FireFly-Controller/releases/tag/1.2.3"
               binaries:
                 - partition: app
                   url: "https://firmware.fireflylx.com/controller/0x32322505/2026.03.01/Controller.ino.bin"
