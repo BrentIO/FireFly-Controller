@@ -230,6 +230,19 @@ paths:
                 $ref: '#/components/schemas/error_message'
               example:
                 message: Device identity not provisioned
+        '500':
+          description: Internal Server Error — cryptographic operation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/bad_request_message'
+              examples:
+                key_derivation_failed:
+                  value:
+                    message: Key derivation failed
+                public_key_failed:
+                  value:
+                    message: Public key computation failed
         '502':
           description: Bad Gateway — FireFly-Cloud request failed
           content:
