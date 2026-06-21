@@ -3761,6 +3761,7 @@ void otaFirmware_checkPending(){
   const char* targetVersion = _otaPendingDoc["version"] | VERSION;
   const char* releaseUrl = _otaPendingDoc["release_url"] | "";
   strlcpy(_otaLatestVersion, targetVersion, sizeof(_otaLatestVersion));
+  strncat(_otaLatestVersion, " (Forced)", sizeof(_otaLatestVersion) - strlen(_otaLatestVersion) - 1);
   strlcpy(_otaReleaseUrl, releaseUrl, sizeof(_otaReleaseUrl));
   _otaLastPublishedPercentage = -1;
   if(deviceIdentity.enabled && mqttClient.connected()){
