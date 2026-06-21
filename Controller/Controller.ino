@@ -3695,8 +3695,9 @@ void setup_OtaFirmware(){
 
 
 /**
- * Executes a pending forced OTA update using execOTA(JsonDocument&), matching
- * the HW-Reg implementation exactly. onComplete handles the reboot on success.
+ * Executes a pending OTA update. If _otaPendingDoc is empty the update was
+ * triggered from HA via MQTT (non-forced); otherwise it is a forced update
+ * with a specific document from the HTTP API.
 */
 void otaFirmware_checkPending(){
 
@@ -3705,6 +3706,14 @@ void otaFirmware_checkPending(){
   }
 
   _otaUpdateInProcess = true;
+  _otaCurrentPartition[0] = '\0';
+
+  if(_otaPendingDoc.size() == 0){
+    _otaPendingRequest = false;
+    otaFirmware.execOTA();
+    _otaUpdateInProcess = false;
+    return;
+  }
 
   otaFirmware.setApplicationName(_otaPendingDoc["application_name"]);
 
@@ -3719,8 +3728,6 @@ void otaFirmware_checkPending(){
       break;
     }
   }
-
-  _otaCurrentPartition[0] = '\0';
 
   otaFirmware.onProgress([](const char* partition, size_t written, size_t total){
     _otaUpdateInProcess = true;
@@ -4375,7 +4382,7 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
     mqttClient.publish(topic, buffer);
 
     if(!_otaManifestUrl.isEmpty()){
-      otaFirmware.execOTA();
+      _otaPendingRequest = true;
     }
     return;
   }
