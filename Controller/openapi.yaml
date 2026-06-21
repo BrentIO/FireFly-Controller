@@ -237,8 +237,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/bad_request_message'
-              example:
-                message: "X-Cert-Type header required; valid values: controller, client, both"
+              examples:
+                missing_cert_type:
+                  value:
+                    message: "X-Cert-Type header required; valid values: controller, client, both"
+                invalid_cert_type:
+                  value:
+                    message: "X-Cert-Type must be controller, client, or both"
         '401':
           description: Unauthorized
         '403':
@@ -263,8 +268,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/error_message'
-              example:
-                message: File system not mounted
+              examples:
+                filesystem_not_mounted:
+                  value:
+                    message: File system not mounted
+                file_open_failed:
+                  value:
+                    message: Unable to open file for writing
 
   /certs/{filename}:
     get:
