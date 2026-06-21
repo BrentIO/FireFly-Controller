@@ -879,9 +879,7 @@ void loop() {
         _otaCheckErrorCode = 0;
         bool updateAvailable = otaFirmware.checkForUpdate();
 
-        if(updateAvailable){
-          otaFirmware.execOTA(); /* onAvailable already published MQTT update-available state */
-        } else if(_otaCheckFailed){
+        if(_otaCheckFailed){
           eventLog.createEvent("OTA check failed");
           /* onError already published "offline" to availability topic; do not overwrite with "online" */
           if(deviceIdentity.enabled && mqttClient.connected()){
@@ -924,7 +922,7 @@ void loop() {
             bufferedNotify.flush();
             mqttClient.endPublish();
           }
-        } else {
+        } else if(!updateAvailable){
           /* Service reachable, no update — publish online + current version */
           if(deviceIdentity.enabled && mqttClient.connected()){
             char availability_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
