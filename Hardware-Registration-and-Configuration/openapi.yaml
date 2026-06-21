@@ -738,7 +738,7 @@ components:
         name:
           type: string
           description: Application name
-          example: 'Hardware-Registration-and-Configuration'
+          example: 'HW-Reg'
         version:
           type: string
           description: Software version
