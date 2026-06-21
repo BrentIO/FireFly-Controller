@@ -413,14 +413,6 @@ paths:
       responses:
         '202':
           description: Request accepted
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/bad_request_message'
-              example:
-                message: Not supported by hardware
         '401':
           description: Unauthorized
         '500':
@@ -439,14 +431,6 @@ paths:
       responses:
         '202':
           description: Request accepted
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/bad_request_message'
-              example:
-                message: Not supported by hardware
         '401':
           description: Unauthorized
         '500':
