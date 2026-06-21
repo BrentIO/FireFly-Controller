@@ -383,12 +383,6 @@ paths:
                     example: A6B5C4D3E2F1
         '401':
           description: Unauthorized
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
     put:
       tags:
         - Provisioning
