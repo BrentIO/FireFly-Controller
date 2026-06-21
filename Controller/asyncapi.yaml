@@ -1350,9 +1350,14 @@ components:
             - "2025.04.01"
         latest_version:
           type: string
-          description: Latest available firmware version
+          description: >
+            Latest available firmware version. For forced OTA installs the
+            suffix " (Forced)" is appended (e.g., "2026.06.21 (Forced)") so
+            that Home Assistant detects a version difference even when the
+            installed and target versions are identical.
           examples:
             - "2025.05.01"
+            - "2025.05.01 (Forced)"
         title:
           type: string
           description: Human-readable release title (optional)
@@ -1369,8 +1374,9 @@ components:
             - integer
             - "null"
           description: >
-            Install progress as an integer where the value is percentage * 100
-            (e.g., 4200 = 42%). Null when no install is in progress.
+            Install progress as an integer from 0 to 100 representing the
+            percentage of the current partition downloaded
+            (e.g., 42 = 42%). Null when no install is in progress.
       required:
         - installed_version
         - latest_version
@@ -1380,14 +1386,31 @@ components:
       type: object
       description: Firmware OTA install progress or failure notification
       properties:
+        installed_version:
+          type: string
+          description: Currently installed firmware version
+          examples:
+            - "2025.04.01"
+        latest_version:
+          type: string
+          description: >
+            Target firmware version. For forced OTA installs the suffix
+            " (Forced)" is appended (e.g., "2026.06.21 (Forced)").
+          examples:
+            - "2025.05.01"
+            - "2025.05.01 (Forced)"
+        release_url:
+          type: string
+          description: URL to the full release notes (optional)
         in_progress:
           type: boolean
           description: Whether the OTA update is still in progress. False indicates failure or completion.
         update_percentage:
           type: integer
           description: >
-            Install progress as an integer where the value is percentage * 100
-            (e.g., 4200 = 42%). Present only when in_progress is true.
+            Install progress as an integer from 0 to 100 representing the
+            percentage of the current partition downloaded
+            (e.g., 42 = 42%). Present only when in_progress is true.
       required:
         - in_progress
 
