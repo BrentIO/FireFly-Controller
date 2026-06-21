@@ -89,8 +89,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/bad_request_message'
-              example:
-                message: Field uuid is required
+              examples:
+                uuid_required:
+                  value:
+                    message: Field uuid is required
+                uuid_length:
+                  value:
+                    message: Field uuid is not exactly 36 characters
+                uuid_invalid:
+                  value:
+                    message: "Invalid uuid, see docs"
+                product_id_required:
+                  value:
+                    message: Field product_id is required
+                product_id_too_long:
+                  value:
+                    message: "Field product_id is greater than 32 characters, see docs"
+                product_hex_required:
+                  value:
+                    message: Field product_hex is required
+                product_hex_length:
+                  value:
+                    message: Field product_hex must be exactly 10 characters
+                product_hex_invalid:
+                  value:
+                    message: "Invalid product_hex, see docs"
+                no_body:
+                  value:
+                    message: Request requires a body
         '409':
           description: Conflict — device identity already provisioned in eFuse
           content:
