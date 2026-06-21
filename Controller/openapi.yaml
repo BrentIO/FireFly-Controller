@@ -499,9 +499,7 @@ paths:
               example:
                 message: Only accessible via provisioning network
         '404':
-          description: Not Found — no controller record found for the provided UUID, or the record has no mac field
-        '405':
-          description: Method Not Allowed
+          description: Not Found — no controller record found for the provided UUID, or the record has no mac field; also returned for any HTTP method other than POST or OPTIONS, as only those methods are registered on this path
         '409':
           description: Conflict — provisioning mode is not active
           content:
