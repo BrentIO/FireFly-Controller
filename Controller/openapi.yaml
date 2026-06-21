@@ -54,6 +54,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/applicationVersionInfo'
+        '500':
+          description: Internal Server Error — device identity unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              examples:
+                identity_unavailable:
+                  value:
+                    message: Device identity unavailable
+                identity_invalid:
+                  value:
+                    message: Device identity invalid
 
   /api/reboot:
     post:
