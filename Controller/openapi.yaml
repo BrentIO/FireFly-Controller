@@ -1168,6 +1168,19 @@ paths:
           description: No backup found in cloud
         '409':
           description: Device not provisioned
+        '500':
+          description: Internal Server Error — failed to build auth headers or execute cloud request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_message'
+              examples:
+                auth_failed:
+                  value:
+                    message: Auth header build failed
+                request_failed:
+                  value:
+                    message: Cloud request failed
         '502':
           description: Cloud returned an unexpected status
           content:
