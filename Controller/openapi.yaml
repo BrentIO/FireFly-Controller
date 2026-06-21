@@ -663,7 +663,7 @@ paths:
                 Multiple controllers:
                   value:
                     - 550e8400-e29b-41d4-a716-446655440000
-                    - 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                    - b3d4e5f6-a7b8-4c9d-a0e1-f23456789012
                 No controllers:
                   $ref: '#/components/examples/emptyArray'
         '401':
@@ -705,7 +705,7 @@ paths:
                 area: Tech Room
                 mac_address: 'a4:cf:12:7e:3b:01'
                 ota:
-                  url: https://firmware.fireflylx.com/controller/manifest.json
+                  url: https://api.fireflylx.com/ota/$$class$$/$$product_hex$$/$$application$$?current_version=$$current_version$$
                 mqtt:
                   host: mymqtt.host.com
                   port: 1883
@@ -898,7 +898,7 @@ paths:
                     tags:
                       - Security
                 ota:
-                  url: https://firmware.fireflylx.com/client/manifest.json
+                  url: https://api.fireflylx.com/ota/$$class$$/$$product_hex$$/$$application$$?current_version=$$current_version$$
                 mqtt:
                   host: mymqtt.host.com
                   port: 1883
