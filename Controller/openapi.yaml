@@ -479,8 +479,7 @@ paths:
                 properties:
                   token:
                     type: integer
-                    format: int64
-                    description: Per-device provisioning token. Pass as the provisioning-token header in subsequent GET requests.
+                    description: A 32-bit unsigned provisioning token. Pass as the provisioning-token header in subsequent GET requests.
                     example: 3819273645
         '400':
           description: Bad Request — uuid must be 36 characters, or mac_address is missing
