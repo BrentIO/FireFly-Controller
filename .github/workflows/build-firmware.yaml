@@ -296,8 +296,8 @@ jobs:
             echo "ERROR: ui-dist/ exceeds 2MB (${TOTAL} bytes)"
             exit 1
           fi
-          echo '{"application":"HW-Reg","version":"${{ env.VERSION }}","commit":"${{ env.COMMIT_HASH }}"}' > $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/ui-dist/version.json
-          echo "HW-Reg UI version.json: $(cat $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/ui-dist/version.json)"
+          echo '{"application":"Hardware-Registration-and-Configuration","version":"${{ env.VERSION }}","commit":"${{ env.COMMIT_HASH }}"}' > $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/ui-dist/version.json
+          echo "Hardware-Registration-and-Configuration UI version.json: $(cat $GITHUB_WORKSPACE/Hardware-Registration-and-Configuration/ui-dist/version.json)"
 
       - name: Build Vue UI (Controller)
         if: ${{ matrix.application == 'Controller' }}
