@@ -127,14 +127,6 @@ paths:
           description: Unauthorized
         '404':
           description: No device identity configured
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/error_message'
-              example:
-                message: NVS read failure
   /api/registration:
     get:
       tags:
