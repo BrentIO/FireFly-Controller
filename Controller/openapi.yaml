@@ -202,7 +202,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/error_message'
               example:
-                message: File system not mounted
+                message: file system not mounted
     post:
       tags:
         - Certificates
