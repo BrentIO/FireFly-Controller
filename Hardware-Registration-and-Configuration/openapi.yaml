@@ -108,7 +108,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/error_message'
               example:
-                message: NVS write failure
+                message: Error during eFuse write
     get:
       tags:
         - Device Identity
