@@ -3661,6 +3661,10 @@ void setup_OtaFirmware(){
     if(!mqttClient.connected()){ return; }
     eventLog.createEvent("OTA update available");
 
+    char availability_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
+    snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid);
+    mqttClient.publish(availability_topic, "online", true);
+
     JsonDocument mqttDoc;
     mqttDoc["installed_version"] = VERSION;
     mqttDoc["latest_version"] = version;
@@ -4168,6 +4172,11 @@ void mqtt_reconnect(){
           mqtt_autoDiscovery_heapFree();
           mqtt_autoDiscovery_heapLargestFreeBlock();
           mqttClient.autoDiscovery.sent = true;
+          if(deviceIdentity.enabled && !_otaManifestUrl.isEmpty()){
+            char update_avail_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
+            snprintf(update_avail_topic, sizeof(update_avail_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid);
+            mqttClient.publish(update_avail_topic, "offline", true);
+          }
         }
         mqtt_publishAllAvailability();
         mqtt_publishTemperatures();
