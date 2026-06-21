@@ -4123,18 +4123,7 @@ void mqtt_reconnect(){
           if(deviceIdentity.enabled && !_otaManifestUrl.isEmpty()){
             char update_avail_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
             snprintf(update_avail_topic, sizeof(update_avail_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid);
-            mqttClient.publish(update_avail_topic, "online", true);
-            char update_state_topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
-            snprintf(update_state_topic, sizeof(update_state_topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
-            JsonDocument mqttDoc;
-            mqttDoc["installed_version"] = VERSION;
-            mqttDoc["latest_version"] = VERSION;
-            mqttDoc["in_progress"] = false;
-            mqttClient.beginPublish(update_state_topic, measureJson(mqttDoc), true);
-            BufferingPrint bufferedClient(mqttClient, 32);
-            serializeJson(mqttDoc, bufferedClient);
-            bufferedClient.flush();
-            mqttClient.endPublish();
+            mqttClient.publish(update_avail_topic, "offline", true);
           }
         }
         mqtt_publishAllAvailability();
