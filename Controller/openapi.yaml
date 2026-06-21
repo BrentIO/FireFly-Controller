@@ -178,9 +178,6 @@ paths:
                 missing_binaries:
                   value:
                     message: Field binaries is required
-                no_valid_binaries:
-                  value:
-                    message: No valid binaries found
         '401':
           description: Unauthorized
         '409':
