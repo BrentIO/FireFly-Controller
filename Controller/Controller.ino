@@ -112,7 +112,6 @@ WiFiClientSecure _otaHttpsClient;       /* TLS client used when the manifest URL
 String _otaManifestUrl;                 /* Set when setup_OtaFirmware() succeeds; empty otherwise */
 bool _otaUpdateInProcess = false;
 bool _otaPendingRequest = false;
-bool _otaNonForcedPendingRequest = false;
 bool _otaCheckFailed = false;           /* Set by onError during checkForUpdate(); reset before each check */
 int _otaCheckErrorCode = 0;             /* Error code captured by onError during checkForUpdate() */
 JsonDocument _otaPendingDoc;
@@ -976,14 +975,6 @@ void loop() {
   }
 
   otaFirmware_checkPending();
-
-  if(_otaNonForcedPendingRequest && !_otaUpdateInProcess){
-    _otaNonForcedPendingRequest = false;
-    _otaUpdateInProcess = true;
-    _otaCurrentPartition[0] = '\0';
-    otaFirmware.execOTA();
-    _otaUpdateInProcess = false;
-  }
 
   oled.loop();
   authToken.loop();
@@ -3704,8 +3695,9 @@ void setup_OtaFirmware(){
 
 
 /**
- * Executes a pending forced OTA update using execOTA(JsonDocument&), matching
- * the HW-Reg implementation exactly. onComplete handles the reboot on success.
+ * Executes a pending OTA update. If _otaPendingDoc is empty the update was
+ * triggered from HA via MQTT (non-forced); otherwise it is a forced update
+ * with a specific document from the HTTP API.
 */
 void otaFirmware_checkPending(){
 
@@ -3714,6 +3706,14 @@ void otaFirmware_checkPending(){
   }
 
   _otaUpdateInProcess = true;
+  _otaCurrentPartition[0] = '\0';
+
+  if(_otaPendingDoc.size() == 0){
+    _otaPendingRequest = false;
+    otaFirmware.execOTA();
+    _otaUpdateInProcess = false;
+    return;
+  }
 
   otaFirmware.setApplicationName(_otaPendingDoc["application_name"]);
 
@@ -3728,8 +3728,6 @@ void otaFirmware_checkPending(){
       break;
     }
   }
-
-  _otaCurrentPartition[0] = '\0';
 
   otaFirmware.onProgress([](const char* partition, size_t written, size_t total){
     _otaUpdateInProcess = true;
@@ -4384,7 +4382,7 @@ void eventHandler_mqttMessageReceived(char* topic, byte* pl, unsigned int length
     mqttClient.publish(topic, buffer);
 
     if(!_otaManifestUrl.isEmpty()){
-      _otaNonForcedPendingRequest = true;
+      _otaPendingRequest = true;
     }
     return;
   }
