@@ -54,6 +54,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/applicationVersionInfo'
+              example:
+                uuid: 550e8400-e29b-41d4-a716-446655440000
+                product_id: FFC3232-2211
+                product_hex: '0x32322205'
+                application:
+                  name: Controller
+                  version: '2026.05.12'
+                  commit: 1a2b3c4
+                ui:
+                  name: ui
+                  version: '2026.05.12'
+                  commit: 5d6e7f8
         '500':
           description: Internal Server Error — device identity unavailable
           content:
@@ -78,7 +90,7 @@ paths:
         - visual-token: []
       responses:
         '204':
-          description: No Content
+          description: Reboot scheduled — the device will restart after a short delay. No response body is returned.
         '401':
           description: Unauthorized
 
@@ -365,7 +377,7 @@ paths:
         - visual-token: []
       responses:
         '204':
-          description: Authorized
+          description: Authorized — the visual token has been accepted and a long-term authorization session has been created. No response body is returned.
         '401':
           description: Unauthorized
 
@@ -647,6 +659,13 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/uuid'
+              examples:
+                Multiple controllers:
+                  value:
+                    - 550e8400-e29b-41d4-a716-446655440000
+                    - b3d4e5f6-a7b8-4c9d-a0e1-f23456789012
+                No controllers:
+                  $ref: '#/components/examples/emptyArray'
         '401':
           description: Unauthorized
         '500':
@@ -681,6 +700,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/controller'
+              example:
+                name: First Floor
+                area: Tech Room
+                mac_address: 'a4:cf:12:7e:3b:01'
+                ota:
+                  url: https://api.fireflylx.com/ota/$$class$$/$$product_hex$$/$$application$$?current_version=$$current_version$$
+                mqtt:
+                  host: mymqtt.host.com
+                  port: 1883
+                  username: controller1
+                  password: aVery$3cretPassw0r[)
+                ports:
+                  1:
+                    id: S22
+                    channels:
+                      1:
+                        actions:
+                          - action: TOGGLE
+                            output: 4
+                outputs:
+                  4:
+                    id: C49
+                    name: Chandelier
+                    area: Foyer
+                    icon: mdi:chandelier
+                    type: VARIABLE
         '401':
           description: Unauthorized
         '404':
@@ -797,6 +842,13 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/uuid'
+              examples:
+                Multiple clients:
+                  value:
+                    - 7c9e6679-7425-40de-944b-e07fc1f90ae7
+                    - f47ac10b-58cc-4372-a567-0e02b2c3d479
+                No clients:
+                  $ref: '#/components/examples/emptyArray'
         '401':
           description: Unauthorized
         '500':
@@ -831,6 +883,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/client'
+              example:
+                id: S22
+                name: Foyer Switch
+                area: Foyer
+                mac_address: 'b8:27:eb:4c:9a:12'
+                hids:
+                  1:
+                    color: Blue
+                    tags:
+                      - Holiday
+                  2:
+                    color: Yellow
+                    tags:
+                      - Security
+                ota:
+                  url: https://api.fireflylx.com/ota/$$class$$/$$product_hex$$/$$application$$?current_version=$$current_version$$
+                mqtt:
+                  host: mymqtt.host.com
+                  port: 1883
+                  username: client1
+                  password: aVery$3cretPassw0r[)
+                wifi:
+                  ssid: MyWiFiNet
+                  password: aVery$3cretPassw0r[)
         '401':
           description: Unauthorized
         '403':
@@ -1093,6 +1169,8 @@ paths:
                   status:
                     type: integer
                     description: HTTP status code returned by the cloud
+              example:
+                status: 200
         '401':
           description: Unauthorized
         '404':
@@ -1118,6 +1196,9 @@ paths:
                     type: string
                   status:
                     type: integer
+              example:
+                message: Bad Gateway — cloud returned an unexpected HTTP status
+                status: 503
         '503':
           description: Clock not synchronized
     get:
@@ -1858,6 +1939,11 @@ components:
 
     dexieFormat:
       type: object
+      description: >
+        Opaque Dexie.js export format. The structure is produced by the FireFly UI's
+        Dexie.js database export and is treated as a pass-through blob by the controller
+        firmware — no field validation is performed on read or write. Refer to the
+        Dexie.js export documentation for the internal structure.
 
     uuid:
       type: string
