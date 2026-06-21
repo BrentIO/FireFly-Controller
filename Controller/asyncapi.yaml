@@ -1130,17 +1130,17 @@ components:
         $ref: "#/components/schemas/updateAvailablePayload"
       examples:
         - name: update-available
+          summary: A newer firmware version is available
           payload:
-            installed_version: "2025.04.01"
-            latest_version: "2025.05.01"
-            title: "FireFly Controller 2025.05.01"
-            release_url: "https://docs.fireflylx.com/releases/2025.05.01"
+            installed_version: "2026.04.01"
+            latest_version: "2026.06.21"
+            release_url: "https://github.com/BrentIO/FireFly-Controller/releases/tag/2026.06.21"
             in_progress: false
-            update_percentage: null
-        - name: no-update
+        - name: up-to-date
+          summary: Device is running the latest firmware
           payload:
-            installed_version: "2025.05.01"
-            latest_version: "2025.05.01"
+            installed_version: "2026.06.21"
+            latest_version: "2026.06.21"
             in_progress: false
 
     updateInProgress:
@@ -1151,15 +1151,34 @@ components:
       payload:
         $ref: "#/components/schemas/updateInProgressPayload"
       examples:
-        - name: started
+        - name: flashing-ui
+          summary: UI partition download underway
           payload:
+            installed_version: "2026.04.01"
+            latest_version: "2026.06.21"
+            release_url: "https://github.com/BrentIO/FireFly-Controller/releases/tag/2026.06.21"
+            title: "Updating ui"
             in_progress: true
-            update_percentage: 0
-        - name: mid-way
+            update_percentage: 23
+        - name: flashing-firmware
+          summary: Firmware partition download underway
           payload:
+            installed_version: "2026.04.01"
+            latest_version: "2026.06.21"
+            release_url: "https://github.com/BrentIO/FireFly-Controller/releases/tag/2026.06.21"
+            title: "Updating app"
             in_progress: true
-            update_percentage: 4200
+            update_percentage: 67
+        - name: forced-in-progress
+          summary: Forced OTA install — same installed and target version
+          payload:
+            installed_version: "2026.06.21"
+            latest_version: "2026.06.21 (Forced)"
+            title: "Updating app"
+            in_progress: true
+            update_percentage: 42
         - name: failed
+          summary: OTA install failed
           payload:
             in_progress: false
 
@@ -1350,14 +1369,14 @@ components:
             - "2025.04.01"
         latest_version:
           type: string
-          description: Latest available firmware version
+          description: >
+            Latest available firmware version. For forced OTA installs the
+            suffix " (Forced)" is appended (e.g., "2026.06.21 (Forced)") so
+            that Home Assistant detects a version difference even when the
+            installed and target versions are identical.
           examples:
             - "2025.05.01"
-        title:
-          type: string
-          description: Human-readable release title (optional)
-          examples:
-            - "FireFly Controller 2025.05.01"
+            - "2025.05.01 (Forced)"
         release_url:
           type: string
           description: URL to the full release notes (optional)
@@ -1369,8 +1388,9 @@ components:
             - integer
             - "null"
           description: >
-            Install progress as an integer where the value is percentage * 100
-            (e.g., 4200 = 42%). Null when no install is in progress.
+            Install progress as an integer from 0 to 100 representing the
+            percentage of the current partition downloaded
+            (e.g., 42 = 42%). Null when no install is in progress.
       required:
         - installed_version
         - latest_version
@@ -1380,14 +1400,40 @@ components:
       type: object
       description: Firmware OTA install progress or failure notification
       properties:
+        installed_version:
+          type: string
+          description: Currently installed firmware version
+          examples:
+            - "2025.04.01"
+        latest_version:
+          type: string
+          description: >
+            Target firmware version. For forced OTA installs the suffix
+            " (Forced)" is appended (e.g., "2026.06.21 (Forced)").
+          examples:
+            - "2025.05.01"
+            - "2025.05.01 (Forced)"
+        release_url:
+          type: string
+          description: URL to the full release notes (optional)
+        title:
+          type: string
+          description: >
+            Label indicating which partition is currently being flashed,
+            e.g. "Updating app" or "Updating ui". Present only when
+            in_progress is true.
+          examples:
+            - "Updating app"
+            - "Updating ui"
         in_progress:
           type: boolean
           description: Whether the OTA update is still in progress. False indicates failure or completion.
         update_percentage:
           type: integer
           description: >
-            Install progress as an integer where the value is percentage * 100
-            (e.g., 4200 = 42%). Present only when in_progress is true.
+            Install progress as an integer from 0 to 100 representing the
+            percentage of the current partition downloaded
+            (e.g., 42 = 42%). Present only when in_progress is true.
       required:
         - in_progress
 
