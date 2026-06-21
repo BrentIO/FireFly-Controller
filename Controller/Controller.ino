@@ -274,12 +274,8 @@ void setup() {
       oled.setMismatchHex(deviceIdentity.data.product_hex, (uint32_t)PRODUCT_HEX);
       oled.setPage(managerOled::PAGE_HW_FW_MISMATCH);
       log_e("HW/FW product_hex mismatch (HW: 0x%08lX, FW: 0x%08lX).", deviceIdentity.data.product_hex, (uint32_t)PRODUCT_HEX);
-      esp_ota_img_states_t ota_state;
-      if(esp_ota_get_state_partition(esp_ota_get_running_partition(), &ota_state) == ESP_OK
-         && ota_state == ESP_OTA_IMG_PENDING_VERIFY){
-        otaFirmware.markAppInvalid(); /* reboots into previous OTA slot; never returns */
-      }
-      esp_deep_sleep_start();
+      otaFirmware.markAppInvalid(); /* mark app invalid and reboot; bootloader selects previous valid OTA slot */
+      esp_deep_sleep_start(); /* unreachable; markAppInvalid always reboots */
     }
   }
 
