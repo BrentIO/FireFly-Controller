@@ -305,7 +305,7 @@ paths:
       description: |
         Triggers an over-the-air update using a firmware version object selected from the list
         returned by `GET /api/firmware`. All partitions in the `binaries` array are flashed
-        sequentially (UI first, then app). The device reboots automatically after the app partition
+        sequentially in the order they appear in the array. The device reboots automatically after the last partition
         is written. Returns `202 Accepted` immediately; the update runs asynchronously on the main
         loop. Returns `409 Conflict` if an update is already in progress or pending.
       security:
