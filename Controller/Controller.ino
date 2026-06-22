@@ -3753,6 +3753,11 @@ void otaFirmware_checkPending(){
       serializeJson(mqttDoc, bufferedClient);
       bufferedClient.flush();
       mqttClient.endPublish();
+      if(success){
+        char availability_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
+        snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid);
+        mqttClient.publish(availability_topic, "offline", true);
+      }
     }
 
     if(success){
