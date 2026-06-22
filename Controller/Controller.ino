@@ -3756,6 +3756,11 @@ void otaFirmware_checkPending(){
     }
 
     if(success){
+      if(mqttClient.connected()){
+        char availability_topic[MQTT_TOPIC_UPDATE_AVAILABILITY_LENGTH+1];
+        snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid);
+        mqttClient.publish(availability_topic, "offline", true);
+      }
       eventLog.createEvent("Rebooting...", EventLog::LOG_LEVEL_NOTIFICATION);
       delay(5000);
       ESP.restart();
