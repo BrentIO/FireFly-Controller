@@ -3724,9 +3724,11 @@ void otaFirmware_checkPending(){
       mqttDoc["title"] = title;
       char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
       snprintf(topic, sizeof(topic), MQTT_TOPIC_UPDATE_STATE_PATTERN, deviceIdentity.data.uuid);
-      char buffer[384];
-      serializeJson(mqttDoc, buffer, sizeof(buffer));
-      mqttClient.publish(topic, buffer);
+      mqttClient.beginPublish(topic, measureJson(mqttDoc), false);
+      BufferingPrint bufferedClient(mqttClient, 32);
+      serializeJson(mqttDoc, bufferedClient);
+      bufferedClient.flush();
+      mqttClient.endPublish();
     }
     mqttClient.loop();
   });
