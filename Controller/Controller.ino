@@ -3607,7 +3607,10 @@ void setup_OtaFirmware(){
     snprintf(availability_topic, sizeof(availability_topic), MQTT_TOPIC_UPDATE_AVAILABILITY_PATTERN, deviceIdentity.data.uuid);
     mqttClient.publish(availability_topic, "online", true);
 
+    char title[64];
+    snprintf(title, sizeof(title), "Release %s is available", version);
     JsonDocument mqttDoc;
+    mqttDoc["title"] = title;
     mqttDoc["installed_version"] = VERSION;
     mqttDoc["latest_version"] = version;
     if(releaseUrl && strlen(releaseUrl) > 0){
