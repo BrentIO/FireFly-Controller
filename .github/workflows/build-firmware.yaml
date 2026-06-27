@@ -176,7 +176,7 @@ jobs:
       - name: Cache ESP32 core
         id: cache-esp32-core
         if: ${{ !env.ACT }}
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.arduino15/packages/esp32
           key: esp32-core-${{ env.VERSION_ESP_Core }}
@@ -196,7 +196,7 @@ jobs:
       - name: Cache Arduino libraries
         id: cache-arduino-libs
         if: ${{ !env.ACT }}
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/Arduino/libraries
           key: arduino-libs-${{ hashFiles('libraries.yaml') }}
