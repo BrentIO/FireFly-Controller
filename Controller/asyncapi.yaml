@@ -1135,6 +1135,7 @@ components:
             installed_version: "2026.04.01"
             latest_version: "2026.06.21"
             release_url: "https://github.com/BrentIO/FireFly-Controller/releases/tag/2026.06.21"
+            release_summary: "After updating, all outputs will be turned off."
             in_progress: false
         - name: up-to-date
           summary: Device is running the latest firmware
@@ -1380,6 +1381,13 @@ components:
         release_url:
           type: string
           description: URL to the full release notes (optional)
+        release_summary:
+          type: string
+          description: >
+            Short changelog/reminder text shown in the Home Assistant update
+            dialog below the release announcement link.
+          examples:
+            - "After updating, all outputs will be turned off."
         in_progress:
           type: boolean
           description: Whether a firmware install is currently in progress

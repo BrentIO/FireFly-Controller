@@ -3616,6 +3616,7 @@ void setup_OtaFirmware(){
     if(releaseUrl && strlen(releaseUrl) > 0){
       mqttDoc["release_url"] = releaseUrl;
     }
+    mqttDoc["release_summary"] = "After updating, all outputs will be turned off.";
     mqttDoc["in_progress"] = false;
 
     char topic[MQTT_TOPIC_UPDATE_STATE_PATTERN_LENGTH+1];
