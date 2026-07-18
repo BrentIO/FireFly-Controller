@@ -2468,9 +2468,15 @@ void http_handleProvisioningToken(AsyncWebServerRequest *request, JsonVariant do
 
   String uuid = doc["uuid"].as<String>();
   String controllerPath = CONFIGFS_PATH_CONTROLLERS + (String)"/" + uuid;
+  String clientPath = CONFIGFS_PATH_CLIENTS + (String)"/" + uuid;
 
-  if(!configFS.exists(controllerPath)){
-    log_w("Provisioning token request: no controller file for uuid=%s from %s", uuid.c_str(), request->client()->remoteIP().toString().c_str());
+  String recordPath;
+  if(configFS.exists(controllerPath)){
+    recordPath = controllerPath;
+  } else if(configFS.exists(clientPath)){
+    recordPath = clientPath;
+  } else {
+    log_w("Provisioning token request: no controller or client file for uuid=%s from %s", uuid.c_str(), request->client()->remoteIP().toString().c_str());
     http_notFound(request);
     return;
   }
@@ -2479,15 +2485,15 @@ void http_handleProvisioningToken(AsyncWebServerRequest *request, JsonVariant do
   filter["mac_address"] = true;
 
   String plaintext;
-  if(!secretEncryption.decryptFromFile(configFS, controllerPath, plaintext)){
-    http_error(request, "Unable to decrypt controller file");
+  if(!secretEncryption.decryptFromFile(configFS, recordPath, plaintext)){
+    http_error(request, "Unable to decrypt record file");
     return;
   }
 
   JsonDocument storedDoc;
   DeserializationError storedErr = deserializeJson(storedDoc, plaintext, DeserializationOption::Filter(filter));
   if(storedErr || storedDoc["mac_address"].isNull()){
-    log_w("Provisioning token request: controller %s has no mac_address field", uuid.c_str());
+    log_w("Provisioning token request: record %s has no mac_address field", uuid.c_str());
     http_notFound(request);
     return;
   }
