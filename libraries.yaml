@@ -49,7 +49,7 @@ libraries:
     version: "3.2.1"
     url: "https://github.com/arduino-libraries/NTPClient"
   - name: "PCA9685_RT"
-    version: "0.7.3"
+    version: "0.7.4"
     url: "https://github.com/RobTillaart/PCA9685_RT"
   - name: "Regexp"
     version: "0.1.1"
