@@ -7,8 +7,8 @@
 
 cores:
   - name: "esp32:esp32"
-    version: "3.3.10"
-    sha: "0d1440d1be38ab530d274fe87ee88565fe167392"
+    version: "3.3.11"
+    sha: "189089bb76e74978dc95abebefdad42b0d421ba9"
     url: "https://github.com/espressif/arduino-esp32"
 
 libraries:
